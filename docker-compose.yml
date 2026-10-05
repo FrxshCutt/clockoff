@@ -1,0 +1,26 @@
+# Local infrastructure for Work Mode.
+#   pnpm db:up       -> starts Postgres on localhost:5433 (5432 avoided to not clash with other local DBs)
+#   pnpm db:down     -> stops it
+# Two databases are created on first start: `workmode` (dev) and `workmode_test` (integration tests).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: workmode-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: workmode
+      POSTGRES_PASSWORD: workmode
+      POSTGRES_DB: workmode
+    ports:
+      - "5433:5432"
+    volumes:
+      - workmode-pgdata:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workmode -d workmode"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  workmode-pgdata:

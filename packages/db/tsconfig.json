@@ -1,0 +1,5 @@
+{
+  "extends": "@workmode/config/tsconfig/node-library.json",
+  "compilerOptions": { "rootDir": ".", "types": ["node"] },
+  "include": ["src/**/*.ts", "prisma/**/*.ts"]
+}

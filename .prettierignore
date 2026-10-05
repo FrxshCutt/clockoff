@@ -1,0 +1,9 @@
+node_modules
+.next
+.turbo
+dist
+coverage
+pnpm-lock.yaml
+packages/db/generated
+apps/ios
+docs/openapi.json

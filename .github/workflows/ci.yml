@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://workmode:workmode@localhost:5432/workmode?schema=public
+  TEST_DATABASE_URL: postgresql://workmode:workmode@localhost:5432/workmode_test?schema=public
+  SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret-0000000000000000
+  MOBILE_JWT_SECRET: ci-mobile-secret-ci-mobile-secret-ci-mobile-secret-000000000000000000
+  INTEGRATION_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  CRON_SECRET: ci-cron-secret
+  APP_URL: http://localhost:3000
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  EMAIL_PROVIDER: console
+  RATE_LIMIT_BACKEND: memory
+
+jobs:
+  js:
+    name: JS — lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: workmode
+          POSTGRES_PASSWORD: workmode
+          POSTGRES_DB: workmode
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U workmode -d workmode"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.10.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Create test database + extensions
+        run: |
+          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode -c "CREATE DATABASE workmode_test;"
+          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode_test -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+      - name: Prisma migrate (dev DB)
+        run: pnpm --filter @workmode/db exec prisma migrate deploy
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Integration tests
+        run: pnpm test:integration
+      - name: Build
+        run: pnpm build
+
+  ios:
+    name: iOS — build + test (simulator, mock provider)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        working-directory: apps/ios
+        run: make generate
+      - name: Build (Debug, simulator)
+        working-directory: apps/ios
+        run: make build
+      - name: Test (simulator, MockRestrictionProvider)
+        working-directory: apps/ios
+        run: make test
+      - name: Build Release (must compile without the mock provider)
+        working-directory: apps/ios
+        run: make build-release

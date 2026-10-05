@@ -1,0 +1,40 @@
+{
+  "name": "@workmode/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prisma schema, migrations, client singleton and seed data.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
+    "migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "migrate:reset": "dotenv -e ../../.env -- prisma migrate reset --force",
+    "migrate:status": "dotenv -e ../../.env -- prisma migrate status",
+    "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
+    "studio": "dotenv -e ../../.env -- prisma studio",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src prisma",
+    "test": "vitest run --passWithNoTests",
+    "build": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "@workmode/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@node-rs/argon2": "2.2.1",
+    "@types/node": "24.19.1",
+    "@workmode/config": "workspace:*",
+    "dotenv-cli": "11.0.0",
+    "eslint": "9.39.5",
+    "prisma": "6.19.3",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7",
+    "dotenv": "18.0.5"
+  }
+}

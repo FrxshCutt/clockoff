@@ -1,0 +1,30 @@
+{
+  "name": "@workmode/validation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zod schemas shared by API route handlers, web forms and the OpenAPI document consumed by the iOS client.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "build": "tsc --noEmit -p tsconfig.json",
+    "openapi": "tsx src/openapi/generate.ts"
+  },
+  "dependencies": {
+    "@workmode/shared": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "@workmode/config": "workspace:*",
+    "eslint": "9.39.5",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}
