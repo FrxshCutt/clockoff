@@ -17,7 +17,7 @@
     "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "studio": "dotenv -e ../../.env -- prisma studio",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src prisma",
+    "lint": "eslint src prisma --no-error-on-unmatched-pattern",
     "test": "vitest run --passWithNoTests",
     "build": "tsc --noEmit -p tsconfig.json"
   },

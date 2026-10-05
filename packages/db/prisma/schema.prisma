@@ -1,3 +1,9 @@
+// Work Mode — Prisma schema (PostgreSQL).
+// Conventions: UUID primary keys, snake_case tables/columns via @map, created_at/updated_at everywhere,
+// deleted_at soft delete where the spec requires it, organisation_id on every tenant-owned table with
+// composite indexes. Functional / partial indexes and check constraints that Prisma cannot express live in
+// the hand-edited SQL of the initial migration (see packages/db/prisma/migrations/*/migration.sql).
+
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
@@ -7,4 +13,1156 @@ datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
   extensions = [citext, pgcrypto]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum BillingStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum Plan {
+  STARTER
+  BUSINESS
+  PRO
+  ENTERPRISE
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+}
+
+enum DateFormat {
+  DMY
+  MDY
+  YMD
+}
+
+enum JoinCodeStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum InviteChannel {
+  LINK
+  EMAIL
+  SMS
+}
+
+enum EmployeeInviteStatus {
+  PENDING
+  SENT
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Employee lifecycle as shown to managers (§9).
+enum InviteStatus {
+  NOT_INVITED
+  INVITED
+  JOINED
+  SETUP_INCOMPLETE
+  CONNECTED
+  DEACTIVATED
+}
+
+enum Platform {
+  IOS
+}
+
+enum PermissionState {
+  NOT_DETERMINED
+  APPROVED
+  DENIED
+  REVOKED
+  UNKNOWN
+}
+
+enum SelectionState {
+  NONE
+  CONFIGURED
+}
+
+/// Work Mode state machine states (§6.2 / §9). Used for the device-reported engine state and for the
+/// server-computed expected state.
+enum WorkModeState {
+  OFF_SHIFT
+  SHIFT_STARTING_SOON
+  WORKING
+  ON_BREAK
+  SHIFT_ENDING
+  MANAGER_OVERRIDE
+  PERMISSION_ERROR
+  SYNC_ERROR
+  UNKNOWN
+}
+
+enum EffectiveRestriction {
+  WORK
+  BREAK_RELAXED
+  NONE
+}
+
+enum PolicyStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum AssignmentScopeType {
+  ORGANISATION
+  LOCATION
+  TEAM
+  EMPLOYEE
+}
+
+enum BreakRestrictionBehaviour {
+  RELAX_ALL
+  RELAX_CATEGORIES
+  KEEP_RESTRICTIONS
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+enum ShiftSource {
+  MANUAL
+  CSV_IMPORT
+  INTEGRATION
+}
+
+enum BreakEndReason {
+  EXPIRED
+  EMPLOYEE_ENDED
+  SHIFT_ENDED
+  MANAGER_ENDED
+  POLICY_CHANGED
+}
+
+enum BreakSessionStatus {
+  ACTIVE
+  ENDED
+}
+
+enum WorkStateSource {
+  DEVICE_REPORT
+  SERVER_COMPUTED
+}
+
+enum ShiftImportStatus {
+  UPLOADED
+  MAPPED
+  VALIDATED
+  IMPORTED
+  FAILED
+}
+
+enum ShiftImportRowStatus {
+  VALID
+  WARNING
+  ERROR
+  IMPORTED
+  SKIPPED
+}
+
+enum IntegrationProvider {
+  PLANDAY
+  DEPUTY
+  SEVENSHIFTS
+  WHEN_I_WORK
+  ROTAREADY
+  HOMEBASE
+}
+
+enum IntegrationStatus {
+  NOT_CONNECTED
+  CONNECTED
+  ERROR
+  DISCONNECTED
+}
+
+enum ActivationMode {
+  SCHEDULED
+  CLOCK_EVENT
+}
+
+enum ClockEventType {
+  CLOCK_IN
+  CLOCK_OUT
+  BREAK_START
+  BREAK_END
+}
+
+enum OverrideType {
+  EXEMPT_TEMPORARILY
+  END_WORK_MODE_EARLY
+  TEMPORARY_EXCEPTION
+  EMERGENCY_POLICY_OVERRIDE
+}
+
+enum ActorType {
+  EMPLOYEE_DEVICE
+  MANAGER
+  SYSTEM
+}
+
+enum ActivityEventType {
+  EMPLOYEE_JOINED
+  SETUP_COMPLETED
+  PERMISSION_GRANTED
+  PERMISSION_NEEDS_ATTENTION
+  SELECTION_CONFIGURED
+  WORK_MODE_STARTED
+  WORK_MODE_ENDED
+  BREAK_STARTED
+  BREAK_ENDED
+  BREAK_EXPIRED
+  SCHEDULE_SYNCED
+  POLICY_SYNCED
+  DEVICE_SYNC_DELAYED
+  POLICY_UPDATED
+  SHIFT_CREATED
+  SHIFT_UPDATED
+  SHIFT_CANCELLED
+  OVERRIDE_CREATED
+  OVERRIDE_EXPIRED
+  INTEGRATION_ERROR
+  IMPORT_COMPLETED
+}
+
+enum NotificationRecipientType {
+  MANAGER_USER
+  EMPLOYEE_DEVICE
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manager identity & auth
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String    @unique @db.Citext
+  passwordHash    String    @map("password_hash")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  name            String
+  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  memberships             OrganisationMembership[]
+  sessions                Session[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  auditLogs               AuditLog[]
+  joinCodesCreated        CompanyJoinCode[]        @relation("JoinCodeCreatedBy")
+  policyVersionsCreated   PolicyVersion[]          @relation("PolicyVersionCreatedBy")
+  policyAssignments       PolicyAssignment[]       @relation("PolicyAssignmentCreatedBy")
+  breakPolicyAssignments  BreakPolicyAssignment[]  @relation("BreakPolicyAssignmentCreatedBy")
+  shiftImports            ShiftImport[]            @relation("ShiftImportUploadedBy")
+  overridesCreated        ManagerOverride[]        @relation("OverrideCreatedBy")
+  managerInvitesSent      ManagerInvite[]          @relation("ManagerInviteInvitedBy")
+
+  @@map("users")
+}
+
+/// Manager web session (opaque random token, hashed at rest, sliding expiry).
+model Session {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Organisation & membership
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Organisation {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String
+  slug                 String        @unique
+  timezone             String        @default("Europe/London")
+  dateFormat           DateFormat    @default(DMY) @map("date_format")
+  defaultPolicyId      String?       @map("default_policy_id") @db.Uuid
+  defaultBreakPolicyId String?       @map("default_break_policy_id") @db.Uuid
+  billingStatus        BillingStatus @default(TRIAL) @map("billing_status")
+  plan                 Plan          @default(STARTER)
+  /// Onboarding checklist, e.g. { "createCompany": true, "createPolicy": false, ..., "dismissedAt": null }
+  onboardingState      Json          @default("{}") @map("onboarding_state")
+  settings             Json          @default("{}")
+  deletedAt            DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  defaultPolicy      Policy?      @relation("OrganisationDefaultPolicy", fields: [defaultPolicyId], references: [id], onDelete: SetNull)
+  defaultBreakPolicy BreakPolicy? @relation("OrganisationDefaultBreakPolicy", fields: [defaultBreakPolicyId], references: [id], onDelete: SetNull)
+
+  memberships            OrganisationMembership[]
+  managerInvites         ManagerInvite[]
+  joinCodes              CompanyJoinCode[]
+  employeeInvites        EmployeeInvite[]
+  employees              Employee[]
+  devices                Device[]
+  locations              Location[]
+  departments            Department[]
+  teams                  Team[]
+  policies               Policy[]                 @relation("OrganisationPolicies")
+  policyAssignments      PolicyAssignment[]
+  breakPolicies          BreakPolicy[]            @relation("OrganisationBreakPolicies")
+  breakPolicyAssignments BreakPolicyAssignment[]
+  shifts                 Shift[]
+  breakSessions          BreakSession[]
+  shiftImports           ShiftImport[]
+  integrations           Integration[]
+  clockEvents            ClockEvent[]
+  overrides              ManagerOverride[]
+  activityEvents         ActivityEvent[]
+  notifications          Notification[]
+  auditLogs              AuditLog[]
+
+  @@map("organisations")
+}
+
+model OrganisationMembership {
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                  String   @map("user_id") @db.Uuid
+  organisationId          String   @map("organisation_id") @db.Uuid
+  role                    Role     @default(MANAGER)
+  notificationPreferences Json     @default("{}") @map("notification_preferences")
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+  @@index([organisationId])
+  @@map("organisation_memberships")
+}
+
+model ManagerInvite {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String    @map("organisation_id") @db.Uuid
+  email          String    @db.Citext
+  role           Role      @default(MANAGER)
+  tokenHash      String    @unique @map("token_hash")
+  invitedById    String?   @map("invited_by_id") @db.Uuid
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt     DateTime? @map("accepted_at") @db.Timestamptz(6)
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  invitedBy    User?        @relation("ManagerInviteInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, email])
+  @@map("manager_invites")
+}
+
+/// Company-wide join code, format WORD-#### (e.g. BREW-4821). Only one ACTIVE per organisation
+/// (partial unique index in migration); history retained.
+model CompanyJoinCode {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String         @map("organisation_id") @db.Uuid
+  code           String         @unique
+  status         JoinCodeStatus @default(ACTIVE)
+  createdById    String?        @map("created_by_id") @db.Uuid
+  revokedAt      DateTime?      @map("revoked_at") @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("JoinCodeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, status])
+  @@map("company_join_codes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Org structure
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Location {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String    @map("organisation_id") @db.Uuid
+  name           String
+  timezone       String?
+  address        String?
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation      Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  teams             Team[]
+  primaryEmployees  Employee[]         @relation("EmployeePrimaryLocation")
+  employeeLocations EmployeeLocation[]
+  shifts            Shift[]
+
+  @@index([organisationId])
+  @@map("locations")
+}
+
+model Department {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String   @map("organisation_id") @db.Uuid
+  name           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employees    Employee[]
+
+  @@unique([organisationId, name])
+  @@map("departments")
+}
+
+model Team {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String   @map("organisation_id") @db.Uuid
+  name           String
+  locationId     String?  @map("location_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  location     Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  members      EmployeeTeam[]
+
+  @@index([organisationId])
+  @@index([locationId])
+  @@map("teams")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Employees, invites, mobile identity, devices
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Employee {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId     String           @map("organisation_id") @db.Uuid
+  firstName          String           @map("first_name")
+  lastName           String           @map("last_name")
+  email              String?          @db.Citext
+  phone              String?
+  externalEmployeeId String?          @map("external_employee_id")
+  jobTitle           String?          @map("job_title")
+  departmentId       String?          @map("department_id") @db.Uuid
+  primaryLocationId  String?          @map("primary_location_id") @db.Uuid
+  employmentStatus   EmploymentStatus @default(ACTIVE) @map("employment_status")
+  inviteStatus       InviteStatus     @default(NOT_INVITED) @map("invite_status")
+  deletedAt          DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation    Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  department      Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  primaryLocation Location?          @relation("EmployeePrimaryLocation", fields: [primaryLocationId], references: [id], onDelete: SetNull)
+  teams           EmployeeTeam[]
+  locations       EmployeeLocation[]
+  invites         EmployeeInvite[]
+  userLink        EmployeeUserLink?
+  devices         Device[]
+  shifts          Shift[]
+  breakSessions   BreakSession[]
+  workState       EmployeeWorkState?
+  clockEvents     ClockEvent[]
+  overrides       ManagerOverride[]
+  activityEvents  ActivityEvent[]
+  importRows      ShiftImportRow[]
+
+  @@unique([organisationId, externalEmployeeId])
+  @@index([organisationId, inviteStatus])
+  @@index([organisationId, email])
+  @@index([organisationId, primaryLocationId])
+  @@index([organisationId, departmentId])
+  @@map("employees")
+}
+
+model EmployeeTeam {
+  employeeId String   @map("employee_id") @db.Uuid
+  teamId     String   @map("team_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([employeeId, teamId])
+  @@index([teamId])
+  @@map("employee_teams")
+}
+
+model EmployeeLocation {
+  employeeId String   @map("employee_id") @db.Uuid
+  locationId String   @map("location_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([employeeId, locationId])
+  @@index([locationId])
+  @@map("employee_locations")
+}
+
+/// Employee-specific invite; disambiguates duplicate names and carries a per-employee code.
+model EmployeeInvite {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String               @map("organisation_id") @db.Uuid
+  employeeId     String               @map("employee_id") @db.Uuid
+  code           String               @unique
+  tokenHash      String               @unique @map("token_hash")
+  channel        InviteChannel        @default(LINK)
+  status         EmployeeInviteStatus @default(PENDING)
+  sentAt         DateTime?            @map("sent_at") @db.Timestamptz(6)
+  acceptedAt     DateTime?            @map("accepted_at") @db.Timestamptz(6)
+  expiresAt      DateTime             @map("expires_at") @db.Timestamptz(6)
+  revokedAt      DateTime?            @map("revoked_at") @db.Timestamptz(6)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, employeeId])
+  @@index([employeeId, status])
+  @@map("employee_invites")
+}
+
+/// Employee identity on mobile. Separate from manager `User`: no email/password — identity is the
+/// device + refresh token.
+model MobileUser {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employeeLinks EmployeeUserLink[]
+  devices       Device[]
+
+  @@map("mobile_users")
+}
+
+model EmployeeUserLink {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId   String    @unique @map("employee_id") @db.Uuid
+  mobileUserId String    @map("mobile_user_id") @db.Uuid
+  linkedAt     DateTime  @default(now()) @map("linked_at") @db.Timestamptz(6)
+  unlinkedAt   DateTime? @map("unlinked_at") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  mobileUser MobileUser @relation(fields: [mobileUserId], references: [id], onDelete: Cascade)
+
+  @@index([mobileUserId])
+  @@map("employee_user_links")
+}
+
+/// A phone. Stores only operational/compliance signals (§12) — never IDFV/IDFA, phone numbers, app lists
+/// or Apple tokens.
+model Device {
+  id                     String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mobileUserId           String          @map("mobile_user_id") @db.Uuid
+  employeeId             String          @map("employee_id") @db.Uuid
+  organisationId         String          @map("organisation_id") @db.Uuid
+  platform               Platform        @default(IOS)
+  appVersion             String?         @map("app_version")
+  osVersion              String?         @map("os_version")
+  deviceModel            String?         @map("device_model")
+  pushTokenEncrypted     Bytes?          @map("push_token_encrypted")
+  permissionState        PermissionState @default(NOT_DETERMINED) @map("permission_state")
+  selectionState         SelectionState  @default(NONE) @map("selection_state")
+  /// Counts only — never tokens or identities.
+  selectionCategoryCount Int             @default(0) @map("selection_category_count")
+  selectionAppCount      Int             @default(0) @map("selection_app_count")
+  selectionDomainCount   Int             @default(0) @map("selection_domain_count")
+  restrictionEngineState WorkModeState   @default(UNKNOWN) @map("restriction_engine_state")
+  policyVersionId        String?         @map("policy_version_id") @db.Uuid
+  scheduleVersion        Int             @default(0) @map("schedule_version")
+  timezone               String?
+  lastDeviceSyncAt       DateTime?       @map("last_device_sync_at") @db.Timestamptz(6)
+  lastPolicySyncAt       DateTime?       @map("last_policy_sync_at") @db.Timestamptz(6)
+  lastScheduleSyncAt     DateTime?       @map("last_schedule_sync_at") @db.Timestamptz(6)
+  lastSeenAt             DateTime?       @map("last_seen_at") @db.Timestamptz(6)
+  lastClockSkewSeconds   Int?            @map("last_clock_skew_seconds")
+  isActive               Boolean         @default(true) @map("is_active")
+  deactivatedAt          DateTime?       @map("deactivated_at") @db.Timestamptz(6)
+  createdAt              DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  mobileUser     MobileUser      @relation(fields: [mobileUserId], references: [id], onDelete: Cascade)
+  employee       Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  organisation   Organisation    @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  policyVersion  PolicyVersion?  @relation(fields: [policyVersionId], references: [id], onDelete: SetNull)
+  refreshTokens  RefreshToken[]
+  breakSessions  BreakSession[]
+  activityEvents ActivityEvent[]
+
+  @@index([organisationId, isActive])
+  @@index([employeeId])
+  @@index([mobileUserId])
+  @@map("devices")
+}
+
+/// Rotating refresh tokens, hashed at rest, per device. `familyId` groups a rotation chain so that reuse
+/// of a rotated token revokes the whole family.
+model RefreshToken {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId     String    @map("device_id") @db.Uuid
+  familyId     String    @default(dbgenerated("gen_random_uuid()")) @map("family_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
+  replacedById String?   @unique @map("replaced_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  device     Device        @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken? @relation("RefreshTokenRotation", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces   RefreshToken? @relation("RefreshTokenRotation")
+
+  @@index([deviceId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Policies
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Policy {
+  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId   String       @map("organisation_id") @db.Uuid
+  name             String
+  description      String?
+  status           PolicyStatus @default(DRAFT)
+  currentVersionId String?      @unique @map("current_version_id") @db.Uuid
+  deletedAt        DateTime?    @map("deleted_at") @db.Timestamptz(6)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation   Organisation       @relation("OrganisationPolicies", fields: [organisationId], references: [id], onDelete: Cascade)
+  currentVersion PolicyVersion?     @relation("PolicyCurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  versions       PolicyVersion[]    @relation("PolicyVersions")
+  assignments    PolicyAssignment[]
+  defaultFor     Organisation[]     @relation("OrganisationDefaultPolicy")
+
+  @@index([organisationId, status])
+  @@map("policies")
+}
+
+model PolicyVersion {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId              String    @map("policy_id") @db.Uuid
+  versionNumber         Int       @map("version_number")
+  /// Validated by `restrictionConfigSchema` in @workmode/validation.
+  restrictionConfig     Json      @map("restriction_config")
+  /// Default break behaviour when no BreakPolicy resolves: { restrictionBehaviour, relaxedCategories }.
+  breakBehaviourDefault Json      @default("{\"restrictionBehaviour\":\"RELAX_ALL\",\"relaxedCategories\":[]}") @map("break_behaviour_default")
+  createdById           String?   @map("created_by_id") @db.Uuid
+  changeNote            String?   @map("change_note")
+  publishedAt           DateTime? @map("published_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  policy    Policy   @relation("PolicyVersions", fields: [policyId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("PolicyVersionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  currentOf Policy?  @relation("PolicyCurrentVersion")
+  devices   Device[]
+
+  @@unique([policyId, versionNumber])
+  @@map("policy_versions")
+}
+
+/// Scope assignment. "Unique(scope_type, scope_id) for active assignments" is a partial unique index in
+/// the migration (active = effective_to IS NULL OR effective_to > now(), approximated as deleted/ended rows
+/// having effective_to set).
+model PolicyAssignment {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String              @map("organisation_id") @db.Uuid
+  policyId       String              @map("policy_id") @db.Uuid
+  scopeType      AssignmentScopeType @map("scope_type")
+  /// Organisation / Location / Team / Employee id depending on scopeType.
+  scopeId        String              @map("scope_id") @db.Uuid
+  effectiveFrom  DateTime?           @map("effective_from") @db.Timestamptz(6)
+  effectiveTo    DateTime?           @map("effective_to") @db.Timestamptz(6)
+  createdById    String?             @map("created_by_id") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  policy       Policy       @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("PolicyAssignmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, scopeType, scopeId])
+  @@index([policyId])
+  @@map("policy_assignments")
+}
+
+model BreakPolicy {
+  id                         String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId             String                    @map("organisation_id") @db.Uuid
+  name                       String
+  description                String?
+  breaksEnabled              Boolean                   @default(true) @map("breaks_enabled")
+  maxBreaksPerShift          Int                       @default(2) @map("max_breaks_per_shift")
+  maxBreakDurationMinutes    Int                       @default(15) @map("max_break_duration_minutes")
+  maxTotalBreakMinutes       Int                       @default(30) @map("max_total_break_minutes")
+  minGapBetweenBreaksMinutes Int                       @default(60) @map("min_gap_between_breaks_minutes")
+  minMinutesAfterShiftStart  Int                       @default(60) @map("min_minutes_after_shift_start")
+  employeeTriggeredAllowed   Boolean                   @default(true) @map("employee_triggered_allowed")
+  scheduledBreaksAllowed     Boolean                   @default(true) @map("scheduled_breaks_allowed")
+  restrictionBehaviour       BreakRestrictionBehaviour @default(RELAX_ALL) @map("restriction_behaviour")
+  /// Array of restriction categories kept/relaxed when behaviour is RELAX_CATEGORIES.
+  relaxedCategories          Json                      @default("[]") @map("relaxed_categories")
+  status                     PolicyStatus              @default(ACTIVE)
+  deletedAt                  DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+  createdAt                  DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation  Organisation            @relation("OrganisationBreakPolicies", fields: [organisationId], references: [id], onDelete: Cascade)
+  assignments   BreakPolicyAssignment[]
+  breakSessions BreakSession[]
+  defaultFor    Organisation[]          @relation("OrganisationDefaultBreakPolicy")
+
+  @@index([organisationId, status])
+  @@map("break_policies")
+}
+
+model BreakPolicyAssignment {
+  id             String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String              @map("organisation_id") @db.Uuid
+  breakPolicyId  String              @map("break_policy_id") @db.Uuid
+  scopeType      AssignmentScopeType @map("scope_type")
+  scopeId        String              @map("scope_id") @db.Uuid
+  effectiveFrom  DateTime?           @map("effective_from") @db.Timestamptz(6)
+  effectiveTo    DateTime?           @map("effective_to") @db.Timestamptz(6)
+  createdById    String?             @map("created_by_id") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  breakPolicy  BreakPolicy  @relation(fields: [breakPolicyId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("BreakPolicyAssignmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, scopeType, scopeId])
+  @@index([breakPolicyId])
+  @@map("break_policy_assignments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scheduling
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Shift {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId     String      @map("organisation_id") @db.Uuid
+  employeeId         String      @map("employee_id") @db.Uuid
+  locationId         String?     @map("location_id") @db.Uuid
+  startsAt           DateTime    @map("starts_at") @db.Timestamptz(6)
+  endsAt             DateTime    @map("ends_at") @db.Timestamptz(6)
+  /// IANA zone captured at creation for display / DST reasoning.
+  timezone           String
+  status             ShiftStatus @default(SCHEDULED)
+  source             ShiftSource @default(MANUAL)
+  externalShiftId    String?     @map("external_shift_id")
+  notes              String?
+  recurrenceRule     String?     @map("recurrence_rule")
+  parentRecurrenceId String?     @map("parent_recurrence_id") @db.Uuid
+  version            Int         @default(1)
+  deletedAt          DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation     Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee         Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  location         Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  parentRecurrence Shift?              @relation("ShiftRecurrence", fields: [parentRecurrenceId], references: [id], onDelete: SetNull)
+  occurrences      Shift[]             @relation("ShiftRecurrence")
+  scheduledBreaks  ScheduledBreak[]
+  breakSessions    BreakSession[]
+  importRows       ShiftImportRow[]
+  activeWorkStates EmployeeWorkState[]
+
+  @@unique([organisationId, externalShiftId])
+  @@index([organisationId, employeeId, startsAt])
+  @@index([organisationId, startsAt])
+  @@index([organisationId, locationId, startsAt])
+  @@index([parentRecurrenceId])
+  @@map("shifts")
+}
+
+model ScheduledBreak {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  shiftId                String   @map("shift_id") @db.Uuid
+  offsetMinutesFromStart Int      @map("offset_minutes_from_start")
+  durationMinutes        Int      @map("duration_minutes")
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
+  @@map("scheduled_breaks")
+}
+
+model BreakSession {
+  id                   String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId       String                    @map("organisation_id") @db.Uuid
+  employeeId           String                    @map("employee_id") @db.Uuid
+  shiftId              String                    @map("shift_id") @db.Uuid
+  deviceId             String?                   @map("device_id") @db.Uuid
+  breakPolicyId        String?                   @map("break_policy_id") @db.Uuid
+  startedAt            DateTime                  @map("started_at") @db.Timestamptz(6)
+  plannedEndsAt        DateTime                  @map("planned_ends_at") @db.Timestamptz(6)
+  endedAt              DateTime?                 @map("ended_at") @db.Timestamptz(6)
+  endReason            BreakEndReason?           @map("end_reason")
+  status               BreakSessionStatus        @default(ACTIVE)
+  /// Idempotency key generated on the device.
+  clientBreakId        String                    @unique @map("client_break_id")
+  /// Snapshot of the behaviour applied for this break (policy may change mid-break).
+  restrictionBehaviour BreakRestrictionBehaviour @default(RELAX_ALL) @map("restriction_behaviour")
+  relaxedCategories    Json                      @default("[]") @map("relaxed_categories")
+  createdAt            DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation     Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee         Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shift            Shift               @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  device           Device?             @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  breakPolicy      BreakPolicy?        @relation(fields: [breakPolicyId], references: [id], onDelete: SetNull)
+  activeWorkStates EmployeeWorkState[]
+
+  @@index([organisationId, employeeId, startedAt])
+  @@index([shiftId, status])
+  @@map("break_sessions")
+}
+
+/// One row per employee. Holds the last device-reported state AND the server-computed expected state so
+/// the dashboard can show divergence (SYNC_DELAYED / NEEDS_ATTENTION).
+model EmployeeWorkState {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeeId           String                @unique @map("employee_id") @db.Uuid
+  state                WorkModeState         @default(OFF_SHIFT)
+  stateSince           DateTime              @default(now()) @map("state_since") @db.Timestamptz(6)
+  activeShiftId        String?               @map("active_shift_id") @db.Uuid
+  activeBreakSessionId String?               @map("active_break_session_id") @db.Uuid
+  breaksTakenCount     Int                   @default(0) @map("breaks_taken_count")
+  breakMinutesUsed     Int                   @default(0) @map("break_minutes_used")
+  source               WorkStateSource       @default(SERVER_COMPUTED)
+  reportedState        WorkModeState?        @map("reported_state")
+  reportedAt           DateTime?             @map("reported_at") @db.Timestamptz(6)
+  expectedState        WorkModeState?        @map("expected_state")
+  expectedRestriction  EffectiveRestriction? @map("expected_restriction")
+  expectedComputedAt   DateTime?             @map("expected_computed_at") @db.Timestamptz(6)
+  nextTransitionAt     DateTime?             @map("next_transition_at") @db.Timestamptz(6)
+  attentionReason      String?               @map("attention_reason")
+  lastUpdatedAt        DateTime              @default(now()) @map("last_updated_at") @db.Timestamptz(6)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee           Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  activeShift        Shift?        @relation(fields: [activeShiftId], references: [id], onDelete: SetNull)
+  activeBreakSession BreakSession? @relation(fields: [activeBreakSessionId], references: [id], onDelete: SetNull)
+
+  @@index([state])
+  @@map("employee_work_states")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV import
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ShiftImport {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String            @map("organisation_id") @db.Uuid
+  uploadedById   String?           @map("uploaded_by_id") @db.Uuid
+  filename       String
+  fileSizeBytes  Int               @default(0) @map("file_size_bytes")
+  status         ShiftImportStatus @default(UPLOADED)
+  /// { "<csv header>": "<field name>" | null }
+  columnMapping  Json              @default("{}") @map("column_mapping")
+  /// Parsing options captured at upload: { dateFormat, timezone, locationId? }
+  options        Json              @default("{}")
+  headers        Json              @default("[]")
+  rowCount       Int               @default(0) @map("row_count")
+  validCount     Int               @default(0) @map("valid_count")
+  warningCount   Int               @default(0) @map("warning_count")
+  errorCount     Int               @default(0) @map("error_count")
+  importedCount  Int               @default(0) @map("imported_count")
+  importedAt     DateTime?         @map("imported_at") @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  uploadedBy   User?            @relation("ShiftImportUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+  rows         ShiftImportRow[]
+
+  @@index([organisationId, createdAt])
+  @@map("shift_imports")
+}
+
+model ShiftImportRow {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  importId          String               @map("import_id") @db.Uuid
+  rowNumber         Int                  @map("row_number")
+  raw               Json
+  parsed            Json?
+  status            ShiftImportRowStatus @default(ERROR)
+  /// Array of { code, message, field? }
+  problems          Json                 @default("[]")
+  matchedEmployeeId String?              @map("matched_employee_id") @db.Uuid
+  createdShiftId    String?              @map("created_shift_id") @db.Uuid
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  import          ShiftImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  matchedEmployee Employee?   @relation(fields: [matchedEmployeeId], references: [id], onDelete: SetNull)
+  createdShift    Shift?      @relation(fields: [createdShiftId], references: [id], onDelete: SetNull)
+
+  @@unique([importId, rowNumber])
+  @@index([importId, status])
+  @@map("shift_import_rows")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Integrations (schema now, providers Phase 2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Integration {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId  String              @map("organisation_id") @db.Uuid
+  provider        IntegrationProvider
+  status          IntegrationStatus   @default(NOT_CONNECTED)
+  settings        Json                @default("{}")
+  activationMode  ActivationMode      @default(SCHEDULED) @map("activation_mode")
+  notifyRequested Boolean             @default(false) @map("notify_requested")
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation           @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  connection   IntegrationConnection?
+
+  @@unique([organisationId, provider])
+  @@map("integrations")
+}
+
+model IntegrationConnection {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  integrationId        String    @unique @map("integration_id") @db.Uuid
+  /// AES-256-GCM ciphertext (iv || tag || data) — see apps/web/src/lib/crypto.ts
+  encryptedCredentials Bytes     @map("encrypted_credentials")
+  tokenExpiresAt       DateTime? @map("token_expires_at") @db.Timestamptz(6)
+  lastSyncAt           DateTime? @map("last_sync_at") @db.Timestamptz(6)
+  lastError            String?   @map("last_error")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("integration_connections")
+}
+
+model ClockEvent {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String         @map("organisation_id") @db.Uuid
+  employeeId     String         @map("employee_id") @db.Uuid
+  type           ClockEventType
+  occurredAt     DateTime       @map("occurred_at") @db.Timestamptz(6)
+  source         String         @default("INTEGRATION")
+  externalId     String?        @map("external_id")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee     Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([organisationId, source, externalId])
+  @@index([organisationId, employeeId, occurredAt])
+  @@map("clock_events")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Overrides, activity, notifications, audit
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ManagerOverride {
+  id                    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId        String       @map("organisation_id") @db.Uuid
+  /// Null for org-wide EMERGENCY_POLICY_OVERRIDE.
+  employeeId            String?      @map("employee_id") @db.Uuid
+  type                  OverrideType
+  reason                String
+  createdById           String?      @map("created_by_id") @db.Uuid
+  startsAt              DateTime     @default(now()) @map("starts_at") @db.Timestamptz(6)
+  expiresAt             DateTime     @map("expires_at") @db.Timestamptz(6)
+  revokedAt             DateTime?    @map("revoked_at") @db.Timestamptz(6)
+  expiredEventEmittedAt DateTime?    @map("expired_event_emitted_at") @db.Timestamptz(6)
+  /// e.g. { "breakPolicyId": "...", "durationMinutes": 30 } for TEMPORARY_EXCEPTION
+  payload               Json         @default("{}")
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee     Employee?    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation("OverrideCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, employeeId, expiresAt])
+  @@index([organisationId, expiresAt])
+  @@map("manager_overrides")
+}
+
+model ActivityEvent {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String            @map("organisation_id") @db.Uuid
+  employeeId     String?           @map("employee_id") @db.Uuid
+  deviceId       String?           @map("device_id") @db.Uuid
+  actorType      ActorType         @map("actor_type")
+  actorUserId    String?           @map("actor_user_id") @db.Uuid
+  type           ActivityEventType
+  occurredAt     DateTime          @map("occurred_at") @db.Timestamptz(6)
+  /// Operational metadata only (§12).
+  metadata       Json              @default("{}")
+  /// Idempotency key from the device; unique per device (composite below).
+  clientEventId  String?           @map("client_event_id")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee     Employee?    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  device       Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@unique([deviceId, clientEventId])
+  @@index([organisationId, occurredAt(sort: Desc)])
+  @@index([organisationId, employeeId, occurredAt(sort: Desc)])
+  @@index([organisationId, type, occurredAt(sort: Desc)])
+  @@map("activity_events")
+}
+
+model Notification {
+  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String                    @map("organisation_id") @db.Uuid
+  recipientType  NotificationRecipientType @map("recipient_type")
+  recipientId    String                    @map("recipient_id") @db.Uuid
+  type           String
+  title          String
+  body           String
+  metadata       Json                      @default("{}")
+  channel        NotificationChannel       @default(IN_APP)
+  readAt         DateTime?                 @map("read_at") @db.Timestamptz(6)
+  sentAt         DateTime?                 @map("sent_at") @db.Timestamptz(6)
+  createdAt      DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, recipientType, recipientId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId String   @map("organisation_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id")
+  before         Json?
+  after          Json?
+  ip             String?
+  userAgent      String?  @map("user_agent")
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  actorUser    User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, occurredAt(sort: Desc)])
+  @@index([organisationId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Marketing
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DemoRequest {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  email     String   @db.Citext
+  company   String
+  teamSize  String?  @map("team_size")
+  message   String?
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("demo_requests")
 }
