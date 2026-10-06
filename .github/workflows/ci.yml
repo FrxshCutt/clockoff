@@ -72,8 +72,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Select newest Xcode on the runner
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)" && xcodebuild -version
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          NAME=$(xcrun simctl list devices available | /usr/bin/grep -oE 'iPhone [0-9]+( Pro)?' | sort -V | tail -1)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"; echo "Using simulator: $NAME"
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project
@@ -81,10 +86,10 @@ jobs:
         run: make generate
       - name: Build (Debug, simulator)
         working-directory: apps/ios
-        run: make build
+        run: make build SIMULATOR="${{ steps.sim.outputs.name }}"
       - name: Test (simulator, MockRestrictionProvider)
         working-directory: apps/ios
-        run: make test
+        run: make test SIMULATOR="${{ steps.sim.outputs.name }}"
       - name: Build Release (must compile without the mock provider)
         working-directory: apps/ios
-        run: make build-release
+        run: make build-release SIMULATOR="${{ steps.sim.outputs.name }}"
