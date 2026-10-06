@@ -51,6 +51,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "5.16.2",
     "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/luxon": "3.7.6",

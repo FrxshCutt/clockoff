@@ -15,3 +15,8 @@
 [functions]
   # Scheduled function that runs the Work Mode tick every minute (netlify/functions/work-mode-tick.mts).
   directory = "apps/web/netlify/functions"   # relative to the base directory (repo root)
+
+# Netlify's Next.js runtime. Declared explicitly (and pinned in apps/web devDependencies) because framework
+# auto-detection looks at the base directory (repo root), which has no "next" dependency.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
