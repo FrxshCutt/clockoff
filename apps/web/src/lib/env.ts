@@ -59,8 +59,14 @@ const envSchema = z.object({
   INTEGRATION_ENCRYPTION_KEY: base64Key32,
 
   // Email
-  EMAIL_PROVIDER: z.enum(["console", "smtp"]).default("console"),
+  /**
+   * `console` (development: logs links), `resend` (production: Resend HTTP API, needs RESEND_API_KEY;
+   * required in production by parseEnv) or `smtp` (not implemented yet).
+   */
+  EMAIL_PROVIDER: z.enum(["console", "smtp", "resend"]).default("console"),
   EMAIL_FROM: z.string().min(3).default("Work Mode <no-reply@workmode.local>"),
+  /** Resend API key (`re_…`), sending access is enough. Read only when EMAIL_PROVIDER=resend. */
+  RESEND_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
   SMTP_USER: z.string().optional(),
@@ -130,6 +136,53 @@ function stripEmpty(source: Readonly<Record<string, string | undefined>>): Recor
   return out;
 }
 
+/**
+ * Sender domains Resend can never verify: the `.local` development default and the reserved
+ * `localhost` / `.test` / `.example` / `.invalid` names (RFC 2606, RFC 6761).
+ */
+const UNVERIFIABLE_SENDER_DOMAIN = /(?:^|\.)(?:local|localhost|test|example|invalid)$/i;
+
+/**
+ * The address in an `EMAIL_FROM` value (`noreply@example.com` or `Name <noreply@example.com>`), or
+ * undefined when it holds no usable address (Resend rejects such a sender on every send).
+ */
+function senderAddress(from: string): string | undefined {
+  const trimmed = from.trim();
+  const bracketed = /<([^<>]*)>$/.exec(trimmed);
+  const address = (bracketed ? bracketed[1]! : trimmed).trim();
+  return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(address) ? address : undefined;
+}
+
+/**
+ * Resend settings that make every send fail. Each problem is a hard error in production (a deploy
+ * that cannot send verification / reset / invite emails must fail loudly) and a warning elsewhere.
+ * Each message reads as a sentence with " in production" appended, and never contains the key or the
+ * sender address.
+ */
+function resendProblems(raw: RawEnv): string[] {
+  if (raw.EMAIL_PROVIDER !== "resend") return [];
+  const problems: string[] = [];
+  const key = raw.RESEND_API_KEY?.trim();
+  if (!key) {
+    problems.push("RESEND_API_KEY is required when EMAIL_PROVIDER=resend");
+  } else if (/[\s\p{Cc}]/u.test(key)) {
+    problems.push(
+      "RESEND_API_KEY must not contain whitespace or control characters when EMAIL_PROVIDER=resend",
+    );
+  }
+  const address = senderAddress(raw.EMAIL_FROM);
+  if (!address) {
+    problems.push(
+      "EMAIL_FROM must be `address@domain` or `Name <address@domain>` when EMAIL_PROVIDER=resend",
+    );
+  } else if (UNVERIFIABLE_SENDER_DOMAIN.test(address.slice(address.lastIndexOf("@") + 1))) {
+    problems.push(
+      "EMAIL_FROM must use a domain verified in Resend, not .local / .localhost / .test / .example / .invalid, when EMAIL_PROVIDER=resend",
+    );
+  }
+  return problems;
+}
+
 function formatIssues(error: z.ZodError): string {
   return error.issues
     .map((issue) => {
@@ -167,6 +220,16 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
   }
   if (raw.EMAIL_PROVIDER === "smtp" && (!raw.SMTP_HOST || !raw.SMTP_USER || !raw.SMTP_PASSWORD)) {
     warnings.push("EMAIL_PROVIDER=smtp but SMTP_HOST / SMTP_USER / SMTP_PASSWORD are incomplete.");
+  }
+  const emailProblems = resendProblems(raw);
+  if (emailProblems.length > 0) {
+    // Hard error in production: fail loudly at first use instead of silently dropping every message.
+    if (isProduction) {
+      throw new Error(
+        `Invalid environment configuration:\n${emailProblems.map((p) => ` - ${p} in production`).join("\n")}`,
+      );
+    }
+    for (const problem of emailProblems) warnings.push(`${problem}: every email send will fail.`);
   }
   if (isProduction && raw.SESSION_SECRET === raw.MOBILE_JWT_SECRET) {
     throw new Error(

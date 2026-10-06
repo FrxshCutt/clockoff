@@ -53,7 +53,9 @@ final class APIClientTests: XCTestCase {
         sleeper = RecordingSleeper()
         logger = RecordingLogger()
         client = APIClient(
-            configuration: APIClientConfiguration(baseURL: URL(string: "https://api.example.test/")!, backoff: BackoffPolicy(maxRetries: 3, initialDelay: 0.5, maxDelay: 8)),
+            // The mobile API root (API_BASE_URL), with a trailing slash: every path below must still be
+            // /api/mobile/v1/<endpoint> with exactly one slash.
+            configuration: APIClientConfiguration(baseURL: URL(string: "https://api.example.test/api/mobile/v1/")!, backoff: BackoffPolicy(maxRetries: 3, initialDelay: 0.5, maxDelay: 8)),
             tokenStore: tokenStore,
             session: StubURLProtocol.makeSession(),
             sleeper: sleeper,
@@ -128,6 +130,71 @@ final class APIClientTests: XCTestCase {
         let request = try XCTUnwrap(StubURLProtocol.recorded.first)
         XCTAssertEqual(request.path, "/api/mobile/v1/schedule")
         XCTAssertEqual(request.query, ["from": "2026-10-05T00:00:00.000Z", "to": "2026-10-07T00:00:00.000Z"])
+        // The log line carries the full server path but never the query.
+        XCTAssertEqual(logger.lines, ["GET /api/mobile/v1/schedule 200 #1 "])
+    }
+
+    // MARK: Request URLs (API_BASE_URL is the mobile API root)
+
+    private static let scheduleJSON = #"{"from":"2026-10-05T00:00:00.000Z","to":"2026-10-07T00:00:00.000Z","shifts":[],"scheduleVersion":1,"serverTime":"2026-10-06T00:00:00.000Z"}"#
+
+    /// Runs sync, schedule (with a query) and push-token through a client on `apiRoot`; returns the full URLs.
+    private func requestURLs(apiRoot: String) async throws -> [String] {
+        let client = APIClient(
+            configuration: APIClientConfiguration(baseURL: try XCTUnwrap(URL(string: apiRoot))),
+            tokenStore: InMemoryTokenStore(tokens: Fixture.tokens),
+            session: StubURLProtocol.makeSession(),
+            sleeper: sleeper,
+            jitter: { 1.0 },
+            logger: logger
+        )
+        StubURLProtocol.install { request in
+            if request.path.hasSuffix("/schedule") { return .response(status: 200, json: Self.scheduleJSON) }
+            if request.path.hasSuffix("/push-token") { return .response(status: 200, json: #"{"ok":true}"#) }
+            return .response(status: 200, json: Fixture.syncJSON)
+        }
+        _ = try await client.sync()
+        _ = try await client.schedule(from: iso("2026-10-05T00:00:00Z"), to: iso("2026-10-07T00:00:00Z"))
+        try await client.registerPushToken(PushTokenRequest(token: String(repeating: "ab", count: 32), environment: .production))
+        return StubURLProtocol.recorded.map(\.url.absoluteString)
+    }
+
+    func testReleaseBaseTargetsTheFullMobileAPIURL() async throws {
+        let urls = try await requestURLs(apiRoot: "https://app.clockoff.online/api/mobile/v1")
+        XCTAssertEqual(urls, [
+            "https://app.clockoff.online/api/mobile/v1/sync",
+            "https://app.clockoff.online/api/mobile/v1/schedule?from=2026-10-05T00:00:00.000Z&to=2026-10-07T00:00:00.000Z",
+            "https://app.clockoff.online/api/mobile/v1/device/push-token",
+        ])
+    }
+
+    func testTrailingSlashBaseTargetsTheSameURLs() async throws {
+        let urls = try await requestURLs(apiRoot: "https://app.clockoff.online/api/mobile/v1/")
+        XCTAssertEqual(urls, [
+            "https://app.clockoff.online/api/mobile/v1/sync",
+            "https://app.clockoff.online/api/mobile/v1/schedule?from=2026-10-05T00:00:00.000Z&to=2026-10-07T00:00:00.000Z",
+            "https://app.clockoff.online/api/mobile/v1/device/push-token",
+        ])
+    }
+
+    func testDebugSimulatorBaseTargetsLocalhost() async throws {
+        let urls = try await requestURLs(apiRoot: "http://localhost:3000/api/mobile/v1")
+        XCTAssertEqual(urls.first, "http://localhost:3000/api/mobile/v1/sync")
+        XCTAssertEqual(urls.last, "http://localhost:3000/api/mobile/v1/device/push-token")
+    }
+
+    func testRefreshAndReplayStayUnderTheAPIRoot() async throws {
+        StubURLProtocol.install { request in
+            if request.path == Self.refreshPath { return .response(status: 200, json: Self.newTokensJSON) }
+            if request.headers["Authorization"] == "Bearer access-new" { return .response(status: 200, json: Fixture.syncJSON) }
+            return .response(status: 401, json: #"{"error":{"code":"UNAUTHENTICATED","message":"expired"}}"#)
+        }
+        _ = try await client.sync()
+        XCTAssertEqual(StubURLProtocol.recorded.map(\.url.absoluteString), [
+            "https://api.example.test/api/mobile/v1/sync",
+            "https://api.example.test/api/mobile/v1/auth/refresh",
+            "https://api.example.test/api/mobile/v1/sync",
+        ])
     }
 
     // MARK: 401 → refresh

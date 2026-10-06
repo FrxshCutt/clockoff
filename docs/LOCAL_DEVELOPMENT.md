@@ -60,8 +60,13 @@ Emails (verification, password reset, invites) are printed to the web server con
 - Simulator builds use `MockRestrictionProvider` (banner "DEVELOPMENT MODE — restrictions are simulated").
   Screen Time APIs (FamilyControls / ManagedSettings / DeviceActivity) only work on a **real device** with the
   Family Controls entitlement on your team — see `docs/IOS_SETUP.md`.
-- Point the Debug build at your machine: set `API_BASE_URL` in `apps/ios/Config/Debug.xcconfig` to your LAN
-  IP (`http://192.168.x.x:3000`).
+- `API_BASE_URL` is the root of the mobile API, not the server origin. The simulator uses the Debug default,
+  `http://localhost:3000/api/mobile/v1`.
+- Point a device at your Mac: in the git-ignored `apps/ios/Config/Local.xcconfig`, set `API_BASE_URL` to your
+  Mac's Bonjour name or LAN IP **including `/api/mobile/v1`**, written with `/$()/` because `//` starts an
+  xcconfig comment: `API_BASE_URL = http:/$()/my-mac.local:3000/api/mobile/v1` (or
+  `http:/$()/192.168.x.x:3000/api/mobile/v1`). Without the path the app stops at launch. Details in
+  `docs/IOS_SETUP.md` › "Pointing a device at a local API".
 
 ## Troubleshooting
 

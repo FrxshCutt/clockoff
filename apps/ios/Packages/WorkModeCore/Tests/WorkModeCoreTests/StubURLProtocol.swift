@@ -5,6 +5,8 @@ import Foundation
 final class StubURLProtocol: URLProtocol {
     struct Recorded {
         let method: String
+        /// The full request URL (scheme, host, port, path and query).
+        let url: URL
         let path: String
         let query: [String: String]
         let headers: [String: String]
@@ -56,6 +58,7 @@ final class StubURLProtocol: URLProtocol {
         for item in components?.queryItems ?? [] { query[item.name] = item.value }
         let recorded = Recorded(
             method: request.httpMethod ?? "GET",
+            url: url,
             path: url.path,
             query: query,
             headers: request.allHTTPHeaderFields ?? [:],

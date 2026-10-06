@@ -86,6 +86,127 @@ describe("parseEnv", () => {
     expect(warnings.join("\n")).toMatch(/https/);
   });
 
+  it("accepts EMAIL_PROVIDER=resend with RESEND_API_KEY (production included)", () => {
+    const { env, warnings } = parseEnv({
+      ...VALID,
+      NODE_ENV: "production",
+      APP_URL: "https://app.clockoff.online",
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_test_key_123",
+      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+    });
+    expect(env).toMatchObject({
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_test_key_123",
+      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+    });
+    expect(warnings).toEqual([]);
+    expect(parseEnv(VALID).env.RESEND_API_KEY).toBeUndefined();
+    expect(() => parseEnv({ ...VALID, EMAIL_PROVIDER: "sendgrid" })).toThrow(/EMAIL_PROVIDER/);
+  });
+
+  it("refuses EMAIL_PROVIDER=resend without RESEND_API_KEY in production, warns elsewhere", () => {
+    const prod = {
+      ...VALID,
+      NODE_ENV: "production",
+      APP_URL: "https://app.clockoff.online",
+      EMAIL_PROVIDER: "resend",
+      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+    };
+    expect(() => parseEnv(prod)).toThrow(
+      /RESEND_API_KEY is required when EMAIL_PROVIDER=resend in production/,
+    );
+    // Empty / blank values count as unset (the .env.production.example template ships RESEND_API_KEY="").
+    expect(() => parseEnv({ ...prod, RESEND_API_KEY: "" })).toThrow(/RESEND_API_KEY/);
+    expect(() => parseEnv({ ...prod, RESEND_API_KEY: "   " })).toThrow(/RESEND_API_KEY/);
+
+    const dev = parseEnv({
+      ...VALID,
+      NODE_ENV: "development",
+      EMAIL_PROVIDER: "resend",
+      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+    });
+    expect(dev.env.EMAIL_PROVIDER).toBe("resend");
+    expect(dev.warnings).toEqual([
+      "RESEND_API_KEY is required when EMAIL_PROVIDER=resend: every email send will fail.",
+    ]);
+  });
+
+  it("refuses a RESEND_API_KEY with inner whitespace in production without echoing it", () => {
+    const key = "re_abc def_Secret123";
+    const prod = {
+      ...VALID,
+      NODE_ENV: "production",
+      APP_URL: "https://app.clockoff.online",
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: key,
+      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+    };
+    let message = "";
+    try {
+      parseEnv(prod);
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toMatch(/RESEND_API_KEY must not contain whitespace .* in production/);
+    expect(message).not.toContain("def_Secret123");
+    // Surrounding whitespace (a pasted trailing newline) is fine: the provider trims it.
+    expect(() => parseEnv({ ...prod, RESEND_API_KEY: ` re_test_key_123\n` })).not.toThrow();
+
+    const dev = parseEnv({ ...prod, NODE_ENV: "development" });
+    expect(dev.warnings.join("\n")).toMatch(/RESEND_API_KEY must not contain whitespace/);
+    expect(dev.warnings.join("\n")).not.toContain("def_Secret123");
+  });
+
+  it("refuses an EMAIL_FROM Resend can never send from in production, warns elsewhere", () => {
+    const prod = {
+      ...VALID,
+      NODE_ENV: "production",
+      APP_URL: "https://app.clockoff.online",
+      EMAIL_PROVIDER: "resend",
+      RESEND_API_KEY: "re_test_key_123",
+    };
+    // EMAIL_FROM unset: the `.local` development default.
+    expect(() => parseEnv(prod)).toThrow(
+      /EMAIL_FROM must use a domain verified in Resend.* in production/,
+    );
+    for (const from of [
+      "Work Mode <noreply@workmode.LOCAL>",
+      "noreply@mail.example",
+      "Work Mode <noreply@app.test>",
+      "x@localhost.invalid",
+    ]) {
+      expect(() => parseEnv({ ...prod, EMAIL_FROM: from }), from).toThrow(/verified in Resend/);
+    }
+    for (const from of [
+      "noreply",
+      "Work Mode",
+      "Work Mode <noreply>",
+      "Work Mode <noreply@clockoff.online",
+      "noreply@localhost",
+    ]) {
+      expect(() => parseEnv({ ...prod, EMAIL_FROM: from }), from).toThrow(
+        /EMAIL_FROM must be `address@domain` or `Name <address@domain>`/,
+      );
+    }
+    for (const from of [
+      "noreply@clockoff.online",
+      "Work Mode <noreply@clockoff.online>",
+      '"Work Mode" <noreply@clockoff.online>',
+      "  Work Mode <noreply@mail.clockoff.online>  ",
+      "Testing <onboarding@resend.dev>",
+    ]) {
+      expect(parseEnv({ ...prod, EMAIL_FROM: from }).warnings, from).toEqual([]);
+    }
+
+    const dev = parseEnv({ ...prod, NODE_ENV: "development" });
+    expect(dev.warnings).toEqual([
+      "EMAIL_FROM must use a domain verified in Resend, not .local / .localhost / .test / .example / .invalid, when EMAIL_PROVIDER=resend: every email send will fail.",
+    ]);
+    // The checks only apply to Resend: the console default keeps working everywhere.
+    expect(parseEnv({ ...VALID, NODE_ENV: "development" }).warnings).toEqual([]);
+  });
+
   it("requires REDIS_URL for the redis backend", () => {
     expect(() => parseEnv({ ...VALID, RATE_LIMIT_BACKEND: "redis" })).toThrow(/REDIS_URL/);
     expect(

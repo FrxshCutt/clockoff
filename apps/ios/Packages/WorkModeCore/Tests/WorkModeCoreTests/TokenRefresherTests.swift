@@ -255,7 +255,7 @@ final class CredentialsUnavailableAPIClientTests: XCTestCase {
         let store = FlakyTokenStore(tokens: pair("old"))
         store.failLoads = true
         let client = APIClient(
-            configuration: APIClientConfiguration(baseURL: URL(string: "https://api.example.test")!),
+            configuration: APIClientConfiguration(baseURL: URL(string: "https://api.example.test/api/mobile/v1")!),
             tokenStore: store,
             session: StubURLProtocol.makeSession()
         )

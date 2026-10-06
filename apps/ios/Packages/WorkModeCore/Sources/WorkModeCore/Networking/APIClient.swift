@@ -1,7 +1,8 @@
 import Foundation
 
 public struct APIClientConfiguration: Sendable {
-    /// Server origin, e.g. `http://localhost:3000` (from Info.plist `API_BASE_URL`).
+    /// Root of the mobile API (Info.plist `API_BASE_URL`), e.g. `https://app.clockoff.online/api/mobile/v1`
+    /// or `http://localhost:3000/api/mobile/v1`. Endpoint paths are appended to it (`Endpoint.url(apiRoot:)`).
     public var baseURL: URL
     public var backoff: BackoffPolicy
     public var timeout: TimeInterval
@@ -176,26 +177,31 @@ public final class APIClient: MobileAPI {
 
     /// Runs `endpoint` with auth, one refresh-and-replay on 401, and backoff retries. Returns the 2xx body.
     private func perform(_ endpoint: Endpoint) async throws -> Data {
+        guard let url = endpoint.url(apiRoot: configuration.baseURL) else {
+            throw APIError(code: .invalidResponse, message: "The server address is not valid.", status: 0)
+        }
+        // The server path only: query values are never logged.
+        let path = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedPath ?? endpoint.path
         var retries = 0
         var refreshed = false
         while true {
             let attempt = retries + 1
             let accessToken: String? = endpoint.requiresAuth ? try await refresher.accessToken() : nil
-            let request = try makeRequest(endpoint, accessToken: accessToken)
+            let request = makeRequest(endpoint, url: url, accessToken: accessToken)
             let started = Date()
             do {
                 let (data, response) = try await session.data(for: request)
                 guard let http = response as? HTTPURLResponse else {
-                    log(endpoint, status: nil, attempt: attempt, started: started, errorCode: APIErrorCode.invalidResponse.rawValue)
+                    log(endpoint, path: path, status: nil, attempt: attempt, started: started, errorCode: APIErrorCode.invalidResponse.rawValue)
                     throw APIError(code: .invalidResponse, message: "The server sent an invalid response.", status: 0)
                 }
                 let status = http.statusCode
                 if (200..<300).contains(status) {
-                    log(endpoint, status: status, attempt: attempt, started: started, errorCode: nil)
+                    log(endpoint, path: path, status: status, attempt: attempt, started: started, errorCode: nil)
                     return data
                 }
                 let error = apiError(from: data, response: http)
-                log(endpoint, status: status, attempt: attempt, started: started, errorCode: error.code.rawValue)
+                log(endpoint, path: path, status: status, attempt: attempt, started: started, errorCode: error.code.rawValue)
 
                 if status == 401, endpoint.requiresAuth, !refreshed {
                     refreshed = true
@@ -219,7 +225,7 @@ public final class APIClient: MobileAPI {
                 if error.code == .cancelled {
                     throw APIError(code: .cancelled, message: "The request was cancelled.", status: 0)
                 }
-                log(endpoint, status: nil, attempt: attempt, started: started, errorCode: "URL_ERROR_\(error.code.rawValue)")
+                log(endpoint, path: path, status: nil, attempt: attempt, started: started, errorCode: "URL_ERROR_\(error.code.rawValue)")
                 if case .idempotent = endpoint.retry, retries < configuration.backoff.maxRetries {
                     retries += 1
                     try await sleepOrCancel(configuration.backoff.delay(forRetry: retries, jitter: jitter()))
@@ -242,16 +248,7 @@ public final class APIClient: MobileAPI {
         }
     }
 
-    private func makeRequest(_ endpoint: Endpoint, accessToken: String?) throws -> URLRequest {
-        var origin = configuration.baseURL.absoluteString
-        while origin.hasSuffix("/") { origin.removeLast() }
-        guard var components = URLComponents(string: origin + MobileAPIPath.prefix + endpoint.path) else {
-            throw APIError(code: .invalidResponse, message: "The server address is not valid.", status: 0)
-        }
-        if !endpoint.query.isEmpty { components.queryItems = endpoint.query }
-        guard let url = components.url else {
-            throw APIError(code: .invalidResponse, message: "The server address is not valid.", status: 0)
-        }
+    private func makeRequest(_ endpoint: Endpoint, url: URL, accessToken: String?) -> URLRequest {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: configuration.timeout)
         request.httpMethod = endpoint.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -291,10 +288,10 @@ public final class APIClient: MobileAPI {
         onAuthenticationLost?()
     }
 
-    private func log(_ endpoint: Endpoint, status: Int?, attempt: Int, started: Date, errorCode: String?) {
+    private func log(_ endpoint: Endpoint, path: String, status: Int?, attempt: Int, started: Date, errorCode: String?) {
         logger.logRequest(
             method: endpoint.method.rawValue,
-            path: MobileAPIPath.prefix + endpoint.path,
+            path: path,
             status: status,
             attempt: attempt,
             duration: Date().timeIntervalSince(started),

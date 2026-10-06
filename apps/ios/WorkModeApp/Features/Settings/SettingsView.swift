@@ -125,7 +125,7 @@ struct SettingsView: View {
     }
 
     private var helpURL: URL {
-        model.container.configuration.apiBaseURL.appendingPathComponent("help")
+        model.container.configuration.helpURL
     }
 
     private var selectionText: String {

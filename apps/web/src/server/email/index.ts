@@ -2,6 +2,7 @@ import { env } from "@/lib/env";
 import { errorSummary, logger } from "@/lib/logger";
 import { ConsoleEmailProvider } from "./ConsoleEmailProvider";
 import type { EmailMessage, EmailProvider } from "./EmailProvider";
+import { ResendEmailProvider } from "./ResendEmailProvider";
 import { SmtpEmailProvider } from "./SmtpEmailProvider";
 
 export {
@@ -12,11 +13,24 @@ export {
 } from "./ConsoleEmailProvider";
 export type { ConsoleEmailProviderOptions, DevOutboxEntry } from "./ConsoleEmailProvider";
 export { MockEmailProvider } from "./MockEmailProvider";
+export {
+  RESEND_API_URL,
+  RESEND_TIMEOUT_MS,
+  ResendEmailError,
+  ResendEmailProvider,
+} from "./ResendEmailProvider";
+export type { FetchLike, ResendConfig } from "./ResendEmailProvider";
 export { SmtpEmailProvider } from "./SmtpEmailProvider";
 export type { EmailContent, EmailMessage, EmailProvider } from "./EmailProvider";
 export * from "./templates";
 
-/** Instantiate the provider selected by `EMAIL_PROVIDER`. */
+/**
+ * Instantiate the provider selected by `EMAIL_PROVIDER`: `console` (development; logs links),
+ * `resend` (production; Resend HTTP API with `RESEND_API_KEY`) or `smtp` (not implemented yet).
+ * A provider with missing configuration throws here, i.e. at the first send; `sendEmailSafely`
+ * catches and logs that. In production `env()` already refuses `resend` without a usable
+ * `RESEND_API_KEY` or with an `EMAIL_FROM` Resend can never send from.
+ */
 export function createEmailProvider(): EmailProvider {
   const e = env();
   switch (e.EMAIL_PROVIDER) {
@@ -26,6 +40,8 @@ export function createEmailProvider(): EmailProvider {
         // Feeds the development-only GET /api/dev/last-email (never in production: env() refuses it there).
         recordOutbox: e.DEV_TOOLS_ENABLED && !e.isProduction,
       });
+    case "resend":
+      return new ResendEmailProvider({ apiKey: e.RESEND_API_KEY, from: e.EMAIL_FROM });
     case "smtp":
       return new SmtpEmailProvider({
         host: e.SMTP_HOST,

@@ -35,9 +35,12 @@ public protocol MobileAPI: AnyObject {
     func registerPushToken(_ request: PushTokenRequest) async throws
 }
 
-/// Paths of the mobile API, relative to the server origin.
+/// Paths of the mobile API, relative to its root: Info.plist `API_BASE_URL`, e.g.
+/// `https://app.clockoff.online/api/mobile/v1`. `Endpoint.url(apiRoot:)` appends them to that root.
 public enum MobileAPIPath {
-    public static let prefix = "/api/mobile/v1"
+    /// Where the server mounts the mobile API. `API_BASE_URL` already ends with it, so the client never
+    /// prepends it; it is used only to find the web app's root on the same server (help pages).
+    public static let mountPath = "/api/mobile/v1"
 
     public static let joinLookup = "/join/lookup"
     public static let joinConfirm = "/join/confirm"

@@ -16,7 +16,7 @@ public enum RetryBehaviour: Sendable {
 /// A request to the mobile API, before authentication is attached.
 public struct Endpoint: Sendable {
     public var method: HTTPMethod
-    /// Path relative to `/api/mobile/v1`, e.g. `/sync`.
+    /// Path relative to the mobile API root (`API_BASE_URL`), e.g. `/sync`. Already percent-encoded.
     public var path: String
     public var query: [URLQueryItem]
     public var body: Data?
@@ -44,6 +44,39 @@ public struct Endpoint: Sendable {
             throw APIError(code: .encodingError, message: "Could not encode the request.", status: 0)
         }
         return Endpoint(method: .post, path: path, body: data, requiresAuth: requiresAuth, retry: retry)
+    }
+}
+
+extension Endpoint {
+    /// This endpoint's request URL under `apiRoot`, the mobile API root (`API_BASE_URL`, e.g.
+    /// `https://app.clockoff.online/api/mobile/v1`), with or without a trailing slash.
+    ///
+    /// Joined by hand, never with `URL(string:relativeTo:)`: resolving an absolute path such as `/sync`
+    /// against the root REPLACES the root's path (→ `https://app.clockoff.online/sync`), and a relative one
+    /// drops the root's last segment unless it ends in `/`. Exactly one `/` separates the root and `path`;
+    /// the root's own query (if any), a query embedded in `path`, and `query` are all kept, in that order.
+    /// `nil` when `apiRoot` is not an absolute URL with a host or `path` is not a valid URL path.
+    public func url(apiRoot: URL) -> URL? {
+        guard var components = URLComponents(url: apiRoot, resolvingAgainstBaseURL: true),
+              components.scheme != nil, components.host?.isEmpty == false else { return nil }
+        var rootPath = components.percentEncodedPath
+        while rootPath.hasSuffix("/") { rootPath.removeLast() }
+        var relative = Substring(path)
+        while relative.hasPrefix("/") { relative.removeFirst() }
+        // Parsed as an absolute-path reference: a `:` or `//` in `path` can never become a scheme or a host.
+        guard let reference = URLComponents(string: "/" + relative) else { return nil }
+        components.percentEncodedPath = rootPath + reference.percentEncodedPath
+
+        var queries = [components.percentEncodedQuery, reference.percentEncodedQuery]
+        if !query.isEmpty {
+            var encoder = URLComponents()
+            encoder.queryItems = query
+            queries.append(encoder.percentEncodedQuery)
+        }
+        let joined = queries.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "&")
+        components.percentEncodedQuery = joined.isEmpty ? nil : joined
+        components.fragment = nil
+        return components.url
     }
 }
 

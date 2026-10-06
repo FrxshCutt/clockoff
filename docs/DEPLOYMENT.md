@@ -1,168 +1,178 @@
 # Deployment
 
-> **Status: not deployed yet.** The repository is prepared for Netlify (hosting), Neon (database) and IONOS
-> (DNS for `clockoff.online`). The Netlify build has been run locally end to end. Provisioning is waiting for
-> credentials in `.env.deploy` — see "What is still manual". Sections marked _(filled in at deploy time)_ are
-> completed by the deployment run.
+> **Status (2026-10-06):** live on Netlify at `https://clockoff.netlify.app` (production deploys from `main`).
+> The custom domains `clockoff.online`, `www.clockoff.online` and `app.clockoff.online` are attached to the site
+> and go live as soon as the IONOS DNS records in `docs/DNS_RECORDS.md` are in place.
 
 ## Hosting architecture
 
 ```mermaid
 flowchart LR
   subgraph IONOS["IONOS DNS (clockoff.online)"]
-    APEX["clockoff.online · www"]
-    APP["app.clockoff.online"]
-    MAILREC["MX / SPF / DMARC → IONOS mail (unchanged)"]
+    APEX["clockoff.online · www → Netlify"]
+    APP["app.clockoff.online → Netlify"]
+    MAILREC["MX / SPF / DMARC → IONOS mailbox (unchanged)"]
+    RESENDREC["send · rsend · resend._domainkey → Resend"]
   end
-  subgraph Netlify["Netlify site (package dir apps/web)"]
+  subgraph Netlify["Netlify site 'clockoff' (free plan, functions in us-east-2)"]
     EDGE["Edge Function: Next.js middleware\nhost routing · CSRF origin check · security headers"]
-    SRV["Function: Next.js server handler\npages + /api/* (manager + /api/mobile/v1)"]
-    SCHED["Scheduled Function work-mode-tick\nevery minute → POST /api/jobs/tick"]
+    SRV["Function ___netlify-server-handler\npages + /api/* (manager + /api/mobile/v1)"]
+    SCHED["Scheduled Function work-mode-tick\n* * * * * → POST /api/jobs/tick"]
     CDN["CDN: static assets"]
   end
-  NEON[("Neon Postgres · aws-eu-west-2 London\npooled + direct endpoints")]
-  IOS["iOS app (Release → https://app.clockoff.online)"]
+  NEON[("Neon Postgres 17 · aws-eu-west-2 London\nproject quiet-flower-84715995 · branch production")]
+  RESEND["Resend (eu-west-1)\nnoreply@clockoff.online"]
+  GH["GitHub FrxshCutt/workmode (private)\npush to main → Netlify build"]
+  IOS["iOS app (Release → https://app.clockoff.online/api/mobile/v1)"]
 
   APEX --> EDGE
   APP --> EDGE
+  IOS --> EDGE
   EDGE --> SRV
   EDGE --> CDN
-  IOS --> EDGE
   SCHED --> SRV
   SRV --> NEON
+  SRV --> RESEND
+  GH --> Netlify
 ```
 
-- **One Netlify site serves both sites.** With `HOST_ROUTING=on`, `src/middleware.ts` (an Edge Function on
-  Netlify) uses `src/server/http/hostRouting.ts`:
+- **One Netlify site serves both sites.** With `HOST_ROUTING=on`, `src/middleware.ts` (an Edge Function) uses
+  `src/server/http/hostRouting.ts`:
   - `www.clockoff.online` → 308 to `clockoff.online`.
-  - `clockoff.online` serves the marketing pages, `/api/request-demo` and `/api/health`. Dashboard and auth
-    pages redirect to `app.clockoff.online`; any other `/api/*` returns 404, so session cookies only ever
-    live on `app.clockoff.online`.
+  - `clockoff.online` serves the marketing pages, `/api/request-demo` and `/api/health`; dashboard and auth pages
+    redirect to `app.clockoff.online`; any other `/api/*` returns 404, so session cookies only ever live on
+    `app.clockoff.online`.
   - `app.clockoff.online` serves the dashboard, auth pages and every API; `/` redirects to `/overview`.
-  - Any other host (`*.netlify.app`, deploy previews, localhost) is served unchanged.
-  - The middleware reads these variables at runtime (verified in the built Edge Function), so changing them
-    only needs a redeploy of the site settings, not a code change.
+  - Any other host (`clockoff.netlify.app`, deploy previews, localhost) is served unchanged.
 - **Background job:** `apps/web/netlify/functions/work-mode-tick.mts` is a Netlify Scheduled Function
-  (`* * * * *`, available on every Netlify plan, 30-second limit). It POSTs `https://app.clockoff.online/api/jobs/tick`
-  with `Authorization: Bearer $CRON_SECRET`, so the tick runs in the same server bundle as every request.
+  (`* * * * *`, 30-second limit) that POSTs `$APP_URL/api/jobs/tick` with `Authorization: Bearer $CRON_SECRET`.
   Scheduled functions only run on the published production deploy.
-- **Regions:** the database is in London (`aws-eu-west-2`). Netlify Functions run in US East (Ohio) by
-  default; choosing **London (`lhr`)** is a Pro/Enterprise setting (Site configuration → Functions → Region).
-  On the free/Personal plan every database query crosses the Atlantic (~80 ms round trip), which makes
-  dashboard pages noticeably slower and means personal data is processed in the US (covered by Netlify's DPA).
+- **Access protection:** the Netlify account protects deploys with team login by default. The site is set to
+  protect **non-production** contexts only (deploy previews, branch deploys); production is public.
 
-### Platform limits (known and accepted for the MVP)
+### Known limitation: functions run in the US
 
-| Area                     | Behaviour on Netlify                                                                                                                                                                             | Fix when it matters                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| Request duration         | Synchronous functions stop at 60 s (not configurable). Everything in the app is well under it.                                                                                                   | —                                                           |
-| Realtime dashboard (SSE) | Streams end at the 60-second limit and reconnect; the event bus is per function instance, so events raised elsewhere arrive through the dashboard's 30-second polling fallback.                  | Redis pub/sub adapter for `EventBus`                        |
-| Rate limiting            | `memory` backend is per instance — best effort. Client IPs come from `x-nf-client-connection-ip` (`CLIENT_IP_HEADER`).                                                                           | Redis rate limiter                                          |
-| Silent pushes (APNs)     | `pushBridge` debounces with a 5-second timer that a frozen function may never fire; phones still re-sync on launch, foreground, background refresh and reconnect.                                | Send via `runAfterResponse` or a queue before enabling APNs |
-| Native modules           | `@node-rs/argon2` and the Prisma engine are platform-specific. **Always build on Netlify** (Git-triggered builds); never `netlify deploy --build` from a Mac, which would upload macOS binaries. | —                                                           |
+The site is on Netlify's **free** plan, so its functions run in **US East (Ohio, `us-east-2`)** while the
+database is in **London**. Every database query crosses the Atlantic (~70–80 ms per round trip), which makes
+dashboard and API responses noticeably slower than they would be in one region, and employee data is processed
+in the US under Netlify's Data Processing Agreement (stored in the UK by Neon).
+**Remedy:** upgrade the Netlify team to Pro and set Site configuration → Functions → Region to **London
+(`lhr`)**, then redeploy. No code change is needed.
 
-## Build
+### Other platform limits (accepted for the MVP)
 
-`apps/web/netlify.toml` (Netlify site: base directory = repo root, package directory = `apps/web`):
+| Area                     | Behaviour on Netlify                                                                                                                                    | Fix when it matters                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Cold starts              | The first request after idle wakes both the function and Neon's auto-suspended compute (≈ 5–6 s observed).                                              | Neon paid plan (no suspend) and/or regular traffic; the minute job keeps the function warm |
+| Request duration         | Synchronous functions stop at 60 s (not configurable). Nothing in the app comes close.                                                                  | —                                                                                          |
+| Realtime dashboard (SSE) | Streams end at 60 s and reconnect; the event bus is per instance, so events raised elsewhere arrive through the dashboard's 30-second polling fallback. | Redis pub/sub adapter for `EventBus`                                                       |
+| Rate limiting            | `memory` backend is per instance — best effort. Client IPs come from `x-nf-client-connection-ip`.                                                       | Redis rate limiter                                                                         |
+| Silent pushes (APNs)     | Not configured. If enabled, `pushBridge`'s 5-second debounce timer may not fire in a frozen function.                                                   | Send via `runAfterResponse` or a queue before enabling APNs                                |
+| Native modules           | `@node-rs/argon2` and the Prisma engine are platform-specific. **Always build on Netlify** (Git-triggered); never `netlify deploy --build` from a Mac.  | —                                                                                          |
 
-| Setting             | Value                                                                                                                                  |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Build command       | `pnpm --filter @workmode/web run build:netlify` → `prisma generate` + `next build`                                                     |
-| Publish directory   | `apps/web/.next`                                                                                                                       |
-| Functions directory | `apps/web/netlify/functions`                                                                                                           |
-| Runtime             | Netlify Next.js runtime v5 (auto-detected)                                                                                             |
-| Node                | 22 (`NODE_VERSION`)                                                                                                                    |
-| pnpm                | 11.10.0 (`PNPM_VERSION`, matches `package.json#packageManager`)                                                                        |
-| Prisma              | `binaryTargets = ["native", "rhel-openssl-3.0.x"]`; the Lambda engine is traced into the server function (verified in the local build) |
+## Build and continuous deployment
 
-The build needs no secrets: environment variables are validated lazily at first use.
+| Setting                            | Value                                                                                               |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Netlify site                       | `clockoff` (id `b65c1658-1110-42ec-a926-637ae7d9415f`, team `frxshcutt`, free plan)                 |
+| Repository                         | `FrxshCutt/workmode` (private), production branch `main`                                            |
+| How builds start                   | GitHub push webhook → Netlify; Netlify clones with a read-only deploy key on the repository         |
+| Base directory / package directory | repo root / `apps/web` (`apps/web/netlify.toml`)                                                    |
+| Build command                      | `pnpm --filter @workmode/web run build:netlify` → `prisma generate` + `next build`                  |
+| Publish directory                  | `apps/web/.next`                                                                                    |
+| Functions directory                | `apps/web/netlify/functions`                                                                        |
+| Runtime                            | `@netlify/plugin-nextjs` 5.16.2 (declared in `netlify.toml`, pinned in `apps/web` devDependencies)  |
+| Node / pnpm                        | 22 / 11.10.0 (`[build.environment]`)                                                                |
+| Prisma                             | `binaryTargets = ["native", "rhel-openssl-3.0.x"]` (Lambda engine bundled into the server function) |
 
-## Environment variables
+## Environment variables (Netlify site, all contexts)
 
-Every variable is documented in `apps/web/.env.production.example` and `docs/ENVIRONMENT.md`.
+| Variable                                         | Value / origin                                                                                                                                                                |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                   | Neon API — pooled connection (`ep-proud-bonus-za5wlmr7-pooler…eu-west-2.aws.neon.tech/clockoff`, `sslmode=require&pgbouncer=true&connect_timeout=15`). Copy in `.env.deploy`. |
+| `APP_URL`, `NEXT_PUBLIC_APP_URL`                 | `https://app.clockoff.online`                                                                                                                                                 |
+| `MARKETING_URL`                                  | `https://clockoff.online`                                                                                                                                                     |
+| `HOST_ROUTING`                                   | `on`                                                                                                                                                                          |
+| `CLIENT_IP_HEADER` / `TRUSTED_PROXY_HOPS`        | `x-nf-client-connection-ip` / `1`                                                                                                                                             |
+| `SESSION_SECRET` (the "AUTH_SECRET" of this app) | 32 random bytes (base64), generated locally; copy in `.env.deploy`                                                                                                            |
+| `MOBILE_JWT_SECRET` / `MOBILE_JWT_KEY_ID`        | 32 random bytes (base64) / `v1`                                                                                                                                               |
+| `INTEGRATION_ENCRYPTION_KEY`                     | 32 random bytes (base64)                                                                                                                                                      |
+| `CRON_SECRET`                                    | 32 random bytes (hex)                                                                                                                                                         |
+| `SESSION_TTL_DAYS`                               | `14`                                                                                                                                                                          |
+| `EMAIL_PROVIDER` / `EMAIL_FROM`                  | `resend` / `Work Mode <noreply@clockoff.online>`                                                                                                                              |
+| `RESEND_API_KEY`                                 | supplied by the owner; copy in `.env.deploy`                                                                                                                                  |
+| `REQUIRE_EMAIL_VERIFICATION`                     | not set → `true` in production (managers verify their email)                                                                                                                  |
+| `JOBS_ENABLED`                                   | `false` (the scheduled function replaces the in-process runner)                                                                                                               |
+| `DEV_TOOLS_ENABLED`                              | `false`                                                                                                                                                                       |
+| `LOG_LEVEL` / `RATE_LIMIT_BACKEND`               | `info` / `memory`                                                                                                                                                             |
 
-| Variable                                                                           | Value / source                                                                                |
-| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                     | Neon API — pooled connection string (`-pooler` host, `sslmode=require&pgbouncer=true`)        |
-| `DIRECT_URL`                                                                       | Neon API — direct connection; used only for migrations, kept in `.env.deploy`, not on Netlify |
-| `APP_URL`, `NEXT_PUBLIC_APP_URL`                                                   | `https://app.clockoff.online`                                                                 |
-| `MARKETING_URL`                                                                    | `https://clockoff.online`                                                                     |
-| `HOST_ROUTING`                                                                     | `on`                                                                                          |
-| `CLIENT_IP_HEADER`                                                                 | `x-nf-client-connection-ip`                                                                   |
-| `SESSION_SECRET`, `MOBILE_JWT_SECRET`, `INTEGRATION_ENCRYPTION_KEY`, `CRON_SECRET` | Generated locally (32 random bytes), stored in `.env.deploy` and on Netlify; never printed    |
-| `EMAIL_PROVIDER`, `EMAIL_FROM`                                                     | `console` / `Work Mode <noreply@clockoff.online>` until a real transport is configured        |
-| `REQUIRE_EMAIL_VERIFICATION`                                                       | `false` until email works (see "What is still manual"), then unset                            |
-| `APNS_*`                                                                           | Apple Developer → Keys (optional)                                                             |
-| `JOBS_ENABLED`                                                                     | `false` (the scheduled function replaces the in-process runner)                               |
-| `DEV_TOOLS_ENABLED`                                                                | `false`                                                                                       |
+`DIRECT_URL` (unpooled Neon connection) is **not** set on Netlify; it is kept in `.env.deploy` for migrations.
+Change variables with the Netlify API (`PUT /api/v1/accounts/{account_id}/env/{key}?site_id=…`) or the UI, then
+redeploy (Edge Functions and functions read them at runtime, `NEXT_PUBLIC_*` at build time).
 
-## Database
+## Database (Neon)
 
-- Provider: Neon, region `aws-eu-west-2` (London) _(project id, branch and history retention filled in at
-  deploy time)_.
-- **Migrations:** always against the direct endpoint, from a trusted machine:
+|                  |                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Project          | `clockoff` (`quiet-flower-84715995`), organisation "ClockOff" (free plan)                                                         |
+| Region / version | `aws-eu-west-2` (London) / Postgres 17                                                                                            |
+| Branch           | `production` (`br-summer-band-zamyb83w`, default)                                                                                 |
+| Database / role  | `clockoff` / `clockoff`                                                                                                           |
+| Endpoints        | pooled `ep-proud-bonus-za5wlmr7-pooler.c-2.eu-west-2.aws.neon.tech`, direct `ep-proud-bonus-za5wlmr7.c-2.eu-west-2.aws.neon.tech` |
+
+- **Migrations** run from a trusted machine against the direct endpoint:
 
   ```bash
   cd packages/db
-  DATABASE_URL="$DIRECT_URL" pnpm exec prisma migrate deploy
+  DATABASE_URL="$DIRECT_URL" pnpm exec prisma migrate deploy   # DIRECT_URL from .env.deploy
   ```
 
   Never use `migrate dev`, `migrate reset` or `db push` against production. `GET /api/health` returns
   `migrations: "up_to_date" | "pending" | "failed"` and a 503 unless everything is applied.
 
-- **Seed:** never. The seed refuses `NODE_ENV=production` and any non-local host unless `ALLOW_SEED=true`.
-- **First account:** register at `https://app.clockoff.online/register` (the first user creates the
-  organisation and becomes OWNER), or set `INITIAL_OWNER_EMAIL`/`INITIAL_OWNER_PASSWORD` in `.env.deploy`.
+- **Seed:** never. The seed refuses `NODE_ENV=production` and any non-local database unless `ALLOW_SEED=true`.
+- **First account:** register at `https://app.clockoff.online/register`; the first user creates the organisation
+  and becomes OWNER. The production database was left empty.
 
 ### Backups and restore
 
-Neon keeps point-in-time history of the branch (the "restore window"; its length depends on the Neon plan —
-the deploy run records the configured value here). To restore:
+Neon keeps point-in-time history of the branch. On the free plan the **restore window is 6 hours**
+(`history_retention_seconds = 21600`); paid plans keep 7–30 days. There are no other automatic backups.
 
-1. Neon console → project → **Restore**, or the API (`POST /projects/{id}/branches` with `parent_timestamp`),
-   to create a branch at a past instant.
-2. Check the data on the new branch with a read-only connection.
-3. Promote it to the default branch, or point `DATABASE_URL` at it on Netlify and redeploy.
+To restore:
 
-For longer retention, schedule a nightly `pg_dump` of the direct endpoint to object storage.
+1. Neon console → project `clockoff` → **Restore** → pick a time within the window, or via the API:
+   `POST /api/v2/projects/quiet-flower-84715995/branches` with `{"branch": {"parent_id": "br-summer-band-zamyb83w", "parent_timestamp": "<ISO time>"}}`.
+2. Inspect the restored branch through its own connection string.
+3. Either restore the `production` branch in place from the console, or point `DATABASE_URL` on Netlify at the
+   restored branch and redeploy.
+
+Recommended until on a paid plan: a nightly `pg_dump "$DIRECT_URL" | gzip` to private storage.
+
+## Email (Resend)
+
+- `ResendEmailProvider` (`apps/web/src/server/email`) sends through Resend's HTTP API when `EMAIL_PROVIDER=resend`;
+  development keeps `ConsoleEmailProvider`. Verification, password-reset, manager-invite and employee-invite emails
+  all go through it.
+- Sending domain `clockoff.online` (Resend id `538d0ad9-2bee-472e-9b12-36eff396662d`, region `eu-west-1`), from
+  `noreply@clockoff.online`. Resend only delivers once its DNS records (`docs/DNS_RECORDS.md` §3) verify.
 
 ## Redeploy, roll back
 
-- **Redeploy:** push to `main` (Netlify builds from GitHub), or trigger a build:
-  `npx netlify-cli api createSiteBuild --data '{"site_id":"<SITE_ID>"}'` with `NETLIFY_AUTH_TOKEN` set.
+- **Redeploy:** push to `main`. To rebuild without a commit:
+  `curl -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" https://api.netlify.com/api/v1/sites/b65c1658-1110-42ec-a926-637ae7d9415f/builds`.
 - **Roll back:** Netlify keeps every deploy. Publish an earlier one:
-  `npx netlify-cli api restoreSiteDeploy --data '{"site_id":"<SITE_ID>","deploy_id":"<DEPLOY_ID>"}'`
-  (or Deploys → pick a deploy → "Publish deploy"). Migrations are forward-only: reverse a bad one with a new
-  migration, or restore the database branch.
-- **Schema changes:** run the (additive) migration first, then deploy the code that uses it.
+  `curl -X POST -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" https://api.netlify.com/api/v1/sites/b65c1658-1110-42ec-a926-637ae7d9415f/deploys/<DEPLOY_ID>/restore`
+  (or Netlify UI → Deploys → pick one → "Publish deploy"). Migrations are forward-only: reverse a bad one with a
+  new migration, or restore the database branch.
+- **Schema changes:** run the (additive) migration first, then push the code that uses it.
 
-## DNS records (IONOS)
+## DNS record inventory
 
-_(Exact values filled in at deploy time; also written to `docs/DNS_RECORDS.md`.)_
-
-| Host                  | Type  | Value                               | Note                                                                                          |
-| --------------------- | ----- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
-| `clockoff.online`     | A     | `75.2.60.5` (Netlify load balancer) | replaces the IONOS parking A record `217.160.0.186`                                           |
-| `clockoff.online`     | AAAA  | —                                   | **delete** the IONOS parking AAAA (`2001:8d8:100f:f000::200`), or IPv6 visitors land on IONOS |
-| `www`                 | CNAME | `<site>.netlify.app`                |                                                                                               |
-| `app`                 | CNAME | `<site>.netlify.app`                |                                                                                               |
-| MX, SPF TXT, `_dmarc` | —     | unchanged                           | IONOS mail keeps working                                                                      |
-
-Netlify issues Let's Encrypt certificates for all three hostnames once they resolve to Netlify.
+See `docs/DNS_RECORDS.md` (IONOS: apex A `75.2.60.5`, `www`/`app` CNAME `clockoff.netlify.app`, Resend DKIM/SPF
+records on `resend._domainkey`, `send`, `rsend`; IONOS mail records unchanged; parking A/AAAA removed).
 
 ## iOS
 
-The Release configuration points the app at `https://app.clockoff.online` (`apps/ios/Config/Release.xcconfig`,
-`API_BASE_URL`); the mobile API lives under `/api/mobile/v1`. Debug keeps `http://localhost:3000`. No App
-Transport Security exceptions are needed in Release (HTTPS only; `Scripts/verify-release.sh` checks it).
-
-## What is still manual
-
-1. Fill in `.env.deploy` (Netlify token, Neon key or connection strings, IONOS DNS key) and run the deployment.
-2. Netlify plan: Pro if you want functions in London next to the database (recommended); otherwise accept
-   US-East functions and the extra latency.
-3. Email: production requires email verification by default, and password reset and manager invites are
-   emailed. Until an email transport is configured, the deploy sets `REQUIRE_EMAIL_VERIFICATION=false` so the
-   first manager can register; password reset and manager invites cannot be delivered.
-4. Apple: developer team, Family Controls distribution entitlement for all four bundle ids, APNs key, App Store
-   Connect record (`docs/IOS_SETUP.md`).
+Release builds call `https://app.clockoff.online/api/mobile/v1` (`apps/ios/Config/Release.xcconfig`,
+`API_BASE_URL`, enforced by `Scripts/verify-release.sh`); Debug calls `http://localhost:3000/api/mobile/v1`.

@@ -13,7 +13,8 @@ DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
 VALIDATE_PRODUCT = YES
 DEAD_CODE_STRIPPING = YES
 
-// Production origin: the dashboard + API host (mobile API under /api/mobile/v1). docs/DEPLOYMENT.md
-API_BASE_URL = https:/$()/app.clockoff.online
+// Root of the production mobile API (the dashboard + API host is app.clockoff.online). docs/DEPLOYMENT.md
+// `make build-release` requires https and a path ending in /api/mobile/v1 (Scripts/verify-release.sh).
+API_BASE_URL = https:/$()/app.clockoff.online/api/mobile/v1
 WORKMODE_ALLOW_LOCAL_HTTP = NO
 WORKMODE_PUSH_ENVIRONMENT = production

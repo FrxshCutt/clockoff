@@ -17,7 +17,7 @@ GCC_TREAT_WARNINGS_AS_ERRORS = NO
 CLANG_ENABLE_MODULES = YES
 ENABLE_BITCODE = NO
 
-// API_BASE_URL is set per configuration (Debug/Release) and exposed only in the app's Info.plist;
-// the extensions never call the API.
+// API_BASE_URL (the mobile API root, ending in /api/mobile/v1) is set per configuration (Debug/Release)
+// and exposed only in the app's Info.plist; the extensions never call the API.
 // APNs environment reported with the push token (POST /device/push-token).
 WORKMODE_PUSH_ENVIRONMENT = sandbox

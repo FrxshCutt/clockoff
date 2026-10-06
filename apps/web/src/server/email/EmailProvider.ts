@@ -9,6 +9,6 @@ export interface EmailMessage {
 export type EmailContent = Omit<EmailMessage, "to">;
 
 export interface EmailProvider {
-  readonly name: "console" | "smtp" | "mock";
+  readonly name: "console" | "smtp" | "resend" | "mock";
   send(message: EmailMessage): Promise<void>;
 }

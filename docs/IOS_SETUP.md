@@ -25,7 +25,8 @@ All four run unsigned (`CODE_SIGNING_ALLOWED=NO`), so no Apple Developer account
 simulator, run `make test SIMULATOR="iPhone 16"`. Build output goes to `apps/ios/build/` (git-ignored).
 
 To run the app, open `apps/ios/WorkMode.xcodeproj`, choose the **WorkModeApp** scheme and a simulator, and
-press Run. Start the API first (`pnpm dev` at the repo root). The Debug build talks to `http://localhost:3000`.
+press Run. Start the API first (`pnpm dev` at the repo root). The Debug build talks to the mobile API at
+`http://localhost:3000/api/mobile/v1`.
 
 ## Targets
 
@@ -44,23 +45,31 @@ extension also imports UIKit, because `ShieldConfiguration` takes `UIColor`s.
 
 ## Configuration (xcconfig)
 
-| File                      | What it sets                                                                                                                                               |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Config/Base.xcconfig`    | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                           |
-| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `WORKMODE_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                |
-| `Config/Debug.xcconfig`   | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
-| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.clockoff.online` (production; the mobile API lives under `/api/mobile/v1`), APNs production.        |
+| File                      | What it sets                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Config/Base.xcconfig`    | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                                         |
+| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `WORKMODE_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                              |
+| `Config/Debug.xcconfig`   | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000/api/mobile/v1`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
+| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.clockoff.online/api/mobile/v1` (the production mobile API), APNs production.                                      |
 
 Settings that matter:
 
-| Setting                               | Debug                           | Release                       | Used by                                                                           |
-| ------------------------------------- | ------------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
-| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS` | _(empty)_                     | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                  |
-| `API_BASE_URL`                        | `http://localhost:3000`         | `https://app.clockoff.online` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL`                         |
-| `WORKMODE_ALLOW_LOCAL_HTTP`           | `YES`                           | `NO`                          | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` |
-| `WORKMODE_PUSH_ENVIRONMENT`           | `sandbox`                       | `production`                  | Info.plist `WorkModePushEnvironment`, sent with the push token                    |
+| Setting                               | Debug                                 | Release                                     | Used by                                                                                      |
+| ------------------------------------- | ------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS`       | _(empty)_                                   | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                             |
+| `API_BASE_URL`                        | `http://localhost:3000/api/mobile/v1` | `https://app.clockoff.online/api/mobile/v1` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL` → `APIClientConfiguration.baseURL` |
+| `WORKMODE_ALLOW_LOCAL_HTTP`           | `YES`                                 | `NO`                                        | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription`            |
+| `WORKMODE_PUSH_ENVIRONMENT`           | `sandbox`                             | `production`                                | Info.plist `WorkModePushEnvironment`, sent with the push token                               |
 
-In xcconfig, `//` starts a comment. URLs are therefore written as `http:/$()/host:port`.
+`API_BASE_URL` is the **root of the mobile API**, not the server origin: the client appends endpoint paths
+such as `/sync` to it (`Endpoint.url(apiRoot:)`, which keeps the root's path and puts exactly one `/` between
+the two, with or without a trailing slash on the root) and adds no prefix of its own. A value whose path does
+not end with `/api/mobile/v1` exactly once (a bare origin such as `http://localhost:3000`, a partial path such
+as `…/api/mobile`, an empty `//` segment or a doubled `/api/mobile/v1`) is refused at launch
+(`AppConfiguration.apiBaseURL(from:)`). Web pages such as Settings › Help are derived from it by dropping the
+trailing `/api/mobile/v1` (`AppConfiguration.helpURL`).
+
+In xcconfig, `//` starts a comment. URLs are therefore written as `http:/$()/host:port/api/mobile/v1`.
 
 Per-developer overrides go in two git-ignored files, so nothing personal is committed:
 
@@ -69,7 +78,7 @@ Per-developer overrides go in two git-ignored files, so nothing personal is comm
 DEVELOPMENT_TEAM = ABCDE12345
 
 // apps/ios/Config/Local.xcconfig — Debug only
-API_BASE_URL = http:/$()/my-mac.local:3000
+API_BASE_URL = http:/$()/my-mac.local:3000/api/mobile/v1
 WORKMODE_MOCK_RESTRICTIONS_CONDITION =      // use the real Screen Time provider in Debug on a device
 ```
 
@@ -187,20 +196,21 @@ even when the app is closed. The full design, Apple limits and the manual device
 
 ## Pointing a device at a local API
 
-The simulator shares the Mac's network, so `http://localhost:3000` works there. A phone needs your Mac's
-address:
+The simulator shares the Mac's network, so the default `http://localhost:3000/api/mobile/v1` works there. A
+phone needs your Mac's address:
 
 1. Start the API so it is reachable on the LAN. `pnpm dev` prints a **Network** URL. The phone and the Mac
    must be on the same Wi-Fi.
 2. In `apps/ios/Config/Local.xcconfig` (git-ignored, Debug only), use the Mac's Bonjour name (preferred) or
-   its LAN IP:
+   its LAN IP, followed by the mobile API path `/api/mobile/v1`:
 
    ```xcconfig
-   API_BASE_URL = http:/$()/my-mac.local:3000
-   // or: API_BASE_URL = http:/$()/192.168.1.20:3000
+   API_BASE_URL = http:/$()/my-mac.local:3000/api/mobile/v1
+   // or: API_BASE_URL = http:/$()/192.168.1.20:3000/api/mobile/v1
    ```
 
-   Find the Bonjour name with `scutil --get LocalHostName` and add `.local`.
+   Find the Bonjour name with `scutil --get LocalHostName` and add `.local`. Without `/api/mobile/v1` the
+   app stops at launch with `Info.plist API_BASE_URL is missing or invalid`.
 
 3. Build and run the Debug configuration. Plain HTTP is allowed **in Debug only**: the "Debug-only local
    HTTP (ATS)" build phase adds `NSAppTransportSecurity › NSAllowsLocalNetworking`, which covers `.local`
@@ -220,7 +230,10 @@ address:
 - any executable or dylib in the Release app contains `MockRestrictionProvider`, `SimulatorTokenStore` or the
   "DEVELOPMENT MODE" banner text (all three are compiled only under Debug conditions, and this confirms it);
 - the Release Info.plist contains `NSAllowsLocalNetworking` or `NSLocalNetworkUsageDescription`;
-- `API_BASE_URL` is not `https://…`, or `WorkModePushEnvironment` is not `production`;
+- `API_BASE_URL` is not `https://…`, or its path does not end with `/api/mobile/v1` exactly once (it must be
+  the mobile API root, with no trailing slash, query, fragment or empty `//` segment; the script prints the
+  value it checked);
+- `WorkModePushEnvironment` is not `production`;
 - any of the three extensions is missing from `WorkModeApp.app/PlugIns`.
 
 The mock is compiled only under `#if DEBUG_MOCK_RESTRICTIONS`, deliberately not also under
@@ -269,17 +282,17 @@ not contain the mock. A Release simulator build therefore uses `AppleScreenTimeR
 
 ## Troubleshooting
 
-| Symptom                                                               | Fix                                                                                                                                                                                       |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `xcodegen: command not found`                                         | `brew install xcodegen`                                                                                                                                                                   |
-| `Unable to find a destination matching … iPhone 17 Pro`               | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"`                                                                                                                |
-| Build error "Signing for … requires a development team"               | You built without `CODE_SIGNING_ALLOWED=NO` (for example from Xcode, for a device). Set `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`.                                            |
-| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id.                                                                      |
-| `Info.plist API_BASE_URL is missing or invalid` crash at launch       | The xcconfig value is malformed. Remember `http:/$()/host`, because `//` starts a comment.                                                                                                |
-| "Can't reach Work Mode" on a device                                   | The API is not reachable from the phone: check the Wi-Fi, the `.local` name, `Local.xcconfig`, and that local-network access is allowed in Settings › Privacy & Security › Local Network. |
-| Keychain error -34018                                                 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed.                                                                      |
-| `BGTaskScheduler refused com.workmode.app.refresh` in the log         | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`.                                                                                    |
-| Yellow "DEVELOPMENT MODE" banner on a device                          | You are running Debug with the mock. Set `WORKMODE_MOCK_RESTRICTIONS_CONDITION =` in `Local.xcconfig`, or run Release.                                                                    |
-| Tests fail to compile after disabling the mock in `Local.xcconfig`    | The hosted tests use `MockRestrictionProvider`. Remove the override before running `make test`.                                                                                           |
-| "Your sign-in can't be read right now" on Home                        | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking.   |
-| Stale project after pulling                                           | `make generate`, then `make clean` if Xcode still shows removed files.                                                                                                                    |
+| Symptom                                                               | Fix                                                                                                                                                                                                                                    |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xcodegen: command not found`                                         | `brew install xcodegen`                                                                                                                                                                                                                |
+| `Unable to find a destination matching … iPhone 17 Pro`               | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"`                                                                                                                                                             |
+| Build error "Signing for … requires a development team"               | You built without `CODE_SIGNING_ALLOWED=NO` (for example from Xcode, for a device). Set `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`.                                                                                         |
+| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id.                                                                                                                   |
+| `Info.plist API_BASE_URL is missing or invalid` crash at launch       | The xcconfig value is malformed, or its path does not end with `/api/mobile/v1` (e.g. a bare origin). It must be the mobile API root, e.g. `http:/$()/my-mac.local:3000/api/mobile/v1` (write `/$()/`, because `//` starts a comment). |
+| "Can't reach Work Mode" on a device                                   | The API is not reachable from the phone: check the Wi-Fi, the `.local` name, `Local.xcconfig`, and that local-network access is allowed in Settings › Privacy & Security › Local Network.                                              |
+| Keychain error -34018                                                 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed.                                                                                                                   |
+| `BGTaskScheduler refused com.workmode.app.refresh` in the log         | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`.                                                                                                                                 |
+| Yellow "DEVELOPMENT MODE" banner on a device                          | You are running Debug with the mock. Set `WORKMODE_MOCK_RESTRICTIONS_CONDITION =` in `Local.xcconfig`, or run Release.                                                                                                                 |
+| Tests fail to compile after disabling the mock in `Local.xcconfig`    | The hosted tests use `MockRestrictionProvider`. Remove the override before running `make test`.                                                                                                                                        |
+| "Your sign-in can't be read right now" on Home                        | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking.                                                |
+| Stale project after pulling                                           | `make generate`, then `make clean` if Xcode still shows removed files.                                                                                                                                                                 |

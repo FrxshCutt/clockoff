@@ -307,7 +307,7 @@ final class TestEnvironment {
     func makeContainer() -> DependencyContainer {
         let clock = self.clock
         return DependencyContainer(
-            configuration: AppConfiguration(apiBaseURL: URL(string: "http://localhost:3000")!, pushEnvironment: .sandbox,
+            configuration: AppConfiguration(apiBaseURL: URL(string: "http://localhost:3000/api/mobile/v1")!, pushEnvironment: .sandbox,
                                             appVersion: "1.0.0", buildNumber: "1"),
             deviceInfo: deviceInfo,
             tokenStore: InMemoryTokenStore(),

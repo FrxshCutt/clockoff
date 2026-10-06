@@ -15,9 +15,10 @@ DEBUG_INFORMATION_FORMAT = dwarf
 // The hosted unit tests resolve WorkModeCore symbols from the app binary: keep unused ones.
 DEAD_CODE_STRIPPING = NO
 
-// Local API (the Next.js dev server). `//` starts a comment in xcconfig, hence `/$()/`.
-// From a device use your Mac's Bonjour name, e.g. http:/$()/my-mac.local:3000 (docs/IOS_SETUP.md).
-API_BASE_URL = http:/$()/localhost:3000
+// Root of the mobile API on the local Next.js dev server (the client appends endpoint paths such as /sync).
+// `//` starts a comment in xcconfig, hence `/$()/`. From a device use your Mac's Bonjour name in
+// Local.xcconfig, e.g. http:/$()/my-mac.local:3000/api/mobile/v1 (docs/IOS_SETUP.md).
+API_BASE_URL = http:/$()/localhost:3000/api/mobile/v1
 // Plain HTTP to local hosts is allowed in Debug only (a build phase adds NSAllowsLocalNetworking).
 WORKMODE_ALLOW_LOCAL_HTTP = YES
 WORKMODE_PUSH_ENVIRONMENT = sandbox

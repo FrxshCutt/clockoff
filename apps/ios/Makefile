@@ -5,7 +5,8 @@
 #   make test            WorkModeCore tests + hosted app tests on the simulator
 #   make build-release   Release build for the simulator, then Scripts/verify-release.sh: fails if the
 #                        mock provider, DEBUG/DEBUG_MOCK_RESTRICTIONS or the Debug-only ATS keys reach
-#                        Release, or a target's bundle id / App Group / Family Controls entitlement is wrong
+#                        Release, a target's bundle id / App Group / Family Controls entitlement is wrong,
+#                        or API_BASE_URL is not the https mobile API root (…/api/mobile/v1)
 #   make sync-fixtures   copy docs/fixtures/workmode-cases.json into the WorkModeCore test bundle (the engine
 #                        fixture test fails when the copy is stale)
 #   make clean           remove build output

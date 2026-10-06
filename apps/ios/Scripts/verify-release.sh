@@ -7,7 +7,9 @@
 #   - any target's Release build settings define DEBUG or DEBUG_MOCK_RESTRICTIONS, or a bundle id is wrong;
 #   - a target's entitlements lack the App Group or Family Controls;
 #   - the Release binary contains the mock restriction provider or the simulator token store;
-#   - the Debug-only ATS / local-network Info.plist keys are present, or API_BASE_URL is not https;
+#   - the Debug-only ATS / local-network Info.plist keys are present;
+#   - API_BASE_URL is not https, or is not the mobile API root (its path must end with /api/mobile/v1, exactly
+#     once, with no empty segment);
 #   - one of the three extensions is not embedded.
 set -euo pipefail
 
@@ -17,6 +19,10 @@ cd "$(dirname "$0")/.."
 PROJECT=WorkMode.xcodeproj
 APP_GROUP=group.com.workmode.app.shared
 PLISTBUDDY=/usr/libexec/PlistBuddy
+# API_BASE_URL is the mobile API root: https://<host>[/<segment>…]/api/mobile/v1 (no trailing slash, query,
+# fragment, user info or empty `//` segment).
+API_ROOT_PATH=/api/mobile/v1
+API_ROOT_RE='^https://[^/?#@[:space:]]+(/[^/?#[:space:]]+)*/api/mobile/v1$'
 failures=0
 
 fail() {
@@ -83,9 +89,18 @@ if $PLISTBUDDY -c "Print :NSLocalNetworkUsageDescription" "$INFO" >/dev/null 2>&
 fi
 url="$($PLISTBUDDY -c "Print :API_BASE_URL" "$INFO" 2>/dev/null || true)"
 case "$url" in
-  https://*) echo "  Release API_BASE_URL: $url" ;;
+  https://*) ;;
   *) fail "Release API_BASE_URL must be https, got '$url'" ;;
 esac
+if [[ ! "$url" =~ $API_ROOT_RE ]]; then
+  fail "Release API_BASE_URL must be the mobile API root, an https URL whose path ends with $API_ROOT_PATH" \
+    "(no trailing slash, query, fragment or empty '//' segment), got '$url'"
+elif [[ "$url" == *"$API_ROOT_PATH/"* ]]; then
+  # The suffix is the only place it may appear: a doubled prefix would put every request under a 404.
+  fail "Release API_BASE_URL repeats $API_ROOT_PATH, got '$url'"
+else
+  echo "  Release API_BASE_URL: $url"
+fi
 push="$($PLISTBUDDY -c "Print :WorkModePushEnvironment" "$INFO" 2>/dev/null || true)"
 [ "$push" = "production" ] || fail "Release WorkModePushEnvironment is '$push', expected 'production'"
 
@@ -97,5 +112,5 @@ if [ "$failures" -gt 0 ]; then
   echo "Release verification FAILED ($failures problem(s))." >&2
   exit 1
 fi
-echo "Release product OK: no mock provider or simulator token store, no Debug-only keys, https API," \
+echo "Release product OK: no mock provider or simulator token store, no Debug-only keys, https API at $API_ROOT_PATH," \
   "production push, 4 targets with correct bundle ids, App Group and Family Controls, 3 extensions embedded."
