@@ -171,7 +171,7 @@ describe("middleware with hostname routing on", () => {
     expect(root.status).toBe(307);
     expect(root.headers.get("location")).toBe("https://app.example.com/overview");
     const preview = withEnv(ROUTING, () =>
-      middleware(hostReq("https://workmode-abc123.vercel.app/login")),
+      middleware(hostReq("https://deploy-preview-12--clockoff.netlify.app/login")),
     );
     expect(preview.headers.get("location")).toBeNull();
   });

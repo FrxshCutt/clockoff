@@ -11,3 +11,5 @@ docs/fixtures
 apps/web/test-results
 apps/web/playwright-report
 apps/web/e2e/screenshots
+.netlify
+**/.netlify

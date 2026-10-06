@@ -49,16 +49,16 @@ extension also imports UIKit, because `ShieldConfiguration` takes `UIColor`s.
 | `Config/Base.xcconfig`    | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                           |
 | `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `WORKMODE_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                |
 | `Config/Debug.xcconfig`   | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
-| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.workmode.example` (a placeholder: replace it before shipping), APNs production.                     |
+| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.clockoff.online` (production; the mobile API lives under `/api/mobile/v1`), APNs production.        |
 
 Settings that matter:
 
-| Setting                               | Debug                           | Release                        | Used by                                                                           |
-| ------------------------------------- | ------------------------------- | ------------------------------ | --------------------------------------------------------------------------------- |
-| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS` | _(empty)_                      | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                  |
-| `API_BASE_URL`                        | `http://localhost:3000`         | `https://app.workmode.example` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL`                         |
-| `WORKMODE_ALLOW_LOCAL_HTTP`           | `YES`                           | `NO`                           | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` |
-| `WORKMODE_PUSH_ENVIRONMENT`           | `sandbox`                       | `production`                   | Info.plist `WorkModePushEnvironment`, sent with the push token                    |
+| Setting                               | Debug                           | Release                       | Used by                                                                           |
+| ------------------------------------- | ------------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
+| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS` | _(empty)_                     | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                  |
+| `API_BASE_URL`                        | `http://localhost:3000`         | `https://app.clockoff.online` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL`                         |
+| `WORKMODE_ALLOW_LOCAL_HTTP`           | `YES`                           | `NO`                          | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` |
+| `WORKMODE_PUSH_ENVIRONMENT`           | `sandbox`                       | `production`                  | Info.plist `WorkModePushEnvironment`, sent with the push token                    |
 
 In xcconfig, `//` starts a comment. URLs are therefore written as `http:/$()/host:port`.
 

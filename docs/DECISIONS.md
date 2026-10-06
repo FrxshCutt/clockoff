@@ -114,3 +114,13 @@ The spec's example "02:30 on 2026-03-29 is nonexistent in Europe/London" is wron
 With pnpm, Next could not resolve `@prisma/client` from the web app, so `serverExternalPackages` was ignored
 and the client was bundled in `next dev`, where a cached client outlived module reloads and broke nested
 `Prisma.sql` fragments. Declaring the dependency fixes the root cause.
+
+## D-019 — Hosting: Netlify + Neon (London) + IONOS DNS for clockoff.online
+
+The owner chose Netlify for hosting and keeps DNS at IONOS (where the domain and its email live). One Netlify
+site serves both hostnames via middleware host routing. The minute job is a Netlify Scheduled Function (per-
+minute schedules work on every Netlify plan, unlike Vercel Hobby). IONOS keeps authoritative DNS so the existing
+MX/SPF/DMARC email records are untouched; the apex uses Netlify's load-balancer A record (75.2.60.5) because
+IONOS has no ALIAS/ANAME record type, and the IONOS parking AAAA record must be removed. Builds always run on
+Netlify's Linux image (Git-triggered) because the Prisma engine and argon2 are native modules. The Vercel
+configuration from the first deployment attempt was removed.

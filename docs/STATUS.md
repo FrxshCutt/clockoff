@@ -57,7 +57,6 @@ break, returns at break end and lifts at shift end.
 | Apple Developer team + Family Controls **distribution** entitlement | Real-device builds and App Store distribution. All four bundle ids carry the entitlement (`com.workmode.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)                    | Request the distribution entitlement from Apple for each id; put `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig`; see `docs/IOS_SETUP.md`                         |
 | APNs auth key                                                       | Silent pushes that make phones re-sync immediately after policy/schedule/override changes. Without it, phones sync on launch, foreground, background refresh (~15 min) and reconnect | Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_BASE64`, `APNS_BUNDLE_ID`, `APNS_ENVIRONMENT`; `ApnsPushProvider` is selected automatically                                          |
 | Email delivery                                                      | Verification, password reset and invite emails. Today `ConsoleEmailProvider` prints them to the server log                                                                           | Add an SMTP client (`nodemailer`) to `apps/web` and finish `SmtpEmailProvider` (it validates config and throws a clear error until then); set `EMAIL_PROVIDER=smtp` and `SMTP_*` |
-| Production API URL                                                  | The Release build points at the placeholder `https://app.workmode.example`                                                                                                           | Set `API_BASE_URL` in `apps/ios/Config/Release.xcconfig`                                                                                                                         |
 | Planday (or other workforce provider)                               | Automatic schedule sync and clock-in activation                                                                                                                                      | All six providers are registered as Coming Soon; `docs/INTEGRATIONS.md` describes how to implement Planday against the `WorkforceProvider` interface                             |
 | App Store Connect                                                   | TestFlight/App Store distribution                                                                                                                                                    | Not started                                                                                                                                                                      |
 
@@ -85,16 +84,19 @@ break, returns at break end and lifts at shift end.
 
 ## Deployment
 
-**Not deployed yet.** The repository is prepared for Vercel + Neon (runbook: `docs/DEPLOYMENT.md`):
+**Not deployed yet.** Target: Netlify (hosting) + Neon London (database) + IONOS DNS for `clockoff.online`
+(`clockoff.online`/`www` → marketing, `app.clockoff.online` → dashboard + API). Runbook: `docs/DEPLOYMENT.md`.
 
-- Hostname routing for `DOMAIN`/`www` (marketing) and `app.DOMAIN` (dashboard + APIs) behind `HOST_ROUTING=on`.
-- `apps/web/vercel.json` (pnpm install, `build:vercel` runs `prisma generate`, London region); the production
-  build was verified with an empty environment.
-- `GET /api/jobs/tick` for Vercel Cron; `/api/health` reports database and migration status.
-- The demo seed refuses production and non-local databases unless `ALLOW_SEED=true`.
-- `apps/web/.env.production.example` documents every production variable.
+Prepared and verified locally:
 
-Waiting on credentials in `.env.deploy` (domain, Vercel token, Neon key or connection strings, DNS token).
+- `apps/web/netlify.toml` — the Netlify build ran end to end with Netlify's CLI: one server function (with
+  Prisma's Lambda engine bundled), the Next.js middleware as an Edge Function (reads its routing variables at
+  runtime), and the `work-mode-tick` Scheduled Function (every minute).
+- Hostname routing (`HOST_ROUTING=on`), client IPs from Netlify's `x-nf-client-connection-ip`.
+- `/api/health` reports database and migration status; the demo seed refuses production and remote databases.
+- iOS Release build points at `https://app.clockoff.online`.
+
+Waiting on credentials in `.env.deploy`: Netlify token, Neon key (or connection strings), IONOS DNS key.
 
 ## Where to look next
 

@@ -1,0 +1,17 @@
+# Netlify build for the web app (docs/DEPLOYMENT.md).
+# Monorepo layout: Netlify site "Package directory" = apps/web (this file's folder), base directory = repo root.
+# Next.js runs on Netlify's Next.js runtime (OpenNext-based): pages + route handlers become one Netlify
+# Function, src/middleware.ts becomes an Edge Function. pnpm installs the whole workspace.
+
+[build]
+  command = "pnpm --filter @workmode/web run build:netlify"   # prisma generate → next build
+  publish = "apps/web/.next"   # relative to the base directory (repo root)
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Use the pnpm pinned in package.json#packageManager.
+  PNPM_VERSION = "11.10.0"
+
+[functions]
+  # Scheduled function that runs the Work Mode tick every minute (netlify/functions/work-mode-tick.mts).
+  directory = "apps/web/netlify/functions"   # relative to the base directory (repo root)

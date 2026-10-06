@@ -10,8 +10,8 @@ export const maxDuration = 300;
  * Mode tick for an external scheduler; idempotent and safe alongside the node-cron runner
  * (docs/WORK_MODE_SERVER_JOB.md). Not part of the public OpenAPI document (internal endpoint).
  *
- * `GET` is the same handler for Vercel Cron, which calls the path with GET and sends
- * `Authorization: Bearer <CRON_SECRET>` when the project has a `CRON_SECRET` variable.
+ * In production the Netlify Scheduled Function `netlify/functions/work-mode-tick.mts` POSTs it every minute.
+ * `GET` runs the same handler for schedulers that can only issue GET requests (same bearer secret).
  */
 export const POST = createHandler({ auth: "cron" }, async ({ log }) => ({
   ok: true as const,

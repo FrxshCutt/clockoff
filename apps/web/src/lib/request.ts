@@ -27,7 +27,13 @@ export function getRequestId(req: Request): string {
 export function getClientIp(
   req: Request,
   trustedProxyHops: number = env().TRUSTED_PROXY_HOPS,
+  clientIpHeader: string = env().CLIENT_IP_HEADER,
 ): string | null {
+  // A platform-set header (e.g. Netlify's x-nf-client-connection-ip) is authoritative when configured.
+  if (clientIpHeader) {
+    const platform = req.headers.get(clientIpHeader)?.trim();
+    if (platform) return platform.slice(0, 64);
+  }
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     const hops = forwarded

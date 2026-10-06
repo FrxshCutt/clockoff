@@ -21,8 +21,10 @@ describe("request helpers", () => {
 
   it("reads the client IP from x-forwarded-for counting trusted proxy hops from the right, then x-real-ip", () => {
     // One trusted proxy (default): the entry it appended is the client; anything left of it is client-supplied.
-    expect(getClientIp(req({ "x-forwarded-for": "203.0.113.1" }), 1)).toBe("203.0.113.1");
-    expect(getClientIp(req({ "x-forwarded-for": "6.6.6.6, 203.0.113.1" }), 1)).toBe("203.0.113.1");
+    expect(getClientIp(req({ "x-forwarded-for": "203.0.113.1" }), 1, "")).toBe("203.0.113.1");
+    expect(getClientIp(req({ "x-forwarded-for": "6.6.6.6, 203.0.113.1" }), 1, "")).toBe(
+      "203.0.113.1",
+    );
     // Two trusted proxies (e.g. CDN → load balancer): skip the last hop.
     expect(getClientIp(req({ "x-forwarded-for": "6.6.6.6, 203.0.113.1, 10.0.0.1" }), 2)).toBe(
       "203.0.113.1",
@@ -52,5 +54,25 @@ describe("request helpers", () => {
     expect(isMutatingMethod("delete")).toBe(true);
     expect(isMutatingMethod("GET")).toBe(false);
     expect(isMutatingMethod("OPTIONS")).toBe(false);
+  });
+});
+
+describe("getClientIp with a platform client-IP header", () => {
+  it("prefers the configured platform header over X-Forwarded-For", () => {
+    const r = req({
+      "x-nf-client-connection-ip": "198.51.100.7",
+      "x-forwarded-for": "6.6.6.6, 10.0.0.1",
+    });
+    expect(getClientIp(r, 1, "x-nf-client-connection-ip")).toBe("198.51.100.7");
+  });
+
+  it("falls back to X-Forwarded-For when the header is absent or not configured", () => {
+    const r = req({ "x-forwarded-for": "6.6.6.6, 203.0.113.1" });
+    expect(getClientIp(r, 1, "x-nf-client-connection-ip")).toBe("203.0.113.1");
+    const spoofed = req({
+      "x-nf-client-connection-ip": "1.2.3.4",
+      "x-forwarded-for": "203.0.113.1",
+    });
+    expect(getClientIp(spoofed, 1, "")).toBe("203.0.113.1");
   });
 });

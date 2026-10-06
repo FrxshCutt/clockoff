@@ -8,7 +8,7 @@
  * dashboard's cookies are only ever set on `app.DOMAIN`. Edge-safe (no Node APIs): the middleware runs it.
  *
  * Off unless `HOST_ROUTING=on` and both `APP_URL` and `MARKETING_URL` are valid URLs on different hosts.
- * Requests to any other host (localhost, `*.vercel.app` preview URLs) are never touched, so local
+ * Requests to any other host (localhost, `*.netlify.app` and deploy-preview URLs) are never touched, so local
  * development and preview deployments keep serving everything from one origin.
  */
 
@@ -143,7 +143,7 @@ export function routeByHost(
     return { action: "next" };
   }
 
-  // Unknown host (localhost, preview deployments): serve everything as-is.
+  // Unknown host (localhost, *.netlify.app, deploy previews): serve everything as-is.
   return { action: "next" };
 }
 

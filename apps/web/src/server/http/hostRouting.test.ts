@@ -60,7 +60,7 @@ describe("routeByHost", () => {
 
   it("never touches unknown hosts (localhost, preview deployments)", () => {
     expect(route("localhost:3000", "/overview")).toEqual({ action: "next" });
-    expect(route("workmode-git-main-acme.vercel.app", "/")).toEqual({ action: "next" });
+    expect(route("clockoff.netlify.app", "/")).toEqual({ action: "next" });
   });
 
   it("redirects www to the apex, keeping path and query", () => {

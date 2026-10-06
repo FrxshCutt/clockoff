@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "dotenv -e ../../.env -- next dev --port 3000",
     "build": "dotenv -e ../../.env -c -- next build",
-    "build:vercel": "pnpm --filter @workmode/db generate && next build",
+    "build:netlify": "pnpm --filter @workmode/db generate && next build",
     "start": "dotenv -e ../../.env -- next start --port 3000",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",

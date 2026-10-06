@@ -13,7 +13,7 @@ DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
 VALIDATE_PRODUCT = YES
 DEAD_CODE_STRIPPING = YES
 
-// Placeholder production origin — replace before shipping.
-API_BASE_URL = https:/$()/app.workmode.example
+// Production origin: the dashboard + API host (mobile API under /api/mobile/v1). docs/DEPLOYMENT.md
+API_BASE_URL = https:/$()/app.clockoff.online
 WORKMODE_ALLOW_LOCAL_HTTP = NO
 WORKMODE_PUSH_ENVIRONMENT = production

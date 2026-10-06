@@ -82,6 +82,17 @@ const envSchema = z.object({
    * left are client-supplied and never trusted. See docs/SECURITY.md.
    */
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(10).default(1),
+  /**
+   * A header set by the hosting platform's edge that carries the true client IP and cannot be supplied
+   * by the client (Netlify: `x-nf-client-connection-ip`). When set and present it wins over
+   * X-Forwarded-For. Leave empty unless the platform guarantees the header.
+   */
+  CLIENT_IP_HEADER: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9-]*$/i)
+    .default("")
+    .transform((v) => v.toLowerCase()),
 
   // Jobs
   JOBS_ENABLED: booleanString.default(true),
