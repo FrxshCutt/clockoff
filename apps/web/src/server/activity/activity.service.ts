@@ -24,8 +24,14 @@ export function encodeActivityCursor(row: Pick<ActivityEventRow, "occurredAt" | 
 export function decodeActivityCursor(value: string | undefined): ActivityCursor | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<ActivityCursor>;
-    if (typeof parsed.t === "string" && !Number.isNaN(Date.parse(parsed.t)) && typeof parsed.id === "string") {
+    const parsed = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as Partial<ActivityCursor>;
+    if (
+      typeof parsed.t === "string" &&
+      !Number.isNaN(Date.parse(parsed.t)) &&
+      typeof parsed.id === "string"
+    ) {
       return { t: parsed.t, id: parsed.id };
     }
   } catch {
@@ -36,7 +42,10 @@ export function decodeActivityCursor(value: string | undefined): ActivityCursor 
   });
 }
 
-export async function listActivity(ctx: ManagerContext, query: ActivityQuery): Promise<ListActivityResponse> {
+export async function listActivity(
+  ctx: ManagerContext,
+  query: ActivityQuery,
+): Promise<ListActivityResponse> {
   const cursor = decodeActivityCursor(query.cursor);
   const rows = await findActivityEvents(
     ctx.organisation.id,
@@ -51,9 +60,12 @@ export async function listActivity(ctx: ManagerContext, query: ActivityQuery): P
     query.limit + 1,
   );
   const page = rows.slice(0, query.limit);
-  const nextCursor = rows.length > query.limit ? encodeActivityCursor(page[page.length - 1]!) : null;
+  const nextCursor =
+    rows.length > query.limit ? encodeActivityCursor(page[page.length - 1]!) : null;
 
-  const actorIds = [...new Set(page.map((e) => e.actorUserId).filter((id): id is string => id !== null))];
+  const actorIds = [
+    ...new Set(page.map((e) => e.actorUserId).filter((id): id is string => id !== null)),
+  ];
   const actors = await findActorUsers(actorIds);
   const actorById = new Map(actors.map((u) => [u.id, u]));
 

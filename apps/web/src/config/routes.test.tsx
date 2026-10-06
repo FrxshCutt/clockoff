@@ -4,8 +4,14 @@ import path from "node:path";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { PathnameContext, SearchParamsContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+import {
+  AppRouterContext,
+  type AppRouterInstance,
+} from "next/dist/shared/lib/app-router-context.shared-runtime";
+import {
+  PathnameContext,
+  SearchParamsContext,
+} from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { EMPTY_STATES, type EmptyStateKey } from "./emptyStates";
 import { AUTH_ROUTES, NAV_ITEMS, ROUTES, routeFor } from "./navigation";
@@ -74,7 +80,6 @@ const stubRouter: AppRouterInstance = {
   back: () => undefined,
   forward: () => undefined,
   refresh: () => undefined,
-  hmrRefresh: () => undefined,
   push: () => undefined,
   replace: () => undefined,
   prefetch: () => undefined,
@@ -82,7 +87,10 @@ const stubRouter: AppRouterInstance = {
 
 async function renderPage(route: string, id = SAMPLE_ID): Promise<string> {
   const { default: Page } = await loadPage(route);
-  const element = await Page({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) });
+  const element = await Page({
+    params: Promise.resolve({ id }),
+    searchParams: Promise.resolve({}),
+  });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const pathname = route.replace("[id]", id);
   return renderToStaticMarkup(
@@ -99,7 +107,9 @@ async function renderPage(route: string, id = SAMPLE_ID): Promise<string> {
 }
 
 function digestOf(error: unknown): string {
-  return typeof error === "object" && error !== null && "digest" in error ? String(error.digest) : "";
+  return typeof error === "object" && error !== null && "digest" in error
+    ? String(error.digest)
+    : "";
 }
 
 describe("route coverage", () => {
@@ -113,7 +123,9 @@ describe("route coverage", () => {
 
   it("covers every dashboard route in this table", () => {
     const dashboardRoutes = [
-      ...Object.values(ROUTES).filter((route) => route !== ROUTES.home && !AUTH_ROUTES.includes(route)),
+      ...Object.values(ROUTES).filter(
+        (route) => route !== ROUTES.home && !AUTH_ROUTES.includes(route),
+      ),
       ...DETAIL_ROUTES,
     ];
     expect(Object.keys(DASHBOARD_PAGES).sort()).toEqual([...dashboardRoutes].sort());
@@ -122,15 +134,19 @@ describe("route coverage", () => {
 });
 
 describe("dashboard pages", () => {
-  it.each(Object.entries(DASHBOARD_PAGES))("%s renders one <h1> and its empty state", async (route, emptyState) => {
-    const html = await renderPage(route);
-    const headings = html.match(/<h1[\s>]/g)?.length ?? 0;
-    // Detail pages title themselves after the record loads (a bare render shows their skeleton frame).
-    if (DETAIL_ROUTES.includes(route)) expect(headings, route).toBeLessThanOrEqual(1);
-    else expect(headings, route).toBe(1);
-    expect(html).not.toMatch(/>undefined</);
-    if (emptyState) expect(html).toContain(EMPTY_STATES[emptyState].title.replace(/'/g, "&#x27;"));
-  });
+  it.each(Object.entries(DASHBOARD_PAGES))(
+    "%s renders one <h1> and its empty state",
+    async (route, emptyState) => {
+      const html = await renderPage(route);
+      const headings = html.match(/<h1[\s>]/g)?.length ?? 0;
+      // Detail pages title themselves after the record loads (a bare render shows their skeleton frame).
+      if (DETAIL_ROUTES.includes(route)) expect(headings, route).toBeLessThanOrEqual(1);
+      else expect(headings, route).toBe(1);
+      expect(html).not.toMatch(/>undefined</);
+      if (emptyState)
+        expect(html).toContain(EMPTY_STATES[emptyState].title.replace(/'/g, "&#x27;"));
+    },
+  );
 
   it.each(DETAIL_ROUTES)("%s returns 404 for an id that isn't a UUID", async (route) => {
     const error: unknown = await renderPage(route, "not-a-uuid").then(

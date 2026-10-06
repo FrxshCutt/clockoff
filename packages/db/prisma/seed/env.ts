@@ -15,7 +15,9 @@ export function loadSeedEnv(): void {
 export function resolveDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string {
   const url = env.DATABASE_URL;
   if (!url) {
-    throw new Error(`seed: DATABASE_URL is not set (expected it in ${ROOT_ENV_PATH} or the environment)`);
+    throw new Error(
+      `seed: DATABASE_URL is not set (expected it in ${ROOT_ENV_PATH} or the environment)`,
+    );
   }
   let databaseName: string;
   try {

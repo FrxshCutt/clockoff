@@ -25,7 +25,7 @@ export type {
   EmployeeStatusContext,
   StatusContextOptions,
 } from "./employees.status";
-export { defaultStateWindow, isDiverged } from "./employees.status";
+export { defaultStateWindow, deriveEmployeeInviteStatus, isDiverged } from "./employees.status";
 export type { RecomputeInviteStatusOptions, RecomputedInviteStatus } from "./inviteStatus";
 export { resolvePoliciesForEmployees } from "./employees.policies";
 export type { ResolvedEmployeePolicies } from "./employees.policies";

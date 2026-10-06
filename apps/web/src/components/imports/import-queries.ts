@@ -13,7 +13,13 @@ import type {
   ValidateImportResponse,
 } from "@workmode/validation/imports";
 import type { ShiftImportRowStatus } from "@workmode/shared/enums";
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { api, apiFetch } from "@/lib/api-client";
 import { applySummaryToImport } from "./import-wizard-model";
 
@@ -48,7 +54,9 @@ export interface ImportRowsInput {
 
 export function useImportRows(input: ImportRowsInput | null) {
   return useQuery({
-    queryKey: input ? importKeys.rows(input.id, input.status, input.page, input.pageSize) : ["org", "imports", "rows", "disabled"],
+    queryKey: input
+      ? importKeys.rows(input.id, input.status, input.page, input.pageSize)
+      : ["org", "imports", "rows", "disabled"],
     enabled: input !== null,
     placeholderData: keepPreviousData,
     queryFn: ({ signal }) =>
@@ -73,9 +81,13 @@ function setImportDetail(queryClient: QueryClient, response: ImportResponse) {
 export function useUploadImport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (formData: FormData) => apiFetch<CreateImportResponse>("/api/imports", { method: "POST", body: formData }),
+    mutationFn: (formData: FormData) =>
+      apiFetch<CreateImportResponse>("/api/imports", { method: "POST", body: formData }),
     onSuccess: (response) => {
-      queryClient.setQueryData<ImportResponse>(importKeys.detail(response.import.id), { import: response.import, suggestion: response.suggestion });
+      queryClient.setQueryData<ImportResponse>(importKeys.detail(response.import.id), {
+        import: response.import,
+        suggestion: response.suggestion,
+      });
     },
   });
 }
@@ -83,7 +95,8 @@ export function useUploadImport() {
 export function useSaveMapping(id: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: ImportMappingInput) => api.post<ImportResponse>(`${importPath(id ?? "")}/mapping`, input),
+    mutationFn: (input: ImportMappingInput) =>
+      api.post<ImportResponse>(`${importPath(id ?? "")}/mapping`, input),
     onSuccess: (response) => setImportDetail(queryClient, response),
   });
 }
@@ -93,7 +106,9 @@ export function useValidateImport(id: string | null) {
   return useMutation({
     mutationFn: () => api.post<ValidateImportResponse>(`${importPath(id ?? "")}/validate`, {}),
     onSuccess: async (response) => {
-      setImportDetail(queryClient, { import: applySummaryToImport(response.import, response.summary) });
+      setImportDetail(queryClient, {
+        import: applySummaryToImport(response.import, response.summary),
+      });
       await queryClient.invalidateQueries({ queryKey: importKeys.rowsRoot(response.import.id) });
     },
   });
@@ -113,14 +128,28 @@ export function useUpdateImportRow(id: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ rowId, input }: UpdateRowVariables) =>
-      api.patch<ImportRowResponse>(`${importPath(id ?? "")}/rows/${encodeURIComponent(rowId)}`, input),
+      api.patch<ImportRowResponse>(
+        `${importPath(id ?? "")}/rows/${encodeURIComponent(rowId)}`,
+        input,
+      ),
     onSuccess: async (response) => {
       if (!id) return;
-      queryClient.setQueriesData<ListImportRowsResponse>({ queryKey: importKeys.rowsRoot(id) }, (current) =>
-        current ? { ...current, items: current.items.map((row: ImportRow) => (row.id === response.row.id ? response.row : row)) } : current,
+      queryClient.setQueriesData<ListImportRowsResponse>(
+        { queryKey: importKeys.rowsRoot(id) },
+        (current) =>
+          current
+            ? {
+                ...current,
+                items: current.items.map((row: ImportRow) =>
+                  row.id === response.row.id ? response.row : row,
+                ),
+              }
+            : current,
       );
       queryClient.setQueryData<ImportResponse>(importKeys.detail(id), (current) =>
-        current ? { ...current, import: applySummaryToImport(current.import, response.summary) } : current,
+        current
+          ? { ...current, import: applySummaryToImport(current.import, response.summary) }
+          : current,
       );
       await queryClient.invalidateQueries({ queryKey: importKeys.rowsRoot(id) });
     },
@@ -130,7 +159,8 @@ export function useUpdateImportRow(id: string | null) {
 export function useCommitImport(id: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CommitImportInput) => api.post<CommitImportResponse>(`${importPath(id ?? "")}/commit`, input),
+    mutationFn: (input: CommitImportInput) =>
+      api.post<CommitImportResponse>(`${importPath(id ?? "")}/commit`, input),
     onSuccess: async (response) => {
       setImportDetail(queryClient, { import: response.import });
       await Promise.all([

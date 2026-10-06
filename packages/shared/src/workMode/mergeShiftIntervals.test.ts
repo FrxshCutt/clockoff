@@ -11,11 +11,18 @@ import type { WorkModeShiftLike } from "./types";
 
 const at = (hm: string, day = "2026-01-12"): string => `${day}T${hm}:00.000Z`;
 
-function shift(id: string, start: Date | string, end: Date | string, extra: Partial<WorkModeShiftLike> = {}): WorkModeShiftLike {
+function shift(
+  id: string,
+  start: Date | string,
+  end: Date | string,
+  extra: Partial<WorkModeShiftLike> = {},
+): WorkModeShiftLike {
   return { id, startsAt: start, endsAt: end, status: "SCHEDULED", ...extra };
 }
 
-function summary(shifts: readonly WorkModeShiftLike[]): { startsAt: string; endsAt: string; shiftIds: string[] }[] {
+function summary(
+  shifts: readonly WorkModeShiftLike[],
+): { startsAt: string; endsAt: string; shiftIds: string[] }[] {
   return mergeShiftIntervals(shifts).map((i) => ({
     startsAt: i.startsAt.toISOString(),
     endsAt: i.endsAt.toISOString(),
@@ -26,10 +33,18 @@ function summary(shifts: readonly WorkModeShiftLike[]): { startsAt: string; ends
 describe("isEffectiveShift", () => {
   it("accepts only SCHEDULED, non-deleted shifts", () => {
     expect(isEffectiveShift(shift("a", at("09:00"), at("10:00")))).toBe(true);
-    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { status: "CANCELLED" }))).toBe(false);
-    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { status: "COMPLETED" }))).toBe(false);
-    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { deletedAt: at("08:00") }))).toBe(false);
-    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { deletedAt: new Date(at("08:00")) }))).toBe(false);
+    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { status: "CANCELLED" }))).toBe(
+      false,
+    );
+    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { status: "COMPLETED" }))).toBe(
+      false,
+    );
+    expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { deletedAt: at("08:00") }))).toBe(
+      false,
+    );
+    expect(
+      isEffectiveShift(shift("a", at("09:00"), at("10:00"), { deletedAt: new Date(at("08:00")) })),
+    ).toBe(false);
     expect(isEffectiveShift(shift("a", at("09:00"), at("10:00"), { deletedAt: null }))).toBe(true);
   });
 });
@@ -46,9 +61,9 @@ describe("mergeShiftIntervals", () => {
   });
 
   it("merges exactly adjacent shifts into one continuous interval", () => {
-    expect(summary([shift("am", at("09:00"), at("13:00")), shift("pm", at("13:00"), at("17:00"))])).toEqual([
-      { startsAt: at("09:00"), endsAt: at("17:00"), shiftIds: ["am", "pm"] },
-    ]);
+    expect(
+      summary([shift("am", at("09:00"), at("13:00")), shift("pm", at("13:00"), at("17:00"))]),
+    ).toEqual([{ startsAt: at("09:00"), endsAt: at("17:00"), shiftIds: ["am", "pm"] }]);
   });
 
   it("merges overlapping and contained shifts, keeping the furthest end", () => {
@@ -58,7 +73,9 @@ describe("mergeShiftIntervals", () => {
         shift("inner", at("10:00"), at("12:00")),
         shift("tail", at("16:00"), at("18:00")),
       ]),
-    ).toEqual([{ startsAt: at("09:00"), endsAt: at("18:00"), shiftIds: ["long", "inner", "tail"] }]);
+    ).toEqual([
+      { startsAt: at("09:00"), endsAt: at("18:00"), shiftIds: ["long", "inner", "tail"] },
+    ]);
   });
 
   it("chains merges transitively", () => {
@@ -73,7 +90,10 @@ describe("mergeShiftIntervals", () => {
 
   it("keeps shifts separated by any positive gap apart", () => {
     expect(
-      summary([shift("a", at("09:00"), at("12:00")), shift("b", "2026-01-12T12:00:00.001Z", at("15:00"))]),
+      summary([
+        shift("a", at("09:00"), at("12:00")),
+        shift("b", "2026-01-12T12:00:00.001Z", at("15:00")),
+      ]),
     ).toEqual([
       { startsAt: at("09:00"), endsAt: at("12:00"), shiftIds: ["a"] },
       { startsAt: "2026-01-12T12:00:00.001Z", endsAt: at("15:00"), shiftIds: ["b"] },
@@ -123,9 +143,13 @@ describe("mergeShiftIntervals", () => {
   });
 
   it("rejects naive or invalid instants instead of guessing a zone", () => {
-    expect(() => mergeShiftIntervals([shift("a", "2026-01-12T09:00:00", at("10:00"))])).toThrow(TypeError);
+    expect(() => mergeShiftIntervals([shift("a", "2026-01-12T09:00:00", at("10:00"))])).toThrow(
+      TypeError,
+    );
     expect(() => mergeShiftIntervals([shift("a", "not a date", at("10:00"))])).toThrow(TypeError);
-    expect(() => mergeShiftIntervals([shift("a", new Date(Number.NaN), at("10:00"))])).toThrow(TypeError);
+    expect(() => mergeShiftIntervals([shift("a", new Date(Number.NaN), at("10:00"))])).toThrow(
+      TypeError,
+    );
   });
 
   it("normaliseShifts orders ties by end then id", () => {
@@ -148,12 +172,18 @@ describe("interval lookups", () => {
   it("workingIntervalAt is start-inclusive and end-exclusive", () => {
     expect(workingIntervalAt(intervals, new Date(at("08:59")))).toBeNull();
     expect(workingIntervalAt(intervals, new Date(at("09:00")))?.shiftIds).toEqual(["a", "b"]);
-    expect(workingIntervalAt(intervals, new Date("2026-01-12T16:59:59.999Z"))?.shiftIds).toEqual(["a", "b"]);
+    expect(workingIntervalAt(intervals, new Date("2026-01-12T16:59:59.999Z"))?.shiftIds).toEqual([
+      "a",
+      "b",
+    ]);
     expect(workingIntervalAt(intervals, new Date(at("17:00")))).toBeNull();
   });
 
   it("nextWorkingIntervalAfter returns the first interval starting strictly later", () => {
-    expect(nextWorkingIntervalAfter(intervals, new Date(at("08:00")))?.shiftIds).toEqual(["a", "b"]);
+    expect(nextWorkingIntervalAfter(intervals, new Date(at("08:00")))?.shiftIds).toEqual([
+      "a",
+      "b",
+    ]);
     expect(nextWorkingIntervalAfter(intervals, new Date(at("09:00")))?.shiftIds).toEqual(["c"]);
     expect(nextWorkingIntervalAfter(intervals, new Date(at("20:00")))).toBeNull();
   });

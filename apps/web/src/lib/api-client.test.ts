@@ -15,7 +15,10 @@ import {
 type FetchArgs = [input: string, init: RequestInit];
 
 function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
 }
 
 function mockFetch(response: Response | (() => Promise<Response>)) {
@@ -34,10 +37,18 @@ function sentHeaders(fn: ReturnType<typeof mockFetch>): Headers {
 describe("buildApiUrl", () => {
   it("appends query params, repeating arrays and skipping nullish values", () => {
     expect(buildApiUrl("/api/employees")).toBe("/api/employees");
-    expect(buildApiUrl("/api/employees", { q: "a b", page: 2, active: true, skip: null, none: undefined })).toBe(
-      "/api/employees?q=a+b&page=2&active=true",
+    expect(
+      buildApiUrl("/api/employees", {
+        q: "a b",
+        page: 2,
+        active: true,
+        skip: null,
+        none: undefined,
+      }),
+    ).toBe("/api/employees?q=a+b&page=2&active=true");
+    expect(buildApiUrl("/api/x", { status: ["INVITED", "JOINED"] })).toBe(
+      "/api/x?status=INVITED&status=JOINED",
     );
-    expect(buildApiUrl("/api/x", { status: ["INVITED", "JOINED"] })).toBe("/api/x?status=INVITED&status=JOINED");
     expect(buildApiUrl("/api/x?a=1", { b: 2 })).toBe("/api/x?a=1&b=2");
     expect(buildApiUrl("/api/x", { only: null })).toBe("/api/x");
   });
@@ -77,8 +88,15 @@ describe("error mapping", () => {
   });
 
   it("reads the envelope and keeps unknown codes as rawCode", () => {
-    const known = toApiClientError(409, { error: { code: "LAST_OWNER", message: "m", details: { a: 1 } } });
-    expect(known).toMatchObject({ code: "LAST_OWNER", status: 409, message: "m", details: { a: 1 } });
+    const known = toApiClientError(409, {
+      error: { code: "LAST_OWNER", message: "m", details: { a: 1 } },
+    });
+    expect(known).toMatchObject({
+      code: "LAST_OWNER",
+      status: 409,
+      message: "m",
+      details: { a: 1 },
+    });
     const unknown = toApiClientError(409, { error: { code: "BRAND_NEW", message: "m" } });
     expect(unknown.code).toBe("CONFLICT");
     expect(unknown.rawCode).toBe("BRAND_NEW");
@@ -106,7 +124,9 @@ describe("apiFetch", () => {
   it("GETs same-origin JSON without a CSRF header", async () => {
     vi.stubGlobal("document", { cookie: "wm_csrf=tok123" });
     const fetchFn = mockFetch(jsonResponse(200, { ok: true }));
-    await expect(apiFetch<{ ok: boolean }>("/api/auth/me", { query: { a: 1 } })).resolves.toEqual({ ok: true });
+    await expect(apiFetch<{ ok: boolean }>("/api/auth/me", { query: { a: 1 } })).resolves.toEqual({
+      ok: true,
+    });
     const [url, init] = fetchFn.mock.calls[0] ?? [];
     expect(url).toBe("/api/auth/me?a=1");
     expect(init?.method).toBe("GET");
@@ -158,17 +178,34 @@ describe("apiFetch", () => {
   });
 
   it("throws ApiClientError with the envelope for non-2xx responses", async () => {
-    mockFetch(jsonResponse(401, { error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password" } }));
-    const error = await apiFetch("/api/auth/login", { method: "POST", body: {} }).catch((e: unknown) => e);
+    mockFetch(
+      jsonResponse(401, {
+        error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password" },
+      }),
+    );
+    const error = await apiFetch("/api/auth/login", { method: "POST", body: {} }).catch(
+      (e: unknown) => e,
+    );
     expect(error).toBeInstanceOf(ApiClientError);
     expect(error).toMatchObject({ code: "INVALID_CREDENTIALS", status: 401 });
   });
 
   it("maps a bare 401 to UNAUTHENTICATED and an HTML 404 to NOT_FOUND", async () => {
     mockFetch(new Response("", { status: 401 }));
-    await expect(apiFetch("/api/auth/me")).rejects.toMatchObject({ code: "UNAUTHENTICATED", status: 401 });
-    mockFetch(new Response("<!doctype html><h1>404</h1>", { status: 404, headers: { "content-type": "text/html" } }));
-    await expect(apiFetch("/api/notifications")).rejects.toMatchObject({ code: "NOT_FOUND", status: 404 });
+    await expect(apiFetch("/api/auth/me")).rejects.toMatchObject({
+      code: "UNAUTHENTICATED",
+      status: 401,
+    });
+    mockFetch(
+      new Response("<!doctype html><h1>404</h1>", {
+        status: 404,
+        headers: { "content-type": "text/html" },
+      }),
+    );
+    await expect(apiFetch("/api/notifications")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      status: 404,
+    });
   });
 
   it("reports network failures as NETWORK_ERROR and rethrows aborts untouched", async () => {

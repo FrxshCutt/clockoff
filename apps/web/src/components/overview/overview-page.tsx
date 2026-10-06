@@ -78,11 +78,18 @@ export function OverviewPage() {
             <div className="grid gap-6 xl:grid-cols-3">
               <div className="space-y-6 xl:col-span-2">
                 <AwaitingSetupPanel />
-                <UpcomingShiftsList shifts={summary.data?.upcomingShifts} isLoading={summary.isPending} dateFormat={dateFormat} />
+                <UpcomingShiftsList
+                  shifts={summary.data?.upcomingShifts}
+                  isLoading={summary.isPending}
+                  dateFormat={dateFormat}
+                />
               </div>
               <div className="space-y-6">
                 <RecentActivityCard timeZone={timeZone} />
-                <IntegrationStatusCard statuses={summary.data?.integrationStatus} isLoading={summary.isPending} />
+                <IntegrationStatusCard
+                  statuses={summary.data?.integrationStatus}
+                  isLoading={summary.isPending}
+                />
               </div>
             </div>
           </>

@@ -11,7 +11,7 @@ import { KeyRound } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useBreakPolicies, useCreateOverride } from "@/components/employees/employee-api";
-import { ReferenceSelect } from "@/components/employees/reference-select";
+import { ReferenceSelect, referenceOptions } from "@/components/employees/reference-select";
 import { useNow } from "@/components/employees/use-now";
 import { FormErrorAlert, SubmitButton } from "@/components/forms/form-fields";
 import { InlineAlert } from "@/components/inline-alert";
@@ -31,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useCurrentRole } from "@/hooks/use-current-user";
+import { useCurrentRole, usePermission } from "@/hooks/use-current-user";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { getFieldErrors } from "@/lib/errorMessages";
 import { formatDateTime, formatDurationMinutes } from "@/lib/format";
@@ -43,6 +43,7 @@ import {
   OVERRIDE_TYPE_ORDER,
   buildCreateOverrideInput,
   computeOverrideExpiry,
+  isOrganisationWideOverride,
   overrideMaxMinutes,
   type OverrideBehaviourChoice,
   type OverrideExpiryChoice,
@@ -106,14 +107,17 @@ function CreateOverrideForm({
   onCreated?: (override: Override) => void;
 }) {
   const role = useCurrentRole();
+  const canManageOrg = usePermission("org:manage");
   const now = useNow();
   const organisation = useCurrentOrganisation();
   const create = useCreateOverride();
   const breakPolicies = useBreakPolicies();
   const ids = useId();
 
+  // Emergency overrides are organisation-wide and need org:manage, so they are only offered to owners/admins
+  // (an employee page lists the three employee-level types first).
   const types: readonly OverrideType[] = employee
-    ? OVERRIDE_TYPE_ORDER
+    ? OVERRIDE_TYPE_ORDER.filter((t) => !isOrganisationWideOverride(t) || canManageOrg)
     : ["EMERGENCY_POLICY_OVERRIDE"];
   const [type, setType] = useState<OverrideType>(types[0] ?? "EXEMPT_TEMPORARILY");
   const [reason, setReason] = useState("");
@@ -127,6 +131,8 @@ function CreateOverrideForm({
   const [fieldError, setFieldError] = useState<{ field: string; message: string } | null>(null);
 
   const maxMinutes = overrideMaxMinutes(role);
+  const orgWide = isOrganisationWideOverride(type);
+  const blocked = orgWide && !canManageOrg;
   const nowDate = now === null ? null : new Date(now);
   const preview = nowDate ? computeOverrideExpiry(expiry, nowDate, role) : null;
   const timeZone = organisation.data?.organisation.timezone;
@@ -144,6 +150,7 @@ function CreateOverrideForm({
   };
 
   const submit = async () => {
+    if (blocked) return;
     setFieldError(null);
     const built = buildCreateOverrideInput(
       { employeeId: employee?.id ?? null, type, reason, expiry, behaviour: behaviour() },
@@ -167,14 +174,16 @@ function CreateOverrideForm({
       const mapped =
         fieldErrors.reason !== undefined
           ? { field: "reason", message: fieldErrors.reason }
-          : fieldErrors.payload !== undefined
-            ? { field: "behaviour", message: fieldErrors.payload }
-            : fieldErrors.expiresAt !== undefined || fieldErrors.durationMinutes !== undefined
-              ? {
-                  field: "expiry",
-                  message: fieldErrors.expiresAt ?? fieldErrors.durationMinutes ?? "",
-                }
-              : null;
+          : fieldErrors.employeeId !== undefined
+            ? { field: "employee", message: fieldErrors.employeeId }
+            : fieldErrors.payload !== undefined
+              ? { field: "behaviour", message: fieldErrors.payload }
+              : fieldErrors.expiresAt !== undefined || fieldErrors.durationMinutes !== undefined
+                ? {
+                    field: "expiry",
+                    message: fieldErrors.expiresAt ?? fieldErrors.durationMinutes ?? "",
+                  }
+                : null;
       if (mapped) setFieldError(mapped);
     }
   };
@@ -187,7 +196,7 @@ function CreateOverrideForm({
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <KeyRound className="text-muted-foreground size-5" aria-hidden="true" />
-          {employeeName ? `Override for ${employeeName}` : "Organisation-wide override"}
+          {employeeName && !orgWide ? `Override for ${employeeName}` : "Organisation-wide override"}
         </DialogTitle>
         <DialogDescription>
           Overrides change what the phone restricts for a limited time. The reason is recorded in
@@ -239,11 +248,23 @@ function CreateOverrideForm({
           </RadioGroup>
         </fieldset>
 
-        {type === "EMERGENCY_POLICY_OVERRIDE" && !employee ? (
-          <InlineAlert variant="warning" title="Applies to everyone">
-            Without an employee this lifts restrictions for every connected phone in the
-            organisation until it expires.
-          </InlineAlert>
+        {orgWide ? (
+          blocked ? (
+            <InlineAlert variant="warning" title="Owners and admins only">
+              An emergency override lifts restrictions for the whole organisation, so only an owner
+              or admin can apply it. Ask one of them, or choose an employee-level override instead.
+            </InlineAlert>
+          ) : (
+            <InlineAlert variant="warning" title="Applies to everyone">
+              This lifts restrictions for every connected phone in the organisation until it expires
+              {employeeName ? `, not only ${employeeName}'s` : ""}.
+            </InlineAlert>
+          )
+        ) : null}
+        {errorFor("employee") ? (
+          <p className="text-destructive text-xs" role="alert">
+            {errorFor("employee")}
+          </p>
         ) : null}
 
         {/* Reason */}
@@ -407,13 +428,17 @@ function CreateOverrideForm({
                   id={`${ids}-break-policy`}
                   value={breakPolicyId}
                   onChange={setBreakPolicyId}
-                  options={breakPolicies.data
-                    ?.filter((p) => p.status !== "ARCHIVED")
-                    .map((p) => ({
+                  options={referenceOptions(
+                    {
+                      data: breakPolicies.data?.filter((p) => p.status !== "ARCHIVED"),
+                      isError: breakPolicies.isError,
+                    },
+                    (p) => ({
                       id: p.id,
                       name: p.name,
                       hint: BEHAVIOUR_LABELS[p.restrictionBehaviour],
-                    }))}
+                    }),
+                  )}
                   isLoading={breakPolicies.isPending}
                   placeholder="Choose Break Rules"
                   aria-invalid={errorFor("behaviour") ? true : undefined}
@@ -432,7 +457,7 @@ function CreateOverrideForm({
           <Button type="button" variant="outline" onClick={onClose} disabled={create.isPending}>
             Cancel
           </Button>
-          <SubmitButton isPending={create.isPending} pendingLabel="Applying…">
+          <SubmitButton isPending={create.isPending} pendingLabel="Applying…" disabled={blocked}>
             Apply override
           </SubmitButton>
         </DialogFooter>

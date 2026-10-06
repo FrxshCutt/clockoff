@@ -57,6 +57,32 @@ export async function revokeLiveInvitesForEmployee(
   return result.count;
 }
 
+/** Devices of the employee still in use. Zero with an active link means the phone was retired (lost / deactivated). */
+export async function countActiveDevices(
+  organisationId: string,
+  employeeId: string,
+  db: Db = prisma,
+): Promise<number> {
+  return db.device.count({ where: { organisationId, employeeId, isActive: true } });
+}
+
+/**
+ * End the employee's mobile identity link when none of their devices is active, so a fresh invite starts
+ * the §9 lifecycle over (INVITED → joins again from a new phone) instead of leaving them DEACTIVATED.
+ * The WHERE re-checks the device state, so a join that committed meanwhile is never unlinked.
+ */
+export async function unlinkWhenNoActiveDevice(
+  tx: Prisma.TransactionClient,
+  employeeId: string,
+  now: Date,
+): Promise<number> {
+  const result = await tx.employeeUserLink.updateMany({
+    where: { employeeId, unlinkedAt: null, employee: { devices: { none: { isActive: true } } } },
+    data: { unlinkedAt: now },
+  });
+  return result.count;
+}
+
 export async function inviteCodeExists(code: string, db: Db = prisma): Promise<boolean> {
   const row = await db.employeeInvite.findUnique({ where: { code }, select: { id: true } });
   return row !== null;

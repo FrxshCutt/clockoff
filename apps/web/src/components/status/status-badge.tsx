@@ -32,7 +32,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getStatusMeta, TONE_CLASSES, type StatusIcon, type StatusKind, type StatusValue } from "./statusMeta";
+import {
+  getStatusMeta,
+  TONE_CLASSES,
+  type StatusIcon,
+  type StatusKind,
+  type StatusValue,
+} from "./statusMeta";
 
 /** Lucide component for each icon key in `statusMeta.ts` (exhaustive by type). */
 export const STATUS_ICON_COMPONENTS: Record<StatusIcon, LucideIcon> = {
@@ -116,7 +122,9 @@ export function StatusBadge<K extends StatusKind>({
         className,
       )}
     >
-      {hideIcon ? null : <Icon className={size === "md" ? "size-3.5" : "size-3"} aria-hidden="true" />}
+      {hideIcon ? null : (
+        <Icon className={size === "md" ? "size-3.5" : "size-3"} aria-hidden="true" />
+      )}
       <span>{label ?? meta.label}</span>
       {describe && meta.description ? <span className="sr-only">: {meta.description}</span> : null}
     </span>

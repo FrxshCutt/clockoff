@@ -47,7 +47,13 @@ export class ApiClientError extends Error {
   /** The code exactly as the server sent it (may be a code this client version does not know). */
   readonly rawCode?: string;
 
-  constructor(init: { code: ApiClientErrorCode; message: string; status: number; details?: unknown; rawCode?: string }) {
+  constructor(init: {
+    code: ApiClientErrorCode;
+    message: string;
+    status: number;
+    details?: unknown;
+    rawCode?: string;
+  }) {
     super(init.message);
     this.name = "ApiClientError";
     this.code = init.code;
@@ -62,7 +68,10 @@ export function isApiClientError(error: unknown): error is ApiClientError {
 }
 
 /** True when the error is an `ApiClientError` with one of the given codes. */
-export function hasErrorCode(error: unknown, ...codes: readonly ApiClientErrorCode[]): error is ApiClientError {
+export function hasErrorCode(
+  error: unknown,
+  ...codes: readonly ApiClientErrorCode[]
+): error is ApiClientError {
   return isApiClientError(error) && codes.includes(error.code);
 }
 
@@ -178,7 +187,9 @@ function readErrorEnvelope(payload: unknown): ParsedErrorEnvelope | null {
 /** Converts a non-2xx response body (already parsed, or null when unreadable) into an `ApiClientError`. */
 export function toApiClientError(status: number, payload: unknown): ApiClientError {
   const envelope = readErrorEnvelope(payload);
-  const code: ApiErrorCode = isApiErrorCode(envelope?.code) ? envelope.code : errorCodeForStatus(status);
+  const code: ApiErrorCode = isApiErrorCode(envelope?.code)
+    ? envelope.code
+    : errorCodeForStatus(status);
   return new ApiClientError({
     code,
     status,
@@ -263,7 +274,8 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
 
 /** Shorthands. */
 export const api = {
-  get: <T>(path: string, query?: QueryParams, signal?: AbortSignal) => apiFetch<T>(path, { query, signal }),
+  get: <T>(path: string, query?: QueryParams, signal?: AbortSignal) =>
+    apiFetch<T>(path, { query, signal }),
   post: <T>(path: string, body?: unknown) => apiFetch<T>(path, { method: "POST", body }),
   patch: <T>(path: string, body?: unknown) => apiFetch<T>(path, { method: "PATCH", body }),
   put: <T>(path: string, body?: unknown) => apiFetch<T>(path, { method: "PUT", body }),

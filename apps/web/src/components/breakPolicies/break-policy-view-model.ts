@@ -44,24 +44,28 @@ export const BREAK_BEHAVIOUR_META: Record<BreakRestrictionBehaviour, BreakBehavi
     value: "RELAX_CATEGORIES",
     label: "Relax some categories",
     summary: "relax some",
-    description: "Only the categories you choose open up during a break. Everything else stays restricted.",
+    description:
+      "Only the categories you choose open up during a break. Everything else stays restricted. Needs a second Screen Time selection on each phone.",
   },
   KEEP_RESTRICTIONS: {
     value: "KEEP_RESTRICTIONS",
     label: "Keep restrictions",
     summary: "keep restrictions",
-    description: "The break is recorded for timekeeping, but the phone stays in Work Mode throughout.",
+    description:
+      "The break is recorded for timekeeping, but the phone stays in Work Mode throughout.",
   },
 };
 
 /** The three behaviours in display order, with the explanation shown under each option. */
-export const BREAK_BEHAVIOUR_OPTIONS: readonly BreakBehaviourOption[] = BREAK_RESTRICTION_BEHAVIOURS.map(
-  (value) => BREAK_BEHAVIOUR_META[value],
-);
+export const BREAK_BEHAVIOUR_OPTIONS: readonly BreakBehaviourOption[] =
+  BREAK_RESTRICTION_BEHAVIOURS.map((value) => BREAK_BEHAVIOUR_META[value]);
 
-/** Honest note shown when RELAX_CATEGORIES is picked: the phone needs two Screen Time selections. */
+/**
+ * Honest note shown when RELAX_CATEGORIES is picked: the phone needs two Screen Time selections, and until the
+ * second one exists a break keeps every restriction (docs/SCREEN_TIME_IMPLEMENTATION.md §6).
+ */
 export const RELAX_CATEGORIES_DEVICE_NOTE =
-  "Relaxing only some categories needs two Screen Time selections on the employee's phone: the apps restricted during shifts, and the smaller set that stays restricted on breaks. Employees make both selections in the app; the employer never sees either.";
+  "Relaxing only some categories needs two Screen Time selections on the employee's phone: the apps restricted during shifts, and the smaller set that stays restricted on breaks. Employees make both selections in the app; the employer never sees either. Until an employee has made the second selection, their breaks keep every restriction and the app asks them to finish it.";
 
 /** `relax all` · `relax 2 categories` · `keep restrictions` — the behaviour fragment of a summary line. */
 export function describeBreakBehaviour(
@@ -71,7 +75,8 @@ export function describeBreakBehaviour(
   if (behaviour !== "RELAX_CATEGORIES") return BREAK_BEHAVIOUR_META[behaviour].summary;
   const count = relaxedCategories.length;
   if (count === 0) return BREAK_BEHAVIOUR_META.RELAX_CATEGORIES.summary;
-  if (count === 1) return `relax ${RESTRICTION_CATEGORY_LABELS[relaxedCategories[0] as RestrictionCategory].toLowerCase()}`;
+  if (count === 1)
+    return `relax ${RESTRICTION_CATEGORY_LABELS[relaxedCategories[0] as RestrictionCategory].toLowerCase()}`;
   return `relax ${count} categories`;
 }
 
@@ -87,7 +92,10 @@ export function formatBreakCount(count: number): string {
  */
 export function summariseBreakPolicy(rules: BreakPolicyRules): string {
   if (!rules.breaksEnabled) return "Breaks off";
-  const parts = [formatBreakCount(rules.maxBreaksPerShift), `${formatDurationMinutes(rules.maxBreakDurationMinutes)} each`];
+  const parts = [
+    formatBreakCount(rules.maxBreaksPerShift),
+    `${formatDurationMinutes(rules.maxBreakDurationMinutes)} each`,
+  ];
   if (rules.maxTotalBreakMinutes < rules.maxBreaksPerShift * rules.maxBreakDurationMinutes) {
     parts.push(`${formatDurationMinutes(rules.maxTotalBreakMinutes)} total`);
   }
@@ -103,8 +111,10 @@ export function describeBreakTriggers(rules: BreakPolicyRules): string {
   if (rules.scheduledBreaksAllowed) who.push("scheduled breaks start automatically");
   const trigger = who.length > 0 ? who.join(" and ") : "only managers can start breaks";
   const timing: string[] = [];
-  if (rules.minMinutesAfterShiftStart > 0) timing.push(`not in the first ${formatDurationMinutes(rules.minMinutesAfterShiftStart)}`);
-  if (rules.minGapBetweenBreaksMinutes > 0) timing.push(`at least ${formatDurationMinutes(rules.minGapBetweenBreaksMinutes)} apart`);
+  if (rules.minMinutesAfterShiftStart > 0)
+    timing.push(`not in the first ${formatDurationMinutes(rules.minMinutesAfterShiftStart)}`);
+  if (rules.minGapBetweenBreaksMinutes > 0)
+    timing.push(`at least ${formatDurationMinutes(rules.minGapBetweenBreaksMinutes)} apart`);
   const sentence = trigger.charAt(0).toUpperCase() + trigger.slice(1);
   return timing.length > 0 ? `${sentence}; ${timing.join(", ")}.` : `${sentence}.`;
 }
@@ -123,7 +133,8 @@ export const BREAK_POLICY_PRESETS: readonly BreakPolicyPreset[] = [
   {
     id: "standard",
     name: "Standard Break",
-    description: "Two 15-minute breaks per shift, at least an hour apart, with the phone fully available on break.",
+    description:
+      "Two 15-minute breaks per shift, at least an hour apart, with the phone fully available on break.",
     rules: {
       breaksEnabled: true,
       maxBreaksPerShift: 2,
@@ -180,10 +191,28 @@ export const BREAK_POLICY_PRESETS: readonly BreakPolicyPreset[] = [
  * description, so client validation never drifts from the server's.
  */
 export const breakPolicyFormSchema = breakPolicyRulesSchema.extend({
-  name: z.string().trim().min(1, "Give these break rules a name").max(120, "Keep the name under 120 characters"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Give these break rules a name")
+    .max(120, "Keep the name under 120 characters"),
   description: z.string().trim().max(500, "Keep the description under 500 characters"),
 });
 export type BreakPolicyFormValues = z.infer<typeof breakPolicyFormSchema>;
+
+/** The rule keys of `BreakPolicyRules`, for picking them out of wider objects (form values carry name/description too). */
+export const BREAK_RULE_KEYS = [
+  "breaksEnabled",
+  "maxBreaksPerShift",
+  "maxBreakDurationMinutes",
+  "maxTotalBreakMinutes",
+  "minGapBetweenBreaksMinutes",
+  "minMinutesAfterShiftStart",
+  "employeeTriggeredAllowed",
+  "scheduledBreaksAllowed",
+  "restrictionBehaviour",
+  "relaxedCategories",
+] as const satisfies readonly (keyof BreakPolicyRules)[];
 
 export function pickBreakRules(source: BreakPolicyRules): BreakPolicyRules {
   return {
@@ -231,12 +260,20 @@ function normaliseDescription(description: string): string | null {
 }
 
 export function toCreateBreakPolicyInput(values: BreakPolicyFormValues): CreateBreakPolicyInput {
-  return { name: values.name.trim(), description: normaliseDescription(values.description), ...normaliseRules(values) };
+  return {
+    name: values.name.trim(),
+    description: normaliseDescription(values.description),
+    ...normaliseRules(values),
+  };
 }
 
 /** Full PATCH body (every rule is sent so the server re-validates the complete, consistent set). */
 export function toUpdateBreakPolicyInput(values: BreakPolicyFormValues): UpdateBreakPolicyInput {
-  return { name: values.name.trim(), description: normaliseDescription(values.description), ...normaliseRules(values) };
+  return {
+    name: values.name.trim(),
+    description: normaliseDescription(values.description),
+    ...normaliseRules(values),
+  };
 }
 
 /** Labels, help text and bounds for the numeric rule fields. */
@@ -249,7 +286,11 @@ export interface BreakRuleFieldMeta {
 }
 
 export const BREAK_RULE_FIELD_META: Record<
-  "maxBreaksPerShift" | "maxBreakDurationMinutes" | "maxTotalBreakMinutes" | "minGapBetweenBreaksMinutes" | "minMinutesAfterShiftStart",
+  | "maxBreaksPerShift"
+  | "maxBreakDurationMinutes"
+  | "maxTotalBreakMinutes"
+  | "minGapBetweenBreaksMinutes"
+  | "minMinutesAfterShiftStart",
   BreakRuleFieldMeta
 > = {
   maxBreaksPerShift: {
@@ -294,9 +335,12 @@ export const BREAK_RULE_FIELD_META: Record<
 export type BreakPolicyDeleteGuard = { blocked: false } | { blocked: true; reasons: string[] };
 
 /** Why `DELETE /api/break-policies/:id` would fail with `POLICY_ASSIGNED`, so the UI can explain instead of trying. */
-export function breakPolicyDeleteGuard(policy: Pick<BreakPolicy, "isDefault" | "assignmentCount">): BreakPolicyDeleteGuard {
+export function breakPolicyDeleteGuard(
+  policy: Pick<BreakPolicy, "isDefault" | "assignmentCount">,
+): BreakPolicyDeleteGuard {
   const reasons: string[] = [];
-  if (policy.isDefault) reasons.push("They are the organisation default. Choose different default Break Rules first.");
+  if (policy.isDefault)
+    reasons.push("They are the organisation default. Choose different default Break Rules first.");
   if (policy.assignmentCount > 0) {
     reasons.push(
       `They are assigned to ${policy.assignmentCount} ${policy.assignmentCount === 1 ? "scope" : "scopes"}. Remove those assignments or assign other Break Rules first.`,
@@ -306,35 +350,53 @@ export function breakPolicyDeleteGuard(policy: Pick<BreakPolicy, "isDefault" | "
 }
 
 /** Client-side name/description search over an already-loaded list. */
-export function matchesBreakPolicySearch(policy: Pick<BreakPolicy, "name" | "description">, search: string): boolean {
+export function matchesBreakPolicySearch(
+  policy: Pick<BreakPolicy, "name" | "description">,
+  search: string,
+): boolean {
   const needle = search.trim().toLowerCase();
   if (needle === "") return true;
-  return policy.name.toLowerCase().includes(needle) || (policy.description ?? "").toLowerCase().includes(needle);
+  return (
+    policy.name.toLowerCase().includes(needle) ||
+    (policy.description ?? "").toLowerCase().includes(needle)
+  );
 }
 
 // ── Live preview & guards ───────────────────────────────────────────────────
 
 /**
  * Summary line for a form that may be half-filled (numbers are NaN while a box is empty). `null` until the
- * rules are complete and consistent, so the preview never reads "NaN min".
+ * rules are complete and consistent, so the preview never reads "NaN min". Only the rule keys are read:
+ * the form's whole value object (name, description, …) can be passed straight in — `breakPolicyRulesSchema`
+ * is strict and would otherwise reject the extra keys.
  */
 export function previewBreakSummary(values: Partial<BreakPolicyRules>): string | null {
-  const provided = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined));
-  const parsed = breakPolicyRulesSchema.safeParse({ ...BREAK_POLICY_DEFAULTS, ...provided });
+  const merged: Record<string, unknown> = { ...BREAK_POLICY_DEFAULTS };
+  for (const key of BREAK_RULE_KEYS) {
+    if (values[key] !== undefined) merged[key] = values[key];
+  }
+  const parsed = breakPolicyRulesSchema.safeParse(merged);
   return parsed.success ? summariseBreakPolicy(parsed.data) : null;
 }
 
 export type BreakPolicyActionGuard = { ok: true } | { ok: false; reason: string };
 
 /** Break Rules have no publish step: anything not archived can be assigned (`POLICY_ARCHIVED` otherwise). */
-export function breakPolicyAssignGuard(policy: Pick<BreakPolicy, "status">): BreakPolicyActionGuard {
-  if (policy.status === "ARCHIVED") return { ok: false, reason: "Archived Break Rules can't be assigned." };
+export function breakPolicyAssignGuard(
+  policy: Pick<BreakPolicy, "status">,
+): BreakPolicyActionGuard {
+  if (policy.status === "ARCHIVED")
+    return { ok: false, reason: "Archived Break Rules can't be assigned." };
   return { ok: true };
 }
 
-export function breakPolicySetDefaultGuard(policy: Pick<BreakPolicy, "status" | "isDefault">): BreakPolicyActionGuard {
-  if (policy.isDefault) return { ok: false, reason: "These are already the organisation default Break Rules." };
-  if (policy.status === "ARCHIVED") return { ok: false, reason: "Archived Break Rules can't be the default." };
+export function breakPolicySetDefaultGuard(
+  policy: Pick<BreakPolicy, "status" | "isDefault">,
+): BreakPolicyActionGuard {
+  if (policy.isDefault)
+    return { ok: false, reason: "These are already the organisation default Break Rules." };
+  if (policy.status === "ARCHIVED")
+    return { ok: false, reason: "Archived Break Rules can't be the default." };
   return { ok: true };
 }
 
@@ -350,10 +412,14 @@ export function describeBreakBehaviourLabel(
 
 /** Who (or what) can start a break under these rules, for detail views. */
 export function describeBreakStarters(
-  rules: Pick<BreakPolicyRules, "breaksEnabled" | "employeeTriggeredAllowed" | "scheduledBreaksAllowed">,
+  rules: Pick<
+    BreakPolicyRules,
+    "breaksEnabled" | "employeeTriggeredAllowed" | "scheduledBreaksAllowed"
+  >,
 ): string {
   if (!rules.breaksEnabled) return "Nobody — breaks are off";
-  if (rules.employeeTriggeredAllowed && rules.scheduledBreaksAllowed) return "Employees from the app, and scheduled breaks";
+  if (rules.employeeTriggeredAllowed && rules.scheduledBreaksAllowed)
+    return "Employees from the app, and scheduled breaks";
   if (rules.employeeTriggeredAllowed) return "Employees from the app";
   if (rules.scheduledBreaksAllowed) return "Scheduled breaks only";
   return "Managers only";

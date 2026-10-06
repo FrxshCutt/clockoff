@@ -91,7 +91,8 @@ export function isRestrictionConfig(value: unknown): value is RestrictionConfig 
   if (typeof v.requireEmployeeAppSelection !== "boolean") return false;
   if (!isStringArray(v.alwaysAllowedNote)) return false;
   if (v.shieldMessage !== undefined && typeof v.shieldMessage !== "string") return false;
-  if (typeof v.activationMode !== "string" || !ACTIVATION_MODE_SET.has(v.activationMode)) return false;
+  if (typeof v.activationMode !== "string" || !ACTIVATION_MODE_SET.has(v.activationMode))
+    return false;
   if (
     typeof v.preShiftWarningMinutes !== "number" ||
     !Number.isInteger(v.preShiftWarningMinutes) ||

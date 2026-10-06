@@ -12,7 +12,10 @@ import type {
 import type { DeviceStatus, ShiftSummary } from "@workmode/validation/refs";
 import { toEmployeeSummary } from "@/server/employees/employees.mappers";
 import type { ManagerContext } from "@/server/tenancy/context";
-import { evaluateOrganisation, type EmployeeEvaluation } from "@/server/workState/workState.service";
+import {
+  evaluateOrganisation,
+  type EmployeeEvaluation,
+} from "@/server/workState/workState.service";
 import { DAY_MS, type WorkStateShift } from "@/server/workState/workState.repository";
 import {
   findActiveEmployeeIds,
@@ -64,7 +67,8 @@ export function complianceFlags(evaluation: EmployeeEvaluation): ComplianceFlags
     workModeActive: badge === "WORK_MODE_ACTIVE",
     onBreak: badge === "ON_BREAK",
     needsAttention:
-      (badge !== null && ATTENTION_BADGES.has(badge)) || (badge === "PERMISSIONS_MISSING" && shiftActive),
+      (badge !== null && ATTENTION_BADGES.has(badge)) ||
+      (badge === "PERMISSIONS_MISSING" && shiftActive),
   };
 }
 
@@ -138,7 +142,10 @@ function toShiftSummary(shift: WorkStateShift): ShiftSummary {
   };
 }
 
-function toComplianceRow(evaluation: EmployeeEvaluation, shifts: readonly WorkStateShift[]): ComplianceEmployeeRow {
+function toComplianceRow(
+  evaluation: EmployeeEvaluation,
+  shifts: readonly WorkStateShift[],
+): ComplianceEmployeeRow {
   const activeShiftId = evaluation.expected.activeShift?.id ?? null;
   const activeShift = activeShiftId ? (shifts.find((s) => s.id === activeShiftId) ?? null) : null;
   return {
@@ -161,7 +168,10 @@ export function isReadyForShift(evaluation: EmployeeEvaluation | undefined): boo
   return badge !== null && badge !== "PERMISSIONS_MISSING" && badge !== "OFFLINE";
 }
 
-function toUpcomingShift(row: UpcomingShiftRow, evaluation: EmployeeEvaluation | undefined): UpcomingShift {
+function toUpcomingShift(
+  row: UpcomingShiftRow,
+  evaluation: EmployeeEvaluation | undefined,
+): UpcomingShift {
   return {
     shift: {
       id: row.id,
@@ -229,7 +239,9 @@ export async function listComplianceEmployees(
     search: query.search,
   });
   const { evaluations, inputs } = await evaluateAll(organisationId, employeeIds, now);
-  const matching = evaluations.filter((e) => matchesComplianceFilter(complianceFlags(e), query.filter));
+  const matching = evaluations.filter((e) =>
+    matchesComplianceFilter(complianceFlags(e), query.filter),
+  );
   const total = matching.length;
   const start = (query.page - 1) * query.pageSize;
   const page = matching.slice(start, start + query.pageSize);

@@ -67,8 +67,14 @@ function comingSoon(meta: ProviderMetadata): AppError {
   });
 }
 
-async function integrationDto(organisationId: string, provider: IntegrationProvider): Promise<Integration> {
-  const [meta, row] = [getProviderMetadata(provider), await findIntegration(organisationId, provider)];
+async function integrationDto(
+  organisationId: string,
+  provider: IntegrationProvider,
+): Promise<Integration> {
+  const [meta, row] = [
+    getProviderMetadata(provider),
+    await findIntegration(organisationId, provider),
+  ];
   return toIntegrationDto(meta, row);
 }
 
@@ -77,7 +83,9 @@ export async function listIntegrations(ctx: ManagerContext): Promise<ListIntegra
   const rows = await findIntegrations(ctx.organisation.id);
   const byProvider = new Map(rows.map((row) => [row.provider, row]));
   return {
-    integrations: listProviders().map((meta) => toIntegrationDto(meta, byProvider.get(meta.id) ?? null)),
+    integrations: listProviders().map((meta) =>
+      toIntegrationDto(meta, byProvider.get(meta.id) ?? null),
+    ),
   };
 }
 
@@ -117,7 +125,9 @@ export async function connectIntegration(
   const settings = {
     ...readSettings(row.settings),
     ...(result.settings ?? {}),
-    ...(result.externalAccountId !== undefined ? { externalAccountId: result.externalAccountId } : {}),
+    ...(result.externalAccountId !== undefined
+      ? { externalAccountId: result.externalAccountId }
+      : {}),
     ...(result.externalAccountName !== undefined
       ? { externalAccountName: result.externalAccountName }
       : {}),
@@ -171,7 +181,8 @@ export async function disconnectIntegration(
   const meta = getProviderMetadata(provider);
   const row = await findIntegration(organisationId, provider);
   const hasConnection =
-    row !== null && (row.status === "CONNECTED" || row.status === "ERROR" || row.connection !== null);
+    row !== null &&
+    (row.status === "CONNECTED" || row.status === "ERROR" || row.connection !== null);
   if (!row || !hasConnection) return { integration: toIntegrationDto(meta, row) };
 
   if (meta.status === "AVAILABLE") {

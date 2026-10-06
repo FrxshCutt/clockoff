@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { canInviteEmployee, inviteActionLabel } from "@/components/invites/invite-helpers";
-import { CardSkeleton, PageHeaderSkeleton } from "@/components/loading-skeletons";
 import { CreateOverrideDialog } from "@/components/overrides/create-override-dialog";
 import { PageHeader } from "@/components/page-header";
 import { BackLink } from "@/components/placeholder-page";
@@ -27,6 +26,7 @@ import {
 } from "./employee-action-dialogs";
 import { EmployeeActivityTab } from "./employee-activity-tab";
 import { useEmployee } from "./employee-api";
+import { EmployeeDetailSkeleton } from "./employee-detail-skeleton";
 import {
   EMPLOYEE_TABS,
   EMPLOYEE_TAB_META,
@@ -115,18 +115,7 @@ export function EmployeeDetailPage({ id, initialTab }: EmployeeDetailPageProps) 
         </>
       );
     }
-    return (
-      <div role="status" aria-live="polite" className="space-y-6">
-        <span className="sr-only">Loading employee…</span>
-        <PageHeaderSkeleton />
-        <div className="grid gap-6 lg:grid-cols-2" aria-hidden="true">
-          <CardSkeleton lines={4} />
-          <CardSkeleton lines={4} />
-          <CardSkeleton lines={5} />
-          <CardSkeleton lines={4} />
-        </div>
-      </div>
-    );
+    return <EmployeeDetailSkeleton />;
   }
 
   const onAction = (action: EmployeeDialogAction, target: Employee) =>

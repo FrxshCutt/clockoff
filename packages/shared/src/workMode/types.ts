@@ -199,8 +199,20 @@ export interface ExpectedStateJson {
   permissionState: PermissionState;
   activeShift: { id: string; startsAt: string; endsAt: string } | null;
   upcomingShift: { id: string; startsAt: string; endsAt: string } | null;
-  activeBreak: { id: string; shiftId: string; startedAt: string; plannedEndsAt: string; endsAt: string } | null;
-  activeOverride: { id: string; type: OverrideType; startsAt: string; expiresAt: string; employeeId: string | null } | null;
+  activeBreak: {
+    id: string;
+    shiftId: string;
+    startedAt: string;
+    plannedEndsAt: string;
+    endsAt: string;
+  } | null;
+  activeOverride: {
+    id: string;
+    type: OverrideType;
+    startsAt: string;
+    expiresAt: string;
+    employeeId: string | null;
+  } | null;
   workingInterval: {
     startsAt: string;
     endsAt: string;

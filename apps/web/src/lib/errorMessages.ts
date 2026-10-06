@@ -31,14 +31,16 @@ export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   LAST_OWNER: "Every organisation needs at least one owner. Make someone else an owner first.",
   // organisation / employees
   NO_ORGANISATION: "Create or join an organisation to continue.",
-  ORGANISATION_SLUG_TAKEN: "That organisation name is already in use. Try a slightly different name.",
+  ORGANISATION_SLUG_TAKEN:
+    "That organisation name is already in use. Try a slightly different name.",
   EMPLOYEE_NOT_FOUND: "We couldn't find that employee. They may have been removed.",
   EMPLOYEE_INACTIVE: "This employee is deactivated. Reactivate them first.",
   EMPLOYEE_ALREADY_LINKED: "This employee is already connected to a device.",
   EMPLOYEE_NOT_LINKED: "This employee hasn't connected a device yet.",
   // mobile join
   INVALID_COMPANY_CODE: "That company code isn't valid.",
-  AMBIGUOUS_MATCH: "More than one employee matches. Use the employee's personal invite code instead.",
+  AMBIGUOUS_MATCH:
+    "More than one employee matches. Use the employee's personal invite code instead.",
   INVALID_INVITE_CODE: "That invite code isn't valid.",
   DEVICE_INACTIVE: "This device has been deactivated.",
   // policies
@@ -69,7 +71,8 @@ export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   OVERRIDE_TOO_LONG: "Overrides can't last that long. Choose a shorter duration.",
   OVERRIDE_EXPIRED: "This override has already expired.",
   // devices / sync
-  CLOCK_SKEW: "The device clock is out of sync. Ask the employee to enable automatic date and time.",
+  CLOCK_SKEW:
+    "The device clock is out of sync. Ask the employee to enable automatic date and time.",
   UNKNOWN_EVENT_TYPE: "The device sent an event this version doesn't recognise.",
 };
 

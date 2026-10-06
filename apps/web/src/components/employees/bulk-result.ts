@@ -27,6 +27,18 @@ function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
+/** Human copy for one failure; a code can mean something specific for a given action. */
+function failureMessage(
+  action: EmployeeBulkAction,
+  code: BulkEmployeeActionResponse["failed"][number]["code"],
+): string {
+  // Reactivation only conflicts on the plan's active-employee limit (`details.reason = PLAN_LIMIT`).
+  if (action === "REACTIVATE" && code === "CONFLICT") {
+    return "Your plan's active-employee limit is reached. Upgrade or deactivate someone first.";
+  }
+  return API_ERROR_MESSAGES[code] ?? "Couldn't apply this change.";
+}
+
 /**
  * Summarises a bulk response: success when every item applied, warning when some failed, error when none
  * did. Failure lines use the human copy for the error code (never the raw server message) and the
@@ -46,7 +58,7 @@ export function summariseBulkResult(
   }
   const lines = result.failed.slice(0, 3).map((f) => {
     const name = nameFor(f.employeeId);
-    const message = API_ERROR_MESSAGES[f.code] ?? "Couldn't apply this change.";
+    const message = failureMessage(result.action, f.code);
     return name ? `${name}: ${message}` : message;
   });
   const more = result.failed.length > 3 ? ` …and ${result.failed.length - 3} more.` : "";

@@ -27,14 +27,20 @@ describe("diffJson", () => {
       { path: "name", kind: "added", before: undefined, after: "Front of house" },
       { path: "status", kind: "added", before: undefined, after: "DRAFT" },
     ]);
-    expect(diffJson({ name: "x" }, null)).toEqual([{ path: "name", kind: "removed", before: "x", after: undefined }]);
+    expect(diffJson({ name: "x" }, null)).toEqual([
+      { path: "name", kind: "removed", before: "x", after: undefined },
+    ]);
     expect(diffJson(null, null)).toEqual([]);
     expect(diffJson(undefined, undefined)).toEqual([]);
   });
 
   it("compares arrays and other non-objects as whole values at their path", () => {
-    expect(diffJson({ tags: [1, 2] }, { tags: [1, 3] })).toEqual([{ path: "tags", kind: "changed", before: [1, 2], after: [1, 3] }]);
-    expect(diffJson({ tags: [1, 2] }, { tags: [1, 2] })).toEqual([{ path: "tags", kind: "unchanged", before: [1, 2], after: [1, 2] }]);
+    expect(diffJson({ tags: [1, 2] }, { tags: [1, 3] })).toEqual([
+      { path: "tags", kind: "changed", before: [1, 2], after: [1, 3] },
+    ]);
+    expect(diffJson({ tags: [1, 2] }, { tags: [1, 2] })).toEqual([
+      { path: "tags", kind: "unchanged", before: [1, 2], after: [1, 2] },
+    ]);
     expect(diffJson({ at: null }, { at: "2026-10-06T09:00:00.000Z" })).toEqual([
       { path: "at", kind: "changed", before: null, after: "2026-10-06T09:00:00.000Z" },
     ]);
@@ -42,8 +48,12 @@ describe("diffJson", () => {
 
   it("handles non-object roots", () => {
     expect(diffJson(1, 2)).toEqual([{ path: "(value)", kind: "changed", before: 1, after: 2 }]);
-    expect(diffJson("same", "same")).toEqual([{ path: "(value)", kind: "unchanged", before: "same", after: "same" }]);
-    expect(diffJson({ a: 1 }, "text")).toEqual([{ path: "(value)", kind: "changed", before: { a: 1 }, after: "text" }]);
+    expect(diffJson("same", "same")).toEqual([
+      { path: "(value)", kind: "unchanged", before: "same", after: "same" },
+    ]);
+    expect(diffJson({ a: 1 }, "text")).toEqual([
+      { path: "(value)", kind: "changed", before: { a: 1 }, after: "text" },
+    ]);
   });
 
   it("sorts keys so the order is stable whatever the server sent", () => {
@@ -77,8 +87,12 @@ describe("labels", () => {
 
   it("names the actor with sensible fallbacks", () => {
     expect(describeActor({ actor: null })).toBe("System");
-    expect(describeActor({ actor: { id: "u", name: "Ada Lovelace", email: "ada@example.com" } })).toBe("Ada Lovelace");
-    expect(describeActor({ actor: { id: "u", name: "  ", email: "ada@example.com" } })).toBe("ada@example.com");
+    expect(
+      describeActor({ actor: { id: "u", name: "Ada Lovelace", email: "ada@example.com" } }),
+    ).toBe("Ada Lovelace");
+    expect(describeActor({ actor: { id: "u", name: "  ", email: "ada@example.com" } })).toBe(
+      "ada@example.com",
+    );
     expect(describeActor({ actor: { id: "u", name: "", email: null } })).toBe("Manager");
   });
 

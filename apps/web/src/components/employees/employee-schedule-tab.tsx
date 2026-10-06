@@ -18,7 +18,9 @@ import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { formatDate, formatDurationMinutes } from "@/lib/format";
 import { useEmployeeShifts } from "./employee-api";
 import { EMPLOYEE_EMPTY_STATES } from "./employee-copy";
+import { employeeScheduleWindow } from "./employee-view-model";
 import { ShiftQuickFormDialog } from "./shift-quick-form";
+import { useNow } from "./use-now";
 
 export interface EmployeeScheduleTabProps {
   employee: EmployeeDetail;
@@ -29,7 +31,14 @@ export function EmployeeScheduleTab({ employee }: EmployeeScheduleTabProps) {
   const canWrite = usePermission("schedule:write") && employee.employmentStatus === "ACTIVE";
   const organisation = useCurrentOrganisation();
   const dateFormat = organisation.data?.organisation.dateFormat;
-  const query = useEmployeeShifts(employee.id, { limit: 100 });
+  // Explicit window (the API's default is the last 7 days → +93 days); null until hydration gives us a clock.
+  const now = useNow();
+  const range = now === null ? null : employeeScheduleWindow(now);
+  const query = useEmployeeShifts(
+    employee.id,
+    { ...(range ?? {}), limit: 100 },
+    { enabled: range !== null },
+  );
   const [addOpen, setAddOpen] = useState(false);
 
   const scheduleHref = `${ROUTES.schedule}?view=employee&employee=${encodeURIComponent(employee.id)}`;

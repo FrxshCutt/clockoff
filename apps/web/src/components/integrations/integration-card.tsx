@@ -18,7 +18,12 @@ import {
   safeExternalUrl,
   websiteLabel,
 } from "./integration-view-model";
-import { useConnectIntegration, useDisconnectIntegration, useNotifyMe, useSyncIntegration } from "./use-integrations";
+import {
+  useConnectIntegration,
+  useDisconnectIntegration,
+  useNotifyMe,
+  useSyncIntegration,
+} from "./use-integrations";
 
 export interface IntegrationCardProps {
   integration: Integration;
@@ -61,7 +66,9 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
         },
         onError: (error) => {
           if (hasErrorCode(error, "COMING_SOON")) {
-            toast.info("Coming soon", { description: `${integration.displayName} can't be connected yet. Ask to be notified instead.` });
+            toast.info("Coming soon", {
+              description: `${integration.displayName} can't be connected yet. Ask to be notified instead.`,
+            });
             return;
           }
           toastError(error, { title: `Couldn't connect ${integration.displayName}` });
@@ -80,7 +87,9 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
       },
       onError: (error) => {
         if (hasErrorCode(error, "COMING_SOON")) {
-          toast.info("Coming soon", { description: `Syncing ${integration.displayName} isn't available yet.` });
+          toast.info("Coming soon", {
+            description: `Syncing ${integration.displayName} isn't available yet.`,
+          });
           return;
         }
         toastError(error, { title: `Couldn't sync ${integration.displayName}` });
@@ -89,7 +98,11 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
   };
 
   return (
-    <li className="bg-card flex flex-col gap-5 rounded-xl border p-5 shadow-xs" data-provider={integration.provider} data-state={state}>
+    <li
+      className="bg-card flex flex-col gap-5 rounded-xl border p-5 shadow-xs"
+      data-provider={integration.provider}
+      data-state={state}
+    >
       <div className="flex items-start gap-4">
         <span
           className="bg-primary/10 text-primary flex size-12 shrink-0 items-center justify-center rounded-lg text-base font-semibold tracking-wide"
@@ -100,7 +113,11 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate font-semibold">{integration.displayName}</h3>
-            {state === "coming-soon" ? <Badge variant="secondary">Coming soon</Badge> : <StatusBadge kind="integrationStatus" value={integration.status} size="sm" />}
+            {state === "coming-soon" ? (
+              <Badge variant="secondary">Coming soon</Badge>
+            ) : (
+              <StatusBadge kind="integrationStatus" value={integration.status} size="sm" />
+            )}
           </div>
           {website ? (
             <a
@@ -120,10 +137,14 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
       <p className="text-muted-foreground text-sm leading-relaxed">{integration.description}</p>
 
       <dl className="space-y-2">
-        <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Activation</dt>
+        <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          Activation
+        </dt>
         {integration.supportedActivationModes.map((mode) => (
           <dd key={mode} className="flex gap-2 text-sm">
-            <span className="bg-muted mt-0.5 h-fit shrink-0 rounded px-1.5 py-0.5 text-xs font-medium">{ACTIVATION_MODE_COPY[mode].label}</span>
+            <span className="bg-muted mt-0.5 h-fit shrink-0 rounded px-1.5 py-0.5 text-xs font-medium">
+              {ACTIVATION_MODE_COPY[mode].label}
+            </span>
             <span className="text-muted-foreground">{ACTIVATION_MODE_COPY[mode].summary}</span>
           </dd>
         ))}
@@ -152,13 +173,20 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
         {state === "coming-soon" ? (
           integration.notifyRequested ? (
-            <p className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400" role="status">
+            <p
+              className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+              role="status"
+            >
               <Check className="size-4" aria-hidden="true" />
               We&apos;ll let you know when it&apos;s ready
             </p>
           ) : (
             <Button type="button" variant="outline" onClick={onNotify} disabled={notify.isPending}>
-              {notify.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <BellRing aria-hidden="true" />}
+              {notify.isPending ? (
+                <LoaderCircle className="animate-spin" aria-hidden="true" />
+              ) : (
+                <BellRing aria-hidden="true" />
+              )}
               Notify me
             </Button>
           )
@@ -166,7 +194,10 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
           canWrite ? (
             <>
               <Button type="button" variant="outline" onClick={onSync} disabled={sync.isPending}>
-                <RefreshCw className={sync.isPending ? "animate-spin" : undefined} aria-hidden="true" />
+                <RefreshCw
+                  className={sync.isPending ? "animate-spin" : undefined}
+                  aria-hidden="true"
+                />
                 Sync now
               </Button>
               <ConfirmDialog
@@ -184,7 +215,11 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
                   }
                 }}
                 trigger={
-                  <Button type="button" variant="ghost" className="text-destructive hover:text-destructive">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                  >
                     <Unplug aria-hidden="true" />
                     Disconnect
                   </Button>
@@ -192,15 +227,23 @@ export function IntegrationCard({ integration, canWrite }: IntegrationCardProps)
               />
             </>
           ) : (
-            <p className="text-muted-foreground text-sm">Only owners and admins can sync or disconnect.</p>
+            <p className="text-muted-foreground text-sm">
+              Only owners and admins can sync or disconnect.
+            </p>
           )
         ) : canWrite ? (
           <Button type="button" onClick={onConnect} disabled={connect.isPending}>
-            {connect.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Plug aria-hidden="true" />}
+            {connect.isPending ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Plug aria-hidden="true" />
+            )}
             Connect
           </Button>
         ) : (
-          <p className="text-muted-foreground text-sm">Only owners and admins can connect integrations.</p>
+          <p className="text-muted-foreground text-sm">
+            Only owners and admins can connect integrations.
+          </p>
         )}
       </div>
     </li>

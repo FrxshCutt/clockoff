@@ -38,7 +38,7 @@ import {
   type EmployeeFormValues,
 } from "./employee-form";
 import { employeeFullName } from "./employee-view-model";
-import { CheckboxGroupField, ReferenceSelectField } from "./reference-select";
+import { CheckboxGroupField, ReferenceSelectField, referenceOptions } from "./reference-select";
 
 export interface EmployeeFormSheetProps {
   open: boolean;
@@ -123,20 +123,32 @@ function EmployeeForm({
     }
   });
 
-  const locationOptions = locations.data?.map((l) => ({ id: l.id, name: l.name }));
-  const teamOptions = teams.data?.map((t) => ({ id: t.id, name: t.name, hint: t.location?.name }));
-  const departmentOptions = departments.data?.map((d) => ({ id: d.id, name: d.name }));
-  const policyOptions = policies.data
-    ?.filter((p) => p.status !== "ARCHIVED")
-    .map((p) => ({
+  const locationOptions = referenceOptions(locations, (l) => ({ id: l.id, name: l.name }));
+  const teamOptions = referenceOptions(teams, (t) => ({
+    id: t.id,
+    name: t.name,
+    hint: t.location?.name,
+  }));
+  const departmentOptions = referenceOptions(departments, (d) => ({ id: d.id, name: d.name }));
+  const policyOptions = referenceOptions(
+    { data: policies.data?.filter((p) => p.status !== "ARCHIVED"), isError: policies.isError },
+    (p) => ({
       id: p.id,
       name: p.name,
       hint: p.status === "ACTIVE" ? undefined : "Draft — publish first",
       disabled: p.status !== "ACTIVE",
-    }));
-  const breakPolicyOptions = breakPolicies.data
-    ?.filter((p) => p.status !== "ARCHIVED")
-    .map((p) => ({ id: p.id, name: p.name, disabled: p.status !== "ACTIVE" }));
+    }),
+  );
+  const breakPolicyOptions = referenceOptions(
+    {
+      data: breakPolicies.data?.filter((p) => p.status !== "ARCHIVED"),
+      isError: breakPolicies.isError,
+    },
+    (p) => ({ id: p.id, name: p.name, disabled: p.status !== "ACTIVE" }),
+  );
+  // Names and contact details can still be saved when a reference list fails; say so instead of hiding it.
+  const referenceError =
+    locations.error ?? departments.error ?? teams.error ?? policies.error ?? breakPolicies.error;
 
   return (
     <Form {...form}>
@@ -157,6 +169,12 @@ function EmployeeForm({
             error={mutationError}
             title={mode === "edit" ? "Couldn't save changes" : "Couldn't add the employee"}
           />
+          {referenceError ? (
+            <FormErrorAlert
+              error={referenceError}
+              title="Couldn't load locations, teams or policies — you can still save the other details"
+            />
+          ) : null}
 
           <section className="space-y-4" aria-labelledby="employee-form-identity">
             <h3 id="employee-form-identity" className="text-sm font-semibold">

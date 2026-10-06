@@ -12,7 +12,11 @@ import {
   WORK_MODE_STATES,
 } from "../enums";
 import type { EffectiveRestriction, RestrictionCategory, WorkModeState } from "../enums";
-import { computeExpectedState, restrictionSignature, toExpectedStateJson } from "./computeExpectedState";
+import {
+  computeExpectedState,
+  restrictionSignature,
+  toExpectedStateJson,
+} from "./computeExpectedState";
 import type {
   ComputeExpectedStateInput,
   WorkModeBreakSessionLike,
@@ -64,7 +68,8 @@ function fail(path: string, message: string): never {
   throw new Error(`workmode-cases.json ${path}: ${message}`);
 }
 function obj(value: unknown, path: string): Obj {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) fail(path, "expected an object");
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    fail(path, "expected an object");
   return value as Obj;
 }
 function arr(value: unknown, path: string): unknown[] {
@@ -84,7 +89,8 @@ function bool(value: unknown, path: string): boolean {
 }
 function instant(value: unknown, path: string): string {
   const s = str(value, path);
-  if (!ISO_UTC.test(s) || Number.isNaN(Date.parse(s))) fail(path, `expected an ISO-8601 UTC instant, got "${s}"`);
+  if (!ISO_UTC.test(s) || Number.isNaN(Date.parse(s)))
+    fail(path, `expected an ISO-8601 UTC instant, got "${s}"`);
   return s;
 }
 function nullableInstant(value: unknown, path: string): string | null {
@@ -123,7 +129,11 @@ function parseBreak(raw: unknown, path: string): WorkModeBreakSessionLike {
     plannedEndsAt: instant(o.plannedEndsAt, `${path}.plannedEndsAt`),
     endedAt: nullableInstant(o.endedAt ?? null, `${path}.endedAt`),
     status: oneOf(BREAK_SESSION_STATUSES, o.status, `${path}.status`),
-    restrictionBehaviour: oneOf(BREAK_RESTRICTION_BEHAVIOURS, o.restrictionBehaviour, `${path}.restrictionBehaviour`),
+    restrictionBehaviour: oneOf(
+      BREAK_RESTRICTION_BEHAVIOURS,
+      o.restrictionBehaviour,
+      `${path}.restrictionBehaviour`,
+    ),
     relaxedCategories: o.relaxedCategories,
   };
 }
@@ -159,20 +169,39 @@ function parseCase(raw: unknown, index: number): FixtureCase {
 
   const parsedExpected: FixtureExpected = {
     state: oneOf(WORK_MODE_STATES, expected.state, `${path}.expected.state`),
-    effectiveRestriction: oneOf(EFFECTIVE_RESTRICTIONS, expected.effectiveRestriction, `${path}.expected.effectiveRestriction`),
-    restrictionsShouldBeActive: bool(expected.restrictionsShouldBeActive, `${path}.expected.restrictionsShouldBeActive`),
+    effectiveRestriction: oneOf(
+      EFFECTIVE_RESTRICTIONS,
+      expected.effectiveRestriction,
+      `${path}.expected.effectiveRestriction`,
+    ),
+    restrictionsShouldBeActive: bool(
+      expected.restrictionsShouldBeActive,
+      `${path}.expected.restrictionsShouldBeActive`,
+    ),
     activeShiftId: nullableStr(expected.activeShiftId, `${path}.expected.activeShiftId`),
     activeBreakId: nullableStr(expected.activeBreakId, `${path}.expected.activeBreakId`),
-    nextTransitionAt: nullableInstant(expected.nextTransitionAt, `${path}.expected.nextTransitionAt`),
+    nextTransitionAt: nullableInstant(
+      expected.nextTransitionAt,
+      `${path}.expected.nextTransitionAt`,
+    ),
   };
   if ("upcomingShiftId" in expected) {
-    parsedExpected.upcomingShiftId = nullableStr(expected.upcomingShiftId, `${path}.expected.upcomingShiftId`);
+    parsedExpected.upcomingShiftId = nullableStr(
+      expected.upcomingShiftId,
+      `${path}.expected.upcomingShiftId`,
+    );
   }
   if ("activeOverrideId" in expected) {
-    parsedExpected.activeOverrideId = nullableStr(expected.activeOverrideId, `${path}.expected.activeOverrideId`);
+    parsedExpected.activeOverrideId = nullableStr(
+      expected.activeOverrideId,
+      `${path}.expected.activeOverrideId`,
+    );
   }
   if ("liftedCategories" in expected) {
-    parsedExpected.liftedCategories = categories(expected.liftedCategories, `${path}.expected.liftedCategories`);
+    parsedExpected.liftedCategories = categories(
+      expected.liftedCategories,
+      `${path}.expected.liftedCategories`,
+    );
   }
 
   const parsed: FixtureCase = {
@@ -181,9 +210,15 @@ function parseCase(raw: unknown, index: number): FixtureCase {
     input: {
       now: instant(input.now, `${path}.input.now`),
       timezone: str(input.timezone, `${path}.input.timezone`),
-      permissionState: oneOf(PERMISSION_STATES, input.permissionState, `${path}.input.permissionState`),
+      permissionState: oneOf(
+        PERMISSION_STATES,
+        input.permissionState,
+        `${path}.input.permissionState`,
+      ),
       employeeId: nullableStr(input.employeeId ?? null, `${path}.input.employeeId`),
-      shifts: arr(input.shifts, `${path}.input.shifts`).map((s, i) => parseShift(s, `${path}.input.shifts[${i}]`)),
+      shifts: arr(input.shifts, `${path}.input.shifts`).map((s, i) =>
+        parseShift(s, `${path}.input.shifts[${i}]`),
+      ),
       breakSessions: arr(input.breakSessions, `${path}.input.breakSessions`).map((b, i) =>
         parseBreak(b, `${path}.input.breakSessions[${i}]`),
       ),
@@ -197,7 +232,10 @@ function parseCase(raw: unknown, index: number): FixtureCase {
   if (c.wallClock !== undefined) {
     parsed.wallClock = arr(c.wallClock, `${path}.wallClock`).map((w, i) => {
       const o = obj(w, `${path}.wallClock[${i}]`);
-      return { utc: instant(o.utc, `${path}.wallClock[${i}].utc`), local: str(o.local, `${path}.wallClock[${i}].local`) };
+      return {
+        utc: instant(o.utc, `${path}.wallClock[${i}].utc`),
+        local: str(o.local, `${path}.wallClock[${i}].local`),
+      };
     });
   }
   return parsed;
@@ -213,12 +251,20 @@ function loadCases(): FixtureCase[] {
 const CASES = loadCases();
 
 /** Every string under an instant-named key, and every date-looking string anywhere, with its JSON path. */
-function instantLikeStrings(value: unknown, path: string, key: string, out: { path: string; key: string; value: unknown }[]): void {
+function instantLikeStrings(
+  value: unknown,
+  path: string,
+  key: string,
+  out: { path: string; key: string; value: unknown }[],
+): void {
   if (Array.isArray(value)) {
     value.forEach((v, i) => instantLikeStrings(v, `${path}[${i}]`, key, out));
   } else if (typeof value === "object" && value !== null) {
     for (const [k, v] of Object.entries(value)) instantLikeStrings(v, `${path}.${k}`, k, out);
-  } else if (INSTANT_KEY.test(key) || (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value))) {
+  } else if (
+    INSTANT_KEY.test(key) ||
+    (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value))
+  ) {
     out.push({ path, key, value });
   }
 }
@@ -230,7 +276,12 @@ function withDates(input: FixtureCase["input"]): ComputeExpectedStateInput {
   return {
     ...input,
     now: d(input.now),
-    shifts: input.shifts.map((s) => ({ ...s, startsAt: d(s.startsAt), endsAt: d(s.endsAt), deletedAt: dn(s.deletedAt) })),
+    shifts: input.shifts.map((s) => ({
+      ...s,
+      startsAt: d(s.startsAt),
+      endsAt: d(s.endsAt),
+      deletedAt: dn(s.deletedAt),
+    })),
     breakSessions: (input.breakSessions ?? []).map((b) => ({
       ...b,
       startedAt: d(b.startedAt),
@@ -260,7 +311,12 @@ describe("docs/fixtures/workmode-cases.json", () => {
     const found: { path: string; key: string; value: unknown }[] = [];
     instantLikeStrings(RAW, "root", "", found);
     const bad = found.filter(({ key, value }) =>
-      key === "local" ? typeof value !== "string" : !(value === null || (typeof value === "string" && ISO_UTC.test(value) && !Number.isNaN(Date.parse(value)))),
+      key === "local"
+        ? typeof value !== "string"
+        : !(
+            value === null ||
+            (typeof value === "string" && ISO_UTC.test(value) && !Number.isNaN(Date.parse(value)))
+          ),
     );
     expect(bad).toEqual([]);
     // Sanity: the scan really saw the instants.
@@ -283,7 +339,10 @@ describe("docs/fixtures/workmode-cases.json", () => {
         "custom-warning-minutes-before-window",
         "pre-shift-warning-zero-straight-to-working",
       ],
-      "WORKING on [start, end) with no active break": ["canonical-0900-working", "overnight-0200-working"],
+      "WORKING on [start, end) with no active break": [
+        "canonical-0900-working",
+        "overnight-0200-working",
+      ],
       "ON_BREAK while an ACTIVE break has plannedEndsAt > now": [
         "canonical-1015-on-break",
         "canonical-1029-59-999-on-break-last-ms",
@@ -369,17 +428,18 @@ describe("docs/fixtures/workmode-cases.json", () => {
         "permission-unknown-just-outside-window",
         "permission-denied-at-shift-end",
       ],
-      "precedence PERMISSION_ERROR > MANAGER_OVERRIDE > ON_BREAK > SHIFT_ENDING > WORKING > SHIFT_STARTING_SOON > OFF_SHIFT": [
-        "precedence-permission-over-override-break-and-shift-ending",
-        "permission-denied-dominates-override",
-        "permission-denied-dominates-shift-ending",
-        "precedence-override-over-break-and-shift-ending",
-        "exempt-temporarily-precedes-break",
-        "exempt-temporarily-ends-while-break-runs",
-        "end-work-mode-early-in-shift-ending-window",
-        "break-crosses-shift-end-during",
-        "precedence-working-over-next-shift-starting-soon",
-      ],
+      "precedence PERMISSION_ERROR > MANAGER_OVERRIDE > ON_BREAK > SHIFT_ENDING > WORKING > SHIFT_STARTING_SOON > OFF_SHIFT":
+        [
+          "precedence-permission-over-override-break-and-shift-ending",
+          "permission-denied-dominates-override",
+          "permission-denied-dominates-shift-ending",
+          "precedence-override-over-break-and-shift-ending",
+          "exempt-temporarily-precedes-break",
+          "exempt-temporarily-ends-while-break-runs",
+          "end-work-mode-early-in-shift-ending-window",
+          "break-crosses-shift-end-during",
+          "precedence-working-over-next-shift-starting-soon",
+        ],
       "cancelled / completed / deleted / degenerate shifts are ignored": [
         "cancelled-shift-ignored",
         "completed-shift-ignored",
@@ -408,7 +468,9 @@ describe("docs/fixtures/workmode-cases.json", () => {
 
   it("produces every machine state at least once", () => {
     const produced = new Set(CASES.map((c) => c.expected.state));
-    expect(WORK_MODE_STATES.filter((s) => s !== "SYNC_ERROR" && s !== "UNKNOWN" && !produced.has(s))).toEqual([]);
+    expect(
+      WORK_MODE_STATES.filter((s) => s !== "SYNC_ERROR" && s !== "UNKNOWN" && !produced.has(s)),
+    ).toEqual([]);
   });
 
   it("uses only producible states (SYNC_ERROR / UNKNOWN are device-side)", () => {
@@ -439,8 +501,10 @@ describe.each(CASES.map((c) => [c.name, c] as const))("fixture %s", (_name, c) =
       nextTransitionAt: result.nextTransitionAt?.toISOString() ?? null,
     };
     if ("upcomingShiftId" in c.expected) actual.upcomingShiftId = result.upcomingShift?.id ?? null;
-    if ("activeOverrideId" in c.expected) actual.activeOverrideId = result.activeOverride?.id ?? null;
-    if ("liftedCategories" in c.expected) actual.liftedCategories = result.relaxation?.liftedCategories ?? [];
+    if ("activeOverrideId" in c.expected)
+      actual.activeOverrideId = result.activeOverride?.id ?? null;
+    if ("liftedCategories" in c.expected)
+      actual.liftedCategories = result.relaxation?.liftedCategories ?? [];
     expect(actual).toEqual(c.expected);
   });
 
@@ -449,7 +513,9 @@ describe.each(CASES.map((c) => [c.name, c] as const))("fixture %s", (_name, c) =
   });
 
   it("gives the same result for Date and ISO-string instants", () => {
-    expect(toExpectedStateJson(computeExpectedState(withDates(c.input)))).toEqual(toExpectedStateJson(result));
+    expect(toExpectedStateJson(computeExpectedState(withDates(c.input)))).toEqual(
+      toExpectedStateJson(result),
+    );
   });
 
   it("is JSON-serialisable without loss", () => {
@@ -463,7 +529,10 @@ describe.each(CASES.map((c) => [c.name, c] as const))("fixture %s", (_name, c) =
     const next = result.nextTransitionAt;
     if (next === null) {
       // Nothing ever changes again: probe far into the future.
-      const later = computeExpectedState({ ...c.input, now: new Date(Date.parse(c.input.now) + 400 * 86_400_000) });
+      const later = computeExpectedState({
+        ...c.input,
+        now: new Date(Date.parse(c.input.now) + 400 * 86_400_000),
+      });
       expect(restrictionSignature(later)).toBe(base);
       return;
     }

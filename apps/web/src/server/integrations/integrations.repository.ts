@@ -1,5 +1,9 @@
 import { prisma, type Prisma } from "@workmode/db";
-import type { ActivationMode, IntegrationProvider, IntegrationStatus } from "@workmode/shared/enums";
+import type {
+  ActivationMode,
+  IntegrationProvider,
+  IntegrationStatus,
+} from "@workmode/shared/enums";
 
 /**
  * `Integration` rows (one per organisation and provider, created lazily) and their `IntegrationConnection`
@@ -13,7 +17,10 @@ export const integrationInclude = {
 } satisfies Prisma.IntegrationInclude;
 export type IntegrationRow = Prisma.IntegrationGetPayload<{ include: typeof integrationInclude }>;
 
-export async function findIntegrations(organisationId: string, db: Db = prisma): Promise<IntegrationRow[]> {
+export async function findIntegrations(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<IntegrationRow[]> {
   return db.integration.findMany({ where: { organisationId }, include: integrationInclude });
 }
 
@@ -22,7 +29,10 @@ export async function findIntegration(
   provider: IntegrationProvider,
   db: Db = prisma,
 ): Promise<IntegrationRow | null> {
-  return db.integration.findFirst({ where: { organisationId, provider }, include: integrationInclude });
+  return db.integration.findFirst({
+    where: { organisationId, provider },
+    include: integrationInclude,
+  });
 }
 
 export interface IntegrationUpsertData {

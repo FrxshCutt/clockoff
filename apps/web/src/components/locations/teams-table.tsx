@@ -33,15 +33,22 @@ import { usePolicyOptions } from "./use-scope-assignments";
  * Break Rules assigned at TEAM scope, plus the add / edit sheet and delete confirmation.
  */
 export function TeamsSection() {
+  // Teams and their membership are organisation structure, which the API lets every role with
+  // Organisation structure is edited by owners and admins only (`org:manage`); policy assignment needs `policies:write`.
   const canManage = usePermission("org:manage");
-  const canManageMembers = usePermission("employees:write");
   const canAssign = usePermission("policies:write");
   const teams = useTeamsList();
   const { workPolicies, breakPolicies } = usePolicyOptions({ enabled: canAssign });
   const remove = useDeleteTeam();
   const toastError = useApiErrorToast();
-  const [sheet, setSheet] = useState<{ open: boolean; team: Team | null }>({ open: false, team: null });
-  const [members, setMembers] = useState<{ open: boolean; team: Team | null }>({ open: false, team: null });
+  const [sheet, setSheet] = useState<{ open: boolean; team: Team | null }>({
+    open: false,
+    team: null,
+  });
+  const [members, setMembers] = useState<{ open: boolean; team: Team | null }>({
+    open: false,
+    team: null,
+  });
   const [deleting, setDeleting] = useState<Team | null>(null);
 
   const columns = useMemo<ColumnDef<Team>[]>(
@@ -71,7 +78,7 @@ export function TeamsSection() {
             variant="ghost"
             size="sm"
             className="-ml-2.5 h-8 gap-1.5 px-2.5 font-normal tabular-nums"
-            aria-label={`${formatNumber(row.original.memberCount)} members of ${row.original.name}. ${canManageMembers ? "Manage members" : "View members"}`}
+            aria-label={`${formatNumber(row.original.memberCount)} members of ${row.original.name}. ${canManage ? "Manage members" : "View members"}`}
             onClick={() => setMembers({ open: true, team: row.original })}
           >
             <Users className="text-muted-foreground size-3.5" aria-hidden="true" />
@@ -115,41 +122,49 @@ export function TeamsSection() {
         size: 56,
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) =>
-          canManage || canManageMembers ? (
+          canManage ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${row.original.name}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Actions for ${row.original.name}`}
+                >
                   <MoreHorizontal aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onSelect={() => setMembers({ open: true, team: row.original })}>
                   <Users aria-hidden="true" />
-                  {canManageMembers ? "Manage members" : "View members"}
+                  Manage members
                 </DropdownMenuItem>
-                {canManage ? (
-                  <>
-                    <DropdownMenuItem onSelect={() => setSheet({ open: true, team: row.original })}>
-                      <Pencil aria-hidden="true" />
-                      Edit team
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(row.original)}>
-                      <Trash2 aria-hidden="true" />
-                      Delete team
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
+                <DropdownMenuItem onSelect={() => setSheet({ open: true, team: row.original })}>
+                  <Pencil aria-hidden="true" />
+                  Edit team
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(row.original)}>
+                  <Trash2 aria-hidden="true" />
+                  Delete team
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null,
       },
     ],
-    [canManage, canManageMembers, canAssign, workPolicies, breakPolicies],
+    [canManage, canAssign, workPolicies, breakPolicies],
   );
 
   if (teams.isError) {
-    return <ErrorState title="Couldn't load teams" error={teams.error} onRetry={() => void teams.refetch()} isRetrying={teams.isRefetching} />;
+    return (
+      <ErrorState
+        title="Couldn't load teams"
+        error={teams.error}
+        onRetry={() => void teams.refetch()}
+        isRetrying={teams.isRefetching}
+      />
+    );
   }
 
   const rows = teams.data ? [...teams.data].sort(compareByName) : undefined;
@@ -180,7 +195,11 @@ export function TeamsSection() {
           <EmptyState
             icon={copy.icon}
             title={copy.title}
-            description={canManage ? copy.description : "Only owners and admins can add teams."}
+            description={
+              canManage
+                ? copy.description
+                : "You don't have permission to add teams. Ask an owner or admin."
+            }
             headingLevel={3}
             action={addButton}
           />
@@ -195,7 +214,11 @@ export function TeamsSection() {
           if (mode === "create") setMembers({ open: true, team });
         }}
       />
-      <TeamMembersDialog team={members.team} open={members.open} onOpenChange={(open) => setMembers((prev) => ({ ...prev, open }))} />
+      <TeamMembersDialog
+        team={members.team}
+        open={members.open}
+        onOpenChange={(open) => setMembers((prev) => ({ ...prev, open }))}
+      />
 
       <ConfirmDialog
         open={deleting !== null}
@@ -203,7 +226,11 @@ export function TeamsSection() {
           if (!open) setDeleting(null);
         }}
         title={deleting ? `Delete ${deleting.name}?` : "Delete team?"}
-        description={warnings.length > 0 ? `${warnings.join(" ")} This can't be undone.` : "This team has no members. This can't be undone."}
+        description={
+          warnings.length > 0
+            ? `${warnings.join(" ")} This can't be undone.`
+            : "This team has no members. This can't be undone."
+        }
         confirmLabel="Delete team"
         destructive
         confirmationText={warnings.length > 0 && deleting ? deleting.name : undefined}

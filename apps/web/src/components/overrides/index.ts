@@ -8,6 +8,7 @@ export {
   buildCreateOverrideInput,
   computeOverrideExpiry,
   describeOverrideRemaining,
+  isOrganisationWideOverride,
   overrideMaxMinutes,
   type OverrideBehaviourChoice,
   type OverrideDraft,

@@ -54,10 +54,17 @@ export function EmptyState({
         </div>
       ) : null}
       <div className="max-w-md space-y-1.5">
-        <Heading className={cn("text-foreground font-semibold tracking-tight", size === "md" ? "text-lg" : "text-base")}>
+        <Heading
+          className={cn(
+            "text-foreground font-semibold tracking-tight",
+            size === "md" ? "text-lg" : "text-base",
+          )}
+        >
           {title}
         </Heading>
-        {description ? <p className="text-muted-foreground text-sm text-pretty">{description}</p> : null}
+        {description ? (
+          <p className="text-muted-foreground text-sm text-pretty">{description}</p>
+        ) : null}
       </div>
       {action || secondaryAction ? (
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">

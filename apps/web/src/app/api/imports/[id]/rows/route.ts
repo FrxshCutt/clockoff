@@ -5,6 +5,11 @@ import { listImportRowsPage } from "@/server/imports";
 
 /** `GET /api/imports/:id/rows?status&page&pageSize` (`schedule:read`) → paginated rows in file order. */
 export const GET = createHandler(
-  { auth: "manager", permission: "schedule:read", params: idParamsSchema, query: importRowsQuerySchema },
+  {
+    auth: "manager",
+    permission: "schedule:read",
+    params: idParamsSchema,
+    query: importRowsQuerySchema,
+  },
   async ({ ctx, params, query }) => listImportRowsPage(ctx, params.id, query),
 );

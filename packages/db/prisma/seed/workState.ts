@@ -114,7 +114,13 @@ export function shiftsAsOf(shifts: readonly SeedShift[], at: Date): SeedShift[] 
 export function expectedStateAt(
   input: Pick<
     WorkStateEvaluationInput,
-    "timezone" | "employeeId" | "device" | "shifts" | "sessions" | "overrides" | "preShiftWarningMinutes"
+    | "timezone"
+    | "employeeId"
+    | "device"
+    | "shifts"
+    | "sessions"
+    | "overrides"
+    | "preShiftWarningMinutes"
   >,
   at: Date,
 ): ExpectedState {
@@ -134,7 +140,8 @@ export function expectedStateAt(
 function effectiveBreakEnd(session: SeedBreakSession, shiftEndsAt: Date, now: Date): Date {
   const startMs = session.startedAt.getTime();
   const capMs = Math.max(startMs, Math.min(session.plannedEndsAt.getTime(), shiftEndsAt.getTime()));
-  if (session.endedAt) return new Date(Math.max(startMs, Math.min(session.endedAt.getTime(), capMs)));
+  if (session.endedAt)
+    return new Date(Math.max(startMs, Math.min(session.endedAt.getTime(), capMs)));
   if (session.status === "ENDED") return new Date(capMs);
   return new Date(Math.max(startMs, Math.min(capMs, now.getTime())));
 }
@@ -221,7 +228,10 @@ export function evaluateWorkState(input: WorkStateEvaluationInput): WorkStateEva
 
   const badge = deriveDeviceStatus({
     now,
-    employee: { inviteStatus: input.employee.inviteStatus, employmentStatus: input.employee.employmentStatus },
+    employee: {
+      inviteStatus: input.employee.inviteStatus,
+      employmentStatus: input.employee.employmentStatus,
+    },
     device: {
       isActive: input.device.isActive,
       permissionState: input.device.permissionState,
@@ -252,10 +262,16 @@ export function evaluateWorkState(input: WorkStateEvaluationInput): WorkStateEva
 
   const activeShiftId = expected.activeShift?.id ?? null;
   const activeShift = activeShiftId ? (shifts.find((s) => s.id === activeShiftId) ?? null) : null;
-  const sessionsOfShift = activeShift ? input.sessions.filter((s) => s.shiftId === activeShift.id) : [];
+  const sessionsOfShift = activeShift
+    ? input.sessions.filter((s) => s.shiftId === activeShift.id)
+    : [];
   const breakMinutesUsed = activeShift
     ? sessionsOfShift.reduce(
-        (sum, s) => sum + ceilMinutes(effectiveBreakEnd(s, activeShift.endsAt, now).getTime() - s.startedAt.getTime()),
+        (sum, s) =>
+          sum +
+          ceilMinutes(
+            effectiveBreakEnd(s, activeShift.endsAt, now).getTime() - s.startedAt.getTime(),
+          ),
         0,
       )
     : 0;

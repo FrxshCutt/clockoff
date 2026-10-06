@@ -26,7 +26,15 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { cn } from "@/lib/utils";
 import { DataTablePagination, DEFAULT_PAGE_SIZE_OPTIONS } from "./data-table-pagination";
@@ -102,7 +110,8 @@ export interface DataTableProps<TData, TValue = unknown> {
 
 const UNSIZED_COLUMN = { size: undefined };
 
-const INTERACTIVE_SELECTOR = "a, button, input, select, textarea, label, [role='checkbox'], [role='menuitem'], [role='switch']";
+const INTERACTIVE_SELECTOR =
+  "a, button, input, select, textarea, label, [role='checkbox'], [role='menuitem'], [role='switch']";
 
 function isFromInteractiveChild(event: MouseEvent | KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
@@ -155,9 +164,13 @@ export function DataTable<TData, TValue = unknown>({
   const [sortingState, setSortingState] = useState<SortingState>(initialSorting);
   const [columnFiltersState, setColumnFiltersState] = useState<ColumnFiltersState>([]);
   const [globalFilterState, setGlobalFilterState] = useState("");
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility);
+  const [columnVisibility, setColumnVisibility] =
+    useState<VisibilityState>(initialColumnVisibility);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [paginationState, setPaginationState] = useState<PaginationState>({ pageIndex: 0, pageSize: initialPageSize });
+  const [paginationState, setPaginationState] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: initialPageSize,
+  });
 
   const sorting = sortingProp ?? sortingState;
   const columnFilters = columnFiltersProp ?? columnFiltersState;
@@ -197,7 +210,9 @@ export function DataTable<TData, TValue = unknown>({
       if (!manualPagination) setPaginationState((p) => ({ ...p, pageIndex: 0 }));
     },
     onGlobalFilterChange: (updater: unknown) => {
-      const next = String(functionalUpdate(updater as string | ((old: string) => string), globalFilter) ?? "");
+      const next = String(
+        functionalUpdate(updater as string | ((old: string) => string), globalFilter) ?? "",
+      );
       if (onGlobalFilterChange) onGlobalFilterChange(next);
       else setGlobalFilterState(next);
       if (!manualPagination) setPaginationState((p) => ({ ...p, pageIndex: 0 }));
@@ -228,7 +243,8 @@ export function DataTable<TData, TValue = unknown>({
   const visibleColumnCount = table.getVisibleLeafColumns().length;
   const headerRowCount = table.getHeaderGroups().length;
   // aria-rowcount/aria-rowindex let screen readers announce "row 31 of 120" across pages.
-  const firstRowIndex = headerRowCount + 1 + (paginate ? pagination.pageIndex * pagination.pageSize : 0);
+  const firstRowIndex =
+    headerRowCount + 1 + (paginate ? pagination.pageIndex * pagination.pageSize : 0);
   const hasFilters = globalFilter.trim() !== "" || columnFilters.length > 0;
   const showLoading = isLoading || data === undefined;
   const pageRows = table.getRowModel().rows;
@@ -259,7 +275,10 @@ export function DataTable<TData, TValue = unknown>({
           <div className="flex flex-1 flex-wrap items-center gap-2">
             {searchable ? (
               <div className="relative w-full sm:w-72">
-                <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" aria-hidden="true" />
+                <Search
+                  className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+                  aria-hidden="true"
+                />
                 <Input
                   type="search"
                   value={globalFilter}
@@ -272,13 +291,21 @@ export function DataTable<TData, TValue = unknown>({
             ) : null}
             {toolbar?.(table)}
             {hasFilters ? (
-              <Button type="button" variant="ghost" size="sm" className="h-9" onClick={clearFilters}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9"
+                onClick={clearFilters}
+              >
                 Reset
                 <X aria-hidden="true" />
               </Button>
             ) : null}
           </div>
-          {toolbarActions ? <div className="flex flex-wrap items-center gap-2">{toolbarActions}</div> : null}
+          {toolbarActions ? (
+            <div className="flex flex-wrap items-center gap-2">{toolbarActions}</div>
+          ) : null}
         </div>
       ) : null}
 
@@ -305,9 +332,15 @@ export function DataTable<TData, TValue = unknown>({
           containerClassName={cn(stickyHeader && "max-h-[min(70vh,52rem)] overflow-auto")}
         >
           <TableCaption className="sr-only">{label}</TableCaption>
-          <TableHeader className={cn("bg-muted/60 backdrop-blur", stickyHeader && "sticky top-0 z-10")}>
+          <TableHeader
+            className={cn("bg-muted/60 backdrop-blur", stickyHeader && "sticky top-0 z-10")}
+          >
             {table.getHeaderGroups().map((headerGroup, headerIndex) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent" aria-rowindex={headerIndex + 1}>
+              <TableRow
+                key={headerGroup.id}
+                className="hover:bg-transparent"
+                aria-rowindex={headerIndex + 1}
+              >
                 {headerGroup.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
                   return (
@@ -325,9 +358,15 @@ export function DataTable<TData, TValue = unknown>({
                           : undefined
                       }
                       className="h-11 px-4 first:pl-4"
-                      style={header.column.columnDef.size !== undefined ? { width: header.getSize() } : undefined}
+                      style={
+                        header.column.columnDef.size !== undefined
+                          ? { width: header.getSize() }
+                          : undefined
+                      }
                     >
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -340,7 +379,9 @@ export function DataTable<TData, TValue = unknown>({
                 <TableRow key={`skeleton-${r}`} className="hover:bg-transparent" aria-hidden="true">
                   {Array.from({ length: visibleColumnCount }, (_, c) => (
                     <TableCell key={c} className="px-4 py-3.5">
-                      <Skeleton className={cn("h-4", c === 0 ? "w-3/4 max-w-48" : "w-full max-w-32")} />
+                      <Skeleton
+                        className={cn("h-4", c === 0 ? "w-3/4 max-w-48" : "w-full max-w-32")}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -369,7 +410,10 @@ export function DataTable<TData, TValue = unknown>({
                     onKeyDown={
                       interactive
                         ? (event) => {
-                            if ((event.key === "Enter" || event.key === " ") && !isFromInteractiveChild(event)) {
+                            if (
+                              (event.key === "Enter" || event.key === " ") &&
+                              !isFromInteractiveChild(event)
+                            ) {
                               event.preventDefault();
                               onRowClick(row.original);
                             }
@@ -398,14 +442,24 @@ export function DataTable<TData, TValue = unknown>({
                           bordered={false}
                           headingLevel={3}
                           action={
-                            <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={clearFilters}
+                            >
                               Clear filters
                             </Button>
                           }
                         />
                       ))
                     : (emptyState ?? (
-                        <EmptyState title="Nothing here yet" size="sm" bordered={false} headingLevel={3} />
+                        <EmptyState
+                          title="Nothing here yet"
+                          size="sm"
+                          bordered={false}
+                          headingLevel={3}
+                        />
                       ))}
                 </TableCell>
               </TableRow>

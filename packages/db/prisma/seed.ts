@@ -32,7 +32,9 @@ async function main(): Promise<void> {
   const startedAt = Date.now();
   try {
     const clock = new SeedClock(resolveSeedNow(), HARPENDEN.timezone);
-    console.info(`Seeding demo data relative to ${clock.now.toISOString()} (${clock.today} in ${clock.timezone})`);
+    console.info(
+      `Seeding demo data relative to ${clock.now.toISOString()} (${clock.today} in ${clock.timezone})`,
+    );
 
     // argon2id is deliberately slow; hash outside the transaction, one hash per account.
     const hashes = new Map<string, string>();
@@ -73,7 +75,10 @@ async function main(): Promise<void> {
       `\nRemoved previous demo data: ${reset.organisations} organisation(s), ${reset.users} user(s), ${reset.mobileUsers} mobile user(s).`,
     );
     console.info("\nRow counts\n" + formatCountTable(organisations, counts));
-    console.info(`\n${HARPENDEN.name} employees (lifecycle, status badge and stored vs expected Work Mode state)\n` + formatEmployeeTable(harpenden.employees));
+    console.info(
+      `\n${HARPENDEN.name} employees (lifecycle, status badge and stored vs expected Work Mode state)\n` +
+        formatEmployeeTable(harpenden.employees),
+    );
     console.info("\nManager accounts (password for all: " + DEMO_PASSWORD + ")");
     for (const org of DEMO_ORGANISATIONS) {
       for (const manager of Object.values(org.managers)) {

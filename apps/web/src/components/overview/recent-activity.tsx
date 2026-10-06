@@ -14,7 +14,13 @@ import { ROUTES } from "@/config/navigation";
 export const RECENT_ACTIVITY_LIMIT = 20;
 
 /** The newest 20 organisation events (`GET /api/activity?limit=20`), kept fresh by the realtime stream. */
-export function RecentActivityCard({ timeZone, className }: { timeZone?: string; className?: string }) {
+export function RecentActivityCard({
+  timeZone,
+  className,
+}: {
+  timeZone?: string;
+  className?: string;
+}) {
   const query = useRecentActivity(RECENT_ACTIVITY_LIMIT);
   const copy = EMPTY_STATES.activity;
 
@@ -44,7 +50,14 @@ export function RecentActivityCard({ timeZone, className }: { timeZone?: string;
           isRetrying={query.isRefetching}
         />
       ) : query.data.length === 0 ? (
-        <EmptyState icon={copy.icon} title={copy.title} description={copy.description} size="sm" bordered={false} headingLevel={3} />
+        <EmptyState
+          icon={copy.icon}
+          title={copy.title}
+          description={copy.description}
+          size="sm"
+          bordered={false}
+          headingLevel={3}
+        />
       ) : (
         <div className="max-h-[36rem] overflow-y-auto">
           <ActivityList events={query.data} timeZone={timeZone} label="Recent activity" />

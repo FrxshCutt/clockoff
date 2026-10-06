@@ -10,7 +10,11 @@ import {
   SHIFT_STATUSES,
   WORK_MODE_STATES,
 } from "@workmode/shared/enums";
-import { STATUS_BADGE_META, INVITE_STATUS_META, WORK_MODE_STATE_META } from "@workmode/shared/status/statusMeta";
+import {
+  STATUS_BADGE_META,
+  INVITE_STATUS_META,
+  WORK_MODE_STATE_META,
+} from "@workmode/shared/status/statusMeta";
 import { describe, expect, it } from "vitest";
 import {
   STATUS_ENUM_VALUES,
@@ -46,7 +50,10 @@ describe("StatusBadge mapping tables", () => {
   });
 
   it.each(STATUS_KINDS)("maps every %s value to a label, tone, icon and description", (kind) => {
-    const table = STATUS_META[kind] as Record<string, { label: string; tone: string; icon: string; description: string }>;
+    const table = STATUS_META[kind] as Record<
+      string,
+      { label: string; tone: string; icon: string; description: string }
+    >;
     expect(Object.keys(table).sort(), kind).toEqual([...EXPECTED_ENUMS[kind]].sort());
     for (const value of EXPECTED_ENUMS[kind]) {
       const meta = table[value];
@@ -60,7 +67,9 @@ describe("StatusBadge mapping tables", () => {
 
   it("uses distinct labels within each enum so badges are distinguishable without colour", () => {
     for (const kind of STATUS_KINDS) {
-      const labels = Object.values(STATUS_META[kind] as Record<string, { label: string }>).map((m) => m.label);
+      const labels = Object.values(STATUS_META[kind] as Record<string, { label: string }>).map(
+        (m) => m.label,
+      );
       expect(new Set(labels).size, kind).toBe(labels.length);
     }
   });
@@ -74,7 +83,9 @@ describe("StatusBadge mapping tables", () => {
       expect(STATUS_META.inviteStatus[value].label).toBe(INVITE_STATUS_META[value].label);
     }
     for (const value of WORK_MODE_STATES) {
-      expect(STATUS_META.workModeState[value].description).toBe(WORK_MODE_STATE_META[value].description);
+      expect(STATUS_META.workModeState[value].description).toBe(
+        WORK_MODE_STATE_META[value].description,
+      );
     }
   });
 

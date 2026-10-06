@@ -48,10 +48,19 @@ export const OVERRIDE_TYPE_META: Record<OverrideType, OverrideTypeMeta> = {
   EMERGENCY_POLICY_OVERRIDE: {
     label: "Emergency override",
     description:
-      "Lifts restrictions immediately. Without an employee it applies to everyone in the organisation.",
+      "Lifts restrictions immediately for every connected phone in the organisation until it expires. Owners and admins only.",
     example: "A site incident where everyone needs full phone access.",
   },
 };
+
+/**
+ * EMERGENCY_POLICY_OVERRIDE is always organisation-wide: `POST /api/overrides` rejects an `employeeId` on it
+ * and requires `org:manage`. The dialog therefore never sends an employee for it, even when it was opened
+ * from an employee's page.
+ */
+export function isOrganisationWideOverride(type: OverrideType): boolean {
+  return type === "EMERGENCY_POLICY_OVERRIDE";
+}
 
 export const OVERRIDE_TYPE_ORDER: readonly OverrideType[] = [
   "EXEMPT_TEMPORARILY",
@@ -198,7 +207,8 @@ export function buildCreateOverrideInput(
       message: `Keep the reason under ${OVERRIDE_LIMITS.reasonMaxLength} characters.`,
     };
   }
-  if (draft.employeeId === null && draft.type !== "EMERGENCY_POLICY_OVERRIDE") {
+  const orgWide = isOrganisationWideOverride(draft.type);
+  if (draft.employeeId === null && !orgWide) {
     return { ok: false, field: "employee", message: "Choose an employee for this override type." };
   }
   const expiry = computeOverrideExpiry(draft.expiry, now, role);
@@ -232,7 +242,7 @@ export function buildCreateOverrideInput(
   }
 
   const body = {
-    ...(draft.employeeId ? { employeeId: draft.employeeId } : {}),
+    ...(draft.employeeId && !orgWide ? { employeeId: draft.employeeId } : {}),
     type: draft.type,
     reason,
     ...expiry.body,

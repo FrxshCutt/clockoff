@@ -1,5 +1,5 @@
 import { prisma, type BreakSession, type EmployeeWorkState } from "@workmode/db";
-import type { WorkModeState } from "@workmode/shared/enums";
+import type { InviteStatus, WorkModeState } from "@workmode/shared/enums";
 import {
   DEVICE_STATUS_THRESHOLDS,
   deriveDeviceStatus,
@@ -9,7 +9,11 @@ import {
   type DeviceStatusResult,
   type ExpectedWorkState,
 } from "@workmode/shared/status/deriveDeviceStatus";
-import { computeExpectedState, type ExpectedState } from "@workmode/shared/workMode/workModeMachine";
+import { deriveInviteStatus } from "@workmode/shared/status/deriveInviteStatus";
+import {
+  computeExpectedState,
+  type ExpectedState,
+} from "@workmode/shared/workMode/workModeMachine";
 import {
   findBreakSessionsForShifts,
   findDevicesForEmployees,
@@ -168,10 +172,29 @@ export async function getEmployeeStatusContext(
 export interface EmployeeStatusComputation {
   expected: ExpectedState;
   expectedWorkState: ExpectedWorkState;
+  /**
+   * §9 lifecycle derived live from the link, the latest device, employment status and live invites —
+   * the same inputs `recomputeEmployeeInviteStatus` persists. `Employee.inviteStatus` is only refreshed
+   * when something happens (invite, join, leave, device change), so an invite that merely expired since
+   * then still reads INVITED there; this value reads NOT_INVITED.
+   */
+  inviteStatus: InviteStatus;
   status: DeviceStatusResult | null;
   /** When the current (stored) state began, when the stored state agrees with the computed one. */
   since: Date | null;
   diverged: boolean;
+}
+
+/** The §9 lifecycle for a loaded context, from the shared decision table. Pure. */
+export function deriveEmployeeInviteStatus(ctx: EmployeeStatusContext): InviteStatus {
+  const hasLink = ctx.employee.userLink !== null && ctx.employee.userLink.unlinkedAt === null;
+  return deriveInviteStatus({
+    hasLink,
+    // Only a device registered while the current link was made says anything about setup progress.
+    device: hasLink ? ctx.latestDevice : null,
+    employmentStatus: ctx.employee.employmentStatus,
+    hasPendingInvite: ctx.liveInviteCount > 0,
+  });
 }
 
 /** Evaluate the state machine and the §9 badge for one loaded context at `now`. Pure. */
@@ -179,6 +202,7 @@ export function computeEmployeeStatus(
   ctx: EmployeeStatusContext,
   now: Date = new Date(),
 ): EmployeeStatusComputation {
+  const inviteStatus = deriveEmployeeInviteStatus(ctx);
   const activeDevice = ctx.device && ctx.device.isActive ? ctx.device : null;
   const expected = computeExpectedState({
     now,
@@ -196,10 +220,7 @@ export function computeEmployeeStatus(
   const reportedAt: Date | null = ctx.workState?.reportedAt ?? null;
   const status = deriveDeviceStatus({
     now,
-    employee: {
-      inviteStatus: ctx.employee.inviteStatus,
-      employmentStatus: ctx.employee.employmentStatus,
-    },
+    employee: { inviteStatus, employmentStatus: ctx.employee.employmentStatus },
     device: activeDevice,
     expected: expectedWorkState,
     reportedState,
@@ -209,6 +230,7 @@ export function computeEmployeeStatus(
   return {
     expected,
     expectedWorkState,
+    inviteStatus,
     status,
     since,
     diverged: isDiverged(expectedWorkState, reportedState, reportedAt, now),
@@ -230,7 +252,8 @@ export function isDiverged(
   if (!isShiftActive(expected)) return false;
   const reportedLevel = restrictionLevelOf(reportedState);
   const expectedLevel = restrictionLevelOf(expected.state);
-  if (reportedLevel === null || expectedLevel === null || reportedLevel === expectedLevel) return false;
+  if (reportedLevel === null || expectedLevel === null || reportedLevel === expectedLevel)
+    return false;
   const baseline = latestOf(expected.since ?? null, expected.shiftStartedAt ?? null);
   if (baseline !== null && reportedAt.getTime() < baseline.getTime()) return false;
   return now.getTime() - (baseline ?? reportedAt).getTime() > DEVICE_STATUS_THRESHOLDS.divergenceMs;

@@ -12,7 +12,8 @@ import { queryKeys } from "@/lib/query-client";
  * fall back to the active code embedded in `GET /api/organisations/current`.
  */
 
-export type JoinCodeState = { available: true; data: JoinCodeResponse } | { available: false; data: null };
+export type JoinCodeState =
+  { available: true; data: JoinCodeResponse } | { available: false; data: null };
 
 const JOIN_CODE_PATH = "/api/organisations/current/join-code";
 
@@ -23,9 +24,13 @@ export function useJoinCode(options: { enabled?: boolean } = {}) {
     queryFn: async ({ signal }): Promise<JoinCodeState> => {
       try {
         const raw = await api.get<unknown>(JOIN_CODE_PATH, undefined, signal);
-        return { available: true, data: parseResponse(joinCodeResponseSchema, raw, `GET ${JOIN_CODE_PATH}`) };
+        return {
+          available: true,
+          data: parseResponse(joinCodeResponseSchema, raw, `GET ${JOIN_CODE_PATH}`),
+        };
       } catch (error) {
-        if (hasErrorCode(error, "NOT_FOUND", "COMING_SOON")) return { available: false, data: null };
+        if (hasErrorCode(error, "NOT_FOUND", "COMING_SOON"))
+          return { available: false, data: null };
         throw error;
       }
     },
@@ -42,7 +47,8 @@ function useJoinCodeAction(action: "regenerate" | "revoke") {
       return parsed.success ? parsed.data : null;
     },
     onSuccess: async (data) => {
-      if (data) queryClient.setQueryData<JoinCodeState>(queryKeys.joinCode, { available: true, data });
+      if (data)
+        queryClient.setQueryData<JoinCodeState>(queryKeys.joinCode, { available: true, data });
       // The organisation response embeds the active code (top bar chip, overview card); its key is a prefix
       // of the join-code key, so this refreshes both.
       await queryClient.invalidateQueries({ queryKey: queryKeys.currentOrganisation });

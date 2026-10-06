@@ -444,7 +444,7 @@ defineRoute({
   permission: "policies:write",
   request: { body: setDefaultPolicySchema },
   responses: { 200: organisationResponseSchema },
-  errors: ["POLICY_NOT_PUBLISHED", "POLICY_ARCHIVED"],
+  errors: ["NOT_FOUND", "POLICY_NOT_PUBLISHED", "POLICY_ARCHIVED"],
 });
 
 defineRoute({
@@ -456,7 +456,7 @@ defineRoute({
   permission: "policies:write",
   request: { body: setDefaultBreakPolicySchema },
   responses: { 200: organisationResponseSchema },
-  errors: ["POLICY_ARCHIVED"],
+  errors: ["NOT_FOUND", "POLICY_ARCHIVED"],
 });
 
 // ── Members (managers) ──────────────────────────────────────────────────────
@@ -974,12 +974,13 @@ defineRoute({
   path: "/api/policies/:id/archive",
   summary: "Archive a Work Policy",
   description:
-    "Archived policies are skipped by resolution; employees fall back to the next scope.",
+    "Archived policies are skipped by resolution; employees fall back to the next scope. Refused while the policy is assigned or is the organisation default (POLICY_ASSIGNED).",
   tags: ["Policies"],
   auth: "manager",
   permission: "policies:write",
   request: { params: id, body: emptyBodySchema },
   responses: { 200: policyResponseSchema },
+  errors: ["POLICY_ASSIGNED"],
 });
 
 defineRoute({
@@ -1487,12 +1488,14 @@ defineRoute({
   method: "DELETE",
   path: "/api/locations/:id",
   summary: "Delete a location",
-  description: "Soft delete. Employees and shifts keep working without a location.",
+  description:
+    "Soft delete. Employees and teams keep working without a location. Refused (CONFLICT, details.reason UPCOMING_SHIFTS) while scheduled shifts at this location have not ended.",
   tags: ["Locations"],
   auth: "manager",
   permission: "org:manage",
   request: { params: id },
   responses: { 204: null },
+  errors: ["CONFLICT"],
 });
 
 defineRoute({
@@ -1899,6 +1902,7 @@ defineRoute({
   request: { body: mobileStartBreakSchema },
   responses: { 201: mobileBreakResponseSchema },
   errors: [
+    "CONFLICT",
     "BREAKS_DISABLED",
     "EMPLOYEE_BREAKS_NOT_ALLOWED",
     "BREAK_TOO_LONG",

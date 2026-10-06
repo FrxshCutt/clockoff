@@ -41,7 +41,11 @@ registerTenantIsolationCase({
   name: "GET /api/locations/:id of another tenant",
   build: async (_a, b) => {
     const location = await locationInOrg(b.organisation.id);
-    return { handler: getLocationRoute, path: `/api/locations/${location.id}`, params: { id: location.id } };
+    return {
+      handler: getLocationRoute,
+      path: `/api/locations/${location.id}`,
+      params: { id: location.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -60,7 +64,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.location.findFirstOrThrow({ where: { organisationId: b.organisation.id, name: "B site" } });
+    const row = await prisma.location.findFirstOrThrow({
+      where: { organisationId: b.organisation.id, name: "B site" },
+    });
     expect(row.name).toBe("B site");
   },
 });
@@ -78,7 +84,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.location.findFirstOrThrow({ where: { organisationId: b.organisation.id, name: "B site" } });
+    const row = await prisma.location.findFirstOrThrow({
+      where: { organisationId: b.organisation.id, name: "B site" },
+    });
     expect(row.deletedAt).toBeNull();
   },
 });
@@ -112,7 +120,11 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    expect(await prisma.department.count({ where: { organisationId: b.organisation.id, name: "B dept" } })).toBe(1);
+    expect(
+      await prisma.department.count({
+        where: { organisationId: b.organisation.id, name: "B dept" },
+      }),
+    ).toBe(1);
   },
 });
 
@@ -158,7 +170,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    expect(await prisma.team.count({ where: { organisationId: b.organisation.id, name: "B team" } })).toBe(1);
+    expect(
+      await prisma.team.count({ where: { organisationId: b.organisation.id, name: "B team" } }),
+    ).toBe(1);
   },
 });
 
@@ -166,7 +180,12 @@ registerTenantIsolationCase({
   name: "DELETE /api/teams/:id of another tenant",
   build: async (_a, b) => {
     const team = await teamInOrg(b.organisation.id);
-    return { handler: deleteTeamRoute, method: "DELETE", path: `/api/teams/${team.id}`, params: { id: team.id } };
+    return {
+      handler: deleteTeamRoute,
+      method: "DELETE",
+      path: `/api/teams/${team.id}`,
+      params: { id: team.id },
+    };
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
@@ -189,7 +208,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    expect(await prisma.employeeTeam.count({ where: { team: { organisationId: b.organisation.id } } })).toBe(0);
+    expect(
+      await prisma.employeeTeam.count({ where: { team: { organisationId: b.organisation.id } } }),
+    ).toBe(0);
   },
 });
 
@@ -208,7 +229,9 @@ registerTenantIsolationCase({
   },
   expectCode: "EMPLOYEE_NOT_FOUND",
   verify: async (a) => {
-    expect(await prisma.employeeTeam.count({ where: { team: { organisationId: a.organisation.id } } })).toBe(0);
+    expect(
+      await prisma.employeeTeam.count({ where: { team: { organisationId: a.organisation.id } } }),
+    ).toBe(0);
   },
 });
 
@@ -244,7 +267,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    expect(await prisma.employeeTeam.count({ where: { team: { organisationId: b.organisation.id } } })).toBe(1);
+    expect(
+      await prisma.employeeTeam.count({ where: { team: { organisationId: b.organisation.id } } }),
+    ).toBe(1);
   },
 });
 

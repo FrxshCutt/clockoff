@@ -35,7 +35,13 @@ import {
 
 export type { StatusTone };
 
-export const STATUS_TONES = ["neutral", "success", "info", "warning", "danger"] as const satisfies readonly StatusTone[];
+export const STATUS_TONES = [
+  "neutral",
+  "success",
+  "info",
+  "warning",
+  "danger",
+] as const satisfies readonly StatusTone[];
 
 /** Icon keys resolved to lucide components in `status-badge.tsx` (kept as strings so this module stays pure). */
 export const STATUS_ICONS = [
@@ -156,13 +162,21 @@ const WORK_MODE_STATE_ICONS: Record<WorkModeState, StatusIcon> = {
 };
 
 function withIcons<V extends string>(
-  copy: Record<V, { readonly label: string; readonly tone: StatusTone; readonly description: string }>,
+  copy: Record<
+    V,
+    { readonly label: string; readonly tone: StatusTone; readonly description: string }
+  >,
   icons: Record<V, StatusIcon>,
 ): Record<V, StatusBadgeMeta> {
   const out = {} as Record<V, StatusBadgeMeta>;
   for (const key of Object.keys(copy) as V[]) {
     const entry = copy[key];
-    out[key] = { label: entry.label, tone: entry.tone, description: entry.description, icon: icons[key] };
+    out[key] = {
+      label: entry.label,
+      tone: entry.tone,
+      description: entry.description,
+      icon: icons[key],
+    };
   }
   return out;
 }
@@ -332,7 +346,9 @@ export const BILLING_STATUS_META: Record<BillingStatus, StatusBadgeMeta> = {
   },
 };
 
-export const STATUS_META: { readonly [K in StatusKind]: Readonly<Record<StatusValueByKind[K], StatusBadgeMeta>> } = {
+export const STATUS_META: {
+  readonly [K in StatusKind]: Readonly<Record<StatusValueByKind[K], StatusBadgeMeta>>;
+} = {
   inviteStatus: withIcons(INVITE_STATUS_META, INVITE_STATUS_ICONS),
   deviceStatus: withIcons(STATUS_BADGE_META, DEVICE_STATUS_ICONS),
   workModeState: withIcons(WORK_MODE_STATE_META, WORK_MODE_STATE_ICONS),
@@ -354,7 +370,10 @@ function humanize(value: string): string {
  * Meta for a value. Values the dashboard does not know yet (an API newer than the UI) degrade to a neutral
  * badge with a humanised label instead of crashing.
  */
-export function getStatusMeta<K extends StatusKind>(kind: K, value: StatusValue<K> | string): StatusBadgeMeta {
+export function getStatusMeta<K extends StatusKind>(
+  kind: K,
+  value: StatusValue<K> | string,
+): StatusBadgeMeta {
   const table = STATUS_META[kind] as Readonly<Record<string, StatusBadgeMeta>>;
   const known = Object.prototype.hasOwnProperty.call(table, value) ? table[value] : undefined;
   return known ?? { label: humanize(value), tone: "neutral", icon: "help", description: "" };
@@ -371,7 +390,8 @@ export const TONE_CLASSES: Record<StatusTone, string> = {
   info: "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300",
   warning:
     "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
-  danger: "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-300",
+  danger:
+    "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/15 dark:text-red-300",
 };
 
 /** Small dot colour per tone (used by compact badges and table cells). */

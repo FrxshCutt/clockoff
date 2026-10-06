@@ -7,12 +7,22 @@ import { EmployeePicker } from "@/components/employees/employee-picker";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { isResourceId } from "@/config/navigation";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { useActivityFeed } from "./activity-api";
-import { DEFAULT_FEED_PARAMS, hasActiveFeedFilters, type ActivityFeedParams } from "./activity-filters";
+import {
+  DEFAULT_FEED_PARAMS,
+  hasActiveFeedFilters,
+  type ActivityFeedParams,
+} from "./activity-filters";
 import { ActivityList, ActivityListSkeleton } from "./activity-item";
 import { ACTIVITY_GROUP_LABELS, ACTIVITY_TYPE_OPTIONS } from "./activity-meta";
 import { DateRangeFilter } from "./date-range-filter";
@@ -35,7 +45,9 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
   const query = useActivityFeed(feed, timeZone, { enabled: !organisation.isPending });
   const locations = useLocations();
   // The URL only carries the employee id; the picker needs a name to show the selection.
-  const selectedEmployee = useEmployee(feed.employeeId ?? "", { enabled: isResourceId(feed.employeeId) });
+  const selectedEmployee = useEmployee(feed.employeeId ?? "", {
+    enabled: isResourceId(feed.employeeId),
+  });
 
   const events = query.data?.pages.flatMap((page) => page.items) ?? [];
   const filtersActive = hasActiveFeedFilters(feed);
@@ -44,7 +56,12 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
 
   const pickerValue = feed.employeeId
     ? selectedEmployee.data
-      ? { id: selectedEmployee.data.id, firstName: selectedEmployee.data.firstName, lastName: selectedEmployee.data.lastName, jobTitle: selectedEmployee.data.jobTitle }
+      ? {
+          id: selectedEmployee.data.id,
+          firstName: selectedEmployee.data.firstName,
+          lastName: selectedEmployee.data.lastName,
+          jobTitle: selectedEmployee.data.jobTitle,
+        }
       : { id: feed.employeeId, firstName: "Loading", lastName: "…", jobTitle: null }
     : null;
 
@@ -53,7 +70,9 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
       <div role="group" aria-label="Activity filters" className="flex flex-wrap items-center gap-2">
         <EmployeePicker
           value={pickerValue}
-          onChange={(employee: Employee | null) => onChange({ ...feed, employeeId: employee?.id ?? null })}
+          onChange={(employee: Employee | null) =>
+            onChange({ ...feed, employeeId: employee?.id ?? null })
+          }
           placeholder="All employees"
           aria-label="Filter by employee"
           className="h-9 w-56"
@@ -67,11 +86,15 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
         />
         <DateRangeFilter
           value={{ range: feed.range, from: feed.from, to: feed.to }}
-          onChange={(next) => onChange({ ...feed, range: next.range, from: next.from, to: next.to })}
+          onChange={(next) =>
+            onChange({ ...feed, range: next.range, from: next.from, to: next.to })
+          }
         />
         <Select
           value={feed.locationId ?? ALL_LOCATIONS}
-          onValueChange={(next) => onChange({ ...feed, locationId: next === ALL_LOCATIONS ? null : next })}
+          onValueChange={(next) =>
+            onChange({ ...feed, locationId: next === ALL_LOCATIONS ? null : next })
+          }
         >
           <SelectTrigger size="sm" className="h-9 w-44" aria-label="Filter by location">
             <SelectValue placeholder="All locations" />
@@ -86,7 +109,13 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
           </SelectContent>
         </Select>
         {filtersActive ? (
-          <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => onChange(DEFAULT_FEED_PARAMS)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => onChange(DEFAULT_FEED_PARAMS)}
+          >
             Reset
             <X aria-hidden="true" />
           </Button>
@@ -113,17 +142,32 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
               size="sm"
               bordered={false}
               action={
-                <Button type="button" variant="outline" size="sm" onClick={() => onChange(DEFAULT_FEED_PARAMS)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onChange(DEFAULT_FEED_PARAMS)}
+                >
                   Clear filters
                 </Button>
               }
             />
           ) : (
-            <EmptyState icon={emptyCopy.icon} title={emptyCopy.title} description={emptyCopy.description} size="sm" bordered={false} />
+            <EmptyState
+              icon={emptyCopy.icon}
+              title={emptyCopy.title}
+              description={emptyCopy.description}
+              size="sm"
+              bordered={false}
+            />
           )
         ) : (
           <>
-            <ActivityList events={events} timeZone={organisation.data?.organisation.timezone} label="Activity feed" />
+            <ActivityList
+              events={events}
+              timeZone={organisation.data?.organisation.timezone}
+              label="Activity feed"
+            />
             <div className="flex items-center justify-between gap-3 border-t py-3">
               <p className="text-muted-foreground text-xs">
                 Showing {events.length} event{events.length === 1 ? "" : "s"}
@@ -137,7 +181,9 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
                   disabled={query.isFetchingNextPage}
                   onClick={() => void query.fetchNextPage()}
                 >
-                  {query.isFetchingNextPage ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
+                  {query.isFetchingNextPage ? (
+                    <LoaderCircle className="animate-spin" aria-hidden="true" />
+                  ) : null}
                   Load more
                 </Button>
               ) : (

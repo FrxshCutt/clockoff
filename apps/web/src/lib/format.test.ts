@@ -33,21 +33,33 @@ describe("toDate", () => {
 
 describe("formatDate / formatTime", () => {
   it("orders the date per the organisation's preference, in the given zone", () => {
-    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "DMY" })).toBe("06/10/2026");
-    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "MDY" })).toBe("10/06/2026");
-    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "YMD" })).toBe("2026-10-06");
+    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "DMY" })).toBe(
+      "06/10/2026",
+    );
+    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "MDY" })).toBe(
+      "10/06/2026",
+    );
+    expect(formatDate(INSTANT, { timeZone: "Europe/London", dateFormat: "YMD" })).toBe(
+      "2026-10-06",
+    );
     expect(formatDate(INSTANT, { timeZone: "UTC" })).toBe("06/10/2026");
   });
 
   it("converts the UTC instant to the zone (date can change across midnight)", () => {
-    expect(formatDate("2026-10-06T23:30:00Z", { timeZone: "Asia/Tokyo", dateFormat: "YMD" })).toBe("2026-10-07");
-    expect(formatDate("2026-10-06T01:30:00Z", { timeZone: "America/New_York", dateFormat: "YMD" })).toBe("2026-10-05");
+    expect(formatDate("2026-10-06T23:30:00Z", { timeZone: "Asia/Tokyo", dateFormat: "YMD" })).toBe(
+      "2026-10-07",
+    );
+    expect(
+      formatDate("2026-10-06T01:30:00Z", { timeZone: "America/New_York", dateFormat: "YMD" }),
+    ).toBe("2026-10-05");
   });
 
   it("formats 24h and 12h times", () => {
     expect(formatTime(INSTANT, { timeZone: "Europe/London" })).toBe("14:05");
     expect(formatTime(INSTANT, { timeZone: "America/New_York" })).toBe("09:05");
-    expect(formatTime(INSTANT, { timeZone: "Europe/London", hour12: true }).replace(/\s/g, " ")).toMatch(/^2:05 pm$/i);
+    expect(
+      formatTime(INSTANT, { timeZone: "Europe/London", hour12: true }).replace(/\s/g, " "),
+    ).toMatch(/^2:05 pm$/i);
   });
 
   it("combines date and time, and renders a dash for missing values", () => {

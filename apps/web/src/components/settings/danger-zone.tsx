@@ -23,7 +23,9 @@ export function DangerZone() {
   const router = useRouter();
   const organisation = useCurrentOrganisation();
   // Fallback for the caller's membership id when the organisation endpoint doesn't include it.
-  const members = useMembers({ enabled: organisation.isSuccess && organisation.data.membershipId === null });
+  const members = useMembers({
+    enabled: organisation.isSuccess && organisation.data.membershipId === null,
+  });
   const leave = useRemoveMember();
   const canDelete = usePermission("org:delete");
   const toastError = useApiErrorToast();
@@ -42,7 +44,9 @@ export function DangerZone() {
 
   const orgName = organisation.data.organisation.name;
   const membershipId =
-    organisation.data.membershipId ?? members.data?.members.find((m) => m.isCurrentUser === true)?.id ?? null;
+    organisation.data.membershipId ??
+    members.data?.members.find((m) => m.isCurrentUser === true)?.id ??
+    null;
 
   return (
     <div className="space-y-6">
@@ -68,7 +72,12 @@ export function DangerZone() {
               }
             }}
             trigger={
-              <Button type="button" variant="outline" className="text-destructive hover:text-destructive" disabled={!membershipId}>
+              <Button
+                type="button"
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+                disabled={!membershipId}
+              >
                 <LogOut aria-hidden="true" />
                 Leave organisation
               </Button>
@@ -83,18 +92,23 @@ export function DangerZone() {
         footer={
           canDelete ? (
             <Button asChild variant="destructive">
-              <a href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent("Delete organisation")}`}>
+              <a
+                href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent("Delete organisation")}`}
+              >
                 <Trash2 aria-hidden="true" />
                 Contact support to delete
               </a>
             </Button>
           ) : (
-            <p className="text-muted-foreground mr-auto text-sm">Only owners can delete an organisation.</p>
+            <p className="text-muted-foreground mr-auto text-sm">
+              Only owners can delete an organisation.
+            </p>
           )
         }
       >
         <p className="text-muted-foreground text-sm">
-          To protect your data, deletion is handled by our support team after confirming the request with an owner.
+          To protect your data, deletion is handled by our support team after confirming the request
+          with an owner.
         </p>
       </SectionCard>
     </div>

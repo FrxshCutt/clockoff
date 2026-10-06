@@ -37,6 +37,8 @@ import type {
   UpdateImportRowInput,
   ValidateImportResponse,
 } from "@workmode/validation/imports";
+import { SHIFT_LIMITS } from "@workmode/validation/shifts";
+import { errorSummary, logger, stackFrames } from "@/lib/logger";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit, toJsonValue, type AuditEntry } from "@/server/audit/audit";
 import { createEmployee } from "@/server/employees";
@@ -69,6 +71,7 @@ import {
   findImport,
   findImportRow,
   findLocation,
+  listActiveEmployeeIds,
   listEmployeeCandidates,
   listExistingShifts,
   listImportRows,
@@ -89,10 +92,11 @@ import { readImportUpload } from "./imports.upload";
  * Commit creates one `Shift` (source CSV_IMPORT) per VALID / WARNING row in one transaction, with a
  * single centred scheduled break when the row carried `break_minutes`. `department` / `role` cells are
  * informational: kept on the row's `parsed` data, never written to the shift.
+ *
+ * Status machine: UPLOADED → MAPPED → VALIDATED → IMPORTED, or FAILED when the commit transaction itself
+ * fails (nothing written; terminal). Every write outside its allowed states answers IMPORT_INVALID_STATE.
  */
 
-const SHIFT_MIN_MINUTES = 15;
-const SHIFT_MAX_MINUTES = 24 * 60;
 const TRANSACTION_OPTIONS = { timeout: 120_000, maxWait: 10_000 } as const;
 const ROW_WRITE_CHUNK = 100;
 const ROW_CREATE_CHUNK = 500;
@@ -109,7 +113,10 @@ type ImportStatus = ImportRecord["status"];
 
 // ── helpers ─────────────────────────────────────────────────────────────────
 
-function fallbackFor(ctx: ManagerContext): { dateFormat: ImportOptionsStored["dateFormat"]; timezone: string } {
+function fallbackFor(ctx: ManagerContext): {
+  dateFormat: ImportOptionsStored["dateFormat"];
+  timezone: string;
+} {
   return { dateFormat: ctx.organisation.dateFormat, timezone: ctx.organisation.timezone };
 }
 
@@ -119,7 +126,11 @@ async function requireImport(ctx: ManagerContext, importId: string): Promise<Imp
   return record;
 }
 
-function assertImportStatus(record: ImportRecord, allowed: readonly ImportStatus[], hint: string): void {
+function assertImportStatus(
+  record: ImportRecord,
+  allowed: readonly ImportStatus[],
+  hint: string,
+): void {
   if (allowed.includes(record.status)) return;
   throw new AppError("IMPORT_INVALID_STATE", hint, {
     details: { status: record.status, allowed: [...allowed] },
@@ -159,7 +170,9 @@ function suggestionFor(headers: readonly string[]): MappingSuggestion {
   return {
     mapping,
     confidence,
-    needsConfirmation: suggestion.needsConfirmation.filter((h) => h.length <= MAX_MAPPING_HEADER_LENGTH),
+    needsConfirmation: suggestion.needsConfirmation.filter(
+      (h) => h.length <= MAX_MAPPING_HEADER_LENGTH,
+    ),
   };
 }
 
@@ -173,7 +186,10 @@ function importResponse(ctx: ManagerContext, record: ImportRecord): ImportRespon
 // ── reads ───────────────────────────────────────────────────────────────────
 
 /** `GET /api/imports` */
-export async function listImports(ctx: ManagerContext, query: ImportQuery): Promise<ListImportsResponse> {
+export async function listImports(
+  ctx: ManagerContext,
+  query: ImportQuery,
+): Promise<ListImportsResponse> {
   const { items, total } = await listImportRecords(ctx.organisation.id, {
     statuses: query.status,
     page: query.page,
@@ -218,7 +234,10 @@ export async function listImportRowsPage(
 // ── upload ──────────────────────────────────────────────────────────────────
 
 /** `POST /api/imports` (multipart/form-data) → 201 `{ import, suggestion, sampleRows }`. */
-export async function uploadImport(ctx: ManagerContext, req: Request): Promise<CreateImportResponse> {
+export async function uploadImport(
+  ctx: ManagerContext,
+  req: Request,
+): Promise<CreateImportResponse> {
   const organisationId = ctx.organisation.id;
   const upload = await readImportUpload(req);
   const location = upload.metadata.locationId
@@ -460,14 +479,19 @@ async function runValidation(
   );
   const window = importShiftWindow(forValidation);
   const existingShifts = window
-    ? await listExistingShifts(organisationId, window.employeeIds, new Date(window.from), new Date(window.to))
+    ? await listExistingShifts(
+        organisationId,
+        window.employeeIds,
+        new Date(window.from),
+        new Date(window.to),
+      )
     : [];
   const locations = await listLocations(organisationId);
   const validated = validateRows(forValidation, {
     existingShifts,
     knownLocations: locations.map((l) => l.name),
-    minShiftMinutes: SHIFT_MIN_MINUTES,
-    maxShiftMinutes: SHIFT_MAX_MINUTES,
+    minShiftMinutes: SHIFT_LIMITS.minDurationMinutes,
+    maxShiftMinutes: SHIFT_LIMITS.maxDurationMinutes,
     now,
   });
   const final: ValidatedRow[] = validated.map((row, index) =>
@@ -478,7 +502,11 @@ async function runValidation(
   const summary = summarise(final);
 
   return prisma.$transaction(async (tx) => {
-    const writes = final.map((row, index) => ({ row, id: stored[index]!.id, resolution: resolutions[index] ?? {} }));
+    const writes = final.map((row, index) => ({
+      row,
+      id: stored[index]!.id,
+      resolution: resolutions[index] ?? {},
+    }));
     for (const chunk of chunks(writes, ROW_WRITE_CHUNK)) {
       await Promise.all(
         chunk.map(({ row, id, resolution }) => {
@@ -542,9 +570,13 @@ export async function validateImport(
 ): Promise<ValidateImportResponse> {
   const record = await requireImport(ctx, importId);
   if (record.status === "UPLOADED") {
-    throw new AppError("IMPORT_MAPPING_INCOMPLETE", "Confirm the column mapping before validating", {
-      details: { ...checkMapping(readMapping(record.columnMapping)), confirmed: false },
-    });
+    throw new AppError(
+      "IMPORT_MAPPING_INCOMPLETE",
+      "Confirm the column mapping before validating",
+      {
+        details: { ...checkMapping(readMapping(record.columnMapping)), confirmed: false },
+      },
+    );
   }
   assertImportStatus(record, ["MAPPED", "VALIDATED"], "This import has already been committed");
   const updated = await runValidation(ctx, record, { auditEntry: { action: "import.validated" } });
@@ -617,7 +649,11 @@ export async function updateImportRow(
     const name = parsed?.locationName;
     if (name === undefined) {
       throw new AppError("VALIDATION_ERROR", "This row has no location to resolve", {
-        details: { source: "body", formErrors: ["This row has no location value"], fieldErrors: {} },
+        details: {
+          source: "body",
+          formErrors: ["This row has no location value"],
+          fieldErrors: {},
+        },
       });
     }
     if (input.locationAction === "CREATE") {
@@ -655,7 +691,12 @@ export async function updateImportRow(
     auditEntry: {
       action: "import.row_resolved",
       before: { rowNumber: row.rowNumber, status: row.status, resolution: readResolution(parsed) },
-      after: { rowNumber: row.rowNumber, input: describeResolutionInput(input), resolution, ...extra },
+      after: {
+        rowNumber: row.rowNumber,
+        input: describeResolutionInput(input),
+        resolution,
+        ...extra,
+      },
     },
   });
   const fresh = await findImportRow(record.id, row.id);
@@ -664,6 +705,44 @@ export async function updateImportRow(
 }
 
 // ── commit ──────────────────────────────────────────────────────────────────
+
+/**
+ * Closes an import whose commit transaction failed. Nothing of the commit was written (it rolled back),
+ * so the rows keep their validated statuses; the status alone tells the wizard to start over. Never
+ * throws — the original error is what the caller reports.
+ */
+async function markImportFailed(
+  ctx: ManagerContext,
+  record: ImportRecord,
+  err: unknown,
+): Promise<void> {
+  const code = err instanceof AppError ? err.code : "INTERNAL_ERROR";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const result = await tx.shiftImport.updateMany({
+        where: { id: record.id, organisationId: ctx.organisation.id, status: "VALIDATED" },
+        data: { status: "FAILED" },
+      });
+      if (result.count === 0) return;
+      await audit(
+        ctx,
+        {
+          action: "import.failed",
+          entityType: "ShiftImport",
+          entityId: record.id,
+          before: { status: record.status },
+          after: { status: "FAILED", code },
+        },
+        tx,
+      );
+    });
+  } catch (markErr) {
+    logger.error(
+      { error: errorSummary(markErr), stack: stackFrames(markErr), importId: record.id },
+      "could not mark a failed import",
+    );
+  }
+}
 
 interface ShiftPlan {
   row: ImportRowRecord;
@@ -708,13 +787,19 @@ export async function commitImport(
     });
   }
 
-  const locationIdByKey = new Map((await listLocations(organisationId)).map((l) => [locationKey(l.name), l.id]));
+  const locationIdByKey = new Map(
+    (await listLocations(organisationId)).map((l) => [locationKey(l.name), l.id]),
+  );
   const plans: ShiftPlan[] = toImport.map((row) => {
     const parsed = readParsed(row.parsed);
     if (!parsed?.startsAt || !parsed.endsAt || !row.matchedEmployeeId) {
-      throw new AppError("IMPORT_INVALID_STATE", "A row is no longer ready; validate the import again", {
-        details: { status: record.status, rowNumber: row.rowNumber },
-      });
+      throw new AppError(
+        "IMPORT_INVALID_STATE",
+        "A row is no longer ready; validate the import again",
+        {
+          details: { status: record.status, rowNumber: row.rowNumber },
+        },
+      );
     }
     const startsAt = new Date(parsed.startsAt);
     const endsAt = new Date(parsed.endsAt);
@@ -734,98 +819,124 @@ export async function commitImport(
       breaks: brk ? [brk] : [],
     };
   });
+  // Matching ran against ACTIVE employees at validation time; someone deactivated since must not get shifts.
+  const activeIds = await listActiveEmployeeIds(organisationId, [
+    ...new Set(plans.map((p) => p.employeeId)),
+  ]);
+  const notActive = plans.filter((p) => !activeIds.has(p.employeeId));
+  if (notActive.length > 0) {
+    throw new AppError(
+      "IMPORT_INVALID_STATE",
+      "An employee in this import is no longer active; validate the import again",
+      {
+        details: {
+          status: record.status,
+          reason: "EMPLOYEE_NOT_ACTIVE",
+          rowNumbers: notActive.map((p) => p.row.rowNumber),
+        },
+      },
+    );
+  }
   const employeesCreated = new Set(
-    rows.map((r) => readResolution(readParsed(r.parsed)).createdEmployeeId).filter((id) => id !== undefined),
+    rows
+      .map((r) => readResolution(readParsed(r.parsed)).createdEmployeeId)
+      .filter((id) => id !== undefined),
   ).size;
 
-  const { created, updated, event } = await prisma.$transaction(async (tx) => {
-    const created: Array<{ id: string; employeeId: string }> = [];
-    for (const chunk of chunks(plans, SHIFT_CREATE_CHUNK)) {
-      const shifts = await Promise.all(
-        chunk.map((plan) =>
-          tx.shift.create({
-            data: {
-              organisationId,
-              employeeId: plan.employeeId,
-              locationId: plan.locationId,
-              startsAt: plan.startsAt,
-              endsAt: plan.endsAt,
-              timezone: plan.timezone,
-              status: "SCHEDULED",
-              source: "CSV_IMPORT",
-              scheduledBreaks: { create: plan.breaks },
-            },
-            select: { id: true, employeeId: true },
-          }),
-        ),
-      );
-      await Promise.all(
-        chunk.map((plan, i) =>
-          tx.shiftImportRow.update({
-            where: { id: plan.row.id },
-            data: { status: "IMPORTED", createdShiftId: shifts[i]!.id },
-          }),
-        ),
-      );
-      created.push(...shifts);
-    }
-    if (toSkip.length > 0) {
-      await tx.shiftImportRow.updateMany({
-        where: { id: { in: toSkip.map((r) => r.id) } },
-        data: { status: "SKIPPED" },
+  const { created, updated, event } = await prisma
+    .$transaction(async (tx) => {
+      const created: Array<{ id: string; employeeId: string }> = [];
+      for (const chunk of chunks(plans, SHIFT_CREATE_CHUNK)) {
+        const shifts = await Promise.all(
+          chunk.map((plan) =>
+            tx.shift.create({
+              data: {
+                organisationId,
+                employeeId: plan.employeeId,
+                locationId: plan.locationId,
+                startsAt: plan.startsAt,
+                endsAt: plan.endsAt,
+                timezone: plan.timezone,
+                status: "SCHEDULED",
+                source: "CSV_IMPORT",
+                scheduledBreaks: { create: plan.breaks },
+              },
+              select: { id: true, employeeId: true },
+            }),
+          ),
+        );
+        await Promise.all(
+          chunk.map((plan, i) =>
+            tx.shiftImportRow.update({
+              where: { id: plan.row.id },
+              data: { status: "IMPORTED", createdShiftId: shifts[i]!.id },
+            }),
+          ),
+        );
+        created.push(...shifts);
+      }
+      if (toSkip.length > 0) {
+        await tx.shiftImportRow.updateMany({
+          where: { id: { in: toSkip.map((r) => r.id) } },
+          data: { status: "SKIPPED" },
+        });
+      }
+      const updated = await tx.shiftImport.update({
+        where: { id: record.id },
+        data: {
+          status: "IMPORTED",
+          importedAt: now,
+          importedCount: created.length,
+          validCount: 0,
+          warningCount: 0,
+          errorCount: errorRows.length,
+        },
+        include: { uploadedBy: { select: { id: true, name: true } } },
       });
-    }
-    const updated = await tx.shiftImport.update({
-      where: { id: record.id },
-      data: {
-        status: "IMPORTED",
-        importedAt: now,
-        importedCount: created.length,
-        validCount: 0,
-        warningCount: 0,
-        errorCount: errorRows.length,
-      },
-      include: { uploadedBy: { select: { id: true, name: true } } },
+      const skippedTotal = rows.length - created.length - errorRows.length;
+      const { event } = await recordActivity(
+        {
+          organisationId,
+          actorType: "MANAGER",
+          actorUserId: ctx.user.id,
+          type: "IMPORT_COMPLETED",
+          occurredAt: now,
+          metadata: {
+            importId: record.id,
+            shiftsCreated: created.length,
+            rowsSkipped: skippedTotal,
+            rowsWithErrors: errorRows.length,
+            employeesCreated,
+            employeeCount: new Set(created.map((c) => c.employeeId)).size,
+          },
+        },
+        { db: tx, publish: false },
+      );
+      await audit(
+        ctx,
+        {
+          action: "import.committed",
+          entityType: "ShiftImport",
+          entityId: record.id,
+          after: {
+            shiftsCreated: created.length,
+            rowsSkipped: skippedTotal,
+            rowsWithErrors: errorRows.length,
+            employeesCreated,
+            includeWarnings: input.includeWarnings,
+            skipErrors: input.skipErrors,
+            shiftIds: created.map((c) => c.id),
+          },
+        },
+        tx,
+      );
+      return { created, updated, event: event as ActivityEvent };
+    }, TRANSACTION_OPTIONS)
+    .catch(async (err: unknown) => {
+      // The transaction rolled back, so no shift exists; close the import rather than leave it VALIDATED.
+      await markImportFailed(ctx, record, err);
+      throw err;
     });
-    const skippedTotal = rows.length - created.length - errorRows.length;
-    const { event } = await recordActivity(
-      {
-        organisationId,
-        actorType: "MANAGER",
-        actorUserId: ctx.user.id,
-        type: "IMPORT_COMPLETED",
-        occurredAt: now,
-        metadata: {
-          importId: record.id,
-          shiftsCreated: created.length,
-          rowsSkipped: skippedTotal,
-          rowsWithErrors: errorRows.length,
-          employeesCreated,
-          employeeCount: new Set(created.map((c) => c.employeeId)).size,
-        },
-      },
-      { db: tx, publish: false },
-    );
-    await audit(
-      ctx,
-      {
-        action: "import.committed",
-        entityType: "ShiftImport",
-        entityId: record.id,
-        after: {
-          shiftsCreated: created.length,
-          rowsSkipped: skippedTotal,
-          rowsWithErrors: errorRows.length,
-          employeesCreated,
-          includeWarnings: input.includeWarnings,
-          skipErrors: input.skipErrors,
-          shiftIds: created.map((c) => c.id),
-        },
-      },
-      tx,
-    );
-    return { created, updated, event: event as ActivityEvent };
-  }, TRANSACTION_OPTIONS);
 
   publishActivity(event);
   publishScheduleChangedForShifts(organisationId, created, "IMPORTED");
@@ -845,12 +956,18 @@ export async function commitImport(
 // ── errors CSV ──────────────────────────────────────────────────────────────
 
 function attachmentName(filename: string): string {
-  const base = filename.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  const base = filename
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return `${base === "" ? "import" : base}-errors.csv`;
 }
 
 /** `GET /api/imports/:id/errors.csv` → every row with at least one problem, as a CSV attachment. */
-export async function exportImportErrorsCsv(ctx: ManagerContext, importId: string): Promise<Response> {
+export async function exportImportErrorsCsv(
+  ctx: ManagerContext,
+  importId: string,
+): Promise<Response> {
   const record = await requireImport(ctx, importId);
   const options = readOptions(record.options, fallbackFor(ctx));
   const headers = readHeaders(record.headers);

@@ -3,9 +3,21 @@
 import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { DATE_RANGE_PRESETS, DATE_RANGE_PRESET_LABELS, isDateRangePreset, isLocalDate, type DateRangePreset } from "./activity-filters";
+import {
+  DATE_RANGE_PRESETS,
+  DATE_RANGE_PRESET_LABELS,
+  isDateRangePreset,
+  isLocalDate,
+  type DateRangePreset,
+} from "./activity-filters";
 
 export interface DateRangeValue {
   readonly range: DateRangePreset;
@@ -25,14 +37,27 @@ export interface DateRangeFilterProps {
  * Preset window ("Last 7 days") or a custom range of whole local days. Custom bounds are native date inputs
  * so the picker is keyboard- and screen-reader-friendly on every platform.
  */
-export function DateRangeFilter({ value, onChange, label = "Period", className }: DateRangeFilterProps) {
+export function DateRangeFilter({
+  value,
+  onChange,
+  label = "Period",
+  className,
+}: DateRangeFilterProps) {
   const fromId = useId();
   const toId = useId();
-  const tooEarly = value.from && value.to && isLocalDate(value.from) && isLocalDate(value.to) && value.to < value.from;
+  const tooEarly =
+    value.from &&
+    value.to &&
+    isLocalDate(value.from) &&
+    isLocalDate(value.to) &&
+    value.to < value.from;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      <Select value={value.range} onValueChange={(next) => isDateRangePreset(next) && onChange({ ...value, range: next })}>
+      <Select
+        value={value.range}
+        onValueChange={(next) => isDateRangePreset(next) && onChange({ ...value, range: next })}
+      >
         <SelectTrigger size="sm" className="h-9 w-44" aria-label={label}>
           <SelectValue placeholder={label} />
         </SelectTrigger>

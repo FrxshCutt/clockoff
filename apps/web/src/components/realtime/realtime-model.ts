@@ -8,7 +8,10 @@ import {
 import { activityKeys } from "@/components/activity/activity-keys";
 import { deviceKeys } from "@/components/devices/device-keys";
 import { employeeKeys, overrideKeys } from "@/components/employees/employee-keys";
+import { importKeys } from "@/components/imports/import-queries";
 import { complianceKeys } from "@/components/overview/compliance-keys";
+import { breakPolicyQueryKeys, policyQueryKeys } from "@/components/policies/policy-query-keys";
+import { scheduleKeys } from "@/components/schedule/schedule-queries";
 import { queryKeys } from "@/lib/query-client";
 
 /**
@@ -72,31 +75,64 @@ export function statusWhileDisconnected(
 }
 
 /**
+ * The kinds the policies / break-policies services publish (`server/policies/events.ts`). The stream client
+ * only subscribes to what `REALTIME_EVENT_TYPES` declares, so these entries are inert until the contract
+ * lists them (it is being extended to); keeping them here means no UI change is needed when it does.
+ */
+export type PolicyBusEventType = "POLICY_CHANGED" | "BREAK_POLICY_CHANGED";
+
+/**
  * Event type → query keys to invalidate. Realtime payloads are hints, never the source of truth (§5), so
  * every event simply refetches the resources it can have changed. Prefix keys are used so detail,
  * list and derived queries under a domain all refresh. Partial on purpose: the server may gain event
  * kinds before this UI does, and those fall back to `DEFAULT_INVALIDATION_KEYS`.
  */
-export const REALTIME_INVALIDATIONS: Partial<Record<RealtimeEventType, readonly QueryKey[]>> = {
+export const REALTIME_INVALIDATIONS: Partial<
+  Record<RealtimeEventType | PolicyBusEventType, readonly QueryKey[]>
+> = {
   "activity.recorded": [activityKeys.all, complianceKeys.all, employeeKeys.all],
   "employee.work_state.changed": [complianceKeys.all, employeeKeys.all, activityKeys.all],
   "device.status.changed": [complianceKeys.all, deviceKeys.all, employeeKeys.all],
   "notification.created": [queryKeys.notifications],
-  "shift.changed": [complianceKeys.all, employeeKeys.all],
-  "policy.changed": [employeeKeys.all, complianceKeys.all],
+  "shift.changed": [scheduleKeys.shiftsRoot, complianceKeys.all, employeeKeys.all],
+  "policy.changed": [
+    policyQueryKeys.all,
+    breakPolicyQueryKeys.all,
+    employeeKeys.all,
+    complianceKeys.all,
+  ],
   "override.changed": [overrideKeys.all, employeeKeys.all, complianceKeys.all],
-  "import.completed": [complianceKeys.all, employeeKeys.all, activityKeys.all],
+  "import.completed": [
+    importKeys.root,
+    scheduleKeys.shiftsRoot,
+    complianceKeys.all,
+    employeeKeys.all,
+    activityKeys.all,
+  ],
   // Override lifecycle events (also consumed by the device push bridge).
   OVERRIDE_CREATED: [overrideKeys.all, employeeKeys.all, complianceKeys.all, activityKeys.all],
   OVERRIDE_REVOKED: [overrideKeys.all, employeeKeys.all, complianceKeys.all, activityKeys.all],
   OVERRIDE_EXPIRED: [overrideKeys.all, employeeKeys.all, complianceKeys.all, activityKeys.all],
+  // Policy lifecycle events (also consumed by the device push bridge): the policy pages and everything
+  // derived from the resolved policy (employee rows, compliance) refetch.
+  POLICY_CHANGED: [policyQueryKeys.all, employeeKeys.all, complianceKeys.all, activityKeys.all],
+  BREAK_POLICY_CHANGED: [
+    breakPolicyQueryKeys.all,
+    employeeKeys.all,
+    complianceKeys.all,
+    activityKeys.all,
+  ],
 };
 
 /**
  * A known event kind without a specific entry means "something operational changed": the dashboards that
  * summarise state refetch. Kinds this UI has never heard of are ignored (see `invalidationKeysFor`).
  */
-export const DEFAULT_INVALIDATION_KEYS: readonly QueryKey[] = [complianceKeys.all, employeeKeys.all, activityKeys.all];
+export const DEFAULT_INVALIDATION_KEYS: readonly QueryKey[] = [
+  complianceKeys.all,
+  employeeKeys.all,
+  activityKeys.all,
+];
 
 function dedupeKeys(keys: readonly QueryKey[]): QueryKey[] {
   const seen = new Set<string>();
@@ -120,10 +156,13 @@ export function isRealtimeEventType(value: string): value is RealtimeEventType {
   return (REALTIME_EVENT_TYPES as readonly string[]).includes(value);
 }
 
-/** Keys to invalidate for an event type; kinds this UI version does not know at all are ignored. */
+/** Keys to invalidate for an event type; kinds the contract does not declare are ignored (the stream never delivers them). */
 export function invalidationKeysFor(type: string): readonly QueryKey[] {
   if (!isRealtimeEventType(type)) return [];
-  return REALTIME_INVALIDATIONS[type] ?? DEFAULT_INVALIDATION_KEYS;
+  return (
+    REALTIME_INVALIDATIONS[type as RealtimeEventType | PolicyBusEventType] ??
+    DEFAULT_INVALIDATION_KEYS
+  );
 }
 
 /** Parses the `data:` field of an SSE frame; anything malformed is dropped rather than thrown. */
@@ -144,6 +183,13 @@ export interface RealtimeStatusMeta {
   readonly description: string;
   readonly tone: "success" | "warning" | "neutral";
 }
+
+/** Shown before the stream has opened or failed for the first time (see `RealtimeContextValue.connecting`). */
+export const REALTIME_CONNECTING_META: RealtimeStatusMeta = {
+  label: "Connecting…",
+  description: "Opening the live connection.",
+  tone: "neutral",
+};
 
 export const REALTIME_STATUS_META: Record<RealtimeStatus, RealtimeStatusMeta> = {
   connected: { label: "Live", description: "Updates arrive as they happen.", tone: "success" },

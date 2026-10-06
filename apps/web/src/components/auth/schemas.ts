@@ -58,7 +58,10 @@ export type LinkTokenKind = keyof typeof LINK_TOKEN_SCHEMAS;
  * link truncated by an email client). Pages show "this link is incomplete" for null instead of sending a
  * request that would fail with a field-level `VALIDATION_ERROR` the form has no field for.
  */
-export function parseLinkToken(kind: LinkTokenKind, token: string | null | undefined): string | null {
+export function parseLinkToken(
+  kind: LinkTokenKind,
+  token: string | null | undefined,
+): string | null {
   if (!token) return null;
   const result = LINK_TOKEN_SCHEMAS[kind].safeParse(token);
   return result.success ? result.data : null;

@@ -100,10 +100,16 @@ export function isValidLocalTime(value: unknown): value is LocalTimeString {
 }
 
 /** Splits a validated `YYYY-MM-DD` into numbers. Throws on malformed input — validate first. */
-export function splitLocalDate(date: LocalDateString): { year: number; month: number; day: number } {
+export function splitLocalDate(date: LocalDateString): {
+  year: number;
+  month: number;
+  day: number;
+} {
   const m = ISO_DATE_RE.exec(date);
   if (!m || !isValidCalendarDate(Number(m[1]), Number(m[2]), Number(m[3]))) {
-    throw new TypeError(`splitLocalDate: expected a valid YYYY-MM-DD date, got ${JSON.stringify(date)}`);
+    throw new TypeError(
+      `splitLocalDate: expected a valid YYYY-MM-DD date, got ${JSON.stringify(date)}`,
+    );
   }
   return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
 }

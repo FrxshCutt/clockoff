@@ -17,9 +17,16 @@ import { TableSkeleton } from "@/components/loading-skeletons";
 import { PageHeader } from "@/components/page-header";
 import { RealtimeProvider, RealtimeStatusIndicator } from "@/components/realtime";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { routeFor } from "@/config/navigation";
+import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { useDevices } from "./device-api";
 import { deviceColumns } from "./device-columns";
 import {
@@ -34,7 +41,10 @@ import {
   type DeviceListParams,
 } from "./device-model";
 
-const PERMISSION_OPTIONS = PERMISSION_STATES.map((value) => ({ value, label: PERMISSION_STATE_GUIDANCE[value].label }));
+const PERMISSION_OPTIONS = PERMISSION_STATES.map((value) => ({
+  value,
+  label: PERMISSION_STATE_GUIDANCE[value].label,
+}));
 
 /**
  * `/devices`: every phone that has joined, with the operational signals a manager may see (§12). The page
@@ -59,12 +69,19 @@ export function DevicesPage() {
 /** The filterable, server-paginated table; owns the URL state (`?active=&permission=&employee=&location=&page=&pageSize=`). */
 function DevicesTable() {
   const router = useRouter();
-  const [params, setParams] = useUrlState<DeviceListParams>(parseDeviceListParams, serializeDeviceListParams);
+  const [params, setParams] = useUrlState<DeviceListParams>(
+    parseDeviceListParams,
+    serializeDeviceListParams,
+  );
   const query = useDevices(params);
-  const columns = useMemo(() => deviceColumns(), []);
+  const timeZone = useCurrentOrganisation().data?.organisation.timezone;
+  const columns = useMemo(() => deviceColumns(timeZone), [timeZone]);
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
-    const next = functionalUpdate(updater, { pageIndex: params.page - 1, pageSize: params.pageSize });
+    const next = functionalUpdate(updater, {
+      pageIndex: params.page - 1,
+      pageSize: params.pageSize,
+    });
     setParams({ ...params, page: next.pageIndex + 1, pageSize: next.pageSize });
   };
 
@@ -73,7 +90,14 @@ function DevicesTable() {
   const searchCopy = EMPTY_STATES.search;
 
   if (query.isError) {
-    return <ErrorState title="Couldn't load devices" error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isRefetching} />;
+    return (
+      <ErrorState
+        title="Couldn't load devices"
+        error={query.error}
+        onRetry={() => void query.refetch()}
+        isRetrying={query.isRefetching}
+      />
+    );
   }
 
   return (
@@ -98,7 +122,11 @@ function DevicesTable() {
                 if (isDeviceActiveFilter(next)) setParams({ ...params, active: next, page: 1 });
               }}
             >
-              <SelectTrigger size="sm" className="h-9 w-48" aria-label="Show active or deactivated devices">
+              <SelectTrigger
+                size="sm"
+                className="h-9 w-48"
+                aria-label="Show active or deactivated devices"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -116,7 +144,13 @@ function DevicesTable() {
               onChange={(permission) => setParams({ ...params, permission, page: 1 })}
             />
             {filtersActive ? (
-              <Button type="button" variant="ghost" size="sm" className="h-9" onClick={() => setParams(DEFAULT_DEVICE_LIST_PARAMS)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-9"
+                onClick={() => setParams(DEFAULT_DEVICE_LIST_PARAMS)}
+              >
                 Reset
                 <X aria-hidden="true" />
               </Button>
@@ -132,7 +166,12 @@ function DevicesTable() {
               title={searchCopy.title}
               description={searchCopy.description}
               action={
-                <Button type="button" variant="outline" size="sm" onClick={() => setParams(DEFAULT_DEVICE_LIST_PARAMS)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setParams(DEFAULT_DEVICE_LIST_PARAMS)}
+                >
                   Clear filters
                 </Button>
               }
@@ -154,8 +193,9 @@ function DevicesTable() {
         }
       />
       <p className="text-muted-foreground text-xs">
-        Devices report operational status only: setup, permission, selection counts, sync and app version. Work Mode never
-        receives which apps were chosen, messages, browsing, location or anything else on the phone.
+        Devices report operational status only: setup, permission, selection counts, sync and app
+        version. Work Mode never receives which apps were chosen, messages, browsing, location or
+        anything else on the phone.
       </p>
     </div>
   );

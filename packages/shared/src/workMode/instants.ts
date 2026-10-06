@@ -22,7 +22,8 @@ export function toDate(value: InstantInput, field: string): Date {
     throw new TypeError(`workMode: ${field} must include a timezone offset (got "${value}")`);
   }
   const ms = Date.parse(value);
-  if (Number.isNaN(ms)) throw new TypeError(`workMode: ${field} is not a valid ISO-8601 instant (got "${value}")`);
+  if (Number.isNaN(ms))
+    throw new TypeError(`workMode: ${field} is not a valid ISO-8601 instant (got "${value}")`);
   return new Date(ms);
 }
 

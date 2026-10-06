@@ -86,9 +86,13 @@ describe("isValidTimeZone / canonicalTimeZone", () => {
     const fallback = canonicalTimeZone("asia/kolkata");
     expect(fallback === "Asia/Calcutta" || fallback === "Asia/Kolkata").toBe(true);
     // Whatever spelling comes back names the same zone.
-    expect(localToInstant({ date: "2026-10-06", time: "09:00", timezone: fallback! }).instant.toISOString()).toBe(
-      "2026-10-06T03:30:00.000Z",
-    );
+    expect(
+      localToInstant({
+        date: "2026-10-06",
+        time: "09:00",
+        timezone: fallback!,
+      }).instant.toISOString(),
+    ).toBe("2026-10-06T03:30:00.000Z");
   });
 });
 
@@ -183,12 +187,21 @@ describe("Europe/London against the EU rule computed by hand (independent of the
       for (let minuteOfDay = 0; minuteOfDay < 1440; minuteOfDay += 1) {
         const floating = Date.UTC(y, m - 1, d, 0, minuteOfDay);
         // Candidate instants for this wall time are floating − 0 (GMT) and floating − 60 min (BST).
-        const valid = [0, 60].map((o) => floating - o * 60_000).filter((ms) => ukOffsetMinutes(ms) === (floating - ms) / 60_000);
+        const valid = [0, 60]
+          .map((o) => floating - o * 60_000)
+          .filter((ms) => ukOffsetMinutes(ms) === (floating - ms) / 60_000);
         const expected = valid.length > 0 ? Math.min(...valid) : floating; // gap: shift forward = read with GMT (0)
         const expectedWarning =
-          valid.length === 0 ? "NONEXISTENT_LOCAL_TIME_SHIFTED" : valid.length === 2 ? "AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE" : undefined;
+          valid.length === 0
+            ? "NONEXISTENT_LOCAL_TIME_SHIFTED"
+            : valid.length === 2
+              ? "AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE"
+              : undefined;
         const r = resolveWallClock(floatingMsToWallClock(floating), LONDON);
-        expect([r.instant.getTime(), r.warning], `${date} minute ${minuteOfDay}`).toEqual([expected, expectedWarning]);
+        expect([r.instant.getTime(), r.warning], `${date} minute ${minuteOfDay}`).toEqual([
+          expected,
+          expectedWarning,
+        ]);
       }
     },
   );
@@ -276,11 +289,17 @@ describe("resolveWallClock against a brute-force Intl oracle", () => {
         const instants = instantsByWall.get(wall);
         const r = resolveWallClock(floatingMsToWallClock(wall), tz);
         if (instants) {
-          expect(r.instant.getTime(), `${tz} ${new Date(wall).toISOString()}`).toBe(Math.min(...instants));
-          expect(r.warning).toBe(instants.length > 1 ? "AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE" : undefined);
+          expect(r.instant.getTime(), `${tz} ${new Date(wall).toISOString()}`).toBe(
+            Math.min(...instants),
+          );
+          expect(r.warning).toBe(
+            instants.length > 1 ? "AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE" : undefined,
+          );
         } else {
           // Nonexistent: moved forward by the gap = the wall time read with the pre-transition offset.
-          expect(r.instant.getTime(), `${tz} ${new Date(wall).toISOString()}`).toBe(wall - previousOffset);
+          expect(r.instant.getTime(), `${tz} ${new Date(wall).toISOString()}`).toBe(
+            wall - previousOffset,
+          );
           expect(r.warning).toBe("NONEXISTENT_LOCAL_TIME_SHIFTED");
           expect(wallClockToFloatingMs(r.wallClock)).toBe(intlFloatingMs(r.instant.getTime(), tz));
         }
@@ -345,9 +364,9 @@ describe("localToInstant — America/New_York and Australia/Sydney spot checks",
 
 describe("localToInstant — validation", () => {
   it("rejects unknown timezones with INVALID_TIMEZONE", () => {
-    expect(() => localToInstant({ date: "2026-10-06", time: "09:00", timezone: "Mars/Olympus" })).toThrow(
-      AppError,
-    );
+    expect(() =>
+      localToInstant({ date: "2026-10-06", time: "09:00", timezone: "Mars/Olympus" }),
+    ).toThrow(AppError);
     try {
       localToInstant({ date: "2026-10-06", time: "09:00", timezone: "Mars/Olympus" });
     } catch (e) {
@@ -430,55 +449,124 @@ describe("instantToLocal / toDeviceDateComponents", () => {
 
   it.each<[string, string, WallClock]>([
     // Europe/London spring forward: the last GMT second, then 01:00Z is already 02:00 BST.
-    ["2026-03-29T00:59:59Z", LONDON, { year: 2026, month: 3, day: 29, hour: 0, minute: 59, second: 59 }],
-    ["2026-03-29T01:00:00Z", LONDON, { year: 2026, month: 3, day: 29, hour: 2, minute: 0, second: 0 }],
+    [
+      "2026-03-29T00:59:59Z",
+      LONDON,
+      { year: 2026, month: 3, day: 29, hour: 0, minute: 59, second: 59 },
+    ],
+    [
+      "2026-03-29T01:00:00Z",
+      LONDON,
+      { year: 2026, month: 3, day: 29, hour: 2, minute: 0, second: 0 },
+    ],
     // Europe/London fall back: 00:30Z (BST) and 01:30Z (GMT) are both 01:30 local.
-    ["2026-10-25T00:30:00Z", LONDON, { year: 2026, month: 10, day: 25, hour: 1, minute: 30, second: 0 }],
-    ["2026-10-25T01:30:00Z", LONDON, { year: 2026, month: 10, day: 25, hour: 1, minute: 30, second: 0 }],
-    ["2026-10-25T02:00:00Z", LONDON, { year: 2026, month: 10, day: 25, hour: 2, minute: 0, second: 0 }],
+    [
+      "2026-10-25T00:30:00Z",
+      LONDON,
+      { year: 2026, month: 10, day: 25, hour: 1, minute: 30, second: 0 },
+    ],
+    [
+      "2026-10-25T01:30:00Z",
+      LONDON,
+      { year: 2026, month: 10, day: 25, hour: 1, minute: 30, second: 0 },
+    ],
+    [
+      "2026-10-25T02:00:00Z",
+      LONDON,
+      { year: 2026, month: 10, day: 25, hour: 2, minute: 0, second: 0 },
+    ],
     // A summer instant in each of three DST-shifted zones.
-    ["2026-07-04T13:00:00Z", NEW_YORK, { year: 2026, month: 7, day: 4, hour: 9, minute: 0, second: 0 }],
-    ["2026-01-14T22:00:00Z", SYDNEY, { year: 2026, month: 1, day: 15, hour: 9, minute: 0, second: 0 }],
-    ["2026-06-30T23:00:00Z", LONDON, { year: 2026, month: 7, day: 1, hour: 0, minute: 0, second: 0 }],
+    [
+      "2026-07-04T13:00:00Z",
+      NEW_YORK,
+      { year: 2026, month: 7, day: 4, hour: 9, minute: 0, second: 0 },
+    ],
+    [
+      "2026-01-14T22:00:00Z",
+      SYDNEY,
+      { year: 2026, month: 1, day: 15, hour: 9, minute: 0, second: 0 },
+    ],
+    [
+      "2026-06-30T23:00:00Z",
+      LONDON,
+      { year: 2026, month: 7, day: 1, hour: 0, minute: 0, second: 0 },
+    ],
     // New York spring forward (07:00Z = 03:00 EDT) and both 01:30s on the fall-back morning.
-    ["2026-03-08T07:00:00Z", NEW_YORK, { year: 2026, month: 3, day: 8, hour: 3, minute: 0, second: 0 }],
-    ["2026-11-01T05:30:00Z", NEW_YORK, { year: 2026, month: 11, day: 1, hour: 1, minute: 30, second: 0 }],
-    ["2026-11-01T06:30:00Z", NEW_YORK, { year: 2026, month: 11, day: 1, hour: 1, minute: 30, second: 0 }],
+    [
+      "2026-03-08T07:00:00Z",
+      NEW_YORK,
+      { year: 2026, month: 3, day: 8, hour: 3, minute: 0, second: 0 },
+    ],
+    [
+      "2026-11-01T05:30:00Z",
+      NEW_YORK,
+      { year: 2026, month: 11, day: 1, hour: 1, minute: 30, second: 0 },
+    ],
+    [
+      "2026-11-01T06:30:00Z",
+      NEW_YORK,
+      { year: 2026, month: 11, day: 1, hour: 1, minute: 30, second: 0 },
+    ],
     // Sydney DST start (16:00Z = 03:00 AEDT on 4 Oct) and a 30-minute DST zone (Lord Howe, +10:30 → +11).
-    ["2026-10-03T16:00:00Z", SYDNEY, { year: 2026, month: 10, day: 4, hour: 3, minute: 0, second: 0 }],
-    ["2026-10-03T15:29:00Z", "Australia/Lord_Howe", { year: 2026, month: 10, day: 4, hour: 1, minute: 59, second: 0 }],
-    ["2026-10-03T15:30:00Z", "Australia/Lord_Howe", { year: 2026, month: 10, day: 4, hour: 2, minute: 30, second: 0 }],
-  ])("toDeviceDateComponents(%s, %s) uses the offset in force at that instant", (iso, tz, expected) => {
-    expect(toDeviceDateComponents(utc(iso), tz)).toEqual(expected);
-  });
+    [
+      "2026-10-03T16:00:00Z",
+      SYDNEY,
+      { year: 2026, month: 10, day: 4, hour: 3, minute: 0, second: 0 },
+    ],
+    [
+      "2026-10-03T15:29:00Z",
+      "Australia/Lord_Howe",
+      { year: 2026, month: 10, day: 4, hour: 1, minute: 59, second: 0 },
+    ],
+    [
+      "2026-10-03T15:30:00Z",
+      "Australia/Lord_Howe",
+      { year: 2026, month: 10, day: 4, hour: 2, minute: 30, second: 0 },
+    ],
+  ])(
+    "toDeviceDateComponents(%s, %s) uses the offset in force at that instant",
+    (iso, tz, expected) => {
+      expect(toDeviceDateComponents(utc(iso), tz)).toEqual(expected);
+    },
+  );
 
   it("toDeviceDateComponents agrees with Intl every ~2 hours through 2026 in DST zones", () => {
     for (const tz of [LONDON, NEW_YORK, SYDNEY, "America/Santiago"]) {
       for (let ms = Date.UTC(2026, 0, 1); ms < Date.UTC(2027, 0, 1); ms += 2 * 3_600_000 + 61_000) {
-        expect(wallClockToFloatingMs(toDeviceDateComponents(new Date(ms), tz)), `${tz} ${ms}`).toBe(intlFloatingMs(ms, tz));
+        expect(wallClockToFloatingMs(toDeviceDateComponents(new Date(ms), tz)), `${tz} ${ms}`).toBe(
+          intlFloatingMs(ms, tz),
+        );
       }
     }
   });
 
   it("device components resolve back to the same instant, except the second pass of a fall-back hour", () => {
-    for (const iso of ["2026-03-28T22:00:00Z", "2026-03-29T05:00:00Z", "2026-10-24T21:00:00Z", "2026-10-25T00:30:00Z"]) {
-      expect(resolveWallClock(toDeviceDateComponents(utc(iso), LONDON), LONDON).instant.toISOString()).toBe(
-        utc(iso).toISOString(),
-      );
+    for (const iso of [
+      "2026-03-28T22:00:00Z",
+      "2026-03-29T05:00:00Z",
+      "2026-10-24T21:00:00Z",
+      "2026-10-25T00:30:00Z",
+    ]) {
+      expect(
+        resolveWallClock(toDeviceDateComponents(utc(iso), LONDON), LONDON).instant.toISOString(),
+      ).toBe(utc(iso).toISOString());
     }
     // 01:30 GMT shows the same components as 01:30 BST, which resolve to the first (BST) occurrence: use the
     // UTC instant, not the components, for anything that must be exact.
-    expect(resolveWallClock(toDeviceDateComponents(utc("2026-10-25T01:30:00Z"), LONDON), LONDON).instant.toISOString()).toBe(
-      "2026-10-25T00:30:00.000Z",
-    );
+    expect(
+      resolveWallClock(
+        toDeviceDateComponents(utc("2026-10-25T01:30:00Z"), LONDON),
+        LONDON,
+      ).instant.toISOString(),
+    ).toBe("2026-10-25T00:30:00.000Z");
   });
 });
 
 describe("year safety (years 0–99 are not remapped to 1900–1999)", () => {
   it("localToInstant / addLocalDays / instantToWallClock keep year 26", () => {
-    expect(localToInstant({ date: "0026-10-06", time: "09:00", timezone: "UTC" }).instant.toISOString()).toBe(
-      "0026-10-06T09:00:00.000Z",
-    );
+    expect(
+      localToInstant({ date: "0026-10-06", time: "09:00", timezone: "UTC" }).instant.toISOString(),
+    ).toBe("0026-10-06T09:00:00.000Z");
     expect(addLocalDays("0050-01-01", 1)).toBe("0050-01-02");
     expect(addLocalDays("0099-12-31", 1)).toBe("0100-01-01");
     expect(instantToWallClock(utc("0026-10-06T09:00:00Z"), "UTC")).toEqual({
@@ -493,19 +581,22 @@ describe("year safety (years 0–99 are not remapped to 1900–1999)", () => {
 });
 
 describe("resolveWallClock input guard", () => {
-  it.each<Partial<WallClock>>([{ month: 13 }, { day: 31, month: 2 }, { hour: 24 }, { minute: 60 }, { second: 1.5 }])(
-    "rejects %j with VALIDATION_ERROR",
-    (over) => {
-      const wc: WallClock = { year: 2026, month: 10, day: 6, hour: 9, minute: 0, second: 0, ...over };
-      expect(isValidWallClock(wc)).toBe(false);
-      try {
-        resolveWallClock(wc, LONDON);
-        expect.unreachable("expected a throw");
-      } catch (e) {
-        expect((e as AppError).code).toBe("VALIDATION_ERROR");
-      }
-    },
-  );
+  it.each<Partial<WallClock>>([
+    { month: 13 },
+    { day: 31, month: 2 },
+    { hour: 24 },
+    { minute: 60 },
+    { second: 1.5 },
+  ])("rejects %j with VALIDATION_ERROR", (over) => {
+    const wc: WallClock = { year: 2026, month: 10, day: 6, hour: 9, minute: 0, second: 0, ...over };
+    expect(isValidWallClock(wc)).toBe(false);
+    try {
+      resolveWallClock(wc, LONDON);
+      expect.unreachable("expected a throw");
+    } catch (e) {
+      expect((e as AppError).code).toBe("VALIDATION_ERROR");
+    }
+  });
 });
 
 describe("local day / week boundaries", () => {
@@ -521,8 +612,12 @@ describe("local day / week boundaries", () => {
 
   it("startOfLocalDay / localDateRange handle a day whose midnight does not exist (America/Santiago)", () => {
     const SANTIAGO = "America/Santiago";
-    expect(startOfLocalDay(utc("2026-09-06T15:00:00Z"), SANTIAGO).toISOString()).toBe("2026-09-06T04:00:00.000Z");
-    expect(endOfLocalDay(utc("2026-09-05T15:00:00Z"), SANTIAGO).toISOString()).toBe("2026-09-06T04:00:00.000Z");
+    expect(startOfLocalDay(utc("2026-09-06T15:00:00Z"), SANTIAGO).toISOString()).toBe(
+      "2026-09-06T04:00:00.000Z",
+    );
+    expect(endOfLocalDay(utc("2026-09-05T15:00:00Z"), SANTIAGO).toISOString()).toBe(
+      "2026-09-06T04:00:00.000Z",
+    );
     const [start, end] = localDateRange("2026-09-06", "2026-09-06", SANTIAGO);
     expect(start.toISOString()).toBe("2026-09-06T04:00:00.000Z");
     expect(end.toISOString()).toBe("2026-09-07T03:00:00.000Z"); // a 23h day
@@ -584,23 +679,31 @@ describe("local day / week boundaries", () => {
 
   it("weekStart uses the offset of the week's first day, not of the instant", () => {
     // Sunday 29 March 13:00 BST belongs to the week starting Monday 23 March 00:00 GMT.
-    expect(weekStart(utc("2026-03-29T12:00:00Z"), LONDON).toISOString()).toBe("2026-03-23T00:00:00.000Z");
+    expect(weekStart(utc("2026-03-29T12:00:00Z"), LONDON).toISOString()).toBe(
+      "2026-03-23T00:00:00.000Z",
+    );
     // Wednesday 28 October (GMT) belongs to the week starting Monday 26 October 00:00 GMT.
-    expect(weekStart(utc("2026-10-28T12:00:00Z"), LONDON).toISOString()).toBe("2026-10-26T00:00:00.000Z");
+    expect(weekStart(utc("2026-10-28T12:00:00Z"), LONDON).toISOString()).toBe(
+      "2026-10-26T00:00:00.000Z",
+    );
     // Wednesday 1 April (BST) → Monday 30 March 00:00 BST.
-    expect(weekStart(utc("2026-04-01T12:00:00Z"), LONDON).toISOString()).toBe("2026-03-29T23:00:00.000Z");
+    expect(weekStart(utc("2026-04-01T12:00:00Z"), LONDON).toISOString()).toBe(
+      "2026-03-29T23:00:00.000Z",
+    );
   });
 
   it("wallClockMinutesBetween is 0 between the two occurrences of an ambiguous time", () => {
-    expect(wallClockMinutesBetween(utc("2026-10-25T00:30:00Z"), utc("2026-10-25T01:30:00Z"), LONDON)).toBe(0);
+    expect(
+      wallClockMinutesBetween(utc("2026-10-25T00:30:00Z"), utc("2026-10-25T01:30:00Z"), LONDON),
+    ).toBe(0);
   });
 
   it("wallClockMinutesBetween ignores DST", () => {
-    expect(wallClockMinutesBetween(utc("2026-03-28T22:00:00Z"), utc("2026-03-29T05:00:00Z"), LONDON)).toBe(
-      480,
-    );
-    expect(wallClockMinutesBetween(utc("2026-10-24T21:00:00Z"), utc("2026-10-25T06:00:00Z"), LONDON)).toBe(
-      480,
-    );
+    expect(
+      wallClockMinutesBetween(utc("2026-03-28T22:00:00Z"), utc("2026-03-29T05:00:00Z"), LONDON),
+    ).toBe(480);
+    expect(
+      wallClockMinutesBetween(utc("2026-10-24T21:00:00Z"), utc("2026-10-25T06:00:00Z"), LONDON),
+    ).toBe(480);
   });
 });

@@ -60,18 +60,17 @@ export function createOrganisationEventStream(options: EventStreamOptions): Resp
         safeEnqueue(formatSseFrame(event, ++counter));
       });
       heartbeat = setInterval(() => safeEnqueue(`: ping ${Date.now()}\n\n`), heartbeatMs);
-      options.signal?.addEventListener(
-        "abort",
-        () => {
-          cleanup();
-          try {
-            controller.close();
-          } catch {
-            // already closed
-          }
-        },
-        { once: true },
-      );
+      const onAbort = () => {
+        cleanup();
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
+      };
+      // A request can already be aborted by the time the body starts streaming; "abort" never fires again.
+      if (options.signal?.aborted) onAbort();
+      else options.signal?.addEventListener("abort", onAbort, { once: true });
     },
     cancel() {
       cleanup();

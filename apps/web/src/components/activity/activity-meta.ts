@@ -33,7 +33,16 @@ export const ACTIVITY_ICONS = [
 ] as const;
 export type ActivityIcon = (typeof ACTIVITY_ICONS)[number];
 
-export const ACTIVITY_GROUPS = ["setup", "workMode", "breaks", "sync", "schedule", "policy", "overrides", "system"] as const;
+export const ACTIVITY_GROUPS = [
+  "setup",
+  "workMode",
+  "breaks",
+  "sync",
+  "schedule",
+  "policy",
+  "overrides",
+  "system",
+] as const;
 export type ActivityGroup = (typeof ACTIVITY_GROUPS)[number];
 
 export const ACTIVITY_GROUP_LABELS: Record<ActivityGroup, string> = {
@@ -272,7 +281,10 @@ export function activityEventMeta(type: ActivityEventType | string): ActivityEve
     : UNKNOWN_EVENT_META(type);
 }
 
-export type ActivityEventLike = Pick<ActivityEvent, "type" | "employee" | "actor" | "actorType" | "metadata">;
+export type ActivityEventLike = Pick<
+  ActivityEvent,
+  "type" | "employee" | "actor" | "actorType" | "metadata"
+>;
 
 function possessiveOf(name: string): string {
   return name.endsWith("s") ? `${name}'` : `${name}'s`;
@@ -280,7 +292,9 @@ function possessiveOf(name: string): string {
 
 /** Sentence context from an event: employee name (or "An employee"), manager name and metadata. */
 export function activitySentenceContext(event: ActivityEventLike): ActivitySentenceContext {
-  const subject = event.employee ? `${event.employee.firstName} ${event.employee.lastName}`.trim() || "An employee" : "An employee";
+  const subject = event.employee
+    ? `${event.employee.firstName} ${event.employee.lastName}`.trim() || "An employee"
+    : "An employee";
   const actor = event.actorType === "MANAGER" && event.actor ? event.actor.name : null;
   return { subject, possessive: possessiveOf(subject), actor, metadata: event.metadata ?? {} };
 }
@@ -303,11 +317,13 @@ export interface ActivityTypeOption {
 }
 
 /** Every type as a filter option, in enum order, with its group for the picker's section headings. */
-export const ACTIVITY_TYPE_OPTIONS: readonly ActivityTypeOption[] = ACTIVITY_EVENT_TYPES.map((value) => ({
-  value,
-  label: ACTIVITY_EVENT_META[value].label,
-  group: ACTIVITY_EVENT_META[value].group,
-}));
+export const ACTIVITY_TYPE_OPTIONS: readonly ActivityTypeOption[] = ACTIVITY_EVENT_TYPES.map(
+  (value) => ({
+    value,
+    label: ACTIVITY_EVENT_META[value].label,
+    group: ACTIVITY_EVENT_META[value].group,
+  }),
+);
 
 export function isActivityEventType(value: unknown): value is ActivityEventType {
   return typeof value === "string" && (ACTIVITY_EVENT_TYPES as readonly string[]).includes(value);

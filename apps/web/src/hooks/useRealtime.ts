@@ -21,9 +21,14 @@ export interface RealtimeContextValue {
   readonly status: RealtimeStatus;
   /** False when no `<RealtimeProvider>` is mounted above the caller (nothing is live or polling). */
   readonly active: boolean;
+  /**
+   * True until the stream has opened (or failed) once. `status` is "reconnecting" meanwhile, but nothing has
+   * actually dropped yet, so the indicator shows a neutral "Connecting…" rather than a warning.
+   */
+  readonly connecting: boolean;
 }
 
-const INACTIVE: RealtimeContextValue = { status: "polling", active: false };
+const INACTIVE: RealtimeContextValue = { status: "polling", active: false, connecting: false };
 
 export const RealtimeContext = createContext<RealtimeContextValue>(INACTIVE);
 
@@ -38,16 +43,26 @@ export function useRealtime(): RealtimeContextValue {
 
 type Timer = ReturnType<typeof setTimeout>;
 
+export interface RealtimeConnectionState {
+  readonly status: RealtimeStatus;
+  /** See `RealtimeContextValue.connecting`. */
+  readonly connecting: boolean;
+}
+
+const INITIAL_STATE: RealtimeConnectionState = { status: "reconnecting", connecting: true };
+
 /**
  * Owns one `EventSource` to `GET /api/realtime/stream` and turns every frame into React Query invalidations
  * (events are hints, never data — §5). Reconnects with jittered exponential backoff; after 10 s without a
  * connection it falls back to invalidating every realtime-backed query every 30 s. Mounted once by
  * `<RealtimeProvider>`; pages call `useRealtime()` for the status.
  */
-export function useRealtimeConnection(options: { enabled?: boolean } = {}): RealtimeStatus {
+export function useRealtimeConnection(
+  options: { enabled?: boolean } = {},
+): RealtimeConnectionState {
   const enabled = options.enabled ?? true;
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<RealtimeStatus>("reconnecting");
+  const [state, setState] = useState<RealtimeConnectionState>(INITIAL_STATE);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined" || typeof EventSource === "undefined") return;
@@ -61,6 +76,9 @@ export function useRealtimeConnection(options: { enabled?: boolean } = {}): Real
     let disconnectedSince: number | null = null;
     let disposed = false;
     const pending = new Map<string, QueryKey>();
+
+    /** Every transition means the stream has been heard from (opened or failed), so "connecting" is over. */
+    const setStatus = (status: RealtimeStatus) => setState({ status, connecting: false });
 
     const clearTimer = (timer: Timer | null) => {
       if (timer !== null) clearTimeout(timer);
@@ -153,5 +171,5 @@ export function useRealtimeConnection(options: { enabled?: boolean } = {}): Real
     };
   }, [enabled, queryClient]);
 
-  return status;
+  return state;
 }

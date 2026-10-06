@@ -7,7 +7,8 @@ export type InlineAlertVariant = "info" | "success" | "warning" | "danger";
 const VARIANTS: Record<InlineAlertVariant, { icon: LucideIcon; classes: string }> = {
   info: {
     icon: Info,
-    classes: "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100",
+    classes:
+      "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100",
   },
   success: {
     icon: CircleCheck,
@@ -21,7 +22,8 @@ const VARIANTS: Record<InlineAlertVariant, { icon: LucideIcon; classes: string }
   },
   danger: {
     icon: CircleAlert,
-    classes: "border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100",
+    classes:
+      "border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100",
   },
 };
 
@@ -39,7 +41,14 @@ export interface InlineAlertProps {
  * Contextual message inside a page or form. `danger` alerts use `role="alert"` (announced immediately);
  * the others use `role="status"`.
  */
-export function InlineAlert({ variant = "info", title, children, action, icon, className }: InlineAlertProps) {
+export function InlineAlert({
+  variant = "info",
+  title,
+  children,
+  action,
+  icon,
+  className,
+}: InlineAlertProps) {
   const { icon: DefaultIcon, classes } = VARIANTS[variant];
   const Icon = icon ?? DefaultIcon;
   return (

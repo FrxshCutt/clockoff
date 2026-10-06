@@ -126,7 +126,10 @@ export async function createTeam(ctx: ManagerContext, input: CreateTeamInput): P
       data: { organisationId, name: input.name, locationId: input.locationId ?? null },
     });
     await addTeamMemberships(tx, row.id, employeeIds);
-    const withCounts = await tx.team.findUniqueOrThrow({ where: { id: row.id }, include: teamInclude });
+    const withCounts = await tx.team.findUniqueOrThrow({
+      where: { id: row.id },
+      include: teamInclude,
+    });
     await audit(
       ctx,
       { action: "team.created", entityType: "Team", entityId: row.id, after: snapshot(withCounts) },
@@ -138,14 +141,19 @@ export async function createTeam(ctx: ManagerContext, input: CreateTeamInput): P
 }
 
 /** `PATCH /api/teams/:id`: `locationId: null` detaches the team from its location. */
-export async function updateTeam(ctx: ManagerContext, id: string, input: UpdateTeamInput): Promise<Team> {
+export async function updateTeam(
+  ctx: ManagerContext,
+  id: string,
+  input: UpdateTeamInput,
+): Promise<Team> {
   const organisationId = ctx.organisation.id;
   const updated = await prisma.$transaction(async (tx) => {
     const before = await loadTeamOrThrow(organisationId, id, tx);
     const data: Prisma.TeamUncheckedUpdateInput = {};
     if (input.name !== undefined) data.name = input.name;
     if (input.locationId !== undefined) {
-      if (input.locationId) await assertLocationInOrganisation(organisationId, input.locationId, tx);
+      if (input.locationId)
+        await assertLocationInOrganisation(organisationId, input.locationId, tx);
       data.locationId = input.locationId;
     }
     if (Object.keys(data).length === 0) return before;

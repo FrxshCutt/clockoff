@@ -26,7 +26,10 @@ import type { DeviceContext } from "@/server/tenancy/context";
 import { updateDevice } from "@/server/sync/sync.repository";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
-import { resolveEmployeePolicies, type ResolvedBreakPolicy } from "@/server/workState/externalServices";
+import {
+  resolveEmployeePolicies,
+  type ResolvedBreakPolicy,
+} from "@/server/workState/externalServices";
 import { recomputeEmployeeWorkState } from "@/server/workState/workState.service";
 import {
   applyBreakClosures,
@@ -68,7 +71,8 @@ const RECONCILABLE_REFUSALS: ReadonlySet<BreakRefusalCode> = new Set<BreakRefusa
 /** Allowance when no break policy resolves: nothing is granted. */
 const NO_BREAKS_POLICY: BreakPolicyLike = { ...BREAK_POLICY_DEFAULTS, breaksEnabled: false };
 
-export type BreakStartOutcome = "STARTED" | "ALREADY_RECORDED" | "EXPIRED_ON_ARRIVAL" | "RECONCILED_POLICY_CHANGED";
+export type BreakStartOutcome =
+  "STARTED" | "ALREADY_RECORDED" | "EXPIRED_ON_ARRIVAL" | "RECONCILED_POLICY_CHANGED";
 
 export interface StartBreakParams {
   organisationId: string;
@@ -108,7 +112,10 @@ function resolvedBreakPolicy(row: ResolvedBreakPolicy | null): BreakPolicyLike {
   return row ? row.rules : NO_BREAKS_POLICY;
 }
 
-function behaviourColumns(policy: { restrictionBehaviour: BreakPolicyLike["restrictionBehaviour"]; relaxedCategories: unknown }) {
+function behaviourColumns(policy: {
+  restrictionBehaviour: BreakPolicyLike["restrictionBehaviour"];
+  relaxedCategories: unknown;
+}) {
   const behaviour = resolveBreakBehaviour(policy);
   return {
     restrictionBehaviour: behaviour.restrictionBehaviour,
@@ -169,24 +176,81 @@ export async function recordClosureEvents(
   return events;
 }
 
+function isUniqueViolation(err: unknown): err is Prisma.PrismaClientKnownRequestError {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+}
+
 export async function startBreak(params: StartBreakParams): Promise<BreakOperationResult> {
   const { organisationId, employeeId, receivedAt } = params;
   // The break policy CURRENTLY assigned to the employee (never the one the device cached). Resolved before the
   // transaction: the policies service reads through the shared client and nothing it reads is locked below.
-  const policyRow = (await resolveEmployeePolicies(organisationId, employeeId, receivedAt)).breakPolicy;
+  const policyRow = (await resolveEmployeePolicies(organisationId, employeeId, receivedAt))
+    .breakPolicy;
   const policy = resolvedBreakPolicy(policyRow);
-  const result = await prisma.$transaction(async (tx): Promise<TransactionOutcome> => {
+
+  let result: TransactionOutcome;
+  try {
+    result = await startBreakTransaction(params, policyRow, policy);
+  } catch (err) {
+    if (!isUniqueViolation(err)) throw err;
+    // Postgres aborts the whole transaction on a unique violation (every later statement fails until the
+    // rollback), so recovery happens HERE, after `$transaction` rolled back — never inside it.
+    const target = uniqueTarget(err);
+    if (target.includes("client_break_id") || target.includes("clientBreakId")) {
+      // A concurrent request with the same clientBreakId committed first (a different shift, so the per-shift
+      // lock did not serialise it): re-run so the idempotency step answers with that row. A key that belongs to
+      // another employee is a client bug — never that employee's session.
+      const existing = await findSessionByClientBreakId(
+        organisationId,
+        employeeId,
+        params.clientBreakId,
+      );
+      if (!existing) throw new AppError("CONFLICT", "clientBreakId is already in use");
+      result = await startBreakTransaction(params, policyRow, policy);
+    } else {
+      // break_sessions_one_active_per_shift: two different starts raced past the lock.
+      throw new AppError("BREAK_ALREADY_ACTIVE", "A break is already in progress.", {
+        details: { reason: "BREAK_IN_PROGRESS" },
+      });
+    }
+  }
+
+  for (const event of result.published) publishActivity(event);
+  await recomputeEmployeeWorkState({ organisationId, employeeId, now: receivedAt });
+  return { session: result.session, allowance: result.allowance, outcome: result.outcome };
+}
+
+/** One attempt at the break-start transaction (docs/BREAK_RULES.md steps 1–7). A unique violation propagates. */
+async function startBreakTransaction(
+  params: StartBreakParams,
+  policyRow: ResolvedBreakPolicy | null,
+  policy: BreakPolicyLike,
+): Promise<TransactionOutcome> {
+  const { organisationId, employeeId, receivedAt } = params;
+  return prisma.$transaction(async (tx): Promise<TransactionOutcome> => {
     const published: ActivityEvent[] = [];
 
     // 1. Lock the shift row (serialises starts per shift) and check ownership.
-    const shift = await lockShiftForEmployee(tx, { organisationId, employeeId, shiftId: params.shiftId });
+    const shift = await lockShiftForEmployee(tx, {
+      organisationId,
+      employeeId,
+      shiftId: params.shiftId,
+    });
     if (!shift) throw new AppError("NOT_FOUND", "Shift not found");
 
     // 2. Idempotency: a retry of the same clientBreakId returns the recorded session unchanged.
-    const existing = await findSessionByClientBreakId(organisationId, params.clientBreakId, tx);
+    const existing = await findSessionByClientBreakId(
+      organisationId,
+      employeeId,
+      params.clientBreakId,
+      tx,
+    );
     if (existing) {
       const sessions = await listSessionsForShift(organisationId, existing.shiftId, tx);
-      const window = existing.shiftId === shift.id ? shift : await tx.shift.findUniqueOrThrow({ where: { id: existing.shiftId } });
+      const window =
+        existing.shiftId === shift.id
+          ? shift
+          : await tx.shift.findUniqueOrThrow({ where: { id: existing.shiftId } });
       return {
         session: existing,
         allowance: computeBreakAllowance(policy, window, sessions, receivedAt),
@@ -202,7 +266,14 @@ export async function startBreak(params: StartBreakParams): Promise<BreakOperati
 
     // 3. Close expired-but-unclosed rows first (break_sessions_one_active_per_shift).
     const loaded = await listSessionsForShift(organisationId, shift.id, tx);
-    const closed = await closeExpiredSessions(tx, organisationId, employeeId, shift, loaded, receivedAt);
+    const closed = await closeExpiredSessions(
+      tx,
+      organisationId,
+      employeeId,
+      shift,
+      loaded,
+      receivedAt,
+    );
     published.push(...closed.events);
     const sessions = closed.sessions;
 
@@ -250,7 +321,10 @@ export async function startBreak(params: StartBreakParams): Promise<BreakOperati
     } else if (params.reconcileLateRefusals && isLate && RECONCILABLE_REFUSALS.has(decision.code)) {
       // The phone relaxed restrictions while offline; the current policy says it should not have. Record what
       // happened and end it now so the device lifts the relaxation immediately.
-      const minutes = Math.max(1, Math.floor(params.requestedDurationMinutes ?? policy.maxBreakDurationMinutes ?? 1));
+      const minutes = Math.max(
+        1,
+        Math.floor(params.requestedDurationMinutes ?? policy.maxBreakDurationMinutes ?? 1),
+      );
       const plannedMs = Math.max(
         startAt.getTime(),
         Math.min(startAt.getTime() + minutes * 60_000, shift.endsAt.getTime()),
@@ -292,9 +366,13 @@ export async function startBreak(params: StartBreakParams): Promise<BreakOperati
           clientBreakId: session.clientBreakId,
           trigger: params.trigger,
           plannedEndsAt: session.plannedEndsAt.toISOString(),
-          durationMinutes: Math.ceil((session.plannedEndsAt.getTime() - session.startedAt.getTime()) / 60_000),
+          durationMinutes: Math.ceil(
+            (session.plannedEndsAt.getTime() - session.startedAt.getTime()) / 60_000,
+          ),
           restrictionBehaviour: session.restrictionBehaviour,
-          ...(outcome === "RECONCILED_POLICY_CHANGED" ? { refusalCode: decision.ok ? null : decision.code } : {}),
+          ...(outcome === "RECONCILED_POLICY_CHANGED"
+            ? { refusalCode: decision.ok ? null : decision.code }
+            : {}),
         },
         clientEventId: params.deviceId ? `break:${params.clientBreakId}:started` : null,
       },
@@ -319,36 +397,21 @@ export async function startBreak(params: StartBreakParams): Promise<BreakOperati
     }
 
     const after = [...sessions, session];
-    return { session, allowance: computeBreakAllowance(policy, shift, after, receivedAt), outcome, published };
+    return {
+      session,
+      allowance: computeBreakAllowance(policy, shift, after, receivedAt),
+      outcome,
+      published,
+    };
   });
-
-  for (const event of result.published) publishActivity(event);
-  await recomputeEmployeeWorkState({ organisationId, employeeId, now: receivedAt });
-  return { session: result.session, allowance: result.allowance, outcome: result.outcome };
 }
 
+/** Plain insert: a unique violation (clientBreakId, one-active-per-shift) is handled by `startBreak` after the rollback. */
 async function insertSession(
   tx: Prisma.TransactionClient,
   data: Prisma.BreakSessionUncheckedCreateInput,
 ): Promise<BreakSession> {
-  try {
-    return await tx.breakSession.create({ data });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      const target = uniqueTarget(err);
-      if (target.includes("client_break_id") || target.includes("clientBreakId")) {
-        // A concurrent retry of the same clientBreakId won the race.
-        const existing = await tx.breakSession.findFirst({
-          where: { organisationId: data.organisationId, clientBreakId: data.clientBreakId },
-        });
-        if (existing) return existing;
-      }
-      throw new AppError("BREAK_ALREADY_ACTIVE", "A break is already in progress.", {
-        details: { reason: "BREAK_IN_PROGRESS" },
-      });
-    }
-    throw err;
-  }
+  return tx.breakSession.create({ data });
 }
 
 export interface EndBreakParams {
@@ -382,7 +445,12 @@ export async function endBreak(params: EndBreakParams): Promise<EndBreakResult> 
     (await resolveEmployeePolicies(organisationId, employeeId, receivedAt)).breakPolicy,
   );
   const allowanceFor = async (): Promise<BreakAllowance> =>
-    computeBreakAllowance(policy, shift, await listSessionsForShift(organisationId, shift.id), receivedAt);
+    computeBreakAllowance(
+      policy,
+      shift,
+      await listSessionsForShift(organisationId, shift.id),
+      receivedAt,
+    );
 
   if (current.status === "ENDED") {
     return { session: current, allowance: await allowanceFor(), ended: false };
@@ -390,7 +458,11 @@ export async function endBreak(params: EndBreakParams): Promise<EndBreakResult> 
 
   // Clamp the reported end to [startedAt, min(plannedEndsAt, shift.endsAt, receivedAt)].
   const reported = deviceInstantToServerTime(params.endedAt, params.skewSeconds ?? 0).getTime();
-  const cap = Math.min(current.plannedEndsAt.getTime(), shift.endsAt.getTime(), receivedAt.getTime());
+  const cap = Math.min(
+    current.plannedEndsAt.getTime(),
+    shift.endsAt.getTime(),
+    receivedAt.getTime(),
+  );
   const endedAt = new Date(Math.max(current.startedAt.getTime(), Math.min(reported, cap)));
 
   const { session, ended } = await endSessionIfActive(organisationId, current.id, {
@@ -421,11 +493,17 @@ export async function endBreak(params: EndBreakParams): Promise<EndBreakResult> 
 
 /** Allowance for a shift under the employee's current break policy (null when no policy resolves). */
 export async function allowanceForShift(
-  params: { organisationId: string; employeeId: string; shift: { id: string; startsAt: Date; endsAt: Date }; now: Date },
+  params: {
+    organisationId: string;
+    employeeId: string;
+    shift: { id: string; startsAt: Date; endsAt: Date };
+    now: Date;
+  },
   db: Db = prisma,
 ): Promise<BreakAllowance | null> {
-  const policyRow = (await resolveEmployeePolicies(params.organisationId, params.employeeId, params.now))
-    .breakPolicy;
+  const policyRow = (
+    await resolveEmployeePolicies(params.organisationId, params.employeeId, params.now)
+  ).breakPolicy;
   if (!policyRow) return null;
   const sessions = await listSessionsForShift(params.organisationId, params.shift.id, db);
   return computeBreakAllowance(policyRow.rules, params.shift, sessions, params.now);
@@ -461,7 +539,10 @@ export async function startBreakFromDevice(
     reconcileLateRefusals: true,
   });
   await updateDevice(ctx.device.id, { lastSeenAt: now });
-  return { breakSession: toBreakSessionDto(result.session), allowance: toBreakAllowanceDto(result.allowance) };
+  return {
+    breakSession: toBreakSessionDto(result.session),
+    allowance: toBreakAllowanceDto(result.allowance),
+  };
 }
 
 /** `POST /breaks/:id/end` for the verified device (idempotent; another employee's session is NOT_FOUND). */
@@ -483,5 +564,8 @@ export async function endBreakFromDevice(
     actorType: "EMPLOYEE_DEVICE",
   });
   await updateDevice(ctx.device.id, { lastSeenAt: now });
-  return { breakSession: toBreakSessionDto(result.session), allowance: toBreakAllowanceDto(result.allowance) };
+  return {
+    breakSession: toBreakSessionDto(result.session),
+    allowance: toBreakAllowanceDto(result.allowance),
+  };
 }

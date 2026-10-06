@@ -3,7 +3,16 @@
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { FormErrorAlert, SelectField, SubmitButton, TextField, TextareaField, applyApiFieldErrors, useZodForm, type SelectOption } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SelectField,
+  SubmitButton,
+  TextField,
+  TextareaField,
+  applyApiFieldErrors,
+  useZodForm,
+  type SelectOption,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { SITE } from "@/config/site";
@@ -20,7 +29,10 @@ import {
   type RequestDemoPayload,
 } from "./request-demo-schema";
 
-const TEAM_SIZE_SELECT_OPTIONS: SelectOption[] = TEAM_SIZE_OPTIONS.map((value) => ({ value, label: `${value} people` }));
+const TEAM_SIZE_SELECT_OPTIONS: SelectOption[] = TEAM_SIZE_OPTIONS.map((value) => ({
+  value,
+  label: `${value} people`,
+}));
 
 export interface RequestDemoFormProps {
   /** Where the visitor came from (`?source=`), stored with the request after normalisation. */
@@ -42,7 +54,9 @@ export function RequestDemoForm({ source }: RequestDemoFormProps) {
 
   const onSubmit = form.handleSubmit(async (values: RequestDemoFormValues) => {
     try {
-      await submit.mutateAsync(isHoneypotTripped(values) ? null : toRequestDemoPayload(values, source));
+      await submit.mutateAsync(
+        isHoneypotTripped(values) ? null : toRequestDemoPayload(values, source),
+      );
     } catch (error) {
       applyApiFieldErrors(form, error);
     }
@@ -51,11 +65,18 @@ export function RequestDemoForm({ source }: RequestDemoFormProps) {
   if (submit.isSuccess) {
     return (
       <div role="status" className="bg-card space-y-4 rounded-xl border p-6 shadow-xs sm:p-8">
-        <CheckCircle2 className="size-8 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+        <CheckCircle2
+          className="size-8 text-emerald-600 dark:text-emerald-400"
+          aria-hidden="true"
+        />
         <h2 className="text-xl font-semibold tracking-tight">Thanks, we&apos;ll be in touch</h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          We&apos;ll reply within one working day to arrange a time. If you&apos;d rather talk sooner, email{" "}
-          <a href={`mailto:${SITE.supportEmail}`} className="hover:text-foreground underline underline-offset-4">
+          We&apos;ll reply within one working day to arrange a time. If you&apos;d rather talk
+          sooner, email{" "}
+          <a
+            href={`mailto:${SITE.supportEmail}`}
+            className="hover:text-foreground underline underline-offset-4"
+          >
             {SITE.supportEmail}
           </a>
           .
@@ -69,15 +90,37 @@ export function RequestDemoForm({ source }: RequestDemoFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={onSubmit} noValidate className="bg-card space-y-5 rounded-xl border p-6 shadow-xs sm:p-8">
+      <form
+        onSubmit={onSubmit}
+        noValidate
+        className="bg-card space-y-5 rounded-xl border p-6 shadow-xs sm:p-8"
+      >
         <FormErrorAlert error={submit.error} title="Couldn't send your request" />
         <div className="grid gap-5 sm:grid-cols-2">
           <TextField control={form.control} name="name" label="Your name" autoComplete="name" />
-          <TextField control={form.control} name="email" label="Work email" type="email" autoComplete="email" inputMode="email" />
+          <TextField
+            control={form.control}
+            name="email"
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+          />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextField control={form.control} name="company" label="Company" autoComplete="organization" />
-          <SelectField control={form.control} name="teamSize" label="Team size" options={TEAM_SIZE_SELECT_OPTIONS} placeholder="Optional" />
+          <TextField
+            control={form.control}
+            name="company"
+            label="Company"
+            autoComplete="organization"
+          />
+          <SelectField
+            control={form.control}
+            name="teamSize"
+            label="Team size"
+            options={TEAM_SIZE_SELECT_OPTIONS}
+            placeholder="Optional"
+          />
         </div>
         <TextareaField
           control={form.control}
@@ -87,9 +130,18 @@ export function RequestDemoForm({ source }: RequestDemoFormProps) {
           rows={4}
         />
         {/* Honeypot: out of the layout, out of the tab order and hidden from assistive technology. */}
-        <div aria-hidden="true" className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="absolute top-auto -left-[9999px] h-px w-px overflow-hidden"
+        >
           <label htmlFor="request-demo-website">Website</label>
-          <input id="request-demo-website" type="text" tabIndex={-1} autoComplete="off" {...form.register("website")} />
+          <input
+            id="request-demo-website"
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            {...form.register("website")}
+          />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground text-xs">

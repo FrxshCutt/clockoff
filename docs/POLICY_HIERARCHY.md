@@ -7,17 +7,17 @@ determinism check). This document is the human-readable contract that code imple
 
 Entry points (all exported from `@workmode/shared` and `@workmode/shared/policy/resolvePolicy`):
 
-| Function | Purpose |
-| --- | --- |
-| `resolvePolicy(input)` | Pick the one policy that applies. Generic: same code for `Policy` and `BreakPolicy`. |
-| `resolvePolicyVersion(policy)` | For Work Policies: the current *published* version's `restrictionConfig`. |
-| `resolveWorkPolicy(input)` | `resolvePolicy` + `resolvePolicyVersion` in one call, warnings merged. |
-| `explainResolution(result, names?)` | Dashboard copy such as `Resolved from Team: Front of House`. |
-| `fromBreakPolicyAssignment(row)` | Adapts a `BreakPolicyAssignment` (`breakPolicyId` → `policyId`). |
-| `indexPoliciesById(rows)` | Builds the `policiesById` map. |
-| `resolutionWarningKey(warning)` | Stable de-duplication key for persisting warnings as activities (§6). |
-| `isAssignmentActive(a, now)`, `isPolicyUsable(p)`, `compareAssignmentsNewestFirst(a, b)` | The window, archived/deleted and ordering rules used internally (§2–§4). |
-| `POLICY_SCOPE_PRECEDENCE` | Frozen `["EMPLOYEE", "TEAM", "LOCATION", "ORGANISATION"]`, for rendering the hierarchy. |
+| Function                                                                                 | Purpose                                                                                 |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `resolvePolicy(input)`                                                                   | Pick the one policy that applies. Generic: same code for `Policy` and `BreakPolicy`.    |
+| `resolvePolicyVersion(policy)`                                                           | For Work Policies: the current _published_ version's `restrictionConfig`.               |
+| `resolveWorkPolicy(input)`                                                               | `resolvePolicy` + `resolvePolicyVersion` in one call, warnings merged.                  |
+| `explainResolution(result, names?)`                                                      | Dashboard copy such as `Resolved from Team: Front of House`.                            |
+| `fromBreakPolicyAssignment(row)`                                                         | Adapts a `BreakPolicyAssignment` (`breakPolicyId` → `policyId`).                        |
+| `indexPoliciesById(rows)`                                                                | Builds the `policiesById` map.                                                          |
+| `resolutionWarningKey(warning)`                                                          | Stable de-duplication key for persisting warnings as activities (§6).                   |
+| `isAssignmentActive(a, now)`, `isPolicyUsable(p)`, `compareAssignmentsNewestFirst(a, b)` | The window, archived/deleted and ordering rules used internally (§2–§4).                |
+| `POLICY_SCOPE_PRECEDENCE`                                                                | Frozen `["EMPLOYEE", "TEAM", "LOCATION", "ORGANISATION"]`, for rendering the hierarchy. |
 
 Input types are structural (`PolicyLike`, `AssignmentLike`, `EmployeeContextLike`), so Prisma rows are
 passed as-is and the result keeps the concrete row type (`result.policy.name`, `.maxBreaksPerShift`, … are
@@ -37,14 +37,14 @@ those that apply to the employee, so whether it throws never depends on which le
 Levels are consulted in this fixed order (`POLICY_SCOPE_PRECEDENCE`). The first level that yields a
 usable policy wins; nothing below it is looked at.
 
-| # | Level | Applies when the assignment's `scopeId` is … | `resolvedFrom` |
-| --- | --- | --- | --- |
-| 1 | **EMPLOYEE** | the employee's id | `{ via: "ASSIGNMENT", scopeType: "EMPLOYEE", scopeId, assignmentId }` |
-| 2 | **TEAM** | any team the employee belongs to (`EmployeeTeam`) | `{ via: "ASSIGNMENT", scopeType: "TEAM", … }` |
-| 3 | **LOCATION** | the employee's **primary** location only | `{ via: "ASSIGNMENT", scopeType: "LOCATION", … }` |
-| 4 | **ORGANISATION** (assignment) | the organisation id | `{ via: "ASSIGNMENT", scopeType: "ORGANISATION", … }` |
-| 5 | **ORGANISATION default** | `Organisation.defaultPolicyId` / `defaultBreakPolicyId` | `{ via: "DEFAULT", scopeType: "ORGANISATION", scopeId: organisationId }` |
-| 6 | nothing | — | `null` (`policy: null, policyId: null`) |
+| #   | Level                         | Applies when the assignment's `scopeId` is …            | `resolvedFrom`                                                           |
+| --- | ----------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1   | **EMPLOYEE**                  | the employee's id                                       | `{ via: "ASSIGNMENT", scopeType: "EMPLOYEE", scopeId, assignmentId }`    |
+| 2   | **TEAM**                      | any team the employee belongs to (`EmployeeTeam`)       | `{ via: "ASSIGNMENT", scopeType: "TEAM", … }`                            |
+| 3   | **LOCATION**                  | the employee's **primary** location only                | `{ via: "ASSIGNMENT", scopeType: "LOCATION", … }`                        |
+| 4   | **ORGANISATION** (assignment) | the organisation id                                     | `{ via: "ASSIGNMENT", scopeType: "ORGANISATION", … }`                    |
+| 5   | **ORGANISATION default**      | `Organisation.defaultPolicyId` / `defaultBreakPolicyId` | `{ via: "DEFAULT", scopeType: "ORGANISATION", scopeId: organisationId }` |
+| 6   | nothing                       | —                                                       | `null` (`policy: null, policyId: null`)                                  |
 
 The same hierarchy applies to Break Policies: feed `BreakPolicyAssignment` rows through
 `fromBreakPolicyAssignment`, pass `BreakPolicy` rows as `policiesById`, and `defaultBreakPolicyId` as
@@ -64,12 +64,12 @@ changed underneath it.
 Only `primaryLocationId` participates. `EmployeeContextLike.locationIds` (secondary locations from
 `EmployeeLocation`) is accepted for completeness but **never consulted**. An employee with no primary
 location simply has no LOCATION level. This keeps resolution unambiguous without a second tie-break rule;
-if secondary locations ever need to count, add them as a level *below* primary location and document it
+if secondary locations ever need to count, add them as a level _below_ primary location and document it
 here first.
 
 ## 2. Effective windows
 
-An assignment is *active* at instant `now` when
+An assignment is _active_ at instant `now` when
 
 ```
 (effectiveFrom is null  OR  effectiveFrom <= now)   AND
@@ -93,7 +93,7 @@ After filtering to active assignments whose policy is usable (see §4):
 
 1. Sort by `createdAt` **descending**; equal instants fall back to `id` **descending** (plain string
    comparison, which for lowercase UUIDs is the same order as Postgres `ORDER BY id DESC`). The order is
-   total, so the result — winner *and* the order of warnings — never depends on input order or on the
+   total, so the result — winner _and_ the order of warnings — never depends on input order or on the
    order of `teamIds`.
 2. The first entry wins.
 3. Several usable assignments for the **same** `(scopeType, scopeId)` → warning
@@ -135,7 +135,7 @@ than thrown on.
 - `DRAFT` policies are **not** skipped here. The API should refuse to assign a draft
   (`POLICY_NOT_PUBLISHED` error), but if one is assigned anyway, resolution still selects it and
   `resolvePolicyVersion` reports `POLICY_NOT_PUBLISHED`. Falling through silently would hand the
-  employee a *weaker* policy from a lower level, which is the wrong failure mode for a blocking product.
+  employee a _weaker_ policy from a lower level, which is the wrong failure mode for a blocking product.
 
 ### Policies owned by another organisation
 
@@ -149,8 +149,8 @@ an incident, not as manager-facing data clean-up.
 
 ### Policies missing from `policiesById`
 
-`policiesById` must contain **every** policy referenced by any assignment or the default, *regardless of
-status or organisation* (do not filter when loading). If the winning assignment's policy is missing, the
+`policiesById` must contain **every** policy referenced by any assignment or the default, _regardless of
+status or organisation_ (do not filter when loading). If the winning assignment's policy is missing, the
 resolver keeps the winner (precedence is never weakened by a caller bug), returns `policy: null` with
 `policyId` set, and emits `POLICY_NOT_LOADED`. Treat that warning as a bug in the loading query. Only own
 properties of `policiesById` are read, so ids such as `toString` or `__proto__` can never resolve to
@@ -160,14 +160,14 @@ properties of `policiesById` are read, so ids such as `toString` or `__proto__` 
 
 `resolvePolicyVersion(policy)` reads `policy.currentVersion` (load with `include: { currentVersion: true }`):
 
-| Situation | `restrictionConfig` | Warning |
-| --- | --- | --- |
-| `policy` is `null` | `null` | none (upstream already said nothing resolved) |
-| `currentVersionId` set but `currentVersion` absent, `null`, or a different version | `null` | `POLICY_VERSION_NOT_LOADED` (`currentVersionId`, `suppliedVersionId`) |
-| no current version at all | `null` | `POLICY_NOT_PUBLISHED` (`currentVersionId: null`) |
-| `currentVersion.publishedAt` is `null` | `null` | `POLICY_NOT_PUBLISHED` (`currentVersionId` set) |
-| stored JSON fails `isRestrictionConfig` | `null` (version ids still returned) | `INVALID_RESTRICTION_CONFIG` |
-| published, valid | the `RestrictionConfig` | none |
+| Situation                                                                          | `restrictionConfig`                 | Warning                                                               |
+| ---------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------------------- |
+| `policy` is `null`                                                                 | `null`                              | none (upstream already said nothing resolved)                         |
+| `currentVersionId` set but `currentVersion` absent, `null`, or a different version | `null`                              | `POLICY_VERSION_NOT_LOADED` (`currentVersionId`, `suppliedVersionId`) |
+| no current version at all                                                          | `null`                              | `POLICY_NOT_PUBLISHED` (`currentVersionId: null`)                     |
+| `currentVersion.publishedAt` is `null`                                             | `null`                              | `POLICY_NOT_PUBLISHED` (`currentVersionId` set)                       |
+| stored JSON fails `isRestrictionConfig`                                            | `null` (version ids still returned) | `INVALID_RESTRICTION_CONFIG`                                          |
+| published, valid                                                                   | the `RestrictionConfig`             | none                                                                  |
 
 A version counts as published only when `publishedAt` is set; `currentVersionId` alone is not enough.
 Publishing code must set both. `POLICY_VERSION_NOT_LOADED` exists so a forgotten `include` is never
@@ -180,16 +180,16 @@ Every anomaly is a `ResolutionWarning` with a stable `code` (`POLICY_RESOLUTION_
 type-level test keeps the array and the union identical), a human `message` and JSON-safe `details`
 (dates are ISO strings). Callers should persist them — the spec asks for a WARNING activity — not drop them.
 
-| Code | Meaning | Action |
-| --- | --- | --- |
-| `AMBIGUOUS_TEAM_ASSIGNMENT` | Employee in several teams with different policies; newest assignment won | Show on the employee page; manager should add an EMPLOYEE assignment or fix team membership |
-| `DUPLICATE_SCOPE_ASSIGNMENT` | More than one active assignment for one scope | Data clean-up; the assignment API should end the previous row (see §3) |
-| `INACTIVE_POLICY_SKIPPED` | Assignment or default points at an archived / deleted policy | End the stale assignment; pick a new default |
-| `POLICY_ORGANISATION_MISMATCH` | Assignment or default points at another organisation's policy | Tenancy bug: fix the writer, repair the row; never shown as a manager task |
-| `POLICY_NOT_LOADED` | Winning id missing from `policiesById` | Fix the loading query (never filter by status or organisation) |
-| `POLICY_NOT_PUBLISHED` | Resolved policy has no published version | Publish the policy; device gets no restrictions until then |
-| `POLICY_VERSION_NOT_LOADED` | Policy's current version was not supplied | Fix the loading query (`include: { currentVersion: true }`) |
-| `INVALID_RESTRICTION_CONFIG` | Stored version JSON does not match `RestrictionConfig` | Data integrity bug; repair the version |
+| Code                           | Meaning                                                                  | Action                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `AMBIGUOUS_TEAM_ASSIGNMENT`    | Employee in several teams with different policies; newest assignment won | Show on the employee page; manager should add an EMPLOYEE assignment or fix team membership |
+| `DUPLICATE_SCOPE_ASSIGNMENT`   | More than one active assignment for one scope                            | Data clean-up; the assignment API should end the previous row (see §3)                      |
+| `INACTIVE_POLICY_SKIPPED`      | Assignment or default points at an archived / deleted policy             | End the stale assignment; pick a new default                                                |
+| `POLICY_ORGANISATION_MISMATCH` | Assignment or default points at another organisation's policy            | Tenancy bug: fix the writer, repair the row; never shown as a manager task                  |
+| `POLICY_NOT_LOADED`            | Winning id missing from `policiesById`                                   | Fix the loading query (never filter by status or organisation)                              |
+| `POLICY_NOT_PUBLISHED`         | Resolved policy has no published version                                 | Publish the policy; device gets no restrictions until then                                  |
+| `POLICY_VERSION_NOT_LOADED`    | Policy's current version was not supplied                                | Fix the loading query (`include: { currentVersion: true }`)                                 |
+| `INVALID_RESTRICTION_CONFIG`   | Stored version JSON does not match `RestrictionConfig`                   | Data integrity bug; repair the version                                                      |
 
 ### Persisting warnings as activities
 
@@ -213,16 +213,16 @@ operational metadata as required by the privacy rules (§12).
 
 ## 7. Worked examples
 
-Setup: Sam (employee `E`) is in teams *Front of House* (`T1`) and *Baristas* (`T2`), primary location
-*Shoreditch* (`L`), organisation *Acme Coffee* (`O`, default policy `P-default`). All instants UTC.
+Setup: Sam (employee `E`) is in teams _Front of House_ (`T1`) and _Baristas_ (`T2`), primary location
+_Shoreditch_ (`L`), organisation _Acme Coffee_ (`O`, default policy `P-default`). All instants UTC.
 
 **A. Plain hierarchy**
 
-| Assignment | Scope | Policy | Window |
-| --- | --- | --- | --- |
-| a1 | ORGANISATION `O` | P-org | always |
-| a2 | LOCATION `L` | P-loc | always |
-| a3 | TEAM `T1` | P-foh | always |
+| Assignment | Scope            | Policy | Window |
+| ---------- | ---------------- | ------ | ------ |
+| a1         | ORGANISATION `O` | P-org  | always |
+| a2         | LOCATION `L`     | P-loc  | always |
+| a3         | TEAM `T1`        | P-foh  | always |
 
 → `P-foh`, `Resolved from Team: Front of House`. No warnings. Remove a3 → `P-loc`. Remove a2 → `P-org`
 (the organisation **assignment**, not the default). Remove a1 → `P-default`, `Resolved from Organisation
@@ -230,10 +230,10 @@ default`.
 
 **B. Two teams, different policies**
 
-| Assignment | Scope | Policy | createdAt |
-| --- | --- | --- | --- |
-| a3 | TEAM `T1` | P-foh | 2026-09-01 |
-| a4 | TEAM `T2` | P-barista | 2026-09-20 |
+| Assignment | Scope     | Policy    | createdAt  |
+| ---------- | --------- | --------- | ---------- |
+| a3         | TEAM `T1` | P-foh     | 2026-09-01 |
+| a4         | TEAM `T2` | P-barista | 2026-09-20 |
 
 → `P-barista` (a4 is newer) + `AMBIGUOUS_TEAM_ASSIGNMENT` listing both candidates. If a4 also pointed at
 `P-foh` there would be no warning. Had both rows the same `createdAt`, the higher `id` would win, whatever
@@ -241,10 +241,10 @@ the input order.
 
 **C. Scheduled change**
 
-| Assignment | Scope | Policy | Window | createdAt |
-| --- | --- | --- | --- | --- |
-| a5 | EMPLOYEE `E` | P-old | `effectiveTo` 2026-11-01T00:00Z | 2026-06-01 |
-| a6 | EMPLOYEE `E` | P-new | `effectiveFrom` 2026-11-01T00:00Z | 2026-10-05 |
+| Assignment | Scope        | Policy | Window                            | createdAt  |
+| ---------- | ------------ | ------ | --------------------------------- | ---------- |
+| a5         | EMPLOYEE `E` | P-old  | `effectiveTo` 2026-11-01T00:00Z   | 2026-06-01 |
+| a6         | EMPLOYEE `E` | P-new  | `effectiveFrom` 2026-11-01T00:00Z | 2026-10-05 |
 
 At 2026-10-31T23:59Z → `P-old`; at 2026-11-01T00:00Z → `P-new`. No warnings at any instant, no overlap.
 (Only a6 is open-ended, so the partial unique index allows it.)
@@ -292,7 +292,7 @@ resolvePolicy({
 - `policy !== null` but `version.restrictionConfig === null`: show "Policy not published" with a publish
   link **only** for `POLICY_NOT_PUBLISHED`; `POLICY_VERSION_NOT_LOADED` and `INVALID_RESTRICTION_CONFIG` are
   system errors, not manager tasks.
-- Managers care about *today*; pass `now = new Date()`. To preview a scheduled change, pass the future
+- Managers care about _today_; pass `now = new Date()`. To preview a scheduled change, pass the future
   instant — the function is pure, so previews are free.
 
 ## 9. Loading the inputs
@@ -319,9 +319,12 @@ const context = {
 };
 
 // Work policy: every assignment of the organisation (any scope, any window); resolution picks the winner.
-const assignments = await prisma.policyAssignment.findMany({ where: { organisationId: employee.organisationId } });
+const assignments = await prisma.policyAssignment.findMany({
+  where: { organisationId: employee.organisationId },
+});
 const policyIds = new Set(assignments.map((a) => a.policyId));
-if (employee.organisation.defaultPolicyId !== null) policyIds.add(employee.organisation.defaultPolicyId);
+if (employee.organisation.defaultPolicyId !== null)
+  policyIds.add(employee.organisation.defaultPolicyId);
 const policies = await prisma.policy.findMany({
   where: { id: { in: [...policyIds] } }, // NO status / deletedAt / organisation filter
   include: { currentVersion: true },
@@ -335,10 +338,15 @@ const work = resolveWorkPolicy({
 });
 
 // Break policy: same shape, adapted assignment rows, no versions.
-const breakAssignments = await prisma.breakPolicyAssignment.findMany({ where: { organisationId: employee.organisationId } });
+const breakAssignments = await prisma.breakPolicyAssignment.findMany({
+  where: { organisationId: employee.organisationId },
+});
 const breakPolicyIds = new Set(breakAssignments.map((a) => a.breakPolicyId));
-if (employee.organisation.defaultBreakPolicyId !== null) breakPolicyIds.add(employee.organisation.defaultBreakPolicyId);
-const breakPolicies = await prisma.breakPolicy.findMany({ where: { id: { in: [...breakPolicyIds] } } });
+if (employee.organisation.defaultBreakPolicyId !== null)
+  breakPolicyIds.add(employee.organisation.defaultBreakPolicyId);
+const breakPolicies = await prisma.breakPolicy.findMany({
+  where: { id: { in: [...breakPolicyIds] } },
+});
 const breaks = resolvePolicy({
   employee: context,
   assignments: breakAssignments.map(fromBreakPolicyAssignment),
@@ -348,8 +356,8 @@ const breaks = resolvePolicy({
 });
 ```
 
-Why no filters on the policy query: archived and deleted rows must be present to be *skipped* with a
-warning (absent rows become `POLICY_NOT_LOADED`), and foreign rows must be present to be *rejected* by the
+Why no filters on the policy query: archived and deleted rows must be present to be _skipped_ with a
+warning (absent rows become `POLICY_NOT_LOADED`), and foreign rows must be present to be _rejected_ by the
 organisation check. The Prisma client has no soft-delete extension, so `findMany` returns deleted rows.
 
 For a whole organisation, load assignments and policies once and call `resolvePolicy` per employee —
@@ -366,8 +374,12 @@ package should pin the two together at the type level, e.g.
 
 ```ts
 import type { RestrictionConfig } from "@workmode/shared/policy/restrictionConfig";
-type _SchemaMatchesType = [z.infer<typeof restrictionConfigSchema>] extends [RestrictionConfig] ? true : never;
-type _TypeMatchesSchema = [RestrictionConfig] extends [z.infer<typeof restrictionConfigSchema>] ? true : never;
+type _SchemaMatchesType = [z.infer<typeof restrictionConfigSchema>] extends [RestrictionConfig]
+  ? true
+  : never;
+type _TypeMatchesSchema = [RestrictionConfig] extends [z.infer<typeof restrictionConfigSchema>]
+  ? true
+  : never;
 ```
 
 `isRestrictionConfig` in shared is a lightweight structural guard for JSON read back from the database;
@@ -381,5 +393,5 @@ the Zod schema, `isRestrictionConfig`, and the iOS decoder together.
 ## 11. Out of scope
 
 Manager **overrides** (§ overrides: exempt temporarily, end early, emergency policy override) are a
-runtime layer applied by the Work Mode state machine *on top of* the resolved policy; they do not change
+runtime layer applied by the Work Mode state machine _on top of_ the resolved policy; they do not change
 which policy resolves and are not visible to `resolvePolicy`.

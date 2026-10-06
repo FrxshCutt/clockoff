@@ -13,7 +13,9 @@ import { hasPermission, outranksOrEquals } from "@workmode/shared/permissions";
 /** Roles `actorRole` may grant, highest first. Empty when the actor cannot invite at all. */
 export function assignableRoles(actorRole: Role | null): Role[] {
   if (!actorRole || !hasPermission(actorRole, "members:invite")) return [];
-  return ROLES.filter((role) => (role === "OWNER" ? actorRole === "OWNER" : outranksOrEquals(actorRole, role)));
+  return ROLES.filter((role) =>
+    role === "OWNER" ? actorRole === "OWNER" : outranksOrEquals(actorRole, role),
+  );
 }
 
 export function canInviteMembers(actorRole: Role | null): boolean {
@@ -21,7 +23,10 @@ export function canInviteMembers(actorRole: Role | null): boolean {
 }
 
 /** Whether `actorRole` may change the role of / remove `target`. */
-export function canManageMember(actorRole: Role | null, target: { role: Role; isCurrentUser: boolean | null }): boolean {
+export function canManageMember(
+  actorRole: Role | null,
+  target: { role: Role; isCurrentUser: boolean | null },
+): boolean {
   if (!actorRole || target.isCurrentUser) return false;
   if (!hasPermission(actorRole, "members:invite")) return false;
   if (target.role === "OWNER" && actorRole !== "OWNER") return false;

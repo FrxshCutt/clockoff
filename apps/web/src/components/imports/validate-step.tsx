@@ -22,7 +22,13 @@ export interface ValidateStepProps {
  * Step 3: `POST /api/imports/:id/validate` runs as soon as the step opens (once per import), then hands the
  * summary to the review step. Failures show a retry; a view-only role sees why nothing happens.
  */
-export function ValidateStep({ importId, rowCount, canImport, onValidated, onBack }: ValidateStepProps) {
+export function ValidateStep({
+  importId,
+  rowCount,
+  canImport,
+  onValidated,
+  onBack,
+}: ValidateStepProps) {
   const validate = useValidateImport(importId);
   const startedFor = useRef<string | null>(null);
   const { mutate } = validate;
@@ -65,11 +71,19 @@ export function ValidateStep({ importId, rowCount, canImport, onValidated, onBac
   }
 
   return (
-    <div className="bg-card/50 flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center" role="status" aria-live="polite">
+    <div
+      className="bg-card/50 flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center"
+      role="status"
+      aria-live="polite"
+    >
       <LoaderCircle className="text-primary size-8 animate-spin" aria-hidden="true" />
       <div className="max-w-md space-y-1.5">
-        <h2 className="text-foreground text-lg font-semibold tracking-tight">Checking {formatNumber(rowCount)} {rowCount === 1 ? "row" : "rows"}…</h2>
-        <p className="text-muted-foreground text-sm">Dates, times, employees, locations and overlaps with existing shifts.</p>
+        <h2 className="text-foreground text-lg font-semibold tracking-tight">
+          Checking {formatNumber(rowCount)} {rowCount === 1 ? "row" : "rows"}…
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Dates, times, employees, locations and overlaps with existing shifts.
+        </p>
       </div>
       <div className="w-full max-w-md space-y-2" aria-hidden="true">
         <Skeleton className="h-3 w-full" />

@@ -28,8 +28,20 @@ const policy = (id: string, overrides: Partial<PolicyLike> = {}): PolicyLike => 
   ...overrides,
 });
 
-const teamA: AssignmentLike = { id: "a-1", scopeType: "TEAM", scopeId: "team-a", policyId: "p-a", createdAt: hoursAgo(10) };
-const teamB: AssignmentLike = { id: "a-2", scopeType: "TEAM", scopeId: "team-b", policyId: "p-b", createdAt: hoursAgo(2) };
+const teamA: AssignmentLike = {
+  id: "a-1",
+  scopeType: "TEAM",
+  scopeId: "team-a",
+  policyId: "p-a",
+  createdAt: hoursAgo(10),
+};
+const teamB: AssignmentLike = {
+  id: "a-2",
+  scopeType: "TEAM",
+  scopeId: "team-b",
+  policyId: "p-b",
+  createdAt: hoursAgo(2),
+};
 
 function ambiguous(assignments: readonly AssignmentLike[], now = NOW): ResolutionWarning {
   const result = resolvePolicy({
@@ -54,19 +66,34 @@ describe("resolutionWarningKey", () => {
   it("changes when the condition changes (a team's policy is repointed, or the winner changes)", () => {
     const base = resolutionWarningKey(ambiguous([teamA, teamB]));
     const repointed = resolutionWarningKey(ambiguous([{ ...teamA, policyId: "p-c" }, teamB]));
-    const newWinner = resolutionWarningKey(ambiguous([{ ...teamA, createdAt: hoursAgo(1) }, teamB]));
+    const newWinner = resolutionWarningKey(
+      ambiguous([{ ...teamA, createdAt: hoursAgo(1) }, teamB]),
+    );
     expect(new Set([base, repointed, newWinner]).size).toBe(3);
   });
 
   it("ignores message wording", () => {
     const warning = ambiguous([teamA, teamB]);
-    expect(resolutionWarningKey({ ...warning, message: "reworded" })).toBe(resolutionWarningKey(warning));
+    expect(resolutionWarningKey({ ...warning, message: "reworded" })).toBe(
+      resolutionWarningKey(warning),
+    );
   });
 
   it("distinguishes skipping a policy because it was archived from because it was deleted", () => {
-    const asg: AssignmentLike = { id: "a-e", scopeType: "EMPLOYEE", scopeId: "emp-1", policyId: "p-x", createdAt: hoursAgo(1) };
+    const asg: AssignmentLike = {
+      id: "a-e",
+      scopeType: "EMPLOYEE",
+      scopeId: "emp-1",
+      policyId: "p-x",
+      createdAt: hoursAgo(1),
+    };
     const key = (p: PolicyLike): string => {
-      const w = resolvePolicy({ employee, assignments: [asg], policiesById: { [p.id]: p }, now: NOW }).warnings[0];
+      const w = resolvePolicy({
+        employee,
+        assignments: [asg],
+        policiesById: { [p.id]: p },
+        now: NOW,
+      }).warnings[0];
       if (w === undefined) throw new Error("expected a warning");
       return resolutionWarningKey(w);
     };
@@ -86,10 +113,16 @@ describe("resolutionWarningKey", () => {
     }).warnings[0];
     const invalid = resolvePolicyVersion({
       ...policy("p-1"),
-      currentVersion: { id: "v-2", versionNumber: 2, restrictionConfig: { nope: true }, publishedAt: NOW },
+      currentVersion: {
+        id: "v-2",
+        versionNumber: 2,
+        restrictionConfig: { nope: true },
+        publishedAt: NOW,
+      },
     }).warnings[0];
     const noVersion = resolvePolicyVersion(policy("p-1")).warnings[0];
-    if (unpublished === undefined || invalid === undefined || noVersion === undefined) throw new Error("expected warnings");
+    if (unpublished === undefined || invalid === undefined || noVersion === undefined)
+      throw new Error("expected warnings");
     expect(resolutionWarningKey(unpublished)).toBe("POLICY_NOT_PUBLISHED:p-1:v-1");
     expect(resolutionWarningKey(noVersion)).toBe("POLICY_NOT_PUBLISHED:p-1:-");
     expect(resolutionWarningKey(invalid)).toBe("INVALID_RESTRICTION_CONFIG:p-1:v-2");
@@ -101,7 +134,12 @@ describe("resolutionWarningKey", () => {
       DUPLICATE_SCOPE_ASSIGNMENT: {
         code: "DUPLICATE_SCOPE_ASSIGNMENT",
         message: "m",
-        details: { scopeType: "EMPLOYEE", scopeId: "emp-1", assignmentIds: ["d-2", "d-1"], winnerAssignmentId: "d-2" },
+        details: {
+          scopeType: "EMPLOYEE",
+          scopeId: "emp-1",
+          assignmentIds: ["d-2", "d-1"],
+          winnerAssignmentId: "d-2",
+        },
       },
       INACTIVE_POLICY_SKIPPED: {
         code: "INACTIVE_POLICY_SKIPPED",
@@ -132,9 +170,19 @@ describe("resolutionWarningKey", () => {
       POLICY_NOT_LOADED: {
         code: "POLICY_NOT_LOADED",
         message: "m",
-        details: { policyId: "p", via: "ASSIGNMENT", scopeType: "TEAM", scopeId: "team-a", assignmentId: "a-1" },
+        details: {
+          policyId: "p",
+          via: "ASSIGNMENT",
+          scopeType: "TEAM",
+          scopeId: "team-a",
+          assignmentId: "a-1",
+        },
       },
-      POLICY_NOT_PUBLISHED: { code: "POLICY_NOT_PUBLISHED", message: "m", details: { policyId: "p", currentVersionId: null } },
+      POLICY_NOT_PUBLISHED: {
+        code: "POLICY_NOT_PUBLISHED",
+        message: "m",
+        details: { policyId: "p", currentVersionId: null },
+      },
       POLICY_VERSION_NOT_LOADED: {
         code: "POLICY_VERSION_NOT_LOADED",
         message: "m",
@@ -158,7 +206,9 @@ describe("resolutionWarningKey", () => {
     expect(resolutionWarningKey(samples.POLICY_ORGANISATION_MISMATCH)).toBe(
       "POLICY_ORGANISATION_MISMATCH:ASSIGNMENT:EMPLOYEE:emp-1:a-9:p:org-2",
     );
-    expect(resolutionWarningKey(samples.POLICY_VERSION_NOT_LOADED)).toBe("POLICY_VERSION_NOT_LOADED:p:v-3:-");
+    expect(resolutionWarningKey(samples.POLICY_VERSION_NOT_LOADED)).toBe(
+      "POLICY_VERSION_NOT_LOADED:p:v-3:-",
+    );
     expect(
       resolutionWarningKey({
         code: "POLICY_VERSION_NOT_LOADED",
@@ -175,12 +225,24 @@ describe("resolutionWarningKey", () => {
       resolutionWarningKey({
         code: "POLICY_NOT_LOADED",
         message: "m",
-        details: { policyId: "p", via: "DEFAULT", scopeType: "ORGANISATION", scopeId: "org-1", assignmentId: null },
+        details: {
+          policyId: "p",
+          via: "DEFAULT",
+          scopeType: "ORGANISATION",
+          scopeId: "org-1",
+          assignmentId: null,
+        },
       }),
       resolutionWarningKey({
         code: "POLICY_NOT_LOADED",
         message: "m",
-        details: { policyId: "p", via: "ASSIGNMENT", scopeType: "ORGANISATION", scopeId: "org-1", assignmentId: "a-1" },
+        details: {
+          policyId: "p",
+          via: "ASSIGNMENT",
+          scopeType: "ORGANISATION",
+          scopeId: "org-1",
+          assignmentId: "a-1",
+        },
       }),
     ];
     expect(new Set(keys).size).toBe(keys.length);
@@ -188,6 +250,8 @@ describe("resolutionWarningKey", () => {
 
   it("keeps POLICY_RESOLUTION_WARNING_CODES and the ResolutionWarning union in sync (type level)", () => {
     expectTypeOf<ResolutionWarning["code"]>().toEqualTypeOf<PolicyResolutionWarningCode>();
-    expect(new Set(POLICY_RESOLUTION_WARNING_CODES).size).toBe(POLICY_RESOLUTION_WARNING_CODES.length);
+    expect(new Set(POLICY_RESOLUTION_WARNING_CODES).size).toBe(
+      POLICY_RESOLUTION_WARNING_CODES.length,
+    );
   });
 });

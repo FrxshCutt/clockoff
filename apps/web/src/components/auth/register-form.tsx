@@ -6,7 +6,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FormErrorAlert, PasswordField, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  PasswordField,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ROUTES, getPostAuthRedirect } from "@/config/navigation";
@@ -28,7 +35,8 @@ export function RegisterForm({ next }: { next: string | null }) {
       const result = await register.mutateAsync(values);
       const me = await refreshUser();
       if (me) {
-        if (result.requiresEmailVerification) toast.info(`We've sent a verification link to ${values.email}.`);
+        if (result.requiresEmailVerification)
+          toast.info(`We've sent a verification link to ${values.email}.`);
         router.replace(getPostAuthRedirect({ organisationCount: me.organisations.length, next }));
         return;
       }
@@ -49,7 +57,8 @@ export function RegisterForm({ next }: { next: string | null }) {
         title="Check your email"
         description={
           <>
-            We sent a verification link to <span className="text-foreground font-medium">{checkEmailFor}</span>. Open it to
+            We sent a verification link to{" "}
+            <span className="text-foreground font-medium">{checkEmailFor}</span>. Open it to
             activate your account, then sign in.
           </>
         }
@@ -77,8 +86,21 @@ export function RegisterForm({ next }: { next: string | null }) {
       <Form {...form}>
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <FormErrorAlert error={register.error} />
-          <TextField control={form.control} name="name" label="Your name" autoComplete="name" autoFocus />
-          <TextField control={form.control} name="email" label="Work email" type="email" autoComplete="email" inputMode="email" />
+          <TextField
+            control={form.control}
+            name="name"
+            label="Your name"
+            autoComplete="name"
+            autoFocus
+          />
+          <TextField
+            control={form.control}
+            name="email"
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+          />
           <PasswordField
             control={form.control}
             name="password"

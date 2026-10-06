@@ -10,8 +10,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
+import { complianceListHref } from "@/components/activity/activity-filters";
 import { useCreateInvite, useResendInvite } from "@/components/employees/employee-api";
-import { EMPLOYEE_URL_PARAMS } from "@/components/employees/employee-filters";
 import { employeeKeys } from "@/components/employees/employee-keys";
 import { ErrorState } from "@/components/error-state";
 import { canResendInvite, isInviteOpen } from "@/components/invites/invite-helpers";
@@ -19,7 +19,7 @@ import { SectionCard } from "@/components/section";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ROUTES, routeFor } from "@/config/navigation";
+import { routeFor } from "@/config/navigation";
 import { parseResponse } from "@/hooks/api-shapes";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { copyTextToClipboard } from "@/hooks/use-copy-to-clipboard";
@@ -41,7 +41,8 @@ const AWAITING_PARAMS: ComplianceListParams = {
   teamId: null,
 };
 
-const AWAITING_ALL_HREF = `${ROUTES.employees}?${EMPLOYEE_URL_PARAMS.filter}=awaitingSetup`;
+/** The compliance tab with the panel's own API filter, so "View all" lists exactly the rows behind the count. */
+const AWAITING_ALL_HREF = complianceListHref("AWAITING_SETUP");
 
 const TONE_TEXT: Record<StatusTone, string> = {
   neutral: "text-muted-foreground",
@@ -75,7 +76,11 @@ function useAwaitingSetupActions() {
       queryFn: async ({ signal }) =>
         parseResponse(
           employeeDetailResponseSchema,
-          await api.get<unknown>(`/api/employees/${encodeURIComponent(employeeId)}`, undefined, signal),
+          await api.get<unknown>(
+            `/api/employees/${encodeURIComponent(employeeId)}`,
+            undefined,
+            signal,
+          ),
           "GET /api/employees/:id",
         ).employee,
       staleTime: 0,
@@ -91,11 +96,19 @@ function useAwaitingSetupActions() {
       const invite = detail.latestInvite;
       let copyText: string;
       if (invite && isInviteOpen(invite)) {
-        const raw = await api.get<unknown>(`/api/invites/${encodeURIComponent(invite.id)}/instructions`);
-        copyText = parseResponse(inviteInstructionsResponseSchema, raw, "GET /api/invites/:id/instructions").instructions.copyText;
+        const raw = await api.get<unknown>(
+          `/api/invites/${encodeURIComponent(invite.id)}/instructions`,
+        );
+        copyText = parseResponse(
+          inviteInstructionsResponseSchema,
+          raw,
+          "GET /api/invites/:id/instructions",
+        ).instructions.copyText;
       } else {
         if (!canWrite) {
-          toast.error("There's no open invite to copy. Ask an owner or admin to invite this employee.");
+          toast.error(
+            "There's no open invite to copy. Ask an owner or admin to invite this employee.",
+          );
           return;
         }
         // No usable invite yet (never invited, or expired): create one so there is something to share.
@@ -104,7 +117,10 @@ function useAwaitingSetupActions() {
         void refreshPanel();
       }
       const ok = await copyTextToClipboard(copyText);
-      if (ok) toast.success(`Setup instructions for ${fullName(row.employee)} copied. Paste them into a message.`);
+      if (ok)
+        toast.success(
+          `Setup instructions for ${fullName(row.employee)} copied. Paste them into a message.`,
+        );
       else toast.error("Couldn't copy. Open the employee to view and copy the instructions.");
     } catch (error) {
       toastError(error, { title: "Couldn't copy the invite" });
@@ -171,7 +187,11 @@ export function AwaitingSetupPanel({ className }: { className?: string }) {
       contentClassName="px-5 py-2 sm:px-6"
     >
       {query.isPending ? (
-        <ul aria-busy="true" aria-label="Loading employees awaiting setup" className="divide-border divide-y">
+        <ul
+          aria-busy="true"
+          aria-label="Loading employees awaiting setup"
+          className="divide-border divide-y"
+        >
           {Array.from({ length: 3 }, (_, i) => (
             <li key={i} className="flex items-center justify-between gap-4 py-3">
               <div className="flex-1 space-y-2">
@@ -206,7 +226,10 @@ export function AwaitingSetupPanel({ className }: { className?: string }) {
             const name = fullName(row.employee);
             const isBusy = busy?.id === row.employee.id;
             return (
-              <li key={row.employee.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={row.employee.id}
+                className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
@@ -218,7 +241,9 @@ export function AwaitingSetupPanel({ className }: { className?: string }) {
                     <StatusBadge kind="inviteStatus" value={row.employee.inviteStatus} size="sm" />
                   </div>
                   <p className={cn("text-sm", TONE_TEXT[info.tone])}>{info.statusText}</p>
-                  {info.detail ? <p className="text-muted-foreground text-xs">{info.detail}</p> : null}
+                  {info.detail ? (
+                    <p className="text-muted-foreground text-xs">{info.detail}</p>
+                  ) : null}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   {info.canCopyInvite ? (
@@ -231,7 +256,11 @@ export function AwaitingSetupPanel({ className }: { className?: string }) {
                       aria-label={`Copy invite instructions for ${name}`}
                       onClick={() => void copyInvite(row)}
                     >
-                      {isBusy && busy?.action === "copy" ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                      {isBusy && busy?.action === "copy" ? (
+                        <LoaderCircle className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Copy aria-hidden="true" />
+                      )}
                       Copy invite
                     </Button>
                   ) : null}
@@ -245,7 +274,11 @@ export function AwaitingSetupPanel({ className }: { className?: string }) {
                       aria-label={`${info.inviteAction === "invite" ? "Invite" : "Resend invite to"} ${name}`}
                       onClick={() => void resend(row)}
                     >
-                      {isBusy && busy?.action === "resend" ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+                      {isBusy && busy?.action === "resend" ? (
+                        <LoaderCircle className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Send aria-hidden="true" />
+                      )}
                       {info.inviteAction === "invite" ? "Invite" : "Resend"}
                     </Button>
                   ) : null}

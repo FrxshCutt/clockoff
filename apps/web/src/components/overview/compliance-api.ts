@@ -34,13 +34,20 @@ export function useComplianceSummary(options: { enabled?: boolean } = {}) {
 }
 
 /** Employees behind a metric (`GET /api/compliance/employees?filter=…`), offset-paginated. */
-export function useComplianceEmployees(params: ComplianceListParams, options: { enabled?: boolean } = {}) {
+export function useComplianceEmployees(
+  params: ComplianceListParams,
+  options: { enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: complianceKeys.employees(params),
     queryFn: async ({ signal }): Promise<ComplianceEmployeesResponse> =>
       parseResponse(
         complianceEmployeesResponseSchema,
-        await api.get<unknown>("/api/compliance/employees", toComplianceApiQuery(params) as unknown as QueryParams, signal),
+        await api.get<unknown>(
+          "/api/compliance/employees",
+          toComplianceApiQuery(params) as unknown as QueryParams,
+          signal,
+        ),
         "GET /api/compliance/employees",
       ),
     placeholderData: keepPreviousData,

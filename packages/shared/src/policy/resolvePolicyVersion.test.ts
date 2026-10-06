@@ -65,12 +65,17 @@ describe("resolvePolicyVersion", () => {
   it("treats an absent currentVersion property like null", () => {
     const result = resolvePolicyVersion({ id: "pol-2", status: "DRAFT" });
     expect(result.restrictionConfig).toBeNull();
-    expect(result.warnings[0]).toMatchObject({ code: "POLICY_NOT_PUBLISHED", details: { policyId: "pol-2", currentVersionId: null } });
+    expect(result.warnings[0]).toMatchObject({
+      code: "POLICY_NOT_PUBLISHED",
+      details: { policyId: "pol-2", currentVersionId: null },
+    });
   });
 
   it("a current version that was never published is not applied", () => {
     const unpublished = version({ id: "ver-draft", versionNumber: 4, publishedAt: null });
-    const result = resolvePolicyVersion(policy({ currentVersion: unpublished, currentVersionId: unpublished.id }));
+    const result = resolvePolicyVersion(
+      policy({ currentVersion: unpublished, currentVersionId: unpublished.id }),
+    );
     expect(result.restrictionConfig).toBeNull();
     expect(result.versionId).toBeNull();
     expect(result.warnings).toEqual([
@@ -83,7 +88,9 @@ describe("resolvePolicyVersion", () => {
   });
 
   it("reports an INVALID_RESTRICTION_CONFIG when the stored JSON does not match the type, keeping the version ids", () => {
-    const bad = version({ restrictionConfig: { categories: ["NOT_A_CATEGORY"], requireEmployeeAppSelection: "yes" } });
+    const bad = version({
+      restrictionConfig: { categories: ["NOT_A_CATEGORY"], requireEmployeeAppSelection: "yes" },
+    });
     const result = resolvePolicyVersion(policy({ currentVersion: bad }));
     expect(result.versionId).toBe("ver-1");
     expect(result.versionNumber).toBe(3);
@@ -100,7 +107,12 @@ describe("resolvePolicyVersion", () => {
 
   it("reports POLICY_VERSION_NOT_LOADED (not POLICY_NOT_PUBLISHED) when currentVersionId is set but the version was not included", () => {
     // Prisma without `include: { currentVersion: true }`: the relation property is simply absent.
-    const result = resolvePolicyVersion({ id: "pol-3", status: "ACTIVE", deletedAt: null, currentVersionId: "ver-9" });
+    const result = resolvePolicyVersion({
+      id: "pol-3",
+      status: "ACTIVE",
+      deletedAt: null,
+      currentVersionId: "ver-9",
+    });
     expect(result).toEqual({
       versionId: null,
       versionNumber: null,
@@ -114,13 +126,17 @@ describe("resolvePolicyVersion", () => {
         },
       ],
     });
-    const explicitNull = resolvePolicyVersion(policy({ currentVersion: null, currentVersionId: "ver-9" }));
+    const explicitNull = resolvePolicyVersion(
+      policy({ currentVersion: null, currentVersionId: "ver-9" }),
+    );
     expect(explicitNull.warnings.map((w) => w.code)).toEqual(["POLICY_VERSION_NOT_LOADED"]);
   });
 
   it("refuses a supplied version that is not the policy's current version", () => {
     const stale = version({ id: "ver-old", versionNumber: 2 });
-    const result = resolvePolicyVersion(policy({ currentVersion: stale, currentVersionId: "ver-new" }));
+    const result = resolvePolicyVersion(
+      policy({ currentVersion: stale, currentVersionId: "ver-new" }),
+    );
     expect(result.restrictionConfig).toBeNull();
     expect(result.versionId).toBeNull();
     expect(result.warnings).toEqual([
@@ -142,7 +158,9 @@ describe("resolvePolicyVersion", () => {
 
   it("accepts a config without the optional shieldMessage", () => {
     const { shieldMessage: _omitted, ...withoutShield } = createDefaultRestrictionConfig();
-    const result = resolvePolicyVersion(policy({ currentVersion: version({ restrictionConfig: withoutShield }) }));
+    const result = resolvePolicyVersion(
+      policy({ currentVersion: version({ restrictionConfig: withoutShield }) }),
+    );
     expect(result.restrictionConfig).toEqual(withoutShield);
     expect(result.warnings).toEqual([]);
   });
@@ -151,7 +169,12 @@ describe("resolvePolicyVersion", () => {
 describe("resolveWorkPolicy", () => {
   const ORG = "org-1";
   const EMP = "emp-1";
-  const employee: EmployeeContextLike = { employeeId: EMP, organisationId: ORG, teamIds: [], primaryLocationId: null };
+  const employee: EmployeeContextLike = {
+    employeeId: EMP,
+    organisationId: ORG,
+    teamIds: [],
+    primaryLocationId: null,
+  };
   const NOW = new Date("2026-10-05T12:00:00.000Z");
 
   it("composes resolution and version lookup, merging warnings", () => {
@@ -161,13 +184,24 @@ describe("resolveWorkPolicy", () => {
       employee,
       assignments: [
         { id: "a-1", scopeType: "EMPLOYEE", scopeId: EMP, policyId: archived.id, createdAt: NOW },
-        { id: "a-2", scopeType: "ORGANISATION", scopeId: ORG, policyId: published.id, createdAt: NOW },
+        {
+          id: "a-2",
+          scopeType: "ORGANISATION",
+          scopeId: ORG,
+          policyId: published.id,
+          createdAt: NOW,
+        },
       ],
       policiesById: { [published.id]: published, [archived.id]: archived },
       now: NOW,
     });
     expect(result.policy).toBe(published);
-    expect(result.resolvedFrom).toEqual({ via: "ASSIGNMENT", scopeType: "ORGANISATION", scopeId: ORG, assignmentId: "a-2" });
+    expect(result.resolvedFrom).toEqual({
+      via: "ASSIGNMENT",
+      scopeType: "ORGANISATION",
+      scopeId: ORG,
+      assignmentId: "a-2",
+    });
     expect(result.version).toEqual({
       versionId: "ver-1",
       versionNumber: 3,
@@ -178,7 +212,12 @@ describe("resolveWorkPolicy", () => {
   });
 
   it("surfaces POLICY_NOT_PUBLISHED alongside resolution warnings", () => {
-    const draft = policy({ id: "pol-draft", status: "DRAFT", currentVersion: null, currentVersionId: null });
+    const draft = policy({
+      id: "pol-draft",
+      status: "DRAFT",
+      currentVersion: null,
+      currentVersionId: null,
+    });
     const result = resolveWorkPolicy({
       employee,
       assignments: [],
@@ -196,7 +235,15 @@ describe("resolveWorkPolicy", () => {
     const { currentVersion: _omitted, ...notIncluded } = policy({ id: "pol-ni" });
     const result = resolveWorkPolicy({
       employee,
-      assignments: [{ id: "a-1", scopeType: "EMPLOYEE", scopeId: EMP, policyId: notIncluded.id, createdAt: NOW }],
+      assignments: [
+        {
+          id: "a-1",
+          scopeType: "EMPLOYEE",
+          scopeId: EMP,
+          policyId: notIncluded.id,
+          createdAt: NOW,
+        },
+      ],
       policiesById: { [notIncluded.id]: notIncluded },
       now: NOW,
     });
@@ -209,7 +256,12 @@ describe("resolveWorkPolicy", () => {
     const result = resolveWorkPolicy({ employee, assignments: [], policiesById: {}, now: NOW });
     expect(result.policy).toBeNull();
     expect(result.resolvedFrom).toBeNull();
-    expect(result.version).toEqual({ versionId: null, versionNumber: null, publishedAt: null, restrictionConfig: null });
+    expect(result.version).toEqual({
+      versionId: null,
+      versionNumber: null,
+      publishedAt: null,
+      restrictionConfig: null,
+    });
     expect(result.warnings).toEqual([]);
   });
 });

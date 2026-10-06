@@ -65,7 +65,11 @@ async function createLocation(jar: CookieJar, body: Record<string, unknown>, exp
 
 async function createEmployee(
   org: TestOrg,
-  data: { primaryLocationId?: string; departmentId?: string; employmentStatus?: "ACTIVE" | "INACTIVE" } = {},
+  data: {
+    primaryLocationId?: string;
+    departmentId?: string;
+    employmentStatus?: "ACTIVE" | "INACTIVE";
+  } = {},
 ) {
   return prisma.employee.create({
     data: {
@@ -78,7 +82,9 @@ async function createEmployee(
 }
 
 async function createPolicy(org: TestOrg, name: string) {
-  return prisma.policy.create({ data: { organisationId: org.organisation.id, name, status: "ACTIVE" } });
+  return prisma.policy.create({
+    data: { organisationId: org.organisation.id, name, status: "ACTIVE" },
+  });
 }
 
 async function createBreakPolicy(org: TestOrg, name: string) {
@@ -113,7 +119,11 @@ describe("locations", () => {
       ],
     });
     await prisma.team.create({
-      data: { organisationId: org.organisation.id, name: "Baristas", locationId: apple.location.id },
+      data: {
+        organisationId: org.organisation.id,
+        name: "Baristas",
+        locationId: apple.location.id,
+      },
     });
     const policy = await createPolicy(org, "Front of house");
     const breakPolicy = await createBreakPolicy(org, "Standard breaks");
@@ -154,10 +164,18 @@ describe("locations", () => {
       jar,
     });
     expect(one.status).toBe(200);
-    expect(one.body.location).toMatchObject({ id: apple.location.id, employeeCount: 2, teamCount: 1 });
+    expect(one.body.location).toMatchObject({
+      id: apple.location.id,
+      employeeCount: 2,
+      teamCount: 1,
+    });
 
     const auditRow = await prisma.auditLog.findFirst({
-      where: { organisationId: org.organisation.id, action: "location.created", entityId: zebra.location.id },
+      where: {
+        organisationId: org.organisation.id,
+        action: "location.created",
+        entityId: zebra.location.id,
+      },
     });
     expect(auditRow?.after).toMatchObject({ name: "Zebra Street", timezone: "Europe/Paris" });
   });
@@ -192,7 +210,11 @@ describe("locations", () => {
 
   it("PATCH renames, clears the timezone / address and audits; a taken name conflicts", async () => {
     const { org, jar } = await setup();
-    const a = await createLocation(jar, { name: "Alpha", timezone: "Europe/Berlin", address: "A 1" });
+    const a = await createLocation(jar, {
+      name: "Alpha",
+      timezone: "Europe/Berlin",
+      address: "A 1",
+    });
     await createLocation(jar, { name: "Beta" });
 
     const patched = await callRoute<LocationResponse>(patchLocationRoute, {
@@ -219,7 +241,11 @@ describe("locations", () => {
     expect(conflict.status).toBe(409);
 
     const auditRow = await prisma.auditLog.findFirst({
-      where: { organisationId: org.organisation.id, action: "location.updated", entityId: a.location.id },
+      where: {
+        organisationId: org.organisation.id,
+        action: "location.updated",
+        entityId: a.location.id,
+      },
     });
     expect(auditRow?.before).toMatchObject({ name: "Alpha", timezone: "Europe/Berlin" });
     expect(auditRow?.after).toMatchObject({ name: "Alpha Renamed", timezone: null, address: null });
@@ -230,7 +256,9 @@ describe("locations", () => {
     const { location } = await createLocation(jar, { name: "Closing Down" });
     const employee = await createEmployee(org, { primaryLocationId: location.id });
     const other = await createEmployee(org);
-    await prisma.employeeLocation.create({ data: { employeeId: other.id, locationId: location.id } });
+    await prisma.employeeLocation.create({
+      data: { employeeId: other.id, locationId: location.id },
+    });
     const team = await prisma.team.create({
       data: { organisationId: org.organisation.id, name: "Closers", locationId: location.id },
     });
@@ -274,7 +302,10 @@ describe("locations", () => {
     });
     expect(blocked.status).toBe(409);
     expect(blocked.body.error.code).toBe("CONFLICT");
-    expect(blocked.body.error.details).toMatchObject({ reason: "UPCOMING_SHIFTS", upcomingShiftCount: 1 });
+    expect(blocked.body.error.details).toMatchObject({
+      reason: "UPCOMING_SHIFTS",
+      upcomingShiftCount: 1,
+    });
 
     await prisma.shift.update({ where: { id: shift.id }, data: { status: "CANCELLED" } });
 
@@ -291,12 +322,17 @@ describe("locations", () => {
 
     const row = await prisma.location.findUniqueOrThrow({ where: { id: location.id } });
     expect(row.deletedAt).not.toBeNull();
-    expect((await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).primaryLocationId).toBeNull();
+    expect(
+      (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).primaryLocationId,
+    ).toBeNull();
     expect(await prisma.employeeLocation.count({ where: { locationId: location.id } })).toBe(0);
     expect((await prisma.team.findUniqueOrThrow({ where: { id: team.id } })).locationId).toBeNull();
-    expect((await prisma.shift.findUniqueOrThrow({ where: { id: pastShift.id } })).locationId).toBeNull();
     expect(
-      (await prisma.policyAssignment.findUniqueOrThrow({ where: { id: assignment.id } })).effectiveTo,
+      (await prisma.shift.findUniqueOrThrow({ where: { id: pastShift.id } })).locationId,
+    ).toBeNull();
+    expect(
+      (await prisma.policyAssignment.findUniqueOrThrow({ where: { id: assignment.id } }))
+        .effectiveTo,
     ).not.toBeNull();
 
     const policyEvent = events.find((e) => e.type === "POLICY_CHANGED");
@@ -311,11 +347,18 @@ describe("locations", () => {
       jar,
     });
     expect(gone.status).toBe(404);
-    const list = await callRoute<ListLocationsResponse>(listLocationsRoute, { path: "/api/locations", jar });
+    const list = await callRoute<ListLocationsResponse>(listLocationsRoute, {
+      path: "/api/locations",
+      jar,
+    });
     expect(list.body.locations.map((l) => l.id)).not.toContain(location.id);
 
     const auditRow = await prisma.auditLog.findFirst({
-      where: { organisationId: org.organisation.id, action: "location.deleted", entityId: location.id },
+      where: {
+        organisationId: org.organisation.id,
+        action: "location.deleted",
+        entityId: location.id,
+      },
     });
     expect(auditRow?.after).toMatchObject({
       employeesDetached: 1,
@@ -326,12 +369,76 @@ describe("locations", () => {
     });
   });
 
-  it("lets a MANAGER manage structure (employees:write) but not an unauthenticated caller", async () => {
+  it("structure mutations need org:manage (ADMIN yes, MANAGER no); MANAGER still reads and manages team members", async () => {
     const { org } = await setup();
-    const { user } = await createTestUser();
-    await addMember(org.organisation.id, user, "MANAGER");
-    const jar = await loginAs(user, { organisationId: org.organisation.id });
-    await createLocation(jar, { name: "Manager made" });
+    const { user: manager } = await createTestUser();
+    await addMember(org.organisation.id, manager, "MANAGER");
+    const managerJar = await loginAs(manager, { organisationId: org.organisation.id });
+    const { user: admin } = await createTestUser();
+    await addMember(org.organisation.id, admin, "ADMIN");
+    const adminJar = await loginAs(admin, { organisationId: org.organisation.id });
+
+    const { location } = await createLocation(adminJar, { name: "Admin made" });
+    const forbiddenCreate = await createLocation(managerJar, { name: "Manager made" }, 403);
+    expect(forbiddenCreate.error.code).toBe("FORBIDDEN");
+    const forbiddenPatch = await callRoute<ErrorBody>(patchLocationRoute, {
+      method: "PATCH",
+      path: `/api/locations/${location.id}`,
+      params: { id: location.id },
+      jar: managerJar,
+      body: { name: "Hijacked" },
+    });
+    expect(forbiddenPatch.status).toBe(403);
+    const forbiddenDelete = await callRoute<ErrorBody>(deleteLocationRoute, {
+      method: "DELETE",
+      path: `/api/locations/${location.id}`,
+      params: { id: location.id },
+      jar: managerJar,
+    });
+    expect(forbiddenDelete.status).toBe(403);
+    const forbiddenDepartment = await callRoute<ErrorBody>(createDepartmentRoute, {
+      method: "POST",
+      path: "/api/departments",
+      jar: managerJar,
+      body: { name: "Kitchen" },
+    });
+    expect(forbiddenDepartment.status).toBe(403);
+    const forbiddenTeam = await callRoute<ErrorBody>(createTeamRoute, {
+      method: "POST",
+      path: "/api/teams",
+      jar: managerJar,
+      body: { name: "Crew" },
+    });
+    expect(forbiddenTeam.status).toBe(403);
+    expect(await prisma.location.count({ where: { organisationId: org.organisation.id } })).toBe(1);
+    expect((await prisma.location.findUniqueOrThrow({ where: { id: location.id } })).name).toBe(
+      "Admin made",
+    );
+    expect(await prisma.department.count({ where: { organisationId: org.organisation.id } })).toBe(
+      0,
+    );
+    expect(await prisma.team.count({ where: { organisationId: org.organisation.id } })).toBe(0);
+
+    // Reads are open to every manager; team membership is employees:write.
+    const list = await callRoute<ListLocationsResponse>(listLocationsRoute, {
+      path: "/api/locations",
+      jar: managerJar,
+    });
+    expect(list.status).toBe(200);
+    expect(list.body.locations.map((l) => l.name)).toEqual(["Admin made"]);
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Crew" },
+    });
+    const employee = await createEmployee(org);
+    const added = await callRoute<TeamResponse>(addMembersRoute, {
+      method: "POST",
+      path: `/api/teams/${team.id}/members`,
+      params: { id: team.id },
+      jar: managerJar,
+      body: { employeeIds: [employee.id] },
+    });
+    expect(added.status, JSON.stringify(added.body)).toBe(200);
+    expect(added.body.team.memberCount).toBe(1);
 
     const anonymous = await callRoute<ErrorBody>(listLocationsRoute, { path: "/api/locations" });
     expect(anonymous.status).toBe(401);
@@ -415,7 +522,9 @@ describe("departments", () => {
     });
     expect(res.status).toBe(204);
     expect(await prisma.department.count({ where: { id: department.id } })).toBe(0);
-    expect((await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).departmentId).toBeNull();
+    expect(
+      (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).departmentId,
+    ).toBeNull();
 
     const gone = await callRoute<ErrorBody>(getDepartmentRoute, {
       path: `/api/departments/${department.id}`,
@@ -526,10 +635,50 @@ describe("teams", () => {
     expect(badLocation.body.error.code).toBe("NOT_FOUND");
   });
 
+  it("never confirms archived employees or soft-deleted locations", async () => {
+    const { org, jar } = await setup();
+    const archived = await createEmployee(org);
+    await prisma.employee.update({ where: { id: archived.id }, data: { deletedAt: new Date() } });
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Till" },
+    });
+
+    const members = await callRoute<ErrorBody>(addMembersRoute, {
+      method: "POST",
+      path: `/api/teams/${team.id}/members`,
+      params: { id: team.id },
+      jar,
+      body: { employeeIds: [archived.id] },
+    });
+    expect(members.status).toBe(404);
+    expect(members.body.error.code).toBe("EMPLOYEE_NOT_FOUND");
+    expect(await prisma.employeeTeam.count({ where: { teamId: team.id } })).toBe(0);
+
+    const closed = await prisma.location.create({
+      data: { organisationId: org.organisation.id, name: "Closed", deletedAt: new Date() },
+    });
+    const moved = await callRoute<ErrorBody>(patchTeamRoute, {
+      method: "PATCH",
+      path: `/api/teams/${team.id}`,
+      params: { id: team.id },
+      jar,
+      body: { locationId: closed.id },
+    });
+    expect(moved.status).toBe(404);
+    expect(moved.body.error.code).toBe("NOT_FOUND");
+    expect((await prisma.team.findUniqueOrThrow({ where: { id: team.id } })).locationId).toBeNull();
+  });
+
   it("adds members idempotently, replaces the set on request and removes one member", async () => {
     const { org, jar } = await setup();
-    const [e1, e2, e3] = await Promise.all([createEmployee(org), createEmployee(org), createEmployee(org)]);
-    const team = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Till" } });
+    const [e1, e2, e3] = await Promise.all([
+      createEmployee(org),
+      createEmployee(org),
+      createEmployee(org),
+    ]);
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Till" },
+    });
     await prisma.employeeTeam.create({ data: { teamId: team.id, employeeId: e1.id } });
 
     const added = await callRoute<TeamResponse>(addMembersRoute, {
@@ -600,7 +749,12 @@ describe("teams", () => {
     await prisma.employeeTeam.create({ data: { teamId: team.id, employeeId: member.id } });
     const policy = await createPolicy(org, "Pier policy");
     const assignment = await prisma.policyAssignment.create({
-      data: { organisationId: org.organisation.id, policyId: policy.id, scopeType: "TEAM", scopeId: team.id },
+      data: {
+        organisationId: org.organisation.id,
+        policyId: policy.id,
+        scopeType: "TEAM",
+        scopeId: team.id,
+      },
     });
 
     const detached = await callRoute<TeamResponse>(patchTeamRoute, {
@@ -635,7 +789,8 @@ describe("teams", () => {
     expect(deleted.status).toBe(204);
     expect(await prisma.team.count({ where: { id: team.id } })).toBe(0);
     expect(
-      (await prisma.policyAssignment.findUniqueOrThrow({ where: { id: assignment.id } })).effectiveTo,
+      (await prisma.policyAssignment.findUniqueOrThrow({ where: { id: assignment.id } }))
+        .effectiveTo,
     ).not.toBeNull();
     expect(events.find((e) => e.type === "POLICY_CHANGED")?.payload).toMatchObject({
       policyId: policy.id,

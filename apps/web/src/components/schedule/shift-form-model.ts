@@ -10,9 +10,19 @@ import {
   type ShiftUpdateScope,
 } from "@workmode/validation/shifts";
 import { BREAK_POLICY_LIMITS } from "@workmode/validation/breakPolicies";
-import { buildShiftInstants, isValidTimeZone, type LocalDateString, type ShiftTimeWarning } from "@workmode/shared/time/time";
+import {
+  buildShiftInstants,
+  isValidTimeZone,
+  type LocalDateString,
+  type ShiftTimeWarning,
+} from "@workmode/shared/time/time";
 import { z } from "zod";
-import { REPEAT_OPTIONS, buildRecurrenceRule, isWeekdayCode, recurrenceOptionsFromRule, type RepeatOption } from "./rrule-builder";
+import {
+  REPEAT_OPTIONS,
+  buildRecurrenceRule,
+  isWeekdayCode,
+  type RepeatOption,
+} from "./rrule-builder";
 import { shiftLocalTimes } from "./schedule-model";
 
 /**
@@ -60,7 +70,9 @@ export const shiftFormSchema = z
     startTime: localTimeSchema,
     endTime: localTimeSchema,
     notes: z.string().max(1000, "Notes can be at most 1000 characters"),
-    scheduledBreaks: z.array(scheduledBreakFormSchema).max(SHIFT_LIMITS.maxScheduledBreaks, `At most ${SHIFT_LIMITS.maxScheduledBreaks} breaks`),
+    scheduledBreaks: z
+      .array(scheduledBreakFormSchema)
+      .max(SHIFT_LIMITS.maxScheduledBreaks, `At most ${SHIFT_LIMITS.maxScheduledBreaks} breaks`),
     repeat: z.enum(REPEAT_OPTIONS),
     weekdays: z.array(z.string()),
     customRule: z.string(),
@@ -69,19 +81,39 @@ export const shiftFormSchema = z
   })
   .superRefine((value, ctx) => {
     if (value.startTime === value.endTime) {
-      ctx.addIssue({ code: "custom", path: ["endTime"], message: "End time must differ from the start time (equal times would be a 24-hour shift)" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["endTime"],
+        message: "End time must differ from the start time (equal times would be a 24-hour shift)",
+      });
     }
     if (value.repeat !== "none") {
       if (!value.until) {
-        ctx.addIssue({ code: "custom", path: ["until"], message: "Choose the last date of the series" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["until"],
+          message: "Choose the last date of the series",
+        });
       } else if (!localDateSchema.safeParse(value.until).success) {
         ctx.addIssue({ code: "custom", path: ["until"], message: "Enter a valid date" });
       } else if (value.until <= value.date) {
-        ctx.addIssue({ code: "custom", path: ["until"], message: "The series must end after the first shift" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["until"],
+          message: "The series must end after the first shift",
+        });
       }
-      const rule = buildRecurrenceRule({ repeat: value.repeat, weekdays: value.weekdays.filter(isWeekdayCode), customRule: value.customRule });
+      const rule = buildRecurrenceRule({
+        repeat: value.repeat,
+        weekdays: value.weekdays.filter(isWeekdayCode),
+        customRule: value.customRule,
+      });
       if (!rule.ok) {
-        ctx.addIssue({ code: "custom", path: [value.repeat === "weekly" ? "weekdays" : "customRule"], message: rule.error });
+        ctx.addIssue({
+          code: "custom",
+          path: [value.repeat === "weekly" ? "weekdays" : "customRule"],
+          message: rule.error,
+        });
       }
     }
   });
@@ -110,13 +142,18 @@ export function emptyShiftForm(input: ShiftFormDefaultsInput): ShiftFormValues {
   };
 }
 
-/** Form values for editing an existing shift (wall-clock times in the shift's own timezone). */
+/**
+ * Form values for editing an existing shift (wall-clock times in the shift's own timezone). The repeat
+ * controls are always "none": `PATCH /api/shifts/:id` cannot change a recurrence (the drawer shows the stored
+ * rule read-only), and pre-filling them would make the never-rendered `until` field fail validation and
+ * silently block saving a series anchor.
+ */
 export function shiftToFormValues(shift: Shift): ShiftFormValues {
   // The API echoes the local wall-clock values; recompute them from the instants only if they are missing.
-  const times = shift.localDate && shift.localStartTime && shift.localEndTime
-    ? { startDate: shift.localDate, startTime: shift.localStartTime, endTime: shift.localEndTime }
-    : shiftLocalTimes(shift, shift.timezone);
-  const recurrence = recurrenceOptionsFromRule(shift.recurrenceRule);
+  const times =
+    shift.localDate && shift.localStartTime && shift.localEndTime
+      ? { startDate: shift.localDate, startTime: shift.localStartTime, endTime: shift.localEndTime }
+      : shiftLocalTimes(shift, shift.timezone);
   return {
     employeeId: shift.employee.id,
     locationId: shift.location?.id ?? NO_LOCATION,
@@ -128,9 +165,9 @@ export function shiftToFormValues(shift: Shift): ShiftFormValues {
       offsetMinutesFromStart: String(b.offsetMinutesFromStart),
       durationMinutes: String(b.durationMinutes),
     })),
-    repeat: recurrence.repeat,
-    weekdays: [...recurrence.weekdays],
-    customRule: recurrence.customRule,
+    repeat: "none",
+    weekdays: [],
+    customRule: "",
     until: "",
   };
 }
@@ -143,7 +180,10 @@ function toBreakInputs(breaks: ShiftFormValues["scheduledBreaks"]): ScheduledBre
 }
 
 /** `POST /api/shifts` body (local-time form). The timezone is left to the API: location → organisation. */
-export function toCreateShiftInput(values: ShiftFormValues, options: SaveShiftOptions = {}): CreateShiftByLocalTimeInput {
+export function toCreateShiftInput(
+  values: ShiftFormValues,
+  options: SaveShiftOptions = {},
+): CreateShiftByLocalTimeInput {
   const input: CreateShiftByLocalTimeInput = {
     employeeId: values.employeeId,
     date: values.date,
@@ -154,9 +194,14 @@ export function toCreateShiftInput(values: ShiftFormValues, options: SaveShiftOp
   if (values.locationId) input.locationId = values.locationId;
   const notes = values.notes.trim();
   if (notes) input.notes = notes;
-  if (values.scheduledBreaks.length > 0) input.scheduledBreaks = toBreakInputs(values.scheduledBreaks);
+  if (values.scheduledBreaks.length > 0)
+    input.scheduledBreaks = toBreakInputs(values.scheduledBreaks);
   if (values.repeat !== "none") {
-    const rule = buildRecurrenceRule({ repeat: values.repeat, weekdays: values.weekdays.filter(isWeekdayCode), customRule: values.customRule });
+    const rule = buildRecurrenceRule({
+      repeat: values.repeat,
+      weekdays: values.weekdays.filter(isWeekdayCode),
+      customRule: values.customRule,
+    });
     if (rule.ok && rule.rule) input.recurrence = { rule: rule.rule, until: values.until };
   }
   return input;
@@ -168,7 +213,11 @@ export function toCreateShiftInput(values: ShiftFormValues, options: SaveShiftOp
  * so the wall-clock values keep meaning what the form showed. With `applyTo: "THIS_AND_FUTURE"` the server
  * applies the same change to every later occurrence of the series (each keeps its own date).
  */
-export function toUpdateShiftInput(values: ShiftFormValues, shift: Shift, options: SaveShiftOptions = {}): UpdateShiftBody {
+export function toUpdateShiftInput(
+  values: ShiftFormValues,
+  shift: Shift,
+  options: SaveShiftOptions = {},
+): UpdateShiftBody {
   const notes = values.notes.trim();
   const body: UpdateShiftBody = {
     locationId: values.locationId ? values.locationId : null,
@@ -198,27 +247,53 @@ export interface ShiftTimePreview {
 }
 
 export const DST_WARNING_COPY: Record<ShiftTimeWarning, string> = {
-  START_NONEXISTENT_LOCAL_TIME_SHIFTED: "The start time doesn't exist on this date (clocks go forward), so the shift will start at the next valid time.",
-  START_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE: "The start time happens twice on this date (clocks go back); the first occurrence will be used.",
-  END_NONEXISTENT_LOCAL_TIME_SHIFTED: "The end time doesn't exist on this date (clocks go forward), so the shift will end at the next valid time.",
-  END_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE: "The end time happens twice on this date (clocks go back); the first occurrence will be used.",
+  START_NONEXISTENT_LOCAL_TIME_SHIFTED:
+    "The start time doesn't exist on this date (clocks go forward), so the shift will start at the next valid time.",
+  START_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE:
+    "The start time happens twice on this date (clocks go back); the first occurrence will be used.",
+  END_NONEXISTENT_LOCAL_TIME_SHIFTED:
+    "The end time doesn't exist on this date (clocks go forward), so the shift will end at the next valid time.",
+  END_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE:
+    "The end time happens twice on this date (clocks go back); the first occurrence will be used.",
 };
 
 /** Resolves the timezone the form's wall-clock values are entered in: location → organisation. */
-export function formTimezone(locationId: string, locations: readonly Pick<Location, "id" | "timezone">[], organisationTimezone: string): string {
+export function formTimezone(
+  locationId: string,
+  locations: readonly Pick<Location, "id" | "timezone">[],
+  organisationTimezone: string,
+): string {
   const location = locationId ? locations.find((l) => l.id === locationId) : undefined;
   const candidate = location?.timezone ?? organisationTimezone;
   return isValidTimeZone(candidate) ? candidate : organisationTimezone;
 }
 
 /** Live preview of what the typed times mean (overnight, DST adjustments, length). */
-export function previewShiftTimes(values: Pick<ShiftFormValues, "date" | "startTime" | "endTime">, timezone: string): ShiftTimePreview {
-  const base: ShiftTimePreview = { overnight: false, durationMinutes: null, tooShort: false, warnings: [], timezone };
+export function previewShiftTimes(
+  values: Pick<ShiftFormValues, "date" | "startTime" | "endTime">,
+  timezone: string,
+): ShiftTimePreview {
+  const base: ShiftTimePreview = {
+    overnight: false,
+    durationMinutes: null,
+    tooShort: false,
+    warnings: [],
+    timezone,
+  };
   if (!localDateSchema.safeParse(values.date).success) return base;
-  if (!localTimeSchema.safeParse(values.startTime).success || !localTimeSchema.safeParse(values.endTime).success) return base;
+  if (
+    !localTimeSchema.safeParse(values.startTime).success ||
+    !localTimeSchema.safeParse(values.endTime).success
+  )
+    return base;
   if (!isValidTimeZone(timezone)) return base;
   try {
-    const built = buildShiftInstants({ date: values.date, startTime: values.startTime, endTime: values.endTime, timezone });
+    const built = buildShiftInstants({
+      date: values.date,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      timezone,
+    });
     return {
       overnight: built.isOvernight,
       durationMinutes: built.durationMinutes,
@@ -237,7 +312,15 @@ export function readResponseWarnings(payload: unknown): string[] {
   const warnings = (payload as { warnings?: unknown }).warnings;
   if (!Array.isArray(warnings)) return [];
   return warnings
-    .map((w) => (typeof w === "string" ? w : typeof w === "object" && w !== null && typeof (w as { message?: unknown }).message === "string" ? (w as { message: string }).message : null))
+    .map((w) =>
+      typeof w === "string"
+        ? w
+        : typeof w === "object" &&
+            w !== null &&
+            typeof (w as { message?: unknown }).message === "string"
+          ? (w as { message: string }).message
+          : null,
+    )
     .filter((w): w is string => w !== null);
 }
 
@@ -256,13 +339,17 @@ export interface ConflictingShiftRef {
   shift: Shift | null;
 }
 
-export function resolveConflicts(ids: readonly string[], known: readonly Shift[]): ConflictingShiftRef[] {
+export function resolveConflicts(
+  ids: readonly string[],
+  known: readonly Shift[],
+): ConflictingShiftRef[] {
   return ids.map((id) => ({ id, shift: known.find((s) => s.id === id) ?? null }));
 }
 
 /** Local day difference between two `YYYY-MM-DD` dates (positive when `to` is later). */
 export function daysBetweenLocalDates(from: LocalDateString, to: LocalDateString): number {
-  const ms = (d: string) => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
+  const ms = (d: string) =>
+    Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
   return Math.round((ms(to) - ms(from)) / 86_400_000);
 }
 

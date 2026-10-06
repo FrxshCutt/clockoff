@@ -11,7 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ROUTES } from "@/config/navigation";
 import { usePermission } from "@/hooks/use-current-user";
 import { ActivityFeed } from "./activity-feed";
-import { isActivityTab, parseActivityPageState, serializeActivityPageState, type ActivityPageState } from "./activity-filters";
+import {
+  isActivityTab,
+  parseActivityPageState,
+  serializeActivityPageState,
+  type ActivityPageState,
+} from "./activity-filters";
 import { ComplianceTable } from "./compliance-table";
 import { useUrlState } from "./use-url-state";
 
@@ -52,7 +57,10 @@ export function ActivityPage() {
 
 /** The two tabs; owns the URL state (`?tab=…` plus each tab's filters). */
 function ActivityTabs() {
-  const [state, setState] = useUrlState<ActivityPageState>(parseActivityPageState, serializeActivityPageState);
+  const [state, setState] = useUrlState<ActivityPageState>(
+    parseActivityPageState,
+    serializeActivityPageState,
+  );
 
   return (
     <Tabs
@@ -70,7 +78,10 @@ function ActivityTabs() {
         <ActivityFeed feed={state.feed} onChange={(feed) => setState({ ...state, feed })} />
       </TabsContent>
       <TabsContent value="compliance">
-        <ComplianceTable params={state.compliance} onChange={(compliance) => setState({ ...state, compliance })} />
+        <ComplianceTable
+          params={state.compliance}
+          onChange={(compliance) => setState({ ...state, compliance })}
+        />
       </TabsContent>
     </Tabs>
   );

@@ -5,7 +5,9 @@ import { prisma, type Prisma } from "@workmode/db";
 export type Db = Prisma.TransactionClient | typeof prisma;
 
 export const joinCodeInclude = { organisation: true } satisfies Prisma.CompanyJoinCodeInclude;
-export type ActiveJoinCodeRow = Prisma.CompanyJoinCodeGetPayload<{ include: typeof joinCodeInclude }>;
+export type ActiveJoinCodeRow = Prisma.CompanyJoinCodeGetPayload<{
+  include: typeof joinCodeInclude;
+}>;
 
 /** The ACTIVE company join code for a canonical `WORD-####` code, with its (live) organisation. */
 export async function findActiveJoinCode(

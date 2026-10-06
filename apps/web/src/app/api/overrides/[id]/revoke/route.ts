@@ -7,6 +7,11 @@ export const dynamic = "force-dynamic";
 
 /** `POST /api/overrides/:id/revoke` (overrides:create) → `{ override }`; OVERRIDE_EXPIRED once past expiry. */
 export const POST = createHandler(
-  { auth: "manager", permission: "overrides:create", params: idParamsSchema, body: revokeOverrideSchema },
+  {
+    auth: "manager",
+    permission: "overrides:create",
+    params: idParamsSchema,
+    body: revokeOverrideSchema,
+  },
   async ({ ctx, params, body }) => ({ override: await revokeOverride(ctx, params.id, body) }),
 );

@@ -52,14 +52,14 @@ flowchart LR
 
 ## Packages
 
-| Path | Role | Depends on |
-| --- | --- | --- |
-| `packages/shared` | Pure domain logic (no framework): Work Mode state machine, policy resolution, break rules, time/DST helpers, CSV parsing, status derivation, privacy statements, join codes, plans, workforce provider abstraction. Fully unit-tested; the state-machine fixtures (`docs/fixtures/workmode-cases.json`) are also run by XCTest. | luxon, papaparse, rrule |
-| `packages/validation` | Zod schemas for every request/response (strict for mobile), and the OpenAPI 3.1 generator producing `docs/openapi.json`. | zod, shared |
-| `packages/db` | Prisma schema, SQL migrations (including hand-written constraints), client singleton, seed. | @prisma/client |
-| `packages/config` | tsconfig/eslint presets. | — |
-| `apps/web` | Dashboard UI, marketing pages, all API handlers, SSE, jobs entrypoint. | all packages |
-| `apps/ios` | Xcode project generated from `project.yml` (XcodeGen); app + 3 extensions + WorkModeCore SPM. | — (consumes the API) |
+| Path                  | Role                                                                                                                                                                                                                                                                                                                            | Depends on              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| `packages/shared`     | Pure domain logic (no framework): Work Mode state machine, policy resolution, break rules, time/DST helpers, CSV parsing, status derivation, privacy statements, join codes, plans, workforce provider abstraction. Fully unit-tested; the state-machine fixtures (`docs/fixtures/workmode-cases.json`) are also run by XCTest. | luxon, papaparse, rrule |
+| `packages/validation` | Zod schemas for every request/response (strict for mobile), and the OpenAPI 3.1 generator producing `docs/openapi.json`.                                                                                                                                                                                                        | zod, shared             |
+| `packages/db`         | Prisma schema, SQL migrations (including hand-written constraints), client singleton, seed.                                                                                                                                                                                                                                     | @prisma/client          |
+| `packages/config`     | tsconfig/eslint presets.                                                                                                                                                                                                                                                                                                        | —                       |
+| `apps/web`            | Dashboard UI, marketing pages, all API handlers, SSE, jobs entrypoint.                                                                                                                                                                                                                                                          | all packages            |
+| `apps/ios`            | Xcode project generated from `project.yml` (XcodeGen); app + 3 extensions + WorkModeCore SPM.                                                                                                                                                                                                                                   | — (consumes the API)    |
 
 ## Request lifecycle (manager)
 
@@ -100,11 +100,11 @@ through the `PushProvider` (`ApnsPushProvider` when APNs env is set, otherwise `
 
 ## iOS extensions
 
-| Target | Runs when | Does |
-| --- | --- | --- |
+| Target                          | Runs when                                                                                         | Does                                                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `WorkModeDeviceActivityMonitor` | Apple wakes it at scheduled interval start/end/warning, even if the app is killed or after reboot | Reads `plans.json` from the App Group, applies/clears `ManagedSettingsStore` shields, writes engine state + queues events to the outbox |
-| `WorkModeShieldConfiguration` | A shielded app is opened | Renders the custom shield (employer name, shield message) from App Group strings |
-| `WorkModeShieldAction` | User taps a shield button | Primary closes; secondary sets an App Group flag to open the status screen |
+| `WorkModeShieldConfiguration`   | A shielded app is opened                                                                          | Renders the custom shield (employer name, shield message) from App Group strings                                                        |
+| `WorkModeShieldAction`          | User taps a shield button                                                                         | Primary closes; secondary sets an App Group flag to open the status screen                                                              |
 
 See `docs/SCREEN_TIME_IMPLEMENTATION.md` for Apple-specific limits (15-minute minimum interval, 20-activity
 cap, opaque tokens, revocation honesty).

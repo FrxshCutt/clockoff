@@ -118,6 +118,25 @@ export function describeNextShift(
   return { primary, range, isActive };
 }
 
+// ── Schedule tab window ─────────────────────────────────────────────────────
+
+export const EMPLOYEE_SCHEDULE_WINDOW = { pastDays: 1, futureDays: 14 } as const;
+const HOUR_MS = 3_600_000;
+const DAY_MS = 86_400_000;
+
+/**
+ * `from` / `to` for `GET /api/employees/:id/shifts` on the Schedule tab: yesterday to two weeks ahead.
+ * Anchored to the start of the current hour so the query key (and so the request) changes hourly, not on
+ * every clock tick.
+ */
+export function employeeScheduleWindow(nowMs: number): { from: string; to: string } {
+  const anchor = Math.floor(nowMs / HOUR_MS) * HOUR_MS;
+  return {
+    from: new Date(anchor - EMPLOYEE_SCHEDULE_WINDOW.pastDays * DAY_MS).toISOString(),
+    to: new Date(anchor + EMPLOYEE_SCHEDULE_WINDOW.futureDays * DAY_MS).toISOString(),
+  };
+}
+
 // ── Setup checklist ─────────────────────────────────────────────────────────
 
 export interface SetupStep {

@@ -17,7 +17,11 @@ import { Button } from "@/components/ui/button";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { routeFor } from "@/config/navigation";
 import { usePermission } from "@/hooks/use-current-user";
-import { BreakPolicyMenu, DeleteBreakPolicyDialog, useToggleDefaultBreakPolicy } from "./break-policy-actions";
+import {
+  BreakPolicyMenu,
+  DeleteBreakPolicyDialog,
+  useToggleDefaultBreakPolicy,
+} from "./break-policy-actions";
 import { BreakPolicyFormSheet } from "./break-policy-form-sheet";
 import { describeBreakTriggers, summariseBreakPolicy } from "./break-policy-view-model";
 import { useBreakPolicies } from "./use-break-policies";
@@ -38,11 +42,18 @@ function buildColumns(handlers: ColumnHandlers): ColumnDef<BreakPolicy>[] {
       cell: ({ row }) => (
         <div className="min-w-0 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={routeFor.breakRule(row.original.id)} className="font-medium hover:underline">
+            <Link
+              href={routeFor.breakRule(row.original.id)}
+              className="font-medium hover:underline"
+            >
               {row.original.name}
             </Link>
             {row.original.isDefault ? (
-              <Badge variant="secondary" className="gap-1 font-normal" title="Applies to everyone without a more specific assignment">
+              <Badge
+                variant="secondary"
+                className="gap-1 font-normal"
+                title="Applies to everyone without a more specific assignment"
+              >
                 <Star className="fill-amber-400 text-amber-500" aria-hidden="true" />
                 Default
               </Badge>
@@ -62,7 +73,9 @@ function buildColumns(handlers: ColumnHandlers): ColumnDef<BreakPolicy>[] {
       cell: ({ row }) => (
         <div className="min-w-0 space-y-0.5">
           <p className="text-sm tabular-nums">{summariseBreakPolicy(row.original)}</p>
-          <p className="text-muted-foreground line-clamp-1 text-xs">{describeBreakTriggers(row.original)}</p>
+          <p className="text-muted-foreground line-clamp-1 text-xs">
+            {describeBreakTriggers(row.original)}
+          </p>
         </div>
       ),
     },
@@ -75,7 +88,11 @@ function buildColumns(handlers: ColumnHandlers): ColumnDef<BreakPolicy>[] {
       id: "assigned",
       accessorFn: (row) => row.assignedEmployeeCount,
       header: ({ column }) => <DataTableColumnHeader column={column} title="Applies to" />,
-      cell: ({ row }) => <span className="text-muted-foreground text-sm tabular-nums">{formatAssignedSummary(row.original)}</span>,
+      cell: ({ row }) => (
+        <span className="text-muted-foreground text-sm tabular-nums">
+          {formatAssignedSummary(row.original)}
+        </span>
+      ),
     },
     {
       id: "actions",
@@ -103,12 +120,15 @@ export function BreakRulesView() {
   const router = useRouter();
   const canEdit = usePermission("policies:write");
   const policies = useBreakPolicies();
-  const toggleDefault = useToggleDefaultBreakPolicy();
-  const [sheet, setSheet] = useState<{ open: boolean; policy: BreakPolicy | null }>({ open: false, policy: null });
+  const { toggle: toggleDefault, isPending: defaultPending } = useToggleDefaultBreakPolicy();
+  const [sheet, setSheet] = useState<{ open: boolean; policy: BreakPolicy | null }>({
+    open: false,
+    policy: null,
+  });
   const [deleting, setDeleting] = useState<BreakPolicy | null>(null);
   const copy = EMPTY_STATES.breakRules;
 
-  const defaultPending = toggleDefault.isPending;
+  // `toggleDefault` and the state setters are referentially stable, so the columns only rebuild on real changes.
   const columns = useMemo(
     () =>
       buildColumns({
@@ -116,11 +136,9 @@ export function BreakRulesView() {
         defaultPending,
         onEdit: (policy) => setSheet({ open: true, policy }),
         onDelete: setDeleting,
-        onToggleDefault: (policy) => void toggleDefault.toggle(policy),
+        onToggleDefault: (policy) => void toggleDefault(policy),
       }),
-    // `toggleDefault.toggle` closes over the mutation hook; the menu only needs the latest `isPending`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canEdit, defaultPending],
+    [canEdit, defaultPending, toggleDefault],
   );
 
   return (

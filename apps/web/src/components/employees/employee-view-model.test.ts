@@ -8,6 +8,7 @@ import {
   describeNextShift,
   describeResolvedFrom,
   employeeFullName,
+  employeeScheduleWindow,
   permissionGuidance,
 } from "./employee-view-model";
 
@@ -290,6 +291,15 @@ describe("describeExpectedVsReported", () => {
         diverged: false,
       }).summary,
     ).toContain("catching up");
+  });
+});
+
+describe("employeeScheduleWindow", () => {
+  it("spans yesterday to two weeks ahead, anchored to the start of the hour", () => {
+    const range = employeeScheduleWindow(Date.parse("2026-10-06T09:17:42.000Z"));
+    expect(range).toEqual({ from: "2026-10-05T09:00:00.000Z", to: "2026-10-20T09:00:00.000Z" });
+    // Later in the same hour → identical key, so the query does not refetch on every tick.
+    expect(employeeScheduleWindow(Date.parse("2026-10-06T09:59:59.000Z"))).toEqual(range);
   });
 });
 

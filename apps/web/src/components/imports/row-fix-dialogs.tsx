@@ -1,15 +1,42 @@
 "use client";
 
 import type { ImportRow, UpdateImportRowInput } from "@workmode/validation/imports";
-import { Building2, ChevronDown, LoaderCircle, MapPinOff, MapPinPlus, UserPlus } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  LoaderCircle,
+  MapPinOff,
+  MapPinPlus,
+  UserPlus,
+} from "lucide-react";
 import { useState } from "react";
-import { FormErrorAlert, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { InlineAlert } from "@/components/inline-alert";
 import { EmployeePicker, type EmployeeRef } from "@/components/schedule/employee-picker";
 import { employeeName } from "@/components/schedule/schedule-model";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Form } from "@/components/ui/form";
 import { hasErrorCode } from "@/lib/api-client";
 import {
@@ -36,13 +63,32 @@ export interface ChooseEmployeeDialogProps {
 export function ChooseEmployeeDialog({ row, onOpenChange, onSubmit }: ChooseEmployeeDialogProps) {
   return (
     <Dialog open={row !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">{row ? <ChooseEmployeeBody key={row.id} row={row} onSubmit={onSubmit} onDone={() => onOpenChange(false)} /> : null}</DialogContent>
+      <DialogContent className="sm:max-w-md">
+        {row ? (
+          <ChooseEmployeeBody
+            key={row.id}
+            row={row}
+            onSubmit={onSubmit}
+            onDone={() => onOpenChange(false)}
+          />
+        ) : null}
+      </DialogContent>
     </Dialog>
   );
 }
 
-function ChooseEmployeeBody({ row, onSubmit, onDone }: { row: ImportRow; onSubmit: SubmitRowFix; onDone: () => void }) {
-  const [selected, setSelected] = useState<EmployeeRef | null>(row.matchedEmployee ? { ...row.matchedEmployee } : null);
+function ChooseEmployeeBody({
+  row,
+  onSubmit,
+  onDone,
+}: {
+  row: ImportRow;
+  onSubmit: SubmitRowFix;
+  onDone: () => void;
+}) {
+  const [selected, setSelected] = useState<EmployeeRef | null>(
+    row.matchedEmployee ? { ...row.matchedEmployee } : null,
+  );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const label = rowEmployeeLabel(row);
@@ -69,7 +115,10 @@ function ChooseEmployeeBody({ row, onSubmit, onDone }: { row: ImportRow; onSubmi
         <DialogTitle>Choose the employee for row {row.rowNumber}</DialogTitle>
         <DialogDescription>
           The file says <span className="text-foreground font-medium">{label.label}</span>
-          {candidateCount > 1 ? `, which matches ${candidateCount} employees.` : ", which doesn't match anyone exactly."} Pick who this shift is for.
+          {candidateCount > 1
+            ? `, which matches ${candidateCount} employees.`
+            : ", which doesn't match anyone exactly."}{" "}
+          Pick who this shift is for.
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-3">
@@ -81,14 +130,23 @@ function ChooseEmployeeBody({ row, onSubmit, onDone }: { row: ImportRow; onSubmi
           aria-label="Employee"
           className="w-full"
         />
-        {selected ? <p className="text-muted-foreground text-sm">Row {row.rowNumber} will be imported for {employeeName(selected)}.</p> : null}
+        {selected ? (
+          <p className="text-muted-foreground text-sm">
+            Row {row.rowNumber} will be imported for {employeeName(selected)}.
+          </p>
+        ) : null}
         {error ? <FormErrorAlert error={error} title="Couldn't match the row" /> : null}
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone} disabled={pending}>
           Cancel
         </Button>
-        <Button type="button" onClick={() => void submit()} disabled={!selected || pending} aria-busy={pending || undefined}>
+        <Button
+          type="button"
+          onClick={() => void submit()}
+          disabled={!selected || pending}
+          aria-busy={pending || undefined}
+        >
           {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
           Use this employee
         </Button>
@@ -109,13 +167,32 @@ export interface CreateEmployeeDialogProps {
 export function CreateEmployeeDialog({ row, onOpenChange, onSubmit }: CreateEmployeeDialogProps) {
   return (
     <Dialog open={row !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">{row ? <CreateEmployeeBody key={row.id} row={row} onSubmit={onSubmit} onDone={() => onOpenChange(false)} /> : null}</DialogContent>
+      <DialogContent className="sm:max-w-md">
+        {row ? (
+          <CreateEmployeeBody
+            key={row.id}
+            row={row}
+            onSubmit={onSubmit}
+            onDone={() => onOpenChange(false)}
+          />
+        ) : null}
+      </DialogContent>
     </Dialog>
   );
 }
 
-function CreateEmployeeBody({ row, onSubmit, onDone }: { row: ImportRow; onSubmit: SubmitRowFix; onDone: () => void }) {
-  const form = useZodForm(createEmployeeFormSchema, { defaultValues: createEmployeeFormDefaults(prefillCreateEmployee(row)) });
+function CreateEmployeeBody({
+  row,
+  onSubmit,
+  onDone,
+}: {
+  row: ImportRow;
+  onSubmit: SubmitRowFix;
+  onDone: () => void;
+}) {
+  const form = useZodForm(createEmployeeFormSchema, {
+    defaultValues: createEmployeeFormDefaults(prefillCreateEmployee(row)),
+  });
   const [error, setError] = useState<unknown>(null);
   const [pending, setPending] = useState(false);
 
@@ -137,21 +214,56 @@ function CreateEmployeeBody({ row, onSubmit, onDone }: { row: ImportRow; onSubmi
       <form onSubmit={submit} noValidate className="contents">
         <DialogHeader>
           <DialogTitle>Create employee for row {row.rowNumber}</DialogTitle>
-          <DialogDescription>The employee is created now and this row (and others with the same identifier) are matched to them.</DialogDescription>
+          <DialogDescription>
+            The employee is created now and this row (and others with the same identifier) are
+            matched to them.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField control={form.control} name="firstName" label="First name" autoComplete="off" />
-            <TextField control={form.control} name="lastName" label="Last name" autoComplete="off" />
+            <TextField
+              control={form.control}
+              name="firstName"
+              label="First name"
+              autoComplete="off"
+            />
+            <TextField
+              control={form.control}
+              name="lastName"
+              label="Last name"
+              autoComplete="off"
+            />
           </div>
-          <TextField control={form.control} name="email" label="Email" type="email" autoComplete="off" description="Optional. Used to match future imports and to invite them." />
+          <TextField
+            control={form.control}
+            name="email"
+            label="Email"
+            type="email"
+            autoComplete="off"
+            description="Optional. Used to match future imports and to invite them."
+          />
           <div className="grid gap-4 sm:grid-cols-2">
-            <TextField control={form.control} name="externalEmployeeId" label="Employee ID" autoComplete="off" description="Optional. Your payroll / rota ID." />
-            <TextField control={form.control} name="jobTitle" label="Job title" autoComplete="off" description="Optional." />
+            <TextField
+              control={form.control}
+              name="externalEmployeeId"
+              label="Employee ID"
+              autoComplete="off"
+              description="Optional. Your payroll / rota ID."
+            />
+            <TextField
+              control={form.control}
+              name="jobTitle"
+              label="Job title"
+              autoComplete="off"
+              description="Optional."
+            />
           </div>
           {error ? (
             hasErrorCode(error, "CONFLICT") ? (
-              <InlineAlert variant="danger" title="An employee with this email or ID already exists">
+              <InlineAlert
+                variant="danger"
+                title="An employee with this email or ID already exists"
+              >
                 Choose them with &ldquo;Choose employee&rdquo; instead, or change the email / ID.
               </InlineAlert>
             ) : (

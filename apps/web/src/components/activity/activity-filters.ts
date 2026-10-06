@@ -26,7 +26,11 @@ export const DATE_RANGE_PRESET_LABELS: Record<DateRangePreset, string> = {
   custom: "Custom range",
 };
 
-const PRESET_HOURS: Partial<Record<DateRangePreset, number>> = { "24h": 24, "7d": 24 * 7, "30d": 24 * 30 };
+const PRESET_HOURS: Partial<Record<DateRangePreset, number>> = {
+  "24h": 24,
+  "7d": 24 * 7,
+  "30d": 24 * 30,
+};
 
 export interface ActivityFeedParams {
   readonly employeeId: string | null;
@@ -86,7 +90,8 @@ export const ACTIVITY_URL_PARAMS = {
   teamId: "team",
 } as const;
 
-export type SearchParamsLike = URLSearchParams | Readonly<Record<string, string | readonly string[] | undefined>>;
+export type SearchParamsLike =
+  URLSearchParams | Readonly<Record<string, string | readonly string[] | undefined>>;
 
 function readParam(params: SearchParamsLike, name: string): string | null {
   if (params instanceof URLSearchParams) return params.get(name);
@@ -150,9 +155,17 @@ export function parseActivityPageState(params: SearchParamsLike): ActivityPageSt
   const from = readParam(params, ACTIVITY_URL_PARAMS.from);
   const to = readParam(params, ACTIVITY_URL_PARAMS.to);
   const filter = readParam(params, ACTIVITY_URL_PARAMS.filter);
-  const pageSizeRaw = readPositiveInt(readParam(params, ACTIVITY_URL_PARAMS.pageSize), DEFAULT_COMPLIANCE_PARAMS.pageSize, 200);
-  const pageSize = (COMPLIANCE_PAGE_SIZES as readonly number[]).includes(pageSizeRaw) ? pageSizeRaw : DEFAULT_COMPLIANCE_PARAMS.pageSize;
-  const resolvedRange: DateRangePreset = isDateRangePreset(range) ? range : DEFAULT_FEED_PARAMS.range;
+  const pageSizeRaw = readPositiveInt(
+    readParam(params, ACTIVITY_URL_PARAMS.pageSize),
+    DEFAULT_COMPLIANCE_PARAMS.pageSize,
+    200,
+  );
+  const pageSize = (COMPLIANCE_PAGE_SIZES as readonly number[]).includes(pageSizeRaw)
+    ? pageSizeRaw
+    : DEFAULT_COMPLIANCE_PARAMS.pageSize;
+  const resolvedRange: DateRangePreset = isDateRangePreset(range)
+    ? range
+    : DEFAULT_FEED_PARAMS.range;
   const customFrom = resolvedRange === "custom" && isLocalDate(from) ? from : null;
   const customTo = resolvedRange === "custom" && isLocalDate(to) ? to : null;
   return {
@@ -192,10 +205,12 @@ export function serializeActivityPageState(state: ActivityPageState): string {
     if (feed.locationId) out.set(ACTIVITY_URL_PARAMS.locationId, feed.locationId);
   } else {
     const list = state.compliance;
-    if (list.filter !== DEFAULT_COMPLIANCE_PARAMS.filter) out.set(ACTIVITY_URL_PARAMS.filter, list.filter);
+    if (list.filter !== DEFAULT_COMPLIANCE_PARAMS.filter)
+      out.set(ACTIVITY_URL_PARAMS.filter, list.filter);
     if (list.search.trim()) out.set(ACTIVITY_URL_PARAMS.search, list.search.trim());
     if (list.page > 1) out.set(ACTIVITY_URL_PARAMS.page, String(list.page));
-    if (list.pageSize !== DEFAULT_COMPLIANCE_PARAMS.pageSize) out.set(ACTIVITY_URL_PARAMS.pageSize, String(list.pageSize));
+    if (list.pageSize !== DEFAULT_COMPLIANCE_PARAMS.pageSize)
+      out.set(ACTIVITY_URL_PARAMS.pageSize, String(list.pageSize));
     if (list.locationId) out.set(ACTIVITY_URL_PARAMS.locationId, list.locationId);
     if (list.teamId) out.set(ACTIVITY_URL_PARAMS.teamId, list.teamId);
   }
@@ -264,7 +279,12 @@ export interface ActivityApiQuery {
   limit: number;
 }
 
-export function toActivityApiQuery(feed: ActivityFeedParams, now: DateInput, timeZone: string, limit = 25): ActivityApiQuery {
+export function toActivityApiQuery(
+  feed: ActivityFeedParams,
+  now: DateInput,
+  timeZone: string,
+  limit = 25,
+): ActivityApiQuery {
   const query: ActivityApiQuery = { limit };
   if (feed.employeeId) query.employeeId = feed.employeeId;
   if (feed.types.length > 0) query.type = feed.types;
@@ -285,7 +305,11 @@ export interface ComplianceApiQuery {
 }
 
 export function toComplianceApiQuery(params: ComplianceListParams): ComplianceApiQuery {
-  const query: ComplianceApiQuery = { filter: params.filter, page: params.page, pageSize: params.pageSize };
+  const query: ComplianceApiQuery = {
+    filter: params.filter,
+    page: params.page,
+    pageSize: params.pageSize,
+  };
   const search = params.search.trim();
   if (search) query.search = search;
   if (params.locationId) query.locationId = params.locationId;
@@ -304,5 +328,10 @@ export function hasActiveFeedFilters(feed: ActivityFeedParams): boolean {
 }
 
 export function hasActiveComplianceFilters(params: ComplianceListParams): boolean {
-  return params.filter !== "ALL" || params.search.trim() !== "" || params.locationId !== null || params.teamId !== null;
+  return (
+    params.filter !== "ALL" ||
+    params.search.trim() !== "" ||
+    params.locationId !== null ||
+    params.teamId !== null
+  );
 }

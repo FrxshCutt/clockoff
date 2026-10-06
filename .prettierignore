@@ -7,3 +7,4 @@ pnpm-lock.yaml
 packages/db/generated
 apps/ios
 docs/openapi.json
+docs/fixtures

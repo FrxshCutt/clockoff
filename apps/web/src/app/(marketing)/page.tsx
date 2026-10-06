@@ -3,8 +3,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PrivacyExplainer } from "@/components/help/privacy-explainer";
 import { HeroIllustration } from "@/components/marketing/hero-illustration";
-import { FEATURES, HERO, HOW_IT_WORKS_STRIP, MARKETING_CTA, MARKETING_ROUTES } from "@/components/marketing/marketing-content";
-import { Container, CtaBand, PageSection, SectionHeading, StepNumber } from "@/components/marketing/marketing-sections";
+import {
+  FEATURES,
+  HERO,
+  HOW_IT_WORKS_STRIP,
+  MARKETING_CTA,
+  MARKETING_ROUTES,
+} from "@/components/marketing/marketing-content";
+import {
+  Container,
+  CtaBand,
+  PageSection,
+  SectionHeading,
+  StepNumber,
+} from "@/components/marketing/marketing-sections";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/config/site";
 
@@ -27,10 +39,15 @@ export default function HomePage() {
               <ShieldCheck className="size-4" aria-hidden="true" />
               {HERO.privacyLine}
             </p>
-            <h1 id="hero-title" className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+            <h1
+              id="hero-title"
+              className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl"
+            >
               {HERO.headline}
             </h1>
-            <p className="text-muted-foreground text-lg text-pretty sm:text-xl">{HERO.subheadline}</p>
+            <p className="text-muted-foreground text-lg text-pretty sm:text-xl">
+              {HERO.subheadline}
+            </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link href={`${MARKETING_CTA.primary.href}?source=home`}>
@@ -49,7 +66,12 @@ export default function HomePage() {
       </section>
 
       <PageSection tone="muted" aria-labelledby="how-title">
-        <SectionHeading id="how-title" eyebrow="How it works" title="Three steps, then it runs itself" align="center" />
+        <SectionHeading
+          id="how-title"
+          eyebrow="How it works"
+          title="Three steps, then it runs itself"
+          align="center"
+        />
         <ol className="mt-12 grid gap-6 md:grid-cols-3">
           {HOW_IT_WORKS_STRIP.map((step, index) => (
             <li key={step.title} className="bg-card flex gap-4 rounded-xl border p-6 shadow-xs">
@@ -81,7 +103,10 @@ export default function HomePage() {
         <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, body }) => (
             <li key={title} className="bg-card rounded-xl border p-6 shadow-xs">
-              <span className="bg-primary/10 text-primary mb-4 flex size-10 items-center justify-center rounded-lg" aria-hidden="true">
+              <span
+                className="bg-primary/10 text-primary mb-4 flex size-10 items-center justify-center rounded-lg"
+                aria-hidden="true"
+              >
                 <Icon className="size-5" />
               </span>
               <h3 className="font-semibold">{title}</h3>

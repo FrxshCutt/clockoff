@@ -6,7 +6,9 @@ const ALL_ROUTES = new Set<string>(Object.values(ROUTES));
 
 describe("empty-state copy", () => {
   it("quotes the spec verbatim for NO EMPLOYEES and NO POLICY", () => {
-    expect(EMPTY_STATES.employees.description).toBe("Add your first employee to begin setting up distraction-free shifts.");
+    expect(EMPTY_STATES.employees.description).toBe(
+      "Add your first employee to begin setting up distraction-free shifts.",
+    );
     expect(EMPTY_STATES.employees.action.label).toBe("Add Employee");
     expect(EMPTY_STATES.policies.description).toBe(
       "Create a Work Policy to decide which distractions are restricted during shifts.",

@@ -3,7 +3,14 @@
 import { loginSchema } from "@workmode/validation/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormErrorAlert, PasswordField, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  PasswordField,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Form } from "@/components/ui/form";
 import { ROUTES, getPostAuthRedirect } from "@/config/navigation";
 import { useLogin } from "@/hooks/use-auth";
@@ -25,7 +32,9 @@ export function LoginForm({ next }: { next: string | null }) {
     }
   });
 
-  const registerHref = next ? `${ROUTES.register}?next=${encodeURIComponent(next)}` : ROUTES.register;
+  const registerHref = next
+    ? `${ROUTES.register}?next=${encodeURIComponent(next)}`
+    : ROUTES.register;
 
   return (
     <AuthCard
@@ -43,7 +52,15 @@ export function LoginForm({ next }: { next: string | null }) {
       <Form {...form}>
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <FormErrorAlert error={login.error} />
-          <TextField control={form.control} name="email" label="Work email" type="email" autoComplete="email" inputMode="email" autoFocus />
+          <TextField
+            control={form.control}
+            name="email"
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            autoFocus
+          />
           <PasswordField
             control={form.control}
             name="password"
@@ -55,7 +72,11 @@ export function LoginForm({ next }: { next: string | null }) {
               </Link>
             }
           />
-          <SubmitButton className="w-full" isPending={login.isPending || login.isSuccess} pendingLabel="Signing in…">
+          <SubmitButton
+            className="w-full"
+            isPending={login.isPending || login.isSuccess}
+            pendingLabel="Signing in…"
+          >
             Sign in
           </SubmitButton>
         </form>

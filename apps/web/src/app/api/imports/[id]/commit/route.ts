@@ -8,6 +8,11 @@ import { commitImport } from "@/server/imports";
  * `{ import, shiftsCreated, employeesCreated, rowsSkipped }`. IMPORT_HAS_ERRORS while ERROR rows remain.
  */
 export const POST = createHandler(
-  { auth: "manager", permission: "imports:write", params: idParamsSchema, body: commitImportSchema },
+  {
+    auth: "manager",
+    permission: "imports:write",
+    params: idParamsSchema,
+    body: commitImportSchema,
+  },
   async ({ ctx, params, body }) => commitImport(ctx, params.id, body),
 );

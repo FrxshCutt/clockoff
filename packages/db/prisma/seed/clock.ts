@@ -36,7 +36,11 @@ export class SeedClock {
   }
 
   /** Shift instants for typed local times; `endTime <= startTime` ends on the next local day. */
-  shiftWindow(dayOffset: number, startTime: string, endTime: string): { startsAt: Date; endsAt: Date } {
+  shiftWindow(
+    dayOffset: number,
+    startTime: string,
+    endTime: string,
+  ): { startsAt: Date; endsAt: Date } {
     const built = buildShiftInstants({
       date: this.day(dayOffset),
       startTime,

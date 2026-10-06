@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
-import { FormSkeleton, PageHeaderSkeleton } from "@/components/loading-skeletons";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageHeader } from "@/components/page-header";
 import { BackLink } from "@/components/placeholder-page";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-store";
@@ -21,7 +21,13 @@ import { ROUTES, routeFor } from "@/config/navigation";
 import { usePermission } from "@/hooks/use-current-user";
 import { hasErrorCode } from "@/lib/api-client";
 import { AssignmentsPanel } from "./assignments-panel";
-import { PolicyActionDialogs, PolicyMenu, usePolicyActionState, useToggleDefaultPolicy } from "./policy-actions";
+import { DetailHeaderSkeleton } from "./detail-header-skeleton";
+import {
+  PolicyActionDialogs,
+  PolicyMenu,
+  usePolicyActionState,
+  useToggleDefaultPolicy,
+} from "./policy-actions";
 import { PolicyBuilder } from "./policy-builder";
 import { PolicyVersionHistory } from "./policy-version-history";
 import {
@@ -81,7 +87,11 @@ export function PolicyDetailView({ id }: { id: string }) {
   if (policy.isPending) {
     return (
       <>
-        <PageHeaderSkeleton />
+        <DetailHeaderSkeleton
+          backHref={ROUTES.policies}
+          backLabel="Policies"
+          loadingLabel="Loading policy…"
+        />
         <div className={GRID} aria-busy="true" role="status" aria-label="Loading policy">
           <FormSkeleton fields={6} />
           <FormSkeleton fields={3} />
@@ -155,21 +165,30 @@ export function PolicyDetailView({ id }: { id: string }) {
 
       {archived ? (
         <InlineAlert variant="warning" title="This policy is archived">
-          It is skipped when working out which policy applies, and it can’t be edited or assigned. Duplicate it to start a new
-          draft.
+          It is skipped when working out which policy applies, and it can’t be edited or assigned.
+          Duplicate it to start a new draft.
         </InlineAlert>
       ) : current.status === "DRAFT" ? (
         <InlineAlert variant="info" title="Draft — not on any device yet">
           Publish the policy to make it assignable and send it to employees’ phones.
         </InlineAlert>
       ) : current.draftVersion && current.currentVersion ? (
-        <InlineAlert variant="info" title={`Unpublished changes in draft v${current.draftVersion.versionNumber}`}>
-          Devices are still on v{current.currentVersion.versionNumber}. Publish when you’re ready to roll the changes out.
+        <InlineAlert
+          variant="info"
+          title={`Unpublished changes in draft v${current.draftVersion.versionNumber}`}
+        >
+          Devices are still on v{current.currentVersion.versionNumber}. Publish when you’re ready to
+          roll the changes out.
         </InlineAlert>
       ) : null}
 
       <div className={GRID}>
-        <PolicyBuilder key={current.id} policy={current} canEdit={editable} readOnlyReason={readOnlyReason} />
+        <PolicyBuilder
+          key={current.id}
+          policy={current}
+          canEdit={editable}
+          readOnlyReason={readOnlyReason}
+        />
         <PolicyAssignments policy={current} canEdit={editable} />
       </div>
 
@@ -182,9 +201,12 @@ export function PolicyDetailView({ id }: { id: string }) {
             id: current.id,
             input: changeNote === undefined ? {} : { changeNote },
           });
-          toast.success(`Published v${saved.currentVersion?.versionNumber ?? nextVersionNumber(current)}`, {
-            description: "Devices pick it up on their next sync.",
-          });
+          toast.success(
+            `Published v${saved.currentVersion?.versionNumber ?? nextVersionNumber(current)}`,
+            {
+              description: "Devices pick it up on their next sync.",
+            },
+          );
         }}
       />
       <PolicyActionDialogs
@@ -222,8 +244,12 @@ function PolicyAssignments({ policy, canEdit }: { policy: Policy; canEdit: boole
       isDefault={policy.isDefault}
       defaultDisabledReason={policy.isDefault || defaultGuard.ok ? undefined : defaultGuard.reason}
       onSetDefault={(next) => setDefault.mutateAsync({ policyId: next ? policy.id : null })}
-      onAssign={(scopeType, scopeId) => assign.mutateAsync({ id: policy.id, input: { scopeType, scopeId } })}
-      onRemove={(assignment) => remove.mutateAsync({ assignmentId: assignment.id, policyId: policy.id })}
+      onAssign={(scopeType, scopeId) =>
+        assign.mutateAsync({ id: policy.id, input: { scopeType, scopeId } })
+      }
+      onRemove={(assignment) =>
+        remove.mutateAsync({ assignmentId: assignment.id, policyId: policy.id })
+      }
     />
   );
 }

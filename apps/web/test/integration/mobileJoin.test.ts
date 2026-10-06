@@ -17,7 +17,13 @@ import { POST as confirmRoute } from "@/app/api/mobile/v1/join/confirm/route";
 import { POST as lookupRoute } from "@/app/api/mobile/v1/join/lookup/route";
 import { POST as leaveRoute } from "@/app/api/mobile/v1/leave-workplace/route";
 import { hashToken } from "@/lib/tokens";
-import { callRoute, createTestDevice, createTestOrg, type ErrorBody, type TestOrg } from "../helpers";
+import {
+  callRoute,
+  createTestDevice,
+  createTestOrg,
+  type ErrorBody,
+  type TestOrg,
+} from "../helpers";
 
 /**
  * `/api/mobile/v1/join/*`, `/auth/*` and `/leave-workplace` through the real route handlers: company +
@@ -36,7 +42,9 @@ const DEVICE = {
 } as const;
 
 async function setup(options: { firstLocationName?: string } = {}) {
-  const org = await createTestOrg({ firstLocationName: options.firstLocationName ?? "High Street" });
+  const org = await createTestOrg({
+    firstLocationName: options.firstLocationName ?? "High Street",
+  });
   const location = await prisma.location.findFirstOrThrow({
     where: { organisationId: org.organisation.id },
   });
@@ -200,7 +208,11 @@ describe("POST /api/mobile/v1/join/lookup", () => {
       where: { id: org.joinCode.id },
       data: { status: "REVOKED", revokedAt: new Date() },
     });
-    const revoked = await lookup({ companyCode: org.joinCode.code, firstName: "Ann", lastName: "Lee" });
+    const revoked = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Ann",
+      lastName: "Lee",
+    });
     expect(revoked.status).toBe(404);
     expect(errorOf(revoked).code).toBe("INVALID_COMPANY_CODE");
   });
@@ -236,7 +248,11 @@ describe("POST /api/mobile/v1/join/lookup", () => {
     const second = await seedEmployee(org, "Sam", "Patel", { jobTitle: "Server" });
     const invite = await seedInvite(org, second.id);
 
-    const ambiguous = await lookup({ companyCode: org.joinCode.code, firstName: "sam", lastName: "patel" });
+    const ambiguous = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "sam",
+      lastName: "patel",
+    });
     expect(ambiguous.status).toBe(200);
     expect(ambiguous.body).toEqual({
       organisation: { name: org.organisation.name },
@@ -279,7 +295,11 @@ describe("POST /api/mobile/v1/join/lookup", () => {
     expect(joined.employee.id).toBe(second.id);
 
     // Once one of them joined, the other is the single remaining match by name.
-    const remaining = await lookup({ companyCode: org.joinCode.code, firstName: "Sam", lastName: "Patel" });
+    const remaining = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Sam",
+      lastName: "Patel",
+    });
     expect(remaining.body.match).toBe("SINGLE");
     expect(remaining.body.employeePreview?.id).toBe(first.id);
   });
@@ -305,7 +325,11 @@ describe("POST /api/mobile/v1/join/lookup", () => {
       expect(errorOf(res).code, code).toBe("INVALID_INVITE_CODE");
     }
     // Without a code the employee still matches by name.
-    const byName = await lookup({ companyCode: org.joinCode.code, firstName: "Code", lastName: "Holder" });
+    const byName = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Code",
+      lastName: "Holder",
+    });
     expect(byName.body.match).toBe("SINGLE");
   });
 
@@ -313,15 +337,24 @@ describe("POST /api/mobile/v1/join/lookup", () => {
     const { org } = await setup();
     const employee = await seedEmployee(org, "Needs", "Code");
     const invite = await seedInvite(org, employee.id);
-    const current = await prisma.organisation.findUniqueOrThrow({ where: { id: org.organisation.id } });
+    const current = await prisma.organisation.findUniqueOrThrow({
+      where: { id: org.organisation.id },
+    });
     await prisma.organisation.update({
       where: { id: org.organisation.id },
       data: {
-        settings: { ...(current.settings as Record<string, unknown>), requireInviteCodeToJoin: true },
+        settings: {
+          ...(current.settings as Record<string, unknown>),
+          requireInviteCodeToJoin: true,
+        },
       },
     });
 
-    const withoutCode = await lookup({ companyCode: org.joinCode.code, firstName: "Needs", lastName: "Code" });
+    const withoutCode = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Needs",
+      lastName: "Code",
+    });
     expect(withoutCode.body.match).toBe("AMBIGUOUS");
     const withCode = await lookup({
       companyCode: org.joinCode.code,
@@ -425,7 +458,9 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     });
     expect(joined.accessToken.split(".")).toHaveLength(3);
     expect(Date.parse(joined.accessTokenExpiresAt)).toBeGreaterThan(Date.now());
-    expect(Date.parse(joined.refreshTokenExpiresAt)).toBeGreaterThan(Date.parse(joined.accessTokenExpiresAt));
+    expect(Date.parse(joined.refreshTokenExpiresAt)).toBeGreaterThan(
+      Date.parse(joined.accessTokenExpiresAt),
+    );
 
     // Database effects of the join transaction.
     const device = await prisma.device.findUniqueOrThrow({ where: { id: joined.deviceId } });
@@ -439,13 +474,19 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
       isActive: true,
       pushTokenEncrypted: null,
     });
-    const mobileUser = await prisma.mobileUser.findUniqueOrThrow({ where: { id: device.mobileUserId } });
+    const mobileUser = await prisma.mobileUser.findUniqueOrThrow({
+      where: { id: device.mobileUserId },
+    });
     expect(mobileUser).toMatchObject({ firstName: "Jane", lastName: "Smith" });
-    const link = await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const link = await prisma.employeeUserLink.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(link.mobileUserId).toBe(mobileUser.id);
     expect(link.unlinkedAt).toBeNull();
     expect(await prisma.employeeWorkState.count({ where: { employeeId: employee.id } })).toBe(1);
-    expect(await prisma.employeeInvite.findUniqueOrThrow({ where: { id: invite.id } })).toMatchObject({
+    expect(
+      await prisma.employeeInvite.findUniqueOrThrow({ where: { id: invite.id } }),
+    ).toMatchObject({
       status: "ACCEPTED",
     });
     expect(
@@ -467,7 +508,11 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     expect(stored.deviceId).toBe(device.id);
 
     // Joined employees no longer match by name; claiming them again is a conflict, not "not found".
-    const again = await lookup({ companyCode: org.joinCode.code, firstName: "Jane", lastName: "Smith" });
+    const again = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Jane",
+      lastName: "Smith",
+    });
     expect(again.body.match).toBe("NONE");
     const second = await confirm({
       companyCode: org.joinCode.code,
@@ -488,7 +533,9 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     const reused = await refresh(joined.refreshToken);
     expect(reused.status).toBe(401);
     expect(errorOf(reused).code).toBe("TOKEN_REUSED");
-    expect(await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } })).toBe(0);
+    expect(
+      await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } }),
+    ).toBe(0);
     const dead = await refresh(tokens.refreshToken);
     expect(dead.status).toBe(401);
     expect(errorOf(dead).code).toBe("TOKEN_REUSED");
@@ -507,8 +554,12 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
       body: {},
     });
     expect(loggedOut.status, JSON.stringify(loggedOut.body)).toBe(204);
-    expect(await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } })).toBe(0);
-    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(true);
+    expect(
+      await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } }),
+    ).toBe(0);
+    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(
+      true,
+    );
 
     // Leaving unlinks, deactivates this phone and revokes everything; the access token stops working.
     const left = await callRoute<OkResponse>(leaveRoute, {
@@ -524,7 +575,8 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
       pushTokenEncrypted: null,
     });
     expect(
-      (await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } })).unlinkedAt,
+      (await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } }))
+        .unlinkedAt,
     ).not.toBeNull();
     const after = await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } });
     expect(after).toMatchObject({ employmentStatus: "ACTIVE", inviteStatus: "NOT_INVITED" });
@@ -545,7 +597,11 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     expect(dormant.body.error.code).toBe("DEVICE_INACTIVE");
 
     // The employee can join again from a (new) phone: the link is re-pointed, not duplicated.
-    const back = await lookup({ companyCode: org.joinCode.code, firstName: "Jane", lastName: "Smith" });
+    const back = await lookup({
+      companyCode: org.joinCode.code,
+      firstName: "Jane",
+      lastName: "Smith",
+    });
     expect(back.body.match).toBe("SINGLE");
     const rejoined = await joinAs(org, employee.id, "Jane", "Smith");
     expect(rejoined.deviceId).not.toBe(device.id);
@@ -626,7 +682,11 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     expect(noDevice.status).toBe(400);
 
     expect(await prisma.device.count({ where: { organisationId: org.organisation.id } })).toBe(0);
-    expect(await prisma.employeeUserLink.count({ where: { employee: { organisationId: org.organisation.id } } })).toBe(0);
+    expect(
+      await prisma.employeeUserLink.count({
+        where: { employee: { organisationId: org.organisation.id } },
+      }),
+    ).toBe(0);
   });
 
   it("lets an employee whose phone the manager deactivated join again from a new phone", async () => {
@@ -646,9 +706,14 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
     expect(found.body.match).toBe("SINGLE");
     const joined = await joinAs(org, employee.id, employee.firstName, employee.lastName);
     expect(joined.deviceId).not.toBe(oldDevice.id);
-    const devices = await prisma.device.findMany({ where: { employeeId: employee.id }, orderBy: { createdAt: "asc" } });
+    const devices = await prisma.device.findMany({
+      where: { employeeId: employee.id },
+      orderBy: { createdAt: "asc" },
+    });
     expect(devices.map((d) => d.isActive)).toEqual([false, true]);
-    const link = await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const link = await prisma.employeeUserLink.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(link.mobileUserId).toBe(devices[1]?.mobileUserId);
     expect(link.unlinkedAt).toBeNull();
   });
@@ -688,20 +753,29 @@ describe("POST /api/mobile/v1/join/confirm → tokens → refresh → logout →
       body: {},
     });
     expect(left.status, JSON.stringify(left.body)).toBe(200);
-    expect(await prisma.breakSession.findUniqueOrThrow({ where: { id: breakSession.id } })).toMatchObject({
+    expect(
+      await prisma.breakSession.findUniqueOrThrow({ where: { id: breakSession.id } }),
+    ).toMatchObject({
       status: "ENDED",
       endReason: "EMPLOYEE_ENDED",
     });
     expect(
       await prisma.activityEvent.count({
-        where: { employeeId: employee.id, type: "BREAK_ENDED", actorType: "EMPLOYEE_DEVICE", deviceId: joined.deviceId },
+        where: {
+          employeeId: employee.id,
+          type: "BREAK_ENDED",
+          actorType: "EMPLOYEE_DEVICE",
+          deviceId: joined.deviceId,
+        },
       }),
     ).toBe(1);
     expect(
       (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus,
     ).toBe("INVITED");
     // Shifts are kept.
-    expect((await prisma.shift.findUniqueOrThrow({ where: { id: shift.id } })).status).toBe("SCHEDULED");
+    expect((await prisma.shift.findUniqueOrThrow({ where: { id: shift.id } })).status).toBe(
+      "SCHEDULED",
+    );
   });
 });
 
@@ -734,7 +808,9 @@ describe("POST /api/mobile/v1/auth/refresh and /logout", () => {
       body: {},
     });
     expect(loggedOut.status).toBe(204);
-    expect(await prisma.refreshToken.count({ where: { deviceId: joined.deviceId, revokedAt: null } })).toBe(0);
+    expect(
+      await prisma.refreshToken.count({ where: { deviceId: joined.deviceId, revokedAt: null } }),
+    ).toBe(0);
     const afterLogout = await refresh(mobileTokensSchema.parse(rotated.body).refreshToken);
     expect(afterLogout.status).toBe(401);
     expect(errorOf(afterLogout).code).toBe("TOKEN_REUSED");
@@ -749,7 +825,9 @@ describe("POST /api/mobile/v1/auth/refresh and /logout", () => {
       body: { refreshToken: other.refreshToken },
     });
     expect(crossLogout.status).toBe(204);
-    expect(await prisma.refreshToken.count({ where: { deviceId: other.deviceId, revokedAt: null } })).toBe(1);
+    expect(
+      await prisma.refreshToken.count({ where: { deviceId: other.deviceId, revokedAt: null } }),
+    ).toBe(1);
     expect((await refresh(other.refreshToken)).status).toBe(200);
   });
 });

@@ -1,4 +1,7 @@
-import { integrationActionSchema, integrationParamsSchema } from "@workmode/validation/integrations";
+import {
+  integrationActionSchema,
+  integrationParamsSchema,
+} from "@workmode/validation/integrations";
 import { createHandler } from "@/server/http/apiHandler";
 import { syncIntegration } from "@/server/integrations";
 

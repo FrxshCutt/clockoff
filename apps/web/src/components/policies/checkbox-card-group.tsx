@@ -77,7 +77,8 @@ export function CheckboxCardGroup<V extends string>({
                 "has-focus-visible:ring-ring/50 flex cursor-pointer items-start gap-3 rounded-lg border transition-colors has-focus-visible:ring-[3px]",
                 size === "md" ? "p-3" : "px-3 py-2",
                 checked ? "border-primary/50 bg-primary/5" : "hover:bg-accent/50",
-                (disabled || option.disabled) && "cursor-not-allowed opacity-60 hover:bg-transparent",
+                (disabled || option.disabled) &&
+                  "cursor-not-allowed opacity-60 hover:bg-transparent",
               )}
             >
               <Checkbox
@@ -90,7 +91,9 @@ export function CheckboxCardGroup<V extends string>({
               <span className="min-w-0 space-y-0.5">
                 <span className="block text-sm leading-5 font-medium">{option.label}</span>
                 {option.description ? (
-                  <span className="text-muted-foreground block text-xs leading-4">{option.description}</span>
+                  <span className="text-muted-foreground block text-xs leading-4">
+                    {option.description}
+                  </span>
                 ) : null}
               </span>
             </label>

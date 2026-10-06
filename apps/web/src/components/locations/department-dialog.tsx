@@ -2,11 +2,28 @@
 
 import type { Department } from "@workmode/validation/locationsTeams";
 import { toast } from "sonner";
-import { FormErrorAlert, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
-import { departmentFormSchema, type DepartmentFormValues } from "./locations-view-model";
+import {
+  departmentFormSchema,
+  describeStructureConflict,
+  type DepartmentFormValues,
+} from "./locations-view-model";
+import { StructureErrorAlert } from "./structure-error-alert";
 import { useCreateDepartment, useUpdateDepartment } from "./use-locations-teams";
 
 export interface DepartmentDialogProps {
@@ -21,14 +38,28 @@ export function DepartmentDialog({ open, onOpenChange, department = null }: Depa
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        {open ? <DepartmentForm key={department?.id ?? "new"} department={department} onClose={() => onOpenChange(false)} /> : null}
+        {open ? (
+          <DepartmentForm
+            key={department?.id ?? "new"}
+            department={department}
+            onClose={() => onOpenChange(false)}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
 }
 
-function DepartmentForm({ department, onClose }: { department: Department | null; onClose: () => void }) {
-  const form = useZodForm(departmentFormSchema, { defaultValues: { name: department?.name ?? "" } });
+function DepartmentForm({
+  department,
+  onClose,
+}: {
+  department: Department | null;
+  onClose: () => void;
+}) {
+  const form = useZodForm(departmentFormSchema, {
+    defaultValues: { name: department?.name ?? "" },
+  });
   const create = useCreateDepartment();
   const update = useUpdateDepartment();
   const isPending = create.isPending || update.isPending;
@@ -49,7 +80,15 @@ function DepartmentForm({ department, onClose }: { department: Department | null
       }
       onClose();
     } catch (error) {
-      applyApiFieldErrors(form, error);
+      // A duplicate name (409 with `details.field`) belongs on the Name field, like a validation error.
+      const conflict = describeStructureConflict(error, "department");
+      if (conflict?.field)
+        form.setError(
+          conflict.field,
+          { type: "server", message: conflict.message },
+          { shouldFocus: true },
+        );
+      else applyApiFieldErrors(form, error);
     }
   });
 
@@ -59,11 +98,23 @@ function DepartmentForm({ department, onClose }: { department: Department | null
         <DialogHeader>
           <DialogTitle>{department ? `Rename ${department.name}` : "Add department"}</DialogTitle>
           <DialogDescription>
-            Departments group employees for filtering and reporting. Names must be unique within your organisation.
+            Departments group employees for filtering and reporting. Names must be unique within
+            your organisation.
           </DialogDescription>
         </DialogHeader>
-        <FormErrorAlert error={create.error ?? update.error} title={department ? "Couldn't rename the department" : "Couldn't add the department"} />
-        <TextField control={form.control} name="name" label="Name" placeholder="e.g. Kitchen" autoComplete="off" autoFocus />
+        <StructureErrorAlert
+          error={create.error ?? update.error}
+          kind="department"
+          title={department ? "Couldn't rename the department" : "Couldn't add the department"}
+        />
+        <TextField
+          control={form.control}
+          name="name"
+          label="Name"
+          placeholder="e.g. Kitchen"
+          autoComplete="off"
+          autoFocus
+        />
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
             Cancel

@@ -14,10 +14,26 @@ import { ROUTES, routeFor } from "@/config/navigation";
 export const metadata: Metadata = { title: "Help" };
 
 const GETTING_STARTED = [
-  { title: "Create a Work Policy", body: "Choose which categories of apps are restricted during shifts.", href: ROUTES.policies },
-  { title: "Set Break Rules", body: "Decide how long breaks last and what relaxes during them.", href: ROUTES.breakRules },
-  { title: "Add employees", body: "Add everyone who works shifts, using the names they'll type in the app.", href: ROUTES.employees },
-  { title: "Add shifts", body: "Create shifts or import your rota so phones know when to switch Work Mode on.", href: ROUTES.schedule },
+  {
+    title: "Create a Work Policy",
+    body: "Choose which categories of apps are restricted during shifts.",
+    href: ROUTES.policies,
+  },
+  {
+    title: "Set Break Rules",
+    body: "Decide how long breaks last and what relaxes during them.",
+    href: ROUTES.breakRules,
+  },
+  {
+    title: "Add employees",
+    body: "Add everyone who works shifts, using the names they'll type in the app.",
+    href: ROUTES.employees,
+  },
+  {
+    title: "Add shifts",
+    body: "Create shifts or import your rota so phones know when to switch Work Mode on.",
+    href: ROUTES.schedule,
+  },
   {
     title: "Share your join code",
     body: "Employees install Work Mode on their iPhone and join with your company code.",
@@ -51,7 +67,7 @@ export default function HelpPage() {
           </Button>
         }
       />
-      <nav aria-label="On this page" className="mb-6 -mt-2">
+      <nav aria-label="On this page" className="-mt-2 mb-6">
         <ul className="flex flex-wrap gap-2">
           {SECTIONS.map((section) => (
             <li key={section.id}>
@@ -67,7 +83,10 @@ export default function HelpPage() {
       </nav>
       <div className="space-y-6">
         <div id={HELP_ANCHORS.gettingStarted} className="scroll-mt-20">
-          <SectionCard title="Getting started" description="Five steps from sign-up to your first distraction-free shift.">
+          <SectionCard
+            title="Getting started"
+            description="Five steps from sign-up to your first distraction-free shift."
+          >
             <ol className="divide-y">
               {GETTING_STARTED.map((step, index) => (
                 <li key={step.title}>
@@ -103,7 +122,10 @@ export default function HelpPage() {
         </div>
 
         <div id={HELP_ANCHORS.faq} className="scroll-mt-20">
-          <SectionCard title="Frequently asked questions" description="Short answers, with links to the right place in the dashboard.">
+          <SectionCard
+            title="Frequently asked questions"
+            description="Short answers, with links to the right place in the dashboard."
+          >
             <FaqAccordion items={FAQ_ITEMS} />
           </SectionCard>
         </div>
@@ -118,7 +140,10 @@ export default function HelpPage() {
         </div>
 
         <div id={HELP_ANCHORS.troubleshooting} className="scroll-mt-20">
-          <SectionCard title="Troubleshooting" description="The three problems that come up most, and how to clear them.">
+          <SectionCard
+            title="Troubleshooting"
+            description="The three problems that come up most, and how to clear them."
+          >
             <Troubleshooting />
           </SectionCard>
         </div>
@@ -136,7 +161,9 @@ export default function HelpPage() {
               </Button>
             }
           >
-            <p className="text-muted-foreground mb-2 text-sm">To help us answer quickly, include:</p>
+            <p className="text-muted-foreground mb-2 text-sm">
+              To help us answer quickly, include:
+            </p>
             <ul className="text-muted-foreground list-disc space-y-1 pl-5 text-sm">
               {SUPPORT.include.map((line) => (
                 <li key={line}>{line}</li>

@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SETTINGS_TABS, SETTINGS_TAB_META, parseSettingsTab, type SettingsTab } from "@/config/settings";
+import {
+  SETTINGS_TABS,
+  SETTINGS_TAB_META,
+  parseSettingsTab,
+  type SettingsTab,
+} from "@/config/settings";
 import { DangerZone } from "./danger-zone";
 import { JoinCodeSettings } from "./join-code-settings";
 import { MembersSettings } from "./members-settings";
@@ -36,7 +41,11 @@ export function SettingsTabs({ initialTab }: { initialTab: SettingsTab }) {
     setTab(next);
     const url = new URL(window.location.href);
     url.searchParams.set("tab", next);
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
   };
 
   return (

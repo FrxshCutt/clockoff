@@ -3,10 +3,23 @@
 import type { Team } from "@workmode/validation/locationsTeams";
 import { toast } from "sonner";
 import { ReferenceSelectField } from "@/components/employees/reference-select";
-import { FormErrorAlert, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   EMPTY_TEAM_FORM,
   compareByName,
@@ -31,15 +44,32 @@ export function TeamFormSheet({ open, onOpenChange, team = null, onSaved }: Team
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        {open ? <TeamForm key={team?.id ?? "new"} team={team} onClose={() => onOpenChange(false)} onSaved={onSaved} /> : null}
+        {open ? (
+          <TeamForm
+            key={team?.id ?? "new"}
+            team={team}
+            onClose={() => onOpenChange(false)}
+            onSaved={onSaved}
+          />
+        ) : null}
       </SheetContent>
     </Sheet>
   );
 }
 
-function TeamForm({ team, onClose, onSaved }: { team: Team | null; onClose: () => void; onSaved?: TeamFormSheetProps["onSaved"] }) {
+function TeamForm({
+  team,
+  onClose,
+  onSaved,
+}: {
+  team: Team | null;
+  onClose: () => void;
+  onSaved?: TeamFormSheetProps["onSaved"];
+}) {
   const mode = team ? "edit" : "create";
-  const form = useZodForm(teamFormSchema, { defaultValues: team ? teamToFormValues(team) : EMPTY_TEAM_FORM });
+  const form = useZodForm(teamFormSchema, {
+    defaultValues: team ? teamToFormValues(team) : EMPTY_TEAM_FORM,
+  });
   const create = useCreateTeam();
   const update = useUpdateTeam();
   const locations = useLocationsList();
@@ -60,7 +90,9 @@ function TeamForm({ team, onClose, onSaved }: { team: Team | null; onClose: () =
         onSaved?.(saved, "edit");
       } else {
         const saved = await create.mutateAsync(toCreateTeamInput(values));
-        toast.success(`${saved.name} added`, { description: "Add members so the team's policies apply to them." });
+        toast.success(`${saved.name} added`, {
+          description: "Add members so the team's policies apply to them.",
+        });
         onClose();
         onSaved?.(saved, "create");
       }
@@ -69,7 +101,11 @@ function TeamForm({ team, onClose, onSaved }: { team: Team | null; onClose: () =
     }
   });
 
-  const locationOptions = locations.data ? [...locations.data].sort(compareByName).map((location) => ({ id: location.id, name: location.name })) : undefined;
+  const locationOptions = locations.data
+    ? [...locations.data]
+        .sort(compareByName)
+        .map((location) => ({ id: location.id, name: location.name }))
+    : undefined;
 
   return (
     <Form {...form}>
@@ -84,8 +120,18 @@ function TeamForm({ team, onClose, onSaved }: { team: Team | null; onClose: () =
         </SheetHeader>
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
-          <FormErrorAlert error={create.error ?? update.error} title={mode === "edit" ? "Couldn't save changes" : "Couldn't add the team"} />
-          <TextField control={form.control} name="name" label="Name" placeholder="e.g. Front of house" autoComplete="off" autoFocus={mode === "create"} />
+          <FormErrorAlert
+            error={create.error ?? update.error}
+            title={mode === "edit" ? "Couldn't save changes" : "Couldn't add the team"}
+          />
+          <TextField
+            control={form.control}
+            name="name"
+            label="Name"
+            placeholder="e.g. Front of house"
+            autoComplete="off"
+            autoFocus={mode === "create"}
+          />
           <ReferenceSelectField
             control={form.control}
             name="locationId"

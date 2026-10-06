@@ -38,12 +38,15 @@ export function replayTransitions(
   const now = toDate(input.now, "now");
   const start = toDate(since, "since");
   if (start.getTime() > now.getTime()) {
-    throw new RangeError(`workMode: replay since (${start.toISOString()}) is after now (${now.toISOString()})`);
+    throw new RangeError(
+      `workMode: replay since (${start.toISOString()}) is after now (${now.toISOString()})`,
+    );
   }
 
   let current: ExpectedState = computeExpectedState({ ...input, now: start });
   const states: ExpectedState[] = [current];
-  const transitions: Transition[] = previous === null || previous === undefined ? [] : diffStates(previous, current);
+  const transitions: Transition[] =
+    previous === null || previous === undefined ? [] : diffStates(previous, current);
 
   for (let step = 0; ; step += 1) {
     if (step >= MAX_REPLAY_STEPS) {

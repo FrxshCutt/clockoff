@@ -148,7 +148,11 @@ export class AppError extends Error {
   readonly status: number;
   readonly details?: unknown;
 
-  constructor(code: ApiErrorCode, message?: string, options?: { status?: number; details?: unknown }) {
+  constructor(
+    code: ApiErrorCode,
+    message?: string,
+    options?: { status?: number; details?: unknown },
+  ) {
     super(message ?? code);
     this.name = "AppError";
     this.code = code;
@@ -168,5 +172,8 @@ export class AppError extends Error {
 }
 
 export function isAppError(err: unknown): err is AppError {
-  return err instanceof AppError || (typeof err === "object" && err !== null && (err as AppError).name === "AppError");
+  return (
+    err instanceof AppError ||
+    (typeof err === "object" && err !== null && (err as AppError).name === "AppError")
+  );
 }

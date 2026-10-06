@@ -17,7 +17,13 @@ export interface TonedBadgeProps {
  * state, app selection state, active/inactive). Same palette as `StatusBadge`, with a dot instead of an icon
  * so colour is never the only signal.
  */
-export function TonedBadge({ tone, children, description, size = "md", className }: TonedBadgeProps) {
+export function TonedBadge({
+  tone,
+  children,
+  description,
+  size = "md",
+  className,
+}: TonedBadgeProps) {
   return (
     <span
       data-slot="toned-badge"

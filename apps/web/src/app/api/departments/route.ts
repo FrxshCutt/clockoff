@@ -3,12 +3,13 @@ import { createDepartment, listDepartments } from "@/server/departments";
 import { createHandler, json } from "@/server/http/apiHandler";
 
 /** `GET /api/departments` (employees:read) → `listDepartmentsResponseSchema`. */
-export const GET = createHandler({ auth: "manager", permission: "employees:read" }, async ({ ctx }) =>
-  listDepartments(ctx),
+export const GET = createHandler(
+  { auth: "manager", permission: "employees:read" },
+  async ({ ctx }) => listDepartments(ctx),
 );
 
-/** `POST /api/departments` (employees:write) → 201 `{ department }`. CONFLICT on a duplicate name. */
+/** `POST /api/departments` (org:manage) → 201 `{ department }`. CONFLICT on a duplicate name. */
 export const POST = createHandler(
-  { auth: "manager", permission: "employees:write", body: createDepartmentSchema },
+  { auth: "manager", permission: "org:manage", body: createDepartmentSchema },
   async ({ ctx, body }) => json({ department: await createDepartment(ctx, body) }, 201),
 );

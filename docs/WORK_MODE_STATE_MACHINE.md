@@ -5,10 +5,10 @@ restriction their phone should be enforcing. It is a **pure function** over plai
 sessions, manager overrides, Screen Time permission). There are no clocks, no I/O and no framework
 dependencies. The same contract is implemented twice:
 
-| Runtime | Implementation | Runs |
-| --- | --- | --- |
-| Server / dashboard | `packages/shared/src/workMode/` (TypeScript) | the background job (every minute), API handlers, dashboard previews |
-| iOS | `WorkModeCore` engine (Swift port) | on device, from the cached schedule, inside the app and the DeviceActivity monitor extension |
+| Runtime            | Implementation                               | Runs                                                                                         |
+| ------------------ | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Server / dashboard | `packages/shared/src/workMode/` (TypeScript) | the background job (every minute), API handlers, dashboard previews                          |
+| iOS                | `WorkModeCore` engine (Swift port)           | on device, from the cached schedule, inside the app and the DeviceActivity monitor extension |
 
 Both run the **same fixture file**, [`docs/fixtures/workmode-cases.json`](fixtures/workmode-cases.json), so
 any difference between them is a bug.
@@ -16,10 +16,10 @@ any difference between them is a bug.
 ```ts
 import {
   computeExpectedState, // (input) => ExpectedState
-  diffStates,           // (prev, next) => Transition[]
-  replayTransitions,    // (input, since, previous?) => { states, transitions }
-  mergeShiftIntervals,  // (shifts) => WorkingInterval[]
-  toExpectedStateJson,  // ExpectedState → wire/fixture JSON (ISO strings)
+  diffStates, // (prev, next) => Transition[]
+  replayTransitions, // (input, since, previous?) => { states, transitions }
+  mergeShiftIntervals, // (shifts) => WorkingInterval[]
+  toExpectedStateJson, // ExpectedState → wire/fixture JSON (ISO strings)
 } from "@workmode/shared/workMode/workModeMachine"; // also re-exported from "@workmode/shared"
 ```
 
@@ -29,17 +29,17 @@ import {
 
 `WorkModeState` comes from `@workmode/shared/enums` and mirrors the Prisma enum.
 
-| State | Produced by the machine? | Meaning |
-| --- | --- | --- |
-| `OFF_SHIFT` | yes | No working interval in progress, and none starts within `preShiftWarningMinutes`. |
-| `SHIFT_STARTING_SOON` | yes | `now ∈ [start − preShiftWarningMinutes, start)` of the next working interval. Nothing is enforced yet. |
-| `WORKING` | yes | `now ∈ [start, end)` of a working interval, with no break running. Full WORK restriction. |
-| `ON_BREAK` | yes | A break session of the current interval is running. Restriction per the break's behaviour snapshot. |
-| `SHIFT_ENDING` | yes | `now ∈ [end − shiftEndingWarningMinutes, end)` of the **merged** working interval, with no break running. WORK restriction still on. |
-| `MANAGER_OVERRIDE` | yes | A lifting override (`EXEMPT_TEMPORARILY`, `END_WORK_MODE_EARLY`, `EMERGENCY_POLICY_OVERRIDE`) is active while a shift is active or imminent. Restriction `NONE`. |
-| `PERMISSION_ERROR` | yes | Screen Time permission is not `APPROVED` while a shift is active or imminent. |
-| `SYNC_ERROR` | **no** | Device side only: the engine could not get a schedule or policy it trusts. |
-| `UNKNOWN` | **no** | Device side only: no evaluation has happened yet (fresh install, before the first sync). |
+| State                 | Produced by the machine? | Meaning                                                                                                                                                          |
+| --------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OFF_SHIFT`           | yes                      | No working interval in progress, and none starts within `preShiftWarningMinutes`.                                                                                |
+| `SHIFT_STARTING_SOON` | yes                      | `now ∈ [start − preShiftWarningMinutes, start)` of the next working interval. Nothing is enforced yet.                                                           |
+| `WORKING`             | yes                      | `now ∈ [start, end)` of a working interval, with no break running. Full WORK restriction.                                                                        |
+| `ON_BREAK`            | yes                      | A break session of the current interval is running. Restriction per the break's behaviour snapshot.                                                              |
+| `SHIFT_ENDING`        | yes                      | `now ∈ [end − shiftEndingWarningMinutes, end)` of the **merged** working interval, with no break running. WORK restriction still on.                             |
+| `MANAGER_OVERRIDE`    | yes                      | A lifting override (`EXEMPT_TEMPORARILY`, `END_WORK_MODE_EARLY`, `EMERGENCY_POLICY_OVERRIDE`) is active while a shift is active or imminent. Restriction `NONE`. |
+| `PERMISSION_ERROR`    | yes                      | Screen Time permission is not `APPROVED` while a shift is active or imminent.                                                                                    |
+| `SYNC_ERROR`          | **no**                   | Device side only: the engine could not get a schedule or policy it trusts.                                                                                       |
+| `UNKNOWN`             | **no**                   | Device side only: no evaluation has happened yet (fresh install, before the first sync).                                                                         |
 
 All intervals are **start-inclusive and end-exclusive**. At exactly 09:00 a 09:00–15:00 shift is `WORKING`, and
 at exactly 15:00 it is over.
@@ -95,7 +95,7 @@ computeExpectedState({
    `preShiftWarningMinutes`), the result is `OFF_SHIFT` / `NONE`. Overrides and permission problems are not
    surfaced off shift.
 2. **`PERMISSION_ERROR`.** Applies when permission is not `APPROVED` and a shift is active or imminent. It
-   dominates everything below. The *intended* `effectiveRestriction` / `restrictionsShouldBeActive` are still
+   dominates everything below. The _intended_ `effectiveRestriction` / `restrictionsShouldBeActive` are still
    reported, so the dashboard can show what the phone should be enforcing.
 3. **`MANAGER_OVERRIDE`.** Applies when an `EMERGENCY_POLICY_OVERRIDE`, `END_WORK_MODE_EARLY` or
    `EXEMPT_TEMPORARILY` override is active (ranked in that order when several are active), whether the shift
@@ -133,16 +133,21 @@ running end of the current interval extends it. As a result:
 interface ExpectedState {
   state: WorkModeState;
   effectiveRestriction: "WORK" | "BREAK_RELAXED" | "NONE";
-  restrictionsShouldBeActive: boolean;   // is at least part of the shield set enforced?
-  computedAt: Date;                      // = now
+  restrictionsShouldBeActive: boolean; // is at least part of the shield set enforced?
+  computedAt: Date; // = now
   timezone: string | null;
   permissionState: PermissionState;
-  activeShift: ShiftRef | null;          // in progress only (null while merely imminent)
-  upcomingShift: ShiftRef | null;        // first shift of the next interval starting after now
-  activeBreak: BreakRef | null;          // incl. effective `endsAt`
-  activeOverride: OverrideRef | null;    // the override that changed the output
+  activeShift: ShiftRef | null; // in progress only (null while merely imminent)
+  upcomingShift: ShiftRef | null; // first shift of the next interval starting after now
+  activeBreak: BreakRef | null; // incl. effective `endsAt`
+  activeOverride: OverrideRef | null; // the override that changed the output
   workingInterval: WorkingInterval | null; // current, or the imminent one
-  relaxation: { source: "BREAK" | "OVERRIDE"; restrictionBehaviour; relaxedCategories; liftedCategories } | null;
+  relaxation: {
+    source: "BREAK" | "OVERRIDE";
+    restrictionBehaviour;
+    relaxedCategories;
+    liftedCategories;
+  } | null;
   nextTransitionAt: Date | null;
 }
 ```
@@ -150,17 +155,17 @@ interface ExpectedState {
 `toExpectedStateJson()` converts this to `ExpectedStateJson`, with every instant as an ISO string. That is the
 wire and fixture form, and `JSON.stringify(state)` produces the same thing.
 
-| Situation | `effectiveRestriction` | `restrictionsShouldBeActive` | `liftedCategories` |
-| --- | --- | --- | --- |
-| `OFF_SHIFT`, `SHIFT_STARTING_SOON`, `MANAGER_OVERRIDE` | `NONE` | `false` | – |
-| `WORKING`, `SHIFT_ENDING` | `WORK` | `true` | – |
-| Break or exception, `KEEP_RESTRICTIONS` | `WORK` | `true` | – |
-| Break or exception, `RELAX_CATEGORIES` with an empty list | `WORK` | `true` | – |
-| Break or exception, `RELAX_CATEGORIES` with ≥ 1 category | `BREAK_RELAXED` | `true` (unless every category is listed) | the listed categories, canonical order |
-| Break or exception, `RELAX_ALL` | `BREAK_RELAXED` | `false` | every category |
-| `PERMISSION_ERROR` | the intended value from the rows above | intended | intended |
+| Situation                                                 | `effectiveRestriction`                 | `restrictionsShouldBeActive`             | `liftedCategories`                     |
+| --------------------------------------------------------- | -------------------------------------- | ---------------------------------------- | -------------------------------------- |
+| `OFF_SHIFT`, `SHIFT_STARTING_SOON`, `MANAGER_OVERRIDE`    | `NONE`                                 | `false`                                  | –                                      |
+| `WORKING`, `SHIFT_ENDING`                                 | `WORK`                                 | `true`                                   | –                                      |
+| Break or exception, `KEEP_RESTRICTIONS`                   | `WORK`                                 | `true`                                   | –                                      |
+| Break or exception, `RELAX_CATEGORIES` with an empty list | `WORK`                                 | `true`                                   | –                                      |
+| Break or exception, `RELAX_CATEGORIES` with ≥ 1 category  | `BREAK_RELAXED`                        | `true` (unless every category is listed) | the listed categories, canonical order |
+| Break or exception, `RELAX_ALL`                           | `BREAK_RELAXED`                        | `false`                                  | every category                         |
+| `PERMISSION_ERROR`                                        | the intended value from the rows above | intended                                 | intended                               |
 
-> **Note:** `effectiveRestriction` names the *profile*, so a relaxed break is never confused with "off shift"
+> **Note:** `effectiveRestriction` names the _profile_, so a relaxed break is never confused with "off shift"
 > or a manager override (`NONE`). `restrictionsShouldBeActive` and `liftedCategories` say what is actually
 > enforced. `breakRestrictionForSession()` in `breaks/` uses exactly the same mapping, and its parity test
 > runs both against each other.
@@ -229,17 +234,17 @@ stateDiagram-v2
 `Transition { from, to, at, eventType?, shiftId?, breakSessionId?, overrideId? }` per ActivityEvent, in
 causal order:
 
-| # | Condition | `eventType` | ids |
-| --- | --- | --- | --- |
-| 1 | entered `PERMISSION_ERROR` | `PERMISSION_NEEDS_ATTENTION` | shiftId (active or upcoming) |
-| 2 | previous break no longer running, and it ran to its `plannedEndsAt` (a tie with its shift's end counts) | `BREAK_EXPIRED` | breakSessionId, shiftId |
-| 2 | previous break no longer running otherwise (early end, cut short by its shift's end, shift cancelled) | `BREAK_ENDED` | breakSessionId, shiftId |
-| 3 | left `WORKING`/`ON_BREAK`/`SHIFT_ENDING`, or moved to another interval | `WORK_MODE_ENDED` | shiftId, overrideId if a lifting override caused it |
-| 4 | previous override gone and its `expiresAt` passed (a revoke emits nothing) | `OVERRIDE_EXPIRED` | overrideId, shiftId |
-| 5 | entered `WORKING`/`ON_BREAK`/`SHIFT_ENDING`, or moved to another interval | `WORK_MODE_STARTED` | shiftId |
-| 6 | a different break session is now running | `BREAK_STARTED` | breakSessionId, shiftId |
-| – | something else changed (e.g. `OFF_SHIFT → SHIFT_STARTING_SOON`, `WORKING → SHIFT_ENDING`, an exception starting) | *(none)*: one Transition so the caller knows to persist | – |
-| – | nothing changed | `[]` | – |
+| #   | Condition                                                                                                        | `eventType`                                             | ids                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------- |
+| 1   | entered `PERMISSION_ERROR`                                                                                       | `PERMISSION_NEEDS_ATTENTION`                            | shiftId (active or upcoming)                        |
+| 2   | previous break no longer running, and it ran to its `plannedEndsAt` (a tie with its shift's end counts)          | `BREAK_EXPIRED`                                         | breakSessionId, shiftId                             |
+| 2   | previous break no longer running otherwise (early end, cut short by its shift's end, shift cancelled)            | `BREAK_ENDED`                                           | breakSessionId, shiftId                             |
+| 3   | left `WORKING`/`ON_BREAK`/`SHIFT_ENDING`, or moved to another interval                                           | `WORK_MODE_ENDED`                                       | shiftId, overrideId if a lifting override caused it |
+| 4   | previous override gone and its `expiresAt` passed (a revoke emits nothing)                                       | `OVERRIDE_EXPIRED`                                      | overrideId, shiftId                                 |
+| 5   | entered `WORKING`/`ON_BREAK`/`SHIFT_ENDING`, or moved to another interval                                        | `WORK_MODE_STARTED`                                     | shiftId                                             |
+| 6   | a different break session is now running                                                                         | `BREAK_STARTED`                                         | breakSessionId, shiftId                             |
+| –   | something else changed (e.g. `OFF_SHIFT → SHIFT_STARTING_SOON`, `WORKING → SHIFT_ENDING`, an exception starting) | _(none)_: one Transition so the caller knows to persist | –                                                   |
+| –   | nothing changed                                                                                                  | `[]`                                                    | –                                                   |
 
 - Losing permission mid-shift emits `PERMISSION_NEEDS_ATTENTION` and then `WORK_MODE_ENDED`. Regaining it
   emits `WORK_MODE_STARTED`.
@@ -287,8 +292,15 @@ Every minute, for each employee who has a shift near now:
 
 ```ts
 const { states, transitions } = replayTransitions(
-  { now: tick, shifts, breakSessions, overrides, permissionState: device.permissionState,
-    timezone: employee.timezone, employeeId: employee.id },
+  {
+    now: tick,
+    shifts,
+    breakSessions,
+    overrides,
+    permissionState: device.permissionState,
+    timezone: employee.timezone,
+    employeeId: employee.id,
+  },
   workState.expectedComputedAt ?? tick,
   workState.expectedState, // what was persisted at `since` (null on the first run)
 );
@@ -394,7 +406,7 @@ Current coverage (100 cases):
 - **DeviceActivity granularity.** Apple requires monitored intervals of at least 15 minutes and caps the
   number of activities. Shorter shifts or breaks are enforced by the app's own timers when it is running,
   and by the next callback otherwise. The machine itself has no minimum.
-- **The server never enforces.** `ExpectedState` is what *should* happen. The phone's report is what *did*
+- **The server never enforces.** `ExpectedState` is what _should_ happen. The phone's report is what _did_
   happen. The dashboard shows both.
 - **Overrides and permission are invisible off shift.** This is deliberate (§3). A manager override that
   outlives the shift has no effect until a later shift starts inside its window.

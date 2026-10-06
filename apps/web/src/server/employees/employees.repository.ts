@@ -101,7 +101,10 @@ export async function findEmployeesInOrganisation(
 }
 
 /** Active, non-archived employees — the number plan limits count. */
-export async function countActiveEmployees(organisationId: string, db: Db = prisma): Promise<number> {
+export async function countActiveEmployees(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<number> {
   return db.employee.count({
     where: { organisationId, deletedAt: null, employmentStatus: "ACTIVE" },
   });
@@ -204,7 +207,10 @@ export async function departmentExistsInOrganisation(
   id: string,
   db: Db = prisma,
 ): Promise<boolean> {
-  const row = await db.department.findFirst({ where: { organisationId, id }, select: { id: true } });
+  const row = await db.department.findFirst({
+    where: { organisationId, id },
+    select: { id: true },
+  });
   return row !== null;
 }
 
@@ -448,7 +454,8 @@ export async function findEmployeeLevelAssignments(
   }
   for (const row of breakRows) {
     const e = entry(row.scopeId);
-    if (e.breakPolicy === null) e.breakPolicy = { id: row.breakPolicy.id, name: row.breakPolicy.name };
+    if (e.breakPolicy === null)
+      e.breakPolicy = { id: row.breakPolicy.id, name: row.breakPolicy.name };
   }
   return result;
 }

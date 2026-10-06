@@ -28,13 +28,25 @@ describe("organisationSettingsFormSchema", () => {
 
   it("applies the API's rules: trimmed non-empty name, real IANA zone, every setting present", () => {
     const values = toOrganisationFormValues(organisation);
-    expect(organisationSettingsFormSchema.parse({ ...values, name: "  Harbour  " }).name).toBe("Harbour");
-    expect(organisationSettingsFormSchema.safeParse({ ...values, name: "   " }).success).toBe(false);
-    expect(organisationSettingsFormSchema.safeParse({ ...values, name: "x".repeat(121) }).success).toBe(false);
-    expect(organisationSettingsFormSchema.safeParse({ ...values, timezone: "Mars/Olympus" }).success).toBe(false);
-    expect(organisationSettingsFormSchema.safeParse({ ...values, dateFormat: "DDMMYY" }).success).toBe(false);
+    expect(organisationSettingsFormSchema.parse({ ...values, name: "  Harbour  " }).name).toBe(
+      "Harbour",
+    );
+    expect(organisationSettingsFormSchema.safeParse({ ...values, name: "   " }).success).toBe(
+      false,
+    );
+    expect(
+      organisationSettingsFormSchema.safeParse({ ...values, name: "x".repeat(121) }).success,
+    ).toBe(false);
+    expect(
+      organisationSettingsFormSchema.safeParse({ ...values, timezone: "Mars/Olympus" }).success,
+    ).toBe(false);
+    expect(
+      organisationSettingsFormSchema.safeParse({ ...values, dateFormat: "DDMMYY" }).success,
+    ).toBe(false);
     const { timeFormat: _omitted, ...partialSettings } = values.settings;
-    expect(organisationSettingsFormSchema.safeParse({ ...values, settings: partialSettings }).success).toBe(false);
+    expect(
+      organisationSettingsFormSchema.safeParse({ ...values, settings: partialSettings }).success,
+    ).toBe(false);
   });
 
   it("does not share the organisation's settings object with the form", () => {

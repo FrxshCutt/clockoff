@@ -20,8 +20,18 @@ describe("overlaps — half-open [start, end)", () => {
     ["b ends inside a", "2026-10-06T06:00:00Z", "2026-10-06T10:00:00Z", true],
     ["b contains a", "2026-10-06T00:00:00Z", "2026-10-06T23:00:00Z", true],
     ["b inside a", "2026-10-06T10:00:00Z", "2026-10-06T11:00:00Z", true],
-    ["b starts exactly when a ends (touching)", "2026-10-06T15:00:00Z", "2026-10-06T20:00:00Z", false],
-    ["b ends exactly when a starts (touching)", "2026-10-06T05:00:00Z", "2026-10-06T09:00:00Z", false],
+    [
+      "b starts exactly when a ends (touching)",
+      "2026-10-06T15:00:00Z",
+      "2026-10-06T20:00:00Z",
+      false,
+    ],
+    [
+      "b ends exactly when a starts (touching)",
+      "2026-10-06T05:00:00Z",
+      "2026-10-06T09:00:00Z",
+      false,
+    ],
     ["b entirely before", "2026-10-05T09:00:00Z", "2026-10-05T15:00:00Z", false],
     ["b entirely after", "2026-10-07T09:00:00Z", "2026-10-07T15:00:00Z", false],
     ["b one millisecond into a", "2026-10-06T14:59:59.999Z", "2026-10-06T20:00:00Z", true],
@@ -57,20 +67,36 @@ describe("minute arithmetic", () => {
   });
 
   it("roundUpToMinute leaves aligned instants alone and ceils everything else", () => {
-    expect(roundUpToMinute(t("2026-10-06T09:00:00.000Z")).toISOString()).toBe("2026-10-06T09:00:00.000Z");
-    expect(roundUpToMinute(t("2026-10-06T09:00:00.001Z")).toISOString()).toBe("2026-10-06T09:01:00.000Z");
-    expect(roundUpToMinute(t("2026-10-06T09:00:59.999Z")).toISOString()).toBe("2026-10-06T09:01:00.000Z");
-    expect(roundUpToMinute(t("2026-10-06T23:59:30Z")).toISOString()).toBe("2026-10-07T00:00:00.000Z");
+    expect(roundUpToMinute(t("2026-10-06T09:00:00.000Z")).toISOString()).toBe(
+      "2026-10-06T09:00:00.000Z",
+    );
+    expect(roundUpToMinute(t("2026-10-06T09:00:00.001Z")).toISOString()).toBe(
+      "2026-10-06T09:01:00.000Z",
+    );
+    expect(roundUpToMinute(t("2026-10-06T09:00:59.999Z")).toISOString()).toBe(
+      "2026-10-06T09:01:00.000Z",
+    );
+    expect(roundUpToMinute(t("2026-10-06T23:59:30Z")).toISOString()).toBe(
+      "2026-10-07T00:00:00.000Z",
+    );
   });
 
   it("roundDownToMinute floors", () => {
-    expect(roundDownToMinute(t("2026-10-06T09:00:59.999Z")).toISOString()).toBe("2026-10-06T09:00:00.000Z");
-    expect(roundDownToMinute(t("2026-10-06T09:00:00.000Z")).toISOString()).toBe("2026-10-06T09:00:00.000Z");
+    expect(roundDownToMinute(t("2026-10-06T09:00:59.999Z")).toISOString()).toBe(
+      "2026-10-06T09:00:00.000Z",
+    );
+    expect(roundDownToMinute(t("2026-10-06T09:00:00.000Z")).toISOString()).toBe(
+      "2026-10-06T09:00:00.000Z",
+    );
   });
 
   it("addMinutes", () => {
-    expect(addMinutes(t("2026-10-06T09:00:00Z"), 90).toISOString()).toBe("2026-10-06T10:30:00.000Z");
-    expect(addMinutes(t("2026-10-06T09:00:00Z"), -15).toISOString()).toBe("2026-10-06T08:45:00.000Z");
+    expect(addMinutes(t("2026-10-06T09:00:00Z"), 90).toISOString()).toBe(
+      "2026-10-06T10:30:00.000Z",
+    );
+    expect(addMinutes(t("2026-10-06T09:00:00Z"), -15).toISOString()).toBe(
+      "2026-10-06T08:45:00.000Z",
+    );
   });
 });
 

@@ -19,7 +19,9 @@ describe("SidebarNav (server render)", () => {
   it("renders one labelled navigation landmark with every route from the config", () => {
     expect(html.match(/<nav aria-label="Main"/g)?.length).toBe(1);
     for (const item of NAV_ITEMS) {
-      expect(html, item.title).toMatch(new RegExp(`<a[^>]*href="${item.href}"[^>]*>[\\s\\S]*?${item.title.replace("&", "&amp;")}`));
+      expect(html, item.title).toMatch(
+        new RegExp(`<a[^>]*href="${item.href}"[^>]*>[\\s\\S]*?${item.title.replace("&", "&amp;")}`),
+      );
     }
   });
 
@@ -32,6 +34,8 @@ describe("SidebarNav (server render)", () => {
 
 describe("SkipLink", () => {
   it("targets the main content landmark", () => {
-    expect(renderToStaticMarkup(<SkipLink />)).toMatch(/<a href="#main-content"[^>]*>Skip to main content<\/a>/);
+    expect(renderToStaticMarkup(<SkipLink />)).toMatch(
+      /<a href="#main-content"[^>]*>Skip to main content<\/a>/,
+    );
   });
 });

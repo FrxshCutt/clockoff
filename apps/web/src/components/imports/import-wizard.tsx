@@ -15,7 +15,13 @@ import { hasErrorCode } from "@/lib/api-client";
 import { CommitStep } from "./commit-step";
 import { useImport } from "./import-queries";
 import { ImportStepper } from "./import-stepper";
-import { IMPORT_STEP_META, importWizardSearch, stepForImportStatus, summaryFromImport, type ImportStep } from "./import-wizard-model";
+import {
+  IMPORT_STEP_META,
+  importWizardSearch,
+  stepForImportStatus,
+  summaryFromImport,
+  type ImportStep,
+} from "./import-wizard-model";
 import { MappingStep } from "./mapping-step";
 import { ReviewStep } from "./review-step";
 import { SummaryStep } from "./summary-step";
@@ -40,19 +46,26 @@ export function ImportWizard({ initialImportId }: ImportWizardProps) {
   const defaultDateFormat = organisation.data?.organisation.dateFormat ?? "DMY";
 
   const [importId, setImportId] = useState<string | null>(initialImportId);
-  const [chosenStep, setChosenStep] = useState<ImportStep | null>(initialImportId ? null : "upload");
+  const [chosenStep, setChosenStep] = useState<ImportStep | null>(
+    initialImportId ? null : "upload",
+  );
   const [sampleRows, setSampleRows] = useState<readonly Record<string, string>[]>([]);
   const [commitResult, setCommitResult] = useState<CommitImportResponse | null>(null);
 
   const importQuery = useImport(importId);
   const record = importQuery.data?.import ?? null;
-  const step: ImportStep | null = chosenStep ?? (record ? stepForImportStatus(record.status) : null);
+  const step: ImportStep | null =
+    chosenStep ?? (record ? stepForImportStatus(record.status) : null);
 
   // Keep the URL resumable.
   useEffect(() => {
     const search = importWizardSearch(importId);
     if (`${window.location.search}` !== search) {
-      window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${window.location.pathname}${search}${window.location.hash}`,
+      );
     }
   }, [importId]);
 
@@ -73,7 +86,11 @@ export function ImportWizard({ initialImportId }: ImportWizardProps) {
     body = (
       <ErrorState
         title={notFound ? "This import wasn't found" : "Couldn't load the import"}
-        description={notFound ? "It may have been removed, or the link belongs to another organisation." : undefined}
+        description={
+          notFound
+            ? "It may have been removed, or the link belongs to another organisation."
+            : undefined
+        }
         error={notFound ? undefined : importQuery.error}
         onRetry={notFound ? undefined : () => void importQuery.refetch()}
         isRetrying={importQuery.isRefetching}
@@ -114,9 +131,27 @@ export function ImportWizard({ initialImportId }: ImportWizardProps) {
       />
     );
   } else if (step === "validate") {
-    body = <ValidateStep key={record.id} importId={record.id} rowCount={record.rowCount} canImport={canImport} onValidated={onValidated} onBack={() => setChosenStep("map")} />;
+    body = (
+      <ValidateStep
+        key={record.id}
+        importId={record.id}
+        rowCount={record.rowCount}
+        canImport={canImport}
+        onValidated={onValidated}
+        onBack={() => setChosenStep("map")}
+      />
+    );
   } else if (step === "review") {
-    body = <ReviewStep key={record.id} record={record} summary={summaryFromImport(record)} canImport={canImport} onContinue={() => setChosenStep("import")} onBack={() => setChosenStep("map")} />;
+    body = (
+      <ReviewStep
+        key={record.id}
+        record={record}
+        summary={summaryFromImport(record)}
+        canImport={canImport}
+        onContinue={() => setChosenStep("import")}
+        onBack={() => setChosenStep("map")}
+      />
+    );
   } else if (step === "import") {
     body = (
       <CommitStep

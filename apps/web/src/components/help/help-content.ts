@@ -149,7 +149,8 @@ export const SETUP_STEPS: readonly SetupStep[] = [
     key: "name",
     screen: "Your name",
     title: "Enter their name",
-    detail: "First and last name, exactly as you entered them in Employees, so the app can find their record.",
+    detail:
+      "First and last name, exactly as you entered them in Employees, so the app can find their record.",
     managerTip: "Check the spelling on the employee's record matches the name they go by.",
   },
   {
@@ -157,14 +158,16 @@ export const SETUP_STEPS: readonly SetupStep[] = [
     screen: "Join workplace",
     title: "Enter the company code",
     detail:
-      "The company join code from Settings. If more than one employee shares their name, they tap \"I have an employee code\" and enter the personal invite code too.",
-    managerTip: "Share the join code from Settings or the top bar; send a personal invite when names clash.",
+      'The company join code from Settings. If more than one employee shares their name, they tap "I have an employee code" and enter the personal invite code too.',
+    managerTip:
+      "Share the join code from Settings or the top bar; send a personal invite when names clash.",
   },
   {
     key: "confirmIdentity",
     screen: "Confirm identity",
     title: "Confirm it's them",
-    detail: "The app shows the matched name and workplace and asks them to confirm before connecting the phone.",
+    detail:
+      "The app shows the matched name and workplace and asks them to confirm before connecting the phone.",
   },
   {
     key: "screenTimeExplained",
@@ -178,8 +181,9 @@ export const SETUP_STEPS: readonly SetupStep[] = [
     screen: "Allow Screen Time",
     title: "Approve the iOS prompt",
     detail:
-      "iOS shows its own Screen Time permission dialog. Approving it lets the app apply shields; declining leaves the phone connected but shows \"Permissions missing\" on your dashboard.",
-    managerTip: "If someone declines by mistake they can approve later from the app's Settings screen.",
+      'iOS shows its own Screen Time permission dialog. Approving it lets the app apply shields; declining leaves the phone connected but shows "Permissions missing" on your dashboard.',
+    managerTip:
+      "If someone declines by mistake they can approve later from the app's Settings screen.",
   },
   {
     key: "chooseApps",
@@ -194,7 +198,8 @@ export const SETUP_STEPS: readonly SetupStep[] = [
     title: "Review the Work Policy",
     detail:
       "A summary of what is blocked during shifts, what is always allowed and how breaks work under your Work Policy and Break Rules. Once confirmed, setup is complete and the status badge turns to Ready.",
-    managerTip: "Publish a Work Policy first; until then the app says one will apply automatically once published.",
+    managerTip:
+      "Publish a Work Policy first; until then the app says one will apply automatically once published.",
   },
 ];
 
@@ -207,12 +212,14 @@ export interface IosScreen {
 export const IOS_MAIN_SCREENS: readonly IosScreen[] = [
   {
     name: "Work Mode",
-    detail: "Home: the current state (Off shift, Starting soon, Working, On break…), the next shift and when the phone last synced.",
+    detail:
+      "Home: the current state (Off shift, Starting soon, Working, On break…), the next shift and when the phone last synced.",
   },
   { name: "Schedule", detail: "Today's and upcoming shifts, as synced from your rota." },
   {
     name: "Settings",
-    detail: "Privacy (the same can / cannot see lists as this page), Help, Screen Time status and Leave Workplace.",
+    detail:
+      "Privacy (the same can / cannot see lists as this page), Help, Screen Time status and Leave Workplace.",
   },
 ];
 
@@ -237,7 +244,8 @@ export const TROUBLESHOOTING: readonly TroubleshootingItem[] = [
     id: "permission-revoked",
     title: "Screen Time permission revoked or never approved",
     badge: "PERMISSIONS_MISSING",
-    symptom: "The employee shows \"Permissions missing\" and Work Mode does not switch on at the start of their shift.",
+    symptom:
+      'The employee shows "Permissions missing" and Work Mode does not switch on at the start of their shift.',
     cause:
       "Screen Time access was declined during setup or turned off later in iOS Settings, or no apps have been selected yet. Without it the app cannot apply shields.",
     steps: [
@@ -278,5 +286,9 @@ export const SUPPORT = {
   email: SITE.supportEmail,
   subject: "Work Mode support",
   hours: "Replies within one working day.",
-  include: ["Your organisation name", "The employee or shift affected (no need to include personal details)", "What you expected and what happened"],
+  include: [
+    "Your organisation name",
+    "The employee or shift affected (no need to include personal details)",
+    "What you expected and what happened",
+  ],
 } as const;

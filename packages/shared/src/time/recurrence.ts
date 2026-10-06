@@ -148,7 +148,11 @@ function fail(error: string): RecurrenceValidation {
 
 type ListResult = { ok: true; values: number[] } | { ok: false; error: string };
 
-function parseIntList(key: string, value: string, opts: { max: number; allowNegative: boolean }): ListResult {
+function parseIntList(
+  key: string,
+  value: string,
+  opts: { max: number; allowNegative: boolean },
+): ListResult {
   const values = new Set<number>();
   for (const raw of value.split(",")) {
     if (!/^[+-]?\d{1,4}$/.test(raw)) {
@@ -212,7 +216,8 @@ export function validateRecurrenceRule(rule: string): RecurrenceValidation {
     if (seen.has(key)) return fail(`${key} appears more than once`);
     const unsupported = UNSUPPORTED_KEY_MESSAGES[key];
     if (unsupported) return fail(unsupported);
-    if (!(RECURRENCE_RULE_KEYS as readonly string[]).includes(key)) return fail(`Unknown RRULE property ${key}`);
+    if (!(RECURRENCE_RULE_KEYS as readonly string[]).includes(key))
+      return fail(`Unknown RRULE property ${key}`);
     seen.set(key, value);
   }
 
@@ -220,7 +225,8 @@ export function validateRecurrenceRule(rule: string): RecurrenceValidation {
   if (freqRaw === undefined) return fail("FREQ is required");
   const unsupportedFreq = UNSUPPORTED_FREQUENCY_MESSAGES[freqRaw];
   if (unsupportedFreq) return fail(unsupportedFreq);
-  if (!(RECURRENCE_FREQUENCIES as readonly string[]).includes(freqRaw)) return fail(`Unknown FREQ ${freqRaw}`);
+  if (!(RECURRENCE_FREQUENCIES as readonly string[]).includes(freqRaw))
+    return fail(`Unknown FREQ ${freqRaw}`);
   const freq = freqRaw as RecurrenceFrequency;
 
   let interval = 1;
@@ -238,7 +244,8 @@ export function validateRecurrenceRule(rule: string): RecurrenceValidation {
   if (countRaw !== undefined) {
     if (!/^\d{1,6}$/.test(countRaw)) return fail("COUNT must be a positive integer");
     count = Number(countRaw);
-    if (count < 1 || count > MAX_RECURRENCE_COUNT) return fail(`COUNT must be 1..${MAX_RECURRENCE_COUNT}`);
+    if (count < 1 || count > MAX_RECURRENCE_COUNT)
+      return fail(`COUNT must be 1..${MAX_RECURRENCE_COUNT}`);
   }
 
   let byMonth: number[] = [];
@@ -267,9 +274,11 @@ export function validateRecurrenceRule(rule: string): RecurrenceValidation {
       if (!dm || weekday === null) return fail(`Invalid BYDAY value ${JSON.stringify(item)}`);
       const entry: RecurrenceByDay = { weekday };
       if (dm[1] !== undefined) {
-        if (freq !== "MONTHLY") return fail("BYDAY ordinals (e.g. 1MO, -1FR) are only allowed with FREQ=MONTHLY");
+        if (freq !== "MONTHLY")
+          return fail("BYDAY ordinals (e.g. 1MO, -1FR) are only allowed with FREQ=MONTHLY");
         const ordinal = Number(dm[1]);
-        if (ordinal === 0 || Math.abs(ordinal) > 5) return fail(`BYDAY ordinal must be ±1..5, got ${item}`);
+        if (ordinal === 0 || Math.abs(ordinal) > 5)
+          return fail(`BYDAY ordinal must be ±1..5, got ${item}`);
         entry.ordinal = ordinal;
       }
       byDayMap.set(`${entry.ordinal ?? ""}${weekdayCode(weekday)}`, entry);
@@ -300,10 +309,20 @@ export function validateRecurrenceRule(rule: string): RecurrenceValidation {
     const possible = byMonth.some((month) =>
       byMonthDay.some((md) => Math.abs(md) <= MAX_MONTH_LENGTH[month - 1]!),
     );
-    if (!possible) return fail("BYMONTHDAY never falls within the BYMONTH months (e.g. 31 February)");
+    if (!possible)
+      return fail("BYMONTHDAY never falls within the BYMONTH months (e.g. 31 February)");
   }
 
-  const parsed: ParsedRecurrenceRule = { freq, interval, count, byMonth, byMonthDay, byDay, bySetPos, wkst };
+  const parsed: ParsedRecurrenceRule = {
+    freq,
+    interval,
+    count,
+    byMonth,
+    byMonthDay,
+    byDay,
+    bySetPos,
+    wkst,
+  };
   return { ok: true, normalised: formatRecurrenceRule(parsed), frequency: freq, parsed };
 }
 
@@ -315,7 +334,9 @@ export function formatRecurrenceRule(rule: ParsedRecurrenceRule): string {
   if (rule.byMonth.length > 0) parts.push(`BYMONTH=${rule.byMonth.join(",")}`);
   if (rule.byMonthDay.length > 0) parts.push(`BYMONTHDAY=${rule.byMonthDay.join(",")}`);
   if (rule.byDay.length > 0) {
-    parts.push(`BYDAY=${rule.byDay.map((d) => `${d.ordinal ?? ""}${weekdayCode(d.weekday)}`).join(",")}`);
+    parts.push(
+      `BYDAY=${rule.byDay.map((d) => `${d.ordinal ?? ""}${weekdayCode(d.weekday)}`).join(",")}`,
+    );
   }
   if (rule.bySetPos.length > 0) parts.push(`BYSETPOS=${rule.bySetPos.join(",")}`);
   if (rule.wkst !== 1) parts.push(`WKST=${weekdayCode(rule.wkst)}`);
@@ -340,7 +361,7 @@ function calendarOf(dayNum: number): { year: number; month: number; day: number 
 
 /** 1970-01-01 (day 0) was a Thursday (ISO 4). */
 function isoWeekdayOf(dayNum: number): IsoWeekday {
-  return ((((dayNum + 3) % 7) + 7) % 7 + 1) as IsoWeekday;
+  return (((((dayNum + 3) % 7) + 7) % 7) + 1) as IsoWeekday;
 }
 
 /** Rule with RFC 5545 defaults derived from the anchor date filled in. */
@@ -349,7 +370,9 @@ function withAnchorDefaults(rule: ParsedRecurrenceRule, anchorDay: number): Pars
     case "DAILY":
       return rule;
     case "WEEKLY":
-      return rule.byDay.length > 0 ? rule : { ...rule, byDay: [{ weekday: isoWeekdayOf(anchorDay) }] };
+      return rule.byDay.length > 0
+        ? rule
+        : { ...rule, byDay: [{ weekday: isoWeekdayOf(anchorDay) }] };
     case "MONTHLY":
       return rule.byDay.length > 0 || rule.byMonthDay.length > 0
         ? rule
@@ -365,7 +388,10 @@ function dayMatches(dayNum: number, rule: ParsedRecurrenceRule): boolean {
   const { year, month, day } = calendarOf(dayNum);
   if (rule.byMonth.length > 0 && !rule.byMonth.includes(month)) return false;
   const monthLength = daysInMonth(year, month);
-  if (rule.byMonthDay.length > 0 && !rule.byMonthDay.some((md) => (md > 0 ? md : monthLength + md + 1) === day)) {
+  if (
+    rule.byMonthDay.length > 0 &&
+    !rule.byMonthDay.some((md) => (md > 0 ? md : monthLength + md + 1) === day)
+  ) {
     return false;
   }
   if (rule.byDay.length > 0) {
@@ -374,7 +400,8 @@ function dayMatches(dayNum: number, rule: ParsedRecurrenceRule): boolean {
     const nthFromEnd = -(Math.floor((monthLength - day) / 7) + 1);
     const hit = rule.byDay.some(
       (d) =>
-        d.weekday === weekday && (d.ordinal === undefined || d.ordinal === nthFromStart || d.ordinal === nthFromEnd),
+        d.weekday === weekday &&
+        (d.ordinal === undefined || d.ordinal === nthFromStart || d.ordinal === nthFromEnd),
     );
     if (!hit) return false;
   }
@@ -382,7 +409,11 @@ function dayMatches(dayNum: number, rule: ParsedRecurrenceRule): boolean {
 }
 
 /** First day number and length of the `index`-th period (0 = the anchor's period). */
-function period(rule: ParsedRecurrenceRule, anchorDay: number, index: number): { start: number; length: number } {
+function period(
+  rule: ParsedRecurrenceRule,
+  anchorDay: number,
+  index: number,
+): { start: number; length: number } {
   switch (rule.freq) {
     case "DAILY":
       return { start: anchorDay + index * rule.interval, length: 1 };
@@ -419,7 +450,11 @@ function applySetPos(candidates: number[], bySetPos: readonly number[]): number[
  * Day numbers strictly after `anchorDay` and no later than `lastDay` on which the rule fires, ascending.
  * Work is bounded by `(lastDay - anchorDay) / period length`, whatever the rule.
  */
-function* ruleDaysAfterAnchor(rule: ParsedRecurrenceRule, anchorDay: number, lastDay: number): Generator<number> {
+function* ruleDaysAfterAnchor(
+  rule: ParsedRecurrenceRule,
+  anchorDay: number,
+  lastDay: number,
+): Generator<number> {
   for (let index = 0; ; index += 1) {
     const p = period(rule, anchorDay, index);
     if (p.start > lastDay) return;
@@ -518,11 +553,16 @@ function resolveEnd(
     // Only possible for a shift shorter than a DST gap whose end falls in the gap: keep the absolute length.
     return { endsAt: new Date(startsAt.getTime() + durationMs) };
   }
-  return end.warning ? { endsAt: end.instant, warning: `END_${end.warning}` } : { endsAt: end.instant };
+  return end.warning
+    ? { endsAt: end.instant, warning: `END_${end.warning}` }
+    : { endsAt: end.instant };
 }
 
 /** Validated rule and occurrence limit shared by both entry points. Throws INVALID_RECURRENCE / VALIDATION_ERROR. */
-function parseSeriesOptions(rule: string, max: number | undefined): { parsed: ParsedRecurrenceRule; limit: number } {
+function parseSeriesOptions(
+  rule: string,
+  max: number | undefined,
+): { parsed: ParsedRecurrenceRule; limit: number } {
   const validation = validateRecurrenceRule(rule);
   if (!validation.ok) {
     throw new AppError("INVALID_RECURRENCE", validation.error, { details: { rule } });
@@ -533,14 +573,21 @@ function parseSeriesOptions(rule: string, max: number | undefined): { parsed: Pa
       details: { field: "max", value: max },
     });
   }
-  return { parsed: validation.parsed, limit: Math.min(maxValue, validation.parsed.count ?? Number.POSITIVE_INFINITY) };
+  return {
+    parsed: validation.parsed,
+    limit: Math.min(maxValue, validation.parsed.count ?? Number.POSITIVE_INFINITY),
+  };
 }
 
 function assertSpan(anchorMs: number, untilMs: number, field: string): void {
   if (untilMs - anchorMs > RECURRENCE_MAX_SPAN_DAYS * MS_PER_DAY) {
-    throw new AppError("VALIDATION_ERROR", `The series must end within ${RECURRENCE_MAX_SPAN_DAYS} days of its first shift`, {
-      details: { field, maxSpanDays: RECURRENCE_MAX_SPAN_DAYS },
-    });
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `The series must end within ${RECURRENCE_MAX_SPAN_DAYS} days of its first shift`,
+      {
+        details: { field, maxSpanDays: RECURRENCE_MAX_SPAN_DAYS },
+      },
+    );
   }
 }
 
@@ -567,7 +614,8 @@ function expandPlan(plan: SeriesPlan): RecurrenceOccurrence[] {
   if (out.length >= plan.limit) return out;
 
   // Local date of `until`, plus one day of slack; the exact cut-off is applied to resolved instants below.
-  const lastDay = Math.floor(wallClockToFloatingMs(instantToWallClock(new Date(untilMs), tz)) / MS_PER_DAY) + 1;
+  const lastDay =
+    Math.floor(wallClockToFloatingMs(instantToWallClock(new Date(untilMs), tz)) / MS_PER_DAY) + 1;
   const rule = withAnchorDefaults(plan.rule, plan.anchorDay);
   let previousStartMs = plan.anchor.startsAt.getTime();
   for (const day of ruleDaysAfterAnchor(rule, plan.anchorDay, lastDay)) {
@@ -626,7 +674,9 @@ export function expandRecurrence(input: ExpandRecurrenceInput): RecurrenceOccurr
     });
   }
   if (!(input.until instanceof Date) || Number.isNaN(input.until.getTime())) {
-    throw new AppError("VALIDATION_ERROR", "until must be a valid Date", { details: { field: "until" } });
+    throw new AppError("VALIDATION_ERROR", "until must be a valid Date", {
+      details: { field: "until" },
+    });
   }
   if (!Number.isFinite(input.durationMinutes) || input.durationMinutes <= 0) {
     throw new AppError("VALIDATION_ERROR", "durationMinutes must be a positive number", {
@@ -703,7 +753,9 @@ export function expandShiftSeries(input: ExpandShiftSeriesInput): RecurrenceOccu
   const end = splitLocalTime(input.endTime);
   const startMinutes = start.hour * 60 + start.minute;
   const endMinutes = end.hour * 60 + end.minute;
-  const durationMinutes = first.isOvernight ? endMinutes + 1440 - startMinutes : endMinutes - startMinutes;
+  const durationMinutes = first.isOvernight
+    ? endMinutes + 1440 - startMinutes
+    : endMinutes - startMinutes;
   const startWc = instantToWallClock(first.startsAt, input.timezone);
 
   return expandPlan({

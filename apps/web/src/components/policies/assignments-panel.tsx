@@ -2,7 +2,16 @@
 
 import type { AssignmentScopeType } from "@workmode/shared/enums";
 import { SCOPE_TYPE_LABELS } from "@workmode/shared/policy/explainResolution";
-import { Building2, LoaderCircle, MapPin, Star, UserRound, Users, X, type LucideIcon } from "lucide-react";
+import {
+  Building2,
+  LoaderCircle,
+  MapPin,
+  Star,
+  UserRound,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/error-state";
@@ -14,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useNow } from "@/components/employees/use-now";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -24,6 +34,7 @@ import {
   activeAssignmentsByScopeId,
   describeAssignmentScope,
   groupAssignmentsByScope,
+  openAssignments,
   type ScopedAssignment,
 } from "./policy-view-model";
 import { PrecedenceExplainer } from "./precedence-explainer";
@@ -55,7 +66,11 @@ export interface AssignmentsPanelProps {
   /** Why the default toggle can't be switched on right now. */
   defaultDisabledReason?: string;
   onSetDefault: (next: boolean) => Promise<unknown>;
-  onAssign: (scopeType: AssignableScopeType, scopeId: string, scopeName: string) => Promise<unknown>;
+  onAssign: (
+    scopeType: AssignableScopeType,
+    scopeId: string,
+    scopeName: string,
+  ) => Promise<unknown>;
   onRemove: (assignment: ScopedAssignment) => Promise<unknown>;
   /** Shown above the pickers (e.g. a "publish first" note). */
   notice?: ReactNode;
@@ -120,7 +135,12 @@ export function AssignmentsPanel({
     }
   };
 
-  const toggleScope = (scopeType: AssignableScopeType, scopeId: string, scopeName: string, selected: boolean) => {
+  const toggleScope = (
+    scopeType: AssignableScopeType,
+    scopeId: string,
+    scopeName: string,
+    selected: boolean,
+  ) => {
     const existing = activeAssignmentsByScopeId(list, scopeType).get(scopeId);
     void track(scopeKey(scopeType, scopeId), async () => {
       try {
@@ -153,7 +173,11 @@ export function AssignmentsPanel({
     setDefaultPending(true);
     try {
       await onSetDefault(next);
-      toast.success(next ? `Now the organisation default ${noun}` : `No longer the organisation default ${noun}`);
+      toast.success(
+        next
+          ? `Now the organisation default ${noun}`
+          : `No longer the organisation default ${noun}`,
+      );
     } catch (err) {
       toastError(err, { title: "Couldn't change the organisation default" });
     } finally {
@@ -170,11 +194,14 @@ export function AssignmentsPanel({
     return ids;
   };
 
-  const toOptions = (rows: ReadonlyArray<{ id: string; name: string; hint?: string }> | undefined): MultiSelectOption[] | undefined =>
+  const toOptions = (
+    rows: ReadonlyArray<{ id: string; name: string; hint?: string }> | undefined,
+  ): MultiSelectOption[] | undefined =>
     rows?.map((row) => ({ id: row.id, name: row.name, hint: row.hint }));
 
   const assignDisabled = !canEdit || assignDisabledReason !== undefined;
-  const defaultSwitchDisabled = !canEdit || defaultPending || (!isDefault && defaultDisabledReason !== undefined);
+  const defaultSwitchDisabled =
+    !canEdit || defaultPending || (!isDefault && defaultDisabledReason !== undefined);
 
   return (
     <SectionCard title="Assignments" description={description} contentClassName="space-y-5">
@@ -183,7 +210,13 @@ export function AssignmentsPanel({
       <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
         <div className="space-y-1">
           <Label htmlFor={defaultId} className="flex items-center gap-2">
-            <Star className={cn("size-4", isDefault ? "fill-amber-400 text-amber-500" : "text-muted-foreground")} aria-hidden="true" />
+            <Star
+              className={cn(
+                "size-4",
+                isDefault ? "fill-amber-400 text-amber-500" : "text-muted-foreground",
+              )}
+              aria-hidden="true"
+            />
             Organisation default
           </Label>
           <p className="text-muted-foreground text-sm">
@@ -192,7 +225,12 @@ export function AssignmentsPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {defaultPending ? <LoaderCircle className="text-muted-foreground size-4 animate-spin" aria-hidden="true" /> : null}
+          {defaultPending ? (
+            <LoaderCircle
+              className="text-muted-foreground size-4 animate-spin"
+              aria-hidden="true"
+            />
+          ) : null}
           <Switch
             id={defaultId}
             checked={isDefault}
@@ -213,9 +251,13 @@ export function AssignmentsPanel({
             isLoading={locations.isPending}
             selectedIds={new Set(byLocation.keys())}
             pendingIds={pendingIdsFor("LOCATION")}
-            onToggle={(option, selected) => toggleScope("LOCATION", option.id, option.name, selected)}
+            onToggle={(option, selected) =>
+              toggleScope("LOCATION", option.id, option.name, selected)
+            }
             disabled={assignDisabled || locations.isError}
-            disabledReason={assignDisabledReason ?? (locations.isError ? "Couldn't load locations." : undefined)}
+            disabledReason={
+              assignDisabledReason ?? (locations.isError ? "Couldn't load locations." : undefined)
+            }
             description="Applies to employees whose primary location this is."
             searchPlaceholder="Search locations…"
             emptyText="No locations match."
@@ -224,13 +266,21 @@ export function AssignmentsPanel({
             label="Teams"
             icon={Users}
             noun="team"
-            options={toOptions(teams.data?.map((team) => ({ id: team.id, name: team.name, hint: team.location?.name })))}
+            options={toOptions(
+              teams.data?.map((team) => ({
+                id: team.id,
+                name: team.name,
+                hint: team.location?.name,
+              })),
+            )}
             isLoading={teams.isPending}
             selectedIds={new Set(byTeam.keys())}
             pendingIds={pendingIdsFor("TEAM")}
             onToggle={(option, selected) => toggleScope("TEAM", option.id, option.name, selected)}
             disabled={assignDisabled || teams.isError}
-            disabledReason={assignDisabledReason ?? (teams.isError ? "Couldn't load teams." : undefined)}
+            disabledReason={
+              assignDisabledReason ?? (teams.isError ? "Couldn't load teams." : undefined)
+            }
             description="Applies to every member of the team."
             searchPlaceholder="Search teams…"
             emptyText="No teams match."
@@ -240,7 +290,12 @@ export function AssignmentsPanel({
               selectedIds={new Set(byEmployee.keys())}
               pendingIds={pendingIdsFor("EMPLOYEE")}
               onToggle={(employee, selected) =>
-                toggleScope("EMPLOYEE", employee.id, `${employee.firstName} ${employee.lastName}`.trim(), selected)
+                toggleScope(
+                  "EMPLOYEE",
+                  employee.id,
+                  `${employee.firstName} ${employee.lastName}`.trim(),
+                  selected,
+                )
               }
               disabled={assignDisabled}
               disabledReason={assignDisabledReason}
@@ -258,7 +313,13 @@ export function AssignmentsPanel({
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Current assignments</h3>
         {isError ? (
-          <ErrorState size="sm" title="Couldn't load assignments" error={error} onRetry={onRetry} isRetrying={isRetrying} />
+          <ErrorState
+            size="sm"
+            title="Couldn't load assignments"
+            error={error}
+            onRetry={onRetry}
+            isRetrying={isRetrying}
+          />
         ) : (
           <AssignmentList
             assignments={isLoading ? undefined : list}
@@ -283,11 +344,23 @@ export interface AssignmentListProps {
   className?: string;
 }
 
-/** Assignments grouped by scope in precedence order, each with an optional remove button. */
-export function AssignmentList({ assignments, canRemove, onRemove, pendingKeys, emptyText = "No assignments.", className }: AssignmentListProps) {
+/**
+ * Open assignments grouped by scope in precedence order, each with an optional remove button. Ended
+ * assignments are history, not "current", so they are left out (the API returns every row).
+ */
+export function AssignmentList({
+  assignments,
+  canRemove,
+  onRemove,
+  pendingKeys,
+  emptyText = "No assignments.",
+  className,
+}: AssignmentListProps) {
   const { timeZone, dateFormat } = useOrgDateOptions();
+  // Shared clock (null during the server/hydration pass, when the list shows its skeleton anyway).
+  const now = useNow();
 
-  if (assignments === undefined) {
+  if (assignments === undefined || now === null) {
     return (
       <div className={cn("space-y-2", className)} aria-busy="true">
         {Array.from({ length: 3 }, (_, i) => (
@@ -296,11 +369,21 @@ export function AssignmentList({ assignments, canRemove, onRemove, pendingKeys, 
       </div>
     );
   }
-  if (assignments.length === 0) {
-    return <p className={cn("text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm", className)}>{emptyText}</p>;
+  const open = openAssignments(assignments, now);
+  if (open.length === 0) {
+    return (
+      <p
+        className={cn(
+          "text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm",
+          className,
+        )}
+      >
+        {emptyText}
+      </p>
+    );
   }
 
-  const groups = groupAssignmentsByScope(assignments);
+  const groups = groupAssignmentsByScope(open);
   return (
     <div className={cn("space-y-4", className)}>
       {PRECEDENCE_LEVELS.map((level) => {
@@ -315,7 +398,8 @@ export function AssignmentList({ assignments, canRemove, onRemove, pendingKeys, 
             </p>
             <ul className="divide-y rounded-lg border">
               {rows.map((assignment) => {
-                const pending = pendingKeys?.has(scopeKey(assignment.scopeType, assignment.scopeId)) ?? false;
+                const pending =
+                  pendingKeys?.has(scopeKey(assignment.scopeType, assignment.scopeId)) ?? false;
                 const name = describeAssignmentScope(assignment);
                 return (
                   <li key={assignment.id} className="flex items-center gap-3 px-3 py-2.5">
@@ -324,16 +408,18 @@ export function AssignmentList({ assignments, canRemove, onRemove, pendingKeys, 
                         <span className="truncate">{name}</span>
                         {!assignment.isActive ? (
                           <Badge variant="outline" className="font-normal">
-                            {assignment.effectiveFrom && Date.parse(assignment.effectiveFrom) > Date.now()
+                            {assignment.effectiveFrom && Date.parse(assignment.effectiveFrom) > now
                               ? `Starts ${formatDateTime(assignment.effectiveFrom, { timeZone, dateFormat })}`
-                              : "Inactive"}
+                              : "Not active"}
                           </Badge>
                         ) : null}
                       </p>
                       <p className="text-muted-foreground text-xs">
                         Assigned <RelativeTime value={assignment.createdAt} timeZone={timeZone} />
                         {assignment.createdBy ? ` by ${assignment.createdBy.name}` : ""}
-                        {assignment.effectiveTo ? ` · until ${formatDateTime(assignment.effectiveTo, { timeZone, dateFormat })}` : ""}
+                        {assignment.effectiveTo
+                          ? ` · until ${formatDateTime(assignment.effectiveTo, { timeZone, dateFormat })}`
+                          : ""}
                       </p>
                     </div>
                     {canRemove && onRemove ? (
@@ -345,7 +431,11 @@ export function AssignmentList({ assignments, canRemove, onRemove, pendingKeys, 
                         disabled={pending}
                         onClick={() => onRemove(assignment)}
                       >
-                        {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <X aria-hidden="true" />}
+                        {pending ? (
+                          <LoaderCircle className="animate-spin" aria-hidden="true" />
+                        ) : (
+                          <X aria-hidden="true" />
+                        )}
                       </Button>
                     ) : null}
                   </li>

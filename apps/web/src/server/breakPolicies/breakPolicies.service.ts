@@ -17,12 +17,16 @@ import { z } from "zod";
 import { audit } from "@/server/audit/audit";
 import { toOrganisationDto } from "@/server/organisations/mappers";
 import { publishBreakPolicyChanged } from "@/server/policies/events";
-import { countResolvedEmployees, employeesResolvingToBreakPolicy } from "@/server/policies/resolution";
+import {
+  countResolvedEmployees,
+  employeesResolvingToBreakPolicy,
+} from "@/server/policies/resolution";
 import {
   activeEmployeeIds,
   assertScopeTargetExists,
   employeeIdsInScope,
   loadScopeNames,
+  parseAssignmentWindow,
   toInputJson,
   type ScopeRef,
 } from "@/server/policies/scopes";
@@ -82,6 +86,18 @@ function auditSnapshot(row: BreakPolicyRow) {
 
 function rulesToData(rules: BreakPolicyRules): Prisma.BreakPolicyUncheckedUpdateInput {
   return { ...rules, relaxedCategories: toInputJson(rules.relaxedCategories) };
+}
+
+function sameCategorySet(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((category) => set.has(category));
+}
+
+function sameRules(a: BreakPolicyRules, b: BreakPolicyRules): boolean {
+  return RULE_KEYS.every((key) =>
+    key === "relaxedCategories" ? sameCategorySet(a[key], b[key]) : a[key] === b[key],
+  );
 }
 
 async function withExtras(
@@ -232,12 +248,8 @@ export async function updateBreakPolicy(
 
   const current = rulesOf(row);
   const merged: Record<string, unknown> = { ...current };
-  let rulesChanged = false;
   for (const key of RULE_KEYS) {
-    if (input[key] !== undefined) {
-      merged[key] = input[key];
-      rulesChanged = true;
-    }
+    if (input[key] !== undefined) merged[key] = input[key];
   }
   const parsed = breakPolicyRulesSchema.safeParse(merged);
   if (!parsed.success) {
@@ -246,6 +258,13 @@ export async function updateBreakPolicy(
     });
   }
   const rules = parsed.data;
+  // Only a real change is written, audited and announced: a form that re-submits the stored values must
+  // not bump `updatedAt` (part of the device policy version token) or push every phone for nothing.
+  const rulesChanged = !sameRules(current, rules);
+  const nameChanged = input.name !== undefined && input.name !== row.name;
+  const descriptionChanged =
+    input.description !== undefined && input.description !== row.description;
+  if (!rulesChanged && !nameChanged && !descriptionChanged) return reload(ctx, id, now);
 
   await prisma.$transaction(async (tx) => {
     const data: Prisma.BreakPolicyUncheckedUpdateInput = { updatedAt: now };
@@ -313,8 +332,8 @@ export async function listBreakPolicyAssignments(
 }
 
 /**
- * `POST /api/break-policies/:id/assignments` (policies:write). Same replace-per-scope semantics as Work
- * Policy assignments; the break policy must not be archived.
+ * `POST /api/break-policies/:id/assignments` (policies:write). Same replace-per-scope semantics and window
+ * rules as Work Policy assignments (`createPolicyAssignment`); the break policy must not be archived.
  */
 export async function createBreakPolicyAssignment(
   ctx: ManagerContext,
@@ -327,9 +346,7 @@ export async function createBreakPolicyAssignment(
   assertNotArchived(row);
   const scope: ScopeRef = { scopeType: input.scopeType, scopeId: input.scopeId };
   await assertScopeTargetExists(organisationId, scope);
-  const effectiveFrom = input.effectiveFrom ? new Date(input.effectiveFrom) : null;
-  const effectiveTo = input.effectiveTo ? new Date(input.effectiveTo) : null;
-  const replaceAt = effectiveFrom ?? now;
+  const { effectiveFrom, effectiveTo, replaceAt } = parseAssignmentWindow(input, now);
 
   const created = await prisma.$transaction(async (tx) => {
     const open = await findOpenBreakAssignmentsForScope(organisationId, scope, now, tx);
@@ -416,7 +433,10 @@ export async function endBreakPolicyAssignment(
         action: "break_policy_assignment.ended",
         entityType: "BreakPolicyAssignment",
         entityId: assignment.id,
-        before: { ...summariseBreakAssignment(assignment), breakPolicyId: assignment.breakPolicyId },
+        before: {
+          ...summariseBreakAssignment(assignment),
+          breakPolicyId: assignment.breakPolicyId,
+        },
         after: { effectiveTo: now.toISOString() },
       },
       tx,

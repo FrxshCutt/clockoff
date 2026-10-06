@@ -90,9 +90,21 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
   const policyId = b.id("policy:standard");
   const versionId = b.id("policy-version:standard:1");
   const config: RestrictionConfig = {
-    categories: ["SOCIAL_MEDIA", "GAMES", "ENTERTAINMENT", "STREAMING", "VIDEO", "SHOPPING", "DATING"],
+    categories: [
+      "SOCIAL_MEDIA",
+      "GAMES",
+      "ENTERTAINMENT",
+      "STREAMING",
+      "VIDEO",
+      "SHOPPING",
+      "DATING",
+    ],
     requireEmployeeAppSelection: true,
-    alwaysAllowedNote: ["Phone, Messages and FaceTime", "Maps, Camera and Clock", "Emergency SOS and Medical ID"],
+    alwaysAllowedNote: [
+      "Phone, Messages and FaceTime",
+      "Maps, Camera and Clock",
+      "Emergency SOS and Medical ID",
+    ],
     shieldMessage: "Work Mode is on. This app will be available again after your shift.",
     activationMode: "SCHEDULED",
     preShiftWarningMinutes: 10,
@@ -120,18 +132,42 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
     createdAt: policyCreatedAt,
   });
   rows.policyCurrentVersions.push({ policyId, versionId });
-  rows.organisationDefaults.push({ organisationId, defaultPolicyId: policyId, defaultBreakPolicyId: null });
+  rows.organisationDefaults.push({
+    organisationId,
+    defaultPolicyId: policyId,
+    defaultBreakPolicyId: null,
+  });
   b.audit(owner, "policy.created", "Policy", policyId, policyCreatedAt, {
-    after: { name: "Other Co Standard", description: "Default policy for all Other Co staff.", status: "DRAFT", versionId, versionNumber: 1, restrictionConfig: config },
+    after: {
+      name: "Other Co Standard",
+      description: "Default policy for all Other Co staff.",
+      status: "DRAFT",
+      versionId,
+      versionNumber: 1,
+      restrictionConfig: config,
+    },
   });
   b.audit(owner, "policy.published", "Policy", policyId, publishedAt, {
     before: { status: "DRAFT", currentVersionId: null, draftVersionId: versionId },
-    after: { status: "ACTIVE", currentVersionId: versionId, versionNumber: 1, changeNote: "Initial version", publishedAt },
+    after: {
+      status: "ACTIVE",
+      currentVersionId: versionId,
+      versionNumber: 1,
+      changeNote: "Initial version",
+      publishedAt,
+    },
   });
-  b.audit(owner, "organisation.default_policy_changed", "Organisation", organisationId, addMinutes(publishedAt, 1), {
-    before: { defaultPolicyId: null },
-    after: { defaultPolicyId: policyId },
-  });
+  b.audit(
+    owner,
+    "organisation.default_policy_changed",
+    "Organisation",
+    organisationId,
+    addMinutes(publishedAt, 1),
+    {
+      before: { defaultPolicyId: null },
+      after: { defaultPolicyId: policyId },
+    },
+  );
   b.activity({
     type: "POLICY_UPDATED",
     at: publishedAt,
@@ -153,7 +189,11 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
     lastName: "Rivera",
     inviteStatus: deriveInviteStatus({
       hasLink: true,
-      device: { permissionState: alexDevice.permission, selectionState: alexDevice.selection, isActive: true },
+      device: {
+        permissionState: alexDevice.permission,
+        selectionState: alexDevice.selection,
+        isActive: true,
+      },
       employmentStatus: "ACTIVE",
       hasPendingInvite: false,
     }),
@@ -168,7 +208,12 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
     id: b.id("employee:jordan"),
     firstName: "Jordan",
     lastName: "Blake",
-    inviteStatus: deriveInviteStatus({ hasLink: false, device: null, employmentStatus: "ACTIVE", hasPendingInvite: false }),
+    inviteStatus: deriveInviteStatus({
+      hasLink: false,
+      device: null,
+      employmentStatus: "ACTIVE",
+      hasPendingInvite: false,
+    }),
     employmentStatus: "ACTIVE",
     teamIds: [],
     primaryLocationId: locationId,
@@ -193,7 +238,11 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
       inviteStatus: employee.inviteStatus,
       createdAt: employeesCreatedAt,
     });
-    rows.employeeLocations.push({ employeeId: employee.id, locationId, createdAt: employeesCreatedAt });
+    rows.employeeLocations.push({
+      employeeId: employee.id,
+      locationId,
+      createdAt: employeesCreatedAt,
+    });
     b.audit(owner, "employee.created", "Employee", employee.id, employeesCreatedAt, {
       after: {
         firstName: employee.firstName,
@@ -262,7 +311,13 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
     employeeId: alex.id,
     deviceId: device.id,
     clientEventId: "join",
-    metadata: { deviceId: device.id, platform: "IOS", viaInviteCode: false, acceptedInvites: 0, retiredDevices: 0 },
+    metadata: {
+      deviceId: device.id,
+      platform: "IOS",
+      viaInviteCode: false,
+      acceptedInvites: 0,
+      retiredDevices: 0,
+    },
   });
   b.activity({
     type: "SETUP_COMPLETED",
@@ -271,7 +326,11 @@ export function buildOtherCo(clock: SeedClock, hashFor: (email: string) => strin
     employeeId: alex.id,
     deviceId: device.id,
     clientEventId: "setup:completed",
-    metadata: { permissionState: "APPROVED", selectionState: "CONFIGURED", selectionCounts: device.counts },
+    metadata: {
+      permissionState: "APPROVED",
+      selectionState: "CONFIGURED",
+      selectionCounts: device.counts,
+    },
   });
   b.recordWorkModeEvents(device);
 

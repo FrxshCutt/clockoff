@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { ACTIVATION_MODES, RESTRICTION_CATEGORIES } from "../enums";
-import { DEFAULT_RESTRICTION_CONFIG, createDefaultRestrictionConfig, isRestrictionConfig } from "./restrictionConfig";
+import {
+  DEFAULT_RESTRICTION_CONFIG,
+  createDefaultRestrictionConfig,
+  isRestrictionConfig,
+} from "./restrictionConfig";
 import type { RestrictionConfig } from "./restrictionConfig";
 
 describe("DEFAULT_RESTRICTION_CONFIG", () => {
   it("is itself a valid RestrictionConfig", () => {
     expect(isRestrictionConfig(DEFAULT_RESTRICTION_CONFIG)).toBe(true);
     expect(ACTIVATION_MODES).toContain(DEFAULT_RESTRICTION_CONFIG.activationMode);
-    for (const c of DEFAULT_RESTRICTION_CONFIG.categories) expect(RESTRICTION_CATEGORIES).toContain(c);
+    for (const c of DEFAULT_RESTRICTION_CONFIG.categories)
+      expect(RESTRICTION_CATEGORIES).toContain(c);
   });
 
   it("restricts every category except OTHER_SELECTED and requires the employee to pick apps", () => {
-    expect(DEFAULT_RESTRICTION_CONFIG.categories).toEqual(RESTRICTION_CATEGORIES.filter((c) => c !== "OTHER_SELECTED"));
+    expect(DEFAULT_RESTRICTION_CONFIG.categories).toEqual(
+      RESTRICTION_CATEGORIES.filter((c) => c !== "OTHER_SELECTED"),
+    );
     expect(DEFAULT_RESTRICTION_CONFIG.requireEmployeeAppSelection).toBe(true);
     expect(DEFAULT_RESTRICTION_CONFIG.alwaysAllowedNote.length).toBeGreaterThan(0);
     expect(DEFAULT_RESTRICTION_CONFIG.preShiftWarningMinutes).toBeGreaterThan(0);
@@ -55,7 +62,8 @@ describe("isRestrictionConfig", () => {
   });
 
   it("rejects non-objects", () => {
-    for (const v of [null, undefined, 1, "x", true, [], [valid]]) expect(isRestrictionConfig(v)).toBe(false);
+    for (const v of [null, undefined, 1, "x", true, [], [valid]])
+      expect(isRestrictionConfig(v)).toBe(false);
   });
 
   it("rejects missing or mistyped fields", () => {

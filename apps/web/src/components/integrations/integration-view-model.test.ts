@@ -21,7 +21,8 @@ describe("providerInitials", () => {
   });
 
   it("gives every registered provider a two-character placeholder", () => {
-    for (const id of INTEGRATION_PROVIDERS) expect(providerInitials(PROVIDERS[id].displayName), id).toHaveLength(2);
+    for (const id of INTEGRATION_PROVIDERS)
+      expect(providerInitials(PROVIDERS[id].displayName), id).toHaveLength(2);
   });
 });
 
@@ -38,11 +39,19 @@ describe("providerPathSegment", () => {
 
 describe("integrationCardState", () => {
   it("is coming-soon whenever the provider isn't available, else follows the stored status", () => {
-    expect(integrationCardState({ availability: "COMING_SOON", status: "CONNECTED" })).toBe("coming-soon");
-    expect(integrationCardState({ availability: "AVAILABLE", status: "NOT_CONNECTED" })).toBe("not-connected");
-    expect(integrationCardState({ availability: "AVAILABLE", status: "CONNECTED" })).toBe("connected");
+    expect(integrationCardState({ availability: "COMING_SOON", status: "CONNECTED" })).toBe(
+      "coming-soon",
+    );
+    expect(integrationCardState({ availability: "AVAILABLE", status: "NOT_CONNECTED" })).toBe(
+      "not-connected",
+    );
+    expect(integrationCardState({ availability: "AVAILABLE", status: "CONNECTED" })).toBe(
+      "connected",
+    );
     expect(integrationCardState({ availability: "AVAILABLE", status: "ERROR" })).toBe("error");
-    expect(integrationCardState({ availability: "AVAILABLE", status: "DISCONNECTED" })).toBe("disconnected");
+    expect(integrationCardState({ availability: "AVAILABLE", status: "DISCONNECTED" })).toBe(
+      "disconnected",
+    );
   });
 });
 

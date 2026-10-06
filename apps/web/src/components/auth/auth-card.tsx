@@ -38,17 +38,27 @@ export function AuthCard({
       <div className="space-y-6 p-6 sm:p-8">
         <div className="space-y-2 text-center">
           {Icon ? (
-            <div className={cn("mx-auto mb-4 flex size-12 items-center justify-center rounded-full", ICON_TONES[iconTone])} aria-hidden="true">
+            <div
+              className={cn(
+                "mx-auto mb-4 flex size-12 items-center justify-center rounded-full",
+                ICON_TONES[iconTone],
+              )}
+              aria-hidden="true"
+            >
               <Icon className={cn("size-6", iconClassName)} />
             </div>
           ) : null}
           <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
-          {description ? <p className="text-muted-foreground text-sm text-pretty">{description}</p> : null}
+          {description ? (
+            <p className="text-muted-foreground text-sm text-pretty">{description}</p>
+          ) : null}
         </div>
         {children}
       </div>
       {footer ? (
-        <div className="bg-muted/40 text-muted-foreground rounded-b-2xl border-t px-6 py-4 text-center text-sm sm:px-8">{footer}</div>
+        <div className="bg-muted/40 text-muted-foreground rounded-b-2xl border-t px-6 py-4 text-center text-sm sm:px-8">
+          {footer}
+        </div>
       ) : null}
     </div>
   );

@@ -49,7 +49,8 @@ export const MARKETING_CTA = {
 
 export const HERO = {
   headline: SITE.tagline,
-  subheadline: "Your rota manages when your team works. We make sure their phones know they're working too.",
+  subheadline:
+    "Your rota manages when your team works. We make sure their phones know they're working too.",
   privacyLine: SITE.privacyLine,
   secondaryCta: { label: "See how it works", href: MARKETING_ROUTES.howItWorks },
   platformNote: "For iPhone (iOS 16.4 or later), built on Apple Screen Time.",
@@ -211,7 +212,8 @@ export const USE_CASES: readonly UseCase[] = [
       "Split shifts and late changes make 'no phones' rules impossible to police fairly.",
       "Breaks drift when nobody is tracking them.",
     ],
-    outcome: "Work Mode follows the rota you already write, relaxes for the breaks you allow, and treats every shift the same way without a manager playing phone police.",
+    outcome:
+      "Work Mode follows the rota you already write, relaxes for the breaks you allow, and treats every shift the same way without a manager playing phone police.",
   },
   {
     icon: ShoppingBag,
@@ -222,7 +224,8 @@ export const USE_CASES: readonly UseCase[] = [
       "Multiple stores mean multiple local rules and time zones.",
       "Part-time rotas change weekly.",
     ],
-    outcome: "Assign a policy per store or team, import each week's rota, and let shifts switch Work Mode on and off. Head office sees status, never screens.",
+    outcome:
+      "Assign a policy per store or team, import each week's rota, and let shifts switch Work Mode on and off. Head office sees status, never screens.",
   },
   {
     icon: Warehouse,
@@ -233,7 +236,8 @@ export const USE_CASES: readonly UseCase[] = [
       "Shift patterns run around the clock, including overnight.",
       "Agency and seasonal staff need a setup that takes minutes.",
     ],
-    outcome: "Overnight and rotating shifts are handled by the rota itself. New starters join with a company code in minutes, and leave just as easily.",
+    outcome:
+      "Overnight and rotating shifts are handled by the rota itself. New starters join with a company code in minutes, and leave just as easily.",
   },
 ];
 
@@ -296,19 +300,23 @@ export interface PricingFaq {
 export const PRICING_FAQ: readonly PricingFaq[] = [
   {
     question: "How do I start?",
-    answer: "Request a demo. We'll set up your organisation on the right plan with you; there's no card to enter and no self-serve checkout yet.",
+    answer:
+      "Request a demo. We'll set up your organisation on the right plan with you; there's no card to enter and no self-serve checkout yet.",
   },
   {
     question: "What counts as an employee?",
-    answer: "Anyone on your employee list who is active. Deactivated and archived employees don't count towards the limit.",
+    answer:
+      "Anyone on your employee list who is active. Deactivated and archived employees don't count towards the limit.",
   },
   {
     question: "Do employees need a company phone?",
-    answer: "No. Work Mode runs on the employee's own iPhone with their consent, using Apple Screen Time. It needs iOS 16.4 or later.",
+    answer:
+      "No. Work Mode runs on the employee's own iPhone with their consent, using Apple Screen Time. It needs iOS 16.4 or later.",
   },
   {
     question: "Can I change plan later?",
-    answer: "Yes. Plan changes are handled by our team today; contact sales from the Billing page and we'll switch you the same day.",
+    answer:
+      "Yes. Plan changes are handled by our team today; contact sales from the Billing page and we'll switch you the same day.",
   },
 ];
 
@@ -350,7 +358,11 @@ export const PRIVACY_DATA_HANDLING: readonly string[] = [
 
 export interface FooterGroup {
   readonly title: string;
-  readonly links: readonly { readonly label: string; readonly href: string; readonly external?: boolean }[];
+  readonly links: readonly {
+    readonly label: string;
+    readonly href: string;
+    readonly external?: boolean;
+  }[];
 }
 
 export const FOOTER_GROUPS: readonly FooterGroup[] = [
@@ -375,7 +387,11 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
     links: [
       { label: "Log in", href: ROUTES.login },
       { label: "Create your workspace", href: ROUTES.register },
-      { label: `Support: ${SITE.supportEmail}`, href: `mailto:${SITE.supportEmail}`, external: true },
+      {
+        label: `Support: ${SITE.supportEmail}`,
+        href: `mailto:${SITE.supportEmail}`,
+        external: true,
+      },
     ],
   },
 ];

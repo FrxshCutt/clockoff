@@ -10,7 +10,14 @@ import { POST as disconnectRoute } from "@/app/api/integrations/[provider]/disco
 import { POST as notifyMeRoute } from "@/app/api/integrations/[provider]/notify-me/route";
 import { POST as syncRoute } from "@/app/api/integrations/[provider]/sync/route";
 import { GET as listRoute } from "@/app/api/integrations/route";
-import { addMember, callRoute, createTestOrg, createTestUser, loginAs, type ErrorBody } from "../helpers";
+import {
+  addMember,
+  callRoute,
+  createTestOrg,
+  createTestUser,
+  loginAs,
+  type ErrorBody,
+} from "../helpers";
 
 async function setup() {
   const org = await createTestOrg();
@@ -21,7 +28,10 @@ async function setup() {
 describe("GET /api/integrations", () => {
   it("lists every provider in enum order as COMING_SOON / NOT_CONNECTED", async () => {
     const { jar } = await setup();
-    const res = await callRoute<ListIntegrationsResponse>(listRoute, { path: "/api/integrations", jar });
+    const res = await callRoute<ListIntegrationsResponse>(listRoute, {
+      path: "/api/integrations",
+      jar,
+    });
     expect(res.status).toBe(200);
     expect(res.body.integrations.map((i) => i.provider)).toEqual([...INTEGRATION_PROVIDERS]);
     for (const integration of res.body.integrations) {
@@ -36,7 +46,9 @@ describe("GET /api/integrations", () => {
       expect(integration.supportedActivationModes).toContain(integration.activationMode);
       expect(integration.website).toMatch(/^https:\/\//);
     }
-    expect(res.body.integrations.find((i) => i.provider === "SEVENSHIFTS")?.displayName).toBe("7shifts");
+    expect(res.body.integrations.find((i) => i.provider === "SEVENSHIFTS")?.displayName).toBe(
+      "7shifts",
+    );
   });
 });
 
@@ -63,7 +75,9 @@ describe("connect / sync while providers are coming soon", () => {
     });
     expect(sync.status).toBe(501);
     expect(sync.body.error.details).toEqual({ provider: "WHEN_I_WORK" });
-    expect(await prisma.integration.count({ where: { organisationId: org.organisation.id } })).toBe(0);
+    expect(await prisma.integration.count({ where: { organisationId: org.organisation.id } })).toBe(
+      0,
+    );
   });
 
   it("validates the provider segment and the body", async () => {
@@ -136,17 +150,28 @@ describe("POST /api/integrations/:provider/notify-me", () => {
     });
     expect(second.status).toBe(200);
 
-    const rows = await prisma.integration.findMany({ where: { organisationId: org.organisation.id } });
-    expect(rows).toEqual([expect.objectContaining({ provider: "HOMEBASE", notifyRequested: true })]);
+    const rows = await prisma.integration.findMany({
+      where: { organisationId: org.organisation.id },
+    });
+    expect(rows).toEqual([
+      expect.objectContaining({ provider: "HOMEBASE", notifyRequested: true }),
+    ]);
     expect(
       await prisma.auditLog.count({
         where: { organisationId: org.organisation.id, action: "integration.notify_requested" },
       }),
     ).toBe(1);
 
-    const list = await callRoute<ListIntegrationsResponse>(listRoute, { path: "/api/integrations", jar });
-    expect(list.body.integrations.find((i) => i.provider === "HOMEBASE")?.notifyRequested).toBe(true);
-    expect(list.body.integrations.find((i) => i.provider === "PLANDAY")?.notifyRequested).toBe(false);
+    const list = await callRoute<ListIntegrationsResponse>(listRoute, {
+      path: "/api/integrations",
+      jar,
+    });
+    expect(list.body.integrations.find((i) => i.provider === "HOMEBASE")?.notifyRequested).toBe(
+      true,
+    );
+    expect(list.body.integrations.find((i) => i.provider === "PLANDAY")?.notifyRequested).toBe(
+      false,
+    );
   });
 });
 
@@ -162,7 +187,9 @@ describe("POST /api/integrations/:provider/disconnect", () => {
     });
     expect(res.status).toBe(200);
     expect(res.body.integration).toMatchObject({ provider: "ROTAREADY", status: "NOT_CONNECTED" });
-    expect(await prisma.integration.count({ where: { organisationId: org.organisation.id } })).toBe(0);
+    expect(await prisma.integration.count({ where: { organisationId: org.organisation.id } })).toBe(
+      0,
+    );
   });
 
   it("removes stored credentials and marks a connected integration DISCONNECTED", async () => {
@@ -178,7 +205,10 @@ describe("POST /api/integrations/:provider/disconnect", () => {
         },
       },
     });
-    const before = await callRoute<ListIntegrationsResponse>(listRoute, { path: "/api/integrations", jar });
+    const before = await callRoute<ListIntegrationsResponse>(listRoute, {
+      path: "/api/integrations",
+      jar,
+    });
     expect(before.body.integrations.find((i) => i.provider === "DEPUTY")).toMatchObject({
       status: "CONNECTED",
       externalAccountName: "Deputy Ltd",
@@ -194,7 +224,9 @@ describe("POST /api/integrations/:provider/disconnect", () => {
     });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.integration).toMatchObject({ status: "DISCONNECTED", lastSyncAt: null });
-    expect(await prisma.integrationConnection.count({ where: { integrationId: integration.id } })).toBe(0);
+    expect(
+      await prisma.integrationConnection.count({ where: { integrationId: integration.id } }),
+    ).toBe(0);
     expect(
       await prisma.auditLog.count({
         where: { organisationId: org.organisation.id, action: "integration.disconnected" },

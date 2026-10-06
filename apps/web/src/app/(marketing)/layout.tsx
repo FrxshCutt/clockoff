@@ -7,7 +7,12 @@ import { SITE } from "@/config/site";
 export const metadata: Metadata = {
   title: { default: `${SITE.name} · ${SITE.tagline}`, template: `%s · ${SITE.name}` },
   description: SITE.description,
-  openGraph: { siteName: SITE.name, type: "website", title: SITE.tagline, description: SITE.description },
+  openGraph: {
+    siteName: SITE.name,
+    type: "website",
+    title: SITE.tagline,
+    description: SITE.description,
+  },
   robots: { index: true, follow: true },
 };
 

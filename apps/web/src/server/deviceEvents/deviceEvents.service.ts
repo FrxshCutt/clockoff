@@ -38,10 +38,16 @@ const METADATA_KEYS = [
   "permissionState",
   "selectionCounts",
 ] as const satisfies readonly (keyof DeviceEventMetadata)[];
-const BREAK_EVENT_TYPES: ReadonlySet<string> = new Set(["BREAK_STARTED", "BREAK_ENDED", "BREAK_EXPIRED"]);
+const BREAK_EVENT_TYPES: ReadonlySet<string> = new Set([
+  "BREAK_STARTED",
+  "BREAK_ENDED",
+  "BREAK_EXPIRED",
+]);
 
 /** Allow-list copy of the metadata (defence in depth behind the strict schema). */
-export function pickEventMetadata(metadata: DeviceEventMetadata | undefined): Record<string, unknown> {
+export function pickEventMetadata(
+  metadata: DeviceEventMetadata | undefined,
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (!metadata) return out;
   for (const key of METADATA_KEYS) {
@@ -82,10 +88,27 @@ export function reportedStateForEvent(
   }
 }
 
+interface LatestReport {
+  state: WorkModeState;
+  at: Date;
+}
+
+/** The newest engine-state report in a batch (events may arrive out of order). */
+export function laterReport(
+  current: LatestReport | null,
+  state: WorkModeState | null,
+  at: Date,
+): LatestReport | null {
+  if (!state) return current;
+  if (current && at.getTime() < current.at.getTime()) return current;
+  return { state, at };
+}
+
 export function classifyOccurredAt(occurredAt: Date, now: Date): "ok" | "CLOCK_SKEW" {
   const ms = occurredAt.getTime();
   if (!Number.isFinite(ms)) return "CLOCK_SKEW";
-  if (ms < now.getTime() - EVENT_MAX_AGE_MS || ms > now.getTime() + EVENT_MAX_FUTURE_MS) return "CLOCK_SKEW";
+  if (ms < now.getTime() - EVENT_MAX_AGE_MS || ms > now.getTime() + EVENT_MAX_FUTURE_MS)
+    return "CLOCK_SKEW";
   return "ok";
 }
 
@@ -97,13 +120,18 @@ async function ownedIds(
   events: readonly DeviceEventInput[],
   db: Db,
 ): Promise<{ shifts: Set<string>; sessions: Set<string> }> {
-  const shiftIds = [...new Set(events.map((e) => e.metadata?.shiftId).filter((v): v is string => !!v))];
+  const shiftIds = [
+    ...new Set(events.map((e) => e.metadata?.shiftId).filter((v): v is string => !!v)),
+  ];
   const sessionIds = [
     ...new Set(events.map((e) => e.metadata?.breakSessionId).filter((v): v is string => !!v)),
   ];
   const [shifts, sessions] = await Promise.all([
     shiftIds.length
-      ? db.shift.findMany({ where: { organisationId, employeeId, id: { in: shiftIds } }, select: { id: true } })
+      ? db.shift.findMany({
+          where: { organisationId, employeeId, id: { in: shiftIds } },
+          select: { id: true },
+        })
       : [],
     sessionIds.length
       ? db.breakSession.findMany({
@@ -149,7 +177,7 @@ export async function ingestDeviceEvents(
   let accepted = 0;
   let duplicates = 0;
   const rejected: Array<{ clientEventId: string; code: ApiErrorCode }> = [];
-  let latestReport: { state: WorkModeState; at: Date } | null = null;
+  let latestReport: LatestReport | null = null;
 
   for (const event of input.events) {
     if (!REPORTABLE.has(event.type)) {
@@ -168,8 +196,20 @@ export async function ingestDeviceEvents(
       rejected.push({ clientEventId: event.clientEventId, code: "NOT_FOUND" });
       continue;
     }
-    if (await serverAlreadyRecordedBreakEvent(organisationId, employeeId, event.type, event.metadata, prisma)) {
+    const state = reportedStateForEvent(event.type, event.metadata);
+    if (
+      await serverAlreadyRecordedBreakEvent(
+        organisationId,
+        employeeId,
+        event.type,
+        event.metadata,
+        prisma,
+      )
+    ) {
+      // The feed already has this break event (from /breaks/start|end), but the phone is telling us its engine
+      // state for the first time — that report is what confirms the break on the dashboard badge.
       duplicates += 1;
+      latestReport = laterReport(latestReport, state, occurredAt);
       continue;
     }
     const { created } = await recordActivity({
@@ -183,14 +223,12 @@ export async function ingestDeviceEvents(
       clientEventId: event.clientEventId,
     });
     if (!created) {
+      // A replay of a clientEventId this device already flushed: the first upload applied its report.
       duplicates += 1;
       continue;
     }
     accepted += 1;
-    const state = reportedStateForEvent(event.type, event.metadata);
-    if (state && (latestReport === null || occurredAt.getTime() >= latestReport.at.getTime())) {
-      latestReport = { state, at: occurredAt };
-    }
+    latestReport = laterReport(latestReport, state, occurredAt);
   }
 
   await updateDevice(ctx.device.id, { lastSeenAt: now });

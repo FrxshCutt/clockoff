@@ -29,7 +29,12 @@ export interface PublishPolicyDialogProps {
 }
 
 /** "Publish v2?" — change note plus the honest impact line ("v2 will be sent to N devices"). */
-export function PublishPolicyDialog({ policy, open, onOpenChange, onPublish }: PublishPolicyDialogProps) {
+export function PublishPolicyDialog({
+  policy,
+  open,
+  onOpenChange,
+  onPublish,
+}: PublishPolicyDialogProps) {
   const [note, setNote] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -66,7 +71,8 @@ export function PublishPolicyDialog({ policy, open, onOpenChange, onPublish }: P
         <DialogHeader>
           <DialogTitle>Publish v{version}?</DialogTitle>
           <DialogDescription>
-            Publishing makes this the version employees&apos; phones enforce. Earlier versions stay in the history.
+            Publishing makes this the version employees&apos; phones enforce. Earlier versions stay
+            in the history.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -92,7 +98,10 @@ export function PublishPolicyDialog({ policy, open, onOpenChange, onPublish }: P
               disabled={pending}
               aria-describedby={`${noteId}-count`}
             />
-            <p id={`${noteId}-count`} className="text-muted-foreground text-right text-xs tabular-nums">
+            <p
+              id={`${noteId}-count`}
+              className="text-muted-foreground text-right text-xs tabular-nums"
+            >
               {note.length} / {CHANGE_NOTE_MAX_LENGTH}
             </p>
           </div>
@@ -101,8 +110,17 @@ export function PublishPolicyDialog({ policy, open, onOpenChange, onPublish }: P
           <Button type="button" variant="outline" onClick={() => close(false)} disabled={pending}>
             Cancel
           </Button>
-          <Button type="button" onClick={() => void publish()} disabled={pending} aria-busy={pending || undefined}>
-            {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Rocket aria-hidden="true" />}
+          <Button
+            type="button"
+            onClick={() => void publish()}
+            disabled={pending}
+            aria-busy={pending || undefined}
+          >
+            {pending ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Rocket aria-hidden="true" />
+            )}
             Publish v{version}
           </Button>
         </DialogFooter>

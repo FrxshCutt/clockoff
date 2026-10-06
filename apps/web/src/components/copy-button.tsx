@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 
-export interface CopyButtonProps extends Omit<ComponentProps<typeof Button>, "onClick" | "children" | "value"> {
+export interface CopyButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  "onClick" | "children" | "value"
+> {
   /** Text placed on the clipboard. */
   value: string;
   /** Accessible name, e.g. "Copy join code". Also the tooltip. */

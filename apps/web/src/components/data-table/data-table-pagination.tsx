@@ -4,7 +4,13 @@ import type { Table } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatNumber } from "@/lib/format";
 
 export const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
@@ -38,7 +44,10 @@ export function DataTablePagination<TData>({
           <label htmlFor={pageSizeId} className="text-sm font-medium whitespace-nowrap">
             Rows per page
           </label>
-          <Select value={String(pageSize)} onValueChange={(value) => table.setPageSize(Number(value))}>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => table.setPageSize(Number(value))}
+          >
             <SelectTrigger id={pageSizeId} size="sm" className="w-[4.5rem]">
               <SelectValue />
             </SelectTrigger>

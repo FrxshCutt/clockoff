@@ -3,6 +3,7 @@ import type { z } from "zod";
 import {
   addLocalDays,
   buildShiftInstants,
+  formatShiftRange,
   instantToLocal,
   isValidLocalDate,
   isValidTimeZone,
@@ -110,7 +111,11 @@ export interface ScheduleRange {
 }
 
 /** First visible day of the week containing `date`. */
-export function weekStartDate(date: LocalDateString, timezone: string, weekStartsOn: WeekStartsOn | undefined): LocalDateString {
+export function weekStartDate(
+  date: LocalDateString,
+  timezone: string,
+  weekStartsOn: WeekStartsOn | undefined,
+): LocalDateString {
   const start = weekStart(localMidnight(date, timezone), timezone, weekStartsOnToIso(weekStartsOn));
   return localDateOf(start, timezone);
 }
@@ -131,7 +136,11 @@ export function computeRange(
 }
 
 /** Anchor date after pressing previous/next: one day in the day view, one week otherwise. */
-export function navigateDate(view: ScheduleView, date: LocalDateString, direction: -1 | 1): LocalDateString {
+export function navigateDate(
+  view: ScheduleView,
+  date: LocalDateString,
+  direction: -1 | 1,
+): LocalDateString {
   return addLocalDays(date, (view === "day" ? 1 : 7) * direction);
 }
 
@@ -141,7 +150,10 @@ export const MINUTES_PER_DAY = 24 * 60;
 
 function dayIndex(date: LocalDateString): number {
   // Local dates are ISO strings, so the UTC epoch day of the same calendar date is a stable ordinal.
-  return Math.round(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) / 86_400_000);
+  return Math.round(
+    Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10))) /
+      86_400_000,
+  );
 }
 
 function minutesOf(time: string): number {
@@ -179,7 +191,10 @@ export interface ShiftLocalTimes {
 }
 
 /** The shift's wall-clock start/end in `timezone`. */
-export function shiftLocalTimes(shift: Pick<Shift, "startsAt" | "endsAt">, timezone: string): ShiftLocalTimes {
+export function shiftLocalTimes(
+  shift: Pick<Shift, "startsAt" | "endsAt">,
+  timezone: string,
+): ShiftLocalTimes {
   const start = instantToLocal(new Date(shift.startsAt), timezone);
   const end = instantToLocal(new Date(shift.endsAt), timezone);
   return {
@@ -192,7 +207,9 @@ export function shiftLocalTimes(shift: Pick<Shift, "startsAt" | "endsAt">, timez
 }
 
 /** `09:00–15:00`, or `22:00 → 06:00 (+1)` when the shift ends on a later local day. */
-export function shiftTimeLabel(times: Pick<ShiftLocalTimes, "startTime" | "endTime" | "dayOffset">): string {
+export function shiftTimeLabel(
+  times: Pick<ShiftLocalTimes, "startTime" | "endTime" | "dayOffset">,
+): string {
   if (times.dayOffset > 0) return `${times.startTime} → ${times.endTime} (+${times.dayOffset})`;
   return `${times.startTime}–${times.endTime}`;
 }
@@ -201,7 +218,11 @@ export function shiftTimeLabel(times: Pick<ShiftLocalTimes, "startTime" | "endTi
  * Splits every shift into one chip per visible local day it touches. A shift ending exactly at midnight
  * produces no zero-length chip on the following day.
  */
-export function placeShiftsOnDays(shifts: readonly Shift[], days: readonly LocalDateString[], timezone: string): Map<LocalDateString, ShiftChipModel[]> {
+export function placeShiftsOnDays(
+  shifts: readonly Shift[],
+  days: readonly LocalDateString[],
+  timezone: string,
+): Map<LocalDateString, ShiftChipModel[]> {
   const byDay = new Map<LocalDateString, ShiftChipModel[]>();
   for (const day of days) byDay.set(day, []);
   const visible = new Set(days);
@@ -233,7 +254,8 @@ export function placeShiftsOnDays(shifts: readonly Shift[], days: readonly Local
       });
     }
   }
-  for (const chips of byDay.values()) chips.sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
+  for (const chips of byDay.values())
+    chips.sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
   return byDay;
 }
 
@@ -249,7 +271,9 @@ export interface LaneAssignment<T> {
 export function assignLanes<T extends { startMinutes: number; endMinutes: number }>(
   items: readonly T[],
 ): { lanes: LaneAssignment<T>[]; laneCount: number } {
-  const sorted = [...items].sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
+  const sorted = [...items].sort(
+    (a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes,
+  );
   const laneEnds: number[] = [];
   const lanes: LaneAssignment<T>[] = [];
   for (const item of sorted) {
@@ -287,7 +311,14 @@ export function findConflicts(shifts: readonly Shift[]): Map<string, Shift[]> {
       for (let j = i + 1; j < list.length; j += 1) {
         const b = list[j]!;
         if (b.startsAt >= a.endsAt) break;
-        if (overlaps(new Date(a.startsAt), new Date(a.endsAt), new Date(b.startsAt), new Date(b.endsAt))) {
+        if (
+          overlaps(
+            new Date(a.startsAt),
+            new Date(a.endsAt),
+            new Date(b.startsAt),
+            new Date(b.endsAt),
+          )
+        ) {
           conflicts.set(a.id, [...(conflicts.get(a.id) ?? []), b]);
           conflicts.set(b.id, [...(conflicts.get(b.id) ?? []), a]);
         }
@@ -317,14 +348,25 @@ export function employeeRows(shifts: readonly Shift[]): EmployeeRow[] {
   for (const shift of shifts) {
     const e = shift.employee;
     if (!map.has(e.id)) {
-      map.set(e.id, { id: e.id, firstName: e.firstName, lastName: e.lastName, jobTitle: e.jobTitle, name: employeeName(e) });
+      map.set(e.id, {
+        id: e.id,
+        firstName: e.firstName,
+        lastName: e.lastName,
+        jobTitle: e.jobTitle,
+        name: employeeName(e),
+      });
     }
   }
-  return [...map.values()].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+  return [...map.values()].sort(
+    (a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName),
+  );
 }
 
 /** Filters applied client-side so toggles are instant. */
-export function visibleShifts(shifts: readonly Shift[], options: { showCancelled: boolean }): Shift[] {
+export function visibleShifts(
+  shifts: readonly Shift[],
+  options: { showCancelled: boolean },
+): Shift[] {
   return options.showCancelled ? [...shifts] : shifts.filter((s) => s.status !== "CANCELLED");
 }
 
@@ -344,22 +386,44 @@ export interface MoveShiftPlan {
 /**
  * Moving a chip from `fromDay` to `toDay` (both display-timezone days) shifts the shift by that many
  * calendar days while keeping its wall-clock times in its own timezone. Returns null when nothing moves.
+ * The optimistic shift also carries the derived fields the API would answer with (`localDate`,
+ * `isOvernight`, `displayRange`, …) so the drawer never shows the old date while the PATCH is in flight.
  */
-export function planShiftMove(shift: Shift, fromDay: LocalDateString, toDay: LocalDateString): MoveShiftPlan | null {
+export function planShiftMove(
+  shift: Shift,
+  fromDay: LocalDateString,
+  toDay: LocalDateString,
+): MoveShiftPlan | null {
   const deltaDays = dayIndex(toDay) - dayIndex(fromDay);
   if (deltaDays === 0) return null;
   if (!isValidTimeZone(shift.timezone)) return null;
   const own = shiftLocalTimes(shift, shift.timezone);
   const date = addLocalDays(own.startDate, deltaDays);
-  const patch: ShiftPatchBody = { date, startTime: own.startTime, endTime: own.endTime, timezone: shift.timezone, expectedVersion: shift.version };
+  const patch: ShiftPatchBody = {
+    date,
+    startTime: own.startTime,
+    endTime: own.endTime,
+    timezone: shift.timezone,
+    expectedVersion: shift.version,
+  };
   let optimistic: Shift | null = null;
   try {
-    const built = buildShiftInstants({ date, startTime: own.startTime, endTime: own.endTime, timezone: shift.timezone });
+    const built = buildShiftInstants({
+      date,
+      startTime: own.startTime,
+      endTime: own.endTime,
+      timezone: shift.timezone,
+    });
     optimistic = {
       ...shift,
       startsAt: built.startsAt.toISOString(),
       endsAt: built.endsAt.toISOString(),
       durationMinutes: built.durationMinutes,
+      isOvernight: built.isOvernight,
+      localDate: date,
+      localStartTime: own.startTime,
+      localEndTime: own.endTime,
+      displayRange: formatShiftRange(built.startsAt, built.endsAt, shift.timezone),
     };
   } catch {
     optimistic = null;
@@ -370,7 +434,9 @@ export function planShiftMove(shift: Shift, fromDay: LocalDateString, toDay: Loc
 // ── Series ──────────────────────────────────────────────────────────────────
 
 /** Id of the recurrence series a shift belongs to (its anchor), or null for a one-off shift. */
-export function seriesIdOf(shift: Pick<Shift, "id" | "recurrenceRule" | "parentRecurrenceId">): string | null {
+export function seriesIdOf(
+  shift: Pick<Shift, "id" | "recurrenceRule" | "parentRecurrenceId">,
+): string | null {
   if (shift.parentRecurrenceId) return shift.parentRecurrenceId;
   return shift.recurrenceRule ? shift.id : null;
 }
@@ -380,7 +446,10 @@ export function futureSeriesShifts(shift: Shift, candidates: readonly Shift[]): 
   const seriesId = seriesIdOf(shift);
   if (!seriesId) return [shift];
   return candidates
-    .filter((c) => (c.id === seriesId || c.parentRecurrenceId === seriesId) && c.startsAt >= shift.startsAt)
+    .filter(
+      (c) =>
+        (c.id === seriesId || c.parentRecurrenceId === seriesId) && c.startsAt >= shift.startsAt,
+    )
     .filter((c, index, all) => all.findIndex((o) => o.id === c.id) === index)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
@@ -388,9 +457,27 @@ export function futureSeriesShifts(shift: Shift, candidates: readonly Shift[]): 
 // ── Display helpers ─────────────────────────────────────────────────────────
 
 const WEEKDAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+const MONTH_SHORT = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
 
-export function localDateParts(date: LocalDateString): { year: number; month: number; day: number; weekday: IsoWeekday } {
+export function localDateParts(date: LocalDateString): {
+  year: number;
+  month: number;
+  day: number;
+  weekday: IsoWeekday;
+} {
   const year = Number(date.slice(0, 4));
   const month = Number(date.slice(5, 7));
   const day = Number(date.slice(8, 10));
@@ -400,7 +487,10 @@ export function localDateParts(date: LocalDateString): { year: number; month: nu
 }
 
 /** `Mon 6` (column header) or `Mon 6 Oct` / `Mon 6 Oct 2026`. */
-export function formatLocalDay(date: LocalDateString, style: "short" | "medium" | "long" = "medium"): string {
+export function formatLocalDay(
+  date: LocalDateString,
+  style: "short" | "medium" | "long" = "medium",
+): string {
   const { year, month, day, weekday } = localDateParts(date);
   const wd = WEEKDAY_SHORT[weekday - 1] ?? "";
   const mo = MONTH_SHORT[month - 1] ?? "";

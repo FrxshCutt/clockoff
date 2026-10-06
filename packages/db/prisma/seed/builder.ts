@@ -386,7 +386,10 @@ export class OrgBuilder {
       };
       const reported =
         device.reports && device.lastDeviceSyncAt
-          ? { state: expectedStateAt(inputs, device.lastDeviceSyncAt).state, at: device.lastDeviceSyncAt }
+          ? {
+              state: expectedStateAt(inputs, device.lastDeviceSyncAt).state,
+              at: device.lastDeviceSyncAt,
+            }
           : null;
       const evaluation = evaluateWorkState({
         ...inputs,
@@ -439,7 +442,10 @@ export class OrgBuilder {
         deactivatedAt: device.deactivatedAt,
         createdAt: device.linkedAt,
       });
-      this.rows.employeeWorkStates.push({ id: this.id(`work-state:${employee.key}`), ...evaluation.row });
+      this.rows.employeeWorkStates.push({
+        id: this.id(`work-state:${employee.key}`),
+        ...evaluation.row,
+      });
       evaluations.push({ ...evaluation, device, reported });
     }
     return evaluations;
@@ -450,7 +456,11 @@ export class OrgBuilder {
    * permission approved, selection configured, device registered before the shift and still active during it.
    */
   recordWorkModeEvents(device: BuiltDevice): void {
-    if (!device.reports || device.permissionState !== "APPROVED" || device.selectionState !== "CONFIGURED") {
+    if (
+      !device.reports ||
+      device.permissionState !== "APPROVED" ||
+      device.selectionState !== "CONFIGURED"
+    ) {
       return;
     }
     for (const shift of this.shifts) {
@@ -474,7 +484,10 @@ export class OrgBuilder {
           scheduleVersion: device.scheduleVersion,
         },
       });
-      if (this.clock.isPast(shift.endsAt) && (!device.deactivatedAt || shift.endsAt < device.deactivatedAt)) {
+      if (
+        this.clock.isPast(shift.endsAt) &&
+        (!device.deactivatedAt || shift.endsAt < device.deactivatedAt)
+      ) {
         this.activity({
           ...base,
           type: "WORK_MODE_ENDED",

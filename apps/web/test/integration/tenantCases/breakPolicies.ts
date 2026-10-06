@@ -23,7 +23,11 @@ registerTenantIsolationCase({
   name: "GET /api/break-policies/:id of another tenant",
   build: async (_a, b) => {
     const policy = await createBreakPolicyInOrg(b.organisation.id);
-    return { handler: getRoute, path: `/api/break-policies/${policy.id}`, params: { id: policy.id } };
+    return {
+      handler: getRoute,
+      path: `/api/break-policies/${policy.id}`,
+      params: { id: policy.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -64,7 +68,9 @@ registerTenantIsolationCase({
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
     expect(
-      await prisma.breakPolicy.count({ where: { organisationId: b.organisation.id, deletedAt: null } }),
+      await prisma.breakPolicy.count({
+        where: { organisationId: b.organisation.id, deletedAt: null },
+      }),
     ).toBe(1);
   },
 });

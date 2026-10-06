@@ -20,7 +20,14 @@ export interface AlwaysAllowedEditorProps {
  * Editable chips for the "Always available" list shown to employees (Phone, Messages, Maps…). Each line is
  * plain text the employee sees in the app; it does not change what the phone restricts.
  */
-export function AlwaysAllowedEditor({ value, onChange, disabled, maxItems, maxLength, errorId }: AlwaysAllowedEditorProps) {
+export function AlwaysAllowedEditor({
+  value,
+  onChange,
+  disabled,
+  maxItems,
+  maxLength,
+  errorId,
+}: AlwaysAllowedEditorProps) {
   const [draft, setDraft] = useState("");
   const inputId = useId();
   const listId = useId();
@@ -67,7 +74,9 @@ export function AlwaysAllowedEditor({ value, onChange, disabled, maxItems, maxLe
           ))}
         </ul>
       ) : (
-        <p className="text-muted-foreground text-sm">Nothing listed yet. Employees see this list in the app.</p>
+        <p className="text-muted-foreground text-sm">
+          Nothing listed yet. Employees see this list in the app.
+        </p>
       )}
       {disabled ? null : (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -92,7 +101,12 @@ export function AlwaysAllowedEditor({ value, onChange, disabled, maxItems, maxLe
               }}
             />
           </div>
-          <Button type="button" variant="outline" onClick={add} disabled={full || draft.trim() === ""}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={add}
+            disabled={full || draft.trim() === ""}
+          >
             <Plus aria-hidden="true" />
             Add
           </Button>

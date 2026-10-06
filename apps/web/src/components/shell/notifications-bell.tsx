@@ -36,7 +36,9 @@ export function NotificationsBell() {
       <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-sm font-semibold">Notifications</h2>
-          {unread > 0 ? <span className="text-muted-foreground text-xs">{unread} unread</span> : null}
+          {unread > 0 ? (
+            <span className="text-muted-foreground text-xs">{unread} unread</span>
+          ) : null}
         </div>
         {isPending ? (
           <div className="space-y-3 p-4" aria-busy="true">
@@ -51,15 +53,25 @@ export function NotificationsBell() {
           <div className="max-h-96 overflow-y-auto">
             <ul className="divide-y">
               {data.items.map((item) => (
-                <li key={item.id} className={cn("px-4 py-3", item.readAt === null && "bg-primary/5")}>
+                <li
+                  key={item.id}
+                  className={cn("px-4 py-3", item.readAt === null && "bg-primary/5")}
+                >
                   <div className="flex items-start gap-2">
                     {item.readAt === null ? (
-                      <span className="bg-primary mt-1.5 size-2 shrink-0 rounded-full" aria-label="Unread" role="img" />
+                      <span
+                        className="bg-primary mt-1.5 size-2 shrink-0 rounded-full"
+                        aria-label="Unread"
+                        role="img"
+                      />
                     ) : null}
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <p className="text-sm font-medium">{item.title}</p>
                       <p className="text-muted-foreground text-sm">{item.body}</p>
-                      <RelativeTime value={item.createdAt} className="text-muted-foreground text-xs" />
+                      <RelativeTime
+                        value={item.createdAt}
+                        className="text-muted-foreground text-xs"
+                      />
                     </div>
                   </div>
                 </li>

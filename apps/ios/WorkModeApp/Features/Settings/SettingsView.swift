@@ -20,13 +20,18 @@ struct SettingsView: View {
                     if let title = cache.employee?.jobTitle { LabeledContent("Job title", value: title) }
                     if let location = cache.employee?.primaryLocation?.name { LabeledContent("Location", value: location) }
                     if let policy = cache.policy { LabeledContent("Work policy", value: policy.policy.name) }
+                    if let breakPolicy = cache.breakPolicy { LabeledContent("Break rules", value: breakPolicy.name) }
                 }
 
-                Section("Connection status") {
+                Section("Connection") {
                     LabeledContent("Status", value: connectionText(cache))
+                    LabeledContent("Network", value: model.isOnline ? "Online" : "Offline")
                     LabeledContent("Last sync", value: cache.lastSyncAt.map(time.relative) ?? "Never")
+                    LabeledContent("Server last reached", value: model.container.syncMetadata.lastServerContactAt.map(time.relative) ?? "Never")
                     if let error = model.lastSyncError {
-                        Text(error.message).font(.footnote).foregroundStyle(.secondary)
+                        Text(error.isTransient ? "Couldn't reach Work Mode on the last sync." : error.message)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     Button("Sync now") { Task { await model.refresh(reason: .pullToRefresh) } }
                         .frame(minHeight: 44)
@@ -36,6 +41,16 @@ struct SettingsView: View {
                 Section("Permissions") {
                     LabeledContent("Screen Time access", value: permissionText(model.permissionState))
                     LabeledContent("Apps to block", value: selectionText)
+                    if model.policyNeedsBreakKeptSelection {
+                        LabeledContent("Kept blocked on breaks", value: breakKeptText)
+                    }
+                    if model.setupNeedsRepair {
+                        Button("Repair setup") { model.openSetupRepair() }
+                            .frame(minHeight: 44)
+                    } else if model.policyNeedsBreakKeptSelection, !model.hasBreakKeptSelection {
+                        Button("Choose apps that stay blocked on breaks") { model.chooseBreakKeptApps() }
+                            .frame(minHeight: 44)
+                    }
                     if !model.permissionState.isApproved {
                         Button("Open iPhone Settings") {
                             if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
@@ -47,18 +62,23 @@ struct SettingsView: View {
                 Section {
                     NavigationLink("Privacy — what your employer can see") { PrivacyView() }
                         .frame(minHeight: 44)
-                    NavigationLink("Help") { HelpView() }
+                    NavigationLink("Help") { HelpView(helpURL: helpURL) }
                         .frame(minHeight: 44)
                 }
 
-                Section("Device info") {
+                Section("Device") {
                     LabeledContent("App version", value: model.container.configuration.displayVersion)
                     LabeledContent("iOS version", value: model.container.deviceInfo.osVersion)
                     LabeledContent("Device", value: model.container.deviceInfo.model)
                     LabeledContent("Timezone", value: model.container.deviceInfo.timeZone.identifier)
+                    LabeledContent("Last check-in", value: cache.lastDeviceStateReportAt.map(time.dateTime) ?? "Never")
                     LabeledContent("Policy synced", value: cache.lastPolicySyncAt.map(time.dateTime) ?? "Never")
                     LabeledContent("Schedule synced", value: cache.lastScheduleSyncAt.map(time.dateTime) ?? "Never")
-                    LabeledContent("Last check-in", value: cache.lastDeviceStateReportAt.map(time.dateTime) ?? "Never")
+                    if let skew = cache.clockSkewSeconds, abs(skew) > BreakRules.clockSkewAttentionThresholdSeconds {
+                        Label(clockSkewText(skew), systemImage: "clock.badge.exclamationmark")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
                     if model.isUsingMockRestrictions {
                         LabeledContent("Restrictions", value: "Simulated (development)")
                     }
@@ -80,7 +100,7 @@ struct SettingsView: View {
                         .frame(minHeight: 44)
                         .disabled(isLeaving)
                 } footer: {
-                    Text("Leaving lifts every Work Mode restriction on this iPhone and disconnects it from your workplace.")
+                    Text("Leaving lifts every Work Mode restriction on this iPhone, removes your saved schedule and app choices, and disconnects it from your workplace.")
                 }
             }
             .navigationTitle("Settings")
@@ -104,15 +124,25 @@ struct SettingsView: View {
         }
     }
 
+    private var helpURL: URL {
+        model.container.configuration.apiBaseURL.appendingPathComponent("help")
+    }
+
     private var selectionText: String {
         guard model.hasSelection else { return "Not chosen" }
         let counts = model.selectionCounts
         return "\(counts.categories) categories, \(counts.applications) apps, \(counts.webDomains) sites"
     }
 
+    private var breakKeptText: String {
+        guard model.hasBreakKeptSelection else { return "Not chosen" }
+        let counts = model.breakKeptSelectionCounts
+        return "\(counts.categories) categories, \(counts.applications) apps, \(counts.webDomains) sites"
+    }
+
     private func connectionText(_ cache: CachedState) -> String {
         if !cache.isJoined { return "Not connected" }
-        if HomeCard.isSyncStale(cache: cache, now: Date()) { return "Connected — sync delayed" }
+        if SyncStaleness.isStale(lastSyncAt: cache.lastSyncAt, now: Date()) { return "Connected — sync delayed" }
         return "Connected"
     }
 
@@ -124,6 +154,12 @@ struct SettingsView: View {
         case .revoked: return "Turned off"
         case .unknown: return "Unknown"
         }
+    }
+
+    private func clockSkewText(_ skew: Int) -> String {
+        let minutes = max(1, abs(skew) / 60)
+        let direction = skew > 0 ? "ahead of" : "behind"
+        return "Your clock is about \(minutes) min \(direction) server time. Turn on Settings › General › Date & Time › Set Automatically so shifts start on time."
     }
 
     private func leave() {
@@ -171,23 +207,37 @@ private struct PrivacyRow: View {
 }
 
 struct HelpView: View {
+    let helpURL: URL
+
     private let items: [(String, String)] = [
         ("When are apps blocked?", "Only during the shifts your employer schedules. Blocks start automatically, relax on breaks and lift when your shift ends — even if the Work Mode app is closed."),
+        ("How do I take a break?", "On Home, tap Start Break while your shift is on. Your workplace's break rules decide how many breaks you can take, how long they last and when they can start; the card tells you when the next one is available."),
         ("My schedule looks wrong", "Pull down on Home or Schedule to sync. If it is still wrong, ask your manager to check your shifts."),
-        ("It says ACTION REQUIRED", "Screen Time access is off or no apps are chosen. Allow Work Mode in Settings › Screen Time, then reopen the app."),
+        ("It says ACTION REQUIRED", "Screen Time access is off or no apps are chosen. Tap Open Setup, or allow Work Mode in Settings › Screen Time, then reopen the app."),
         ("It says SYNC DELAYED", "Your phone hasn't reached Work Mode for a while. Your saved schedule still applies; connect to the internet and pull down to refresh."),
+        ("I was offline during a break", "Breaks started or ended without a connection are kept on this phone and sent to your workplace when you reconnect, with the time you tapped."),
         ("Can I still make calls?", "Yes. Screen Time cannot block the Phone app or emergency calls, and other apps are blocked only if you chose them."),
         ("I have a new phone", "Leave the workplace on your old phone (Settings › Leave Workplace), or ask your manager to disconnect it, then join on the new one."),
     ]
 
     var body: some View {
-        List(items, id: \.0) { item in
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.0).font(.headline)
-                Text(item.1).font(.body).foregroundStyle(.secondary)
+        List {
+            Section {
+                ForEach(items, id: \.0) { item in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(item.0).font(.headline)
+                        Text(item.1).font(.body).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    .accessibilityElement(children: .combine)
+                }
             }
-            .padding(.vertical, 4)
-            .accessibilityElement(children: .combine)
+            Section {
+                Link(destination: helpURL) {
+                    Label("More help online", systemImage: "safari")
+                        .frame(minHeight: 44)
+                }
+            }
         }
         .navigationTitle("Help")
     }

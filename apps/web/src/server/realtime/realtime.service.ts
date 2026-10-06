@@ -26,7 +26,9 @@ export function openOrganisationStream(
     signal,
     heartbeatMs: REALTIME_HEARTBEAT_MS,
     // Organisation-level events (no employeeId) always pass; employee events only for the chosen employee.
-    filter: employeeId ? (event) => event.employeeId === undefined || event.employeeId === employeeId : undefined,
+    filter: employeeId
+      ? (event) => event.employeeId === undefined || event.employeeId === employeeId
+      : undefined,
     headers: { "cache-control": "no-cache, no-transform", "x-accel-buffering": "no" },
   });
 }

@@ -1,10 +1,20 @@
-import { PRIVACY_PRINCIPLE } from "@workmode/shared/privacyStatements";
 import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { PrivacyExplainer } from "@/components/help/privacy-explainer";
-import { PRIVACY_DATA_HANDLING, PRIVACY_TECH_POINTS } from "@/components/marketing/marketing-content";
-import { CtaBand, PageIntro, PageSection, SectionHeading } from "@/components/marketing/marketing-sections";
-import { PrivacyAllowedFields, integrationsPrivacyStatement } from "@/components/marketing/privacy-allowed-fields";
+import {
+  PRIVACY_DATA_HANDLING,
+  PRIVACY_TECH_POINTS,
+} from "@/components/marketing/marketing-content";
+import {
+  CtaBand,
+  PageIntro,
+  PageSection,
+  SectionHeading,
+} from "@/components/marketing/marketing-sections";
+import {
+  PrivacyAllowedFields,
+  integrationsPrivacyStatement,
+} from "@/components/marketing/privacy-allowed-fields";
 import { SITE } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -28,10 +38,6 @@ export default function PrivacyPage() {
         title="Block distractions. Don't monitor employees."
         lead="Work Mode exists to make shift work less distracting, not to watch people. The employer sees operational status only. This page is the authoritative statement of what that means; the same definitions drive the dashboard, the employee app and the mobile API."
       >
-        <p className="inline-flex items-center gap-2 text-sm font-medium">
-          <ShieldCheck className="text-primary size-4" aria-hidden="true" />
-          {PRIVACY_PRINCIPLE}
-        </p>
         <nav aria-label="On this page">
           <ul className="flex flex-wrap gap-2">
             {SECTIONS.map((section) => (
@@ -57,7 +63,10 @@ export default function PrivacyPage() {
         <ol className="mt-10 grid gap-4 md:grid-cols-2">
           {PRIVACY_TECH_POINTS.map((point, index) => (
             <li key={point.title} className="bg-card flex gap-4 rounded-xl border p-5 shadow-xs">
-              <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums" aria-hidden="true">
+              <span
+                className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums"
+                aria-hidden="true"
+              >
                 {index + 1}
               </span>
               <div className="space-y-1.5">
@@ -83,7 +92,10 @@ export default function PrivacyPage() {
           <PrivacyAllowedFields />
         </div>
         <p className="text-muted-foreground mt-4 text-sm">
-          Not listed, because they carry no information about the employee or the phone: authentication tokens, ids the server itself issued (employee, shift and break ids), and structural fields such as the request containers and the date window of a schedule request.
+          Not listed, because they carry no information about the employee or the phone:
+          authentication tokens, ids the server itself issued (employee, shift and break ids), and
+          structural fields such as the request containers and the date window of a schedule
+          request.
         </p>
       </PageSection>
 
@@ -99,14 +111,21 @@ export default function PrivacyPage() {
         </ul>
         <p className="text-muted-foreground mt-8 max-w-3xl text-sm">
           Questions about privacy? Email{" "}
-          <a href={`mailto:${SITE.supportEmail}`} className="hover:text-foreground underline underline-offset-4">
+          <a
+            href={`mailto:${SITE.supportEmail}`}
+            className="hover:text-foreground underline underline-offset-4"
+          >
             {SITE.supportEmail}
           </a>
           .
         </p>
       </PageSection>
 
-      <CtaBand source="privacy" title="Show your team this page" description="Employees read the same statements in the app before they join. Book a demo and bring your questions." />
+      <CtaBand
+        source="privacy"
+        title="Show your team this page"
+        description="Employees read the same statements in the app before they join. Book a demo and bring your questions."
+      />
     </>
   );
 }

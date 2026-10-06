@@ -17,22 +17,44 @@ async function fixture() {
   const now = Date.now();
   const shift = (employeeId: string, startsAt: Date, endsAt: Date) =>
     prisma.shift.create({
-      data: { organisationId, employeeId, startsAt, endsAt, timezone: "Europe/London", locationId: location.id },
+      data: {
+        organisationId,
+        employeeId,
+        startsAt,
+        endsAt,
+        timezone: "Europe/London",
+        locationId: location.id,
+      },
     });
 
   // E1: connected, on shift, device confirms Work Mode → WORK_MODE_ACTIVE.
   const e1 = await createTestDevice(organisationId);
   await prisma.employee.update({
     where: { id: e1.employee.id },
-    data: { firstName: "Ava", lastName: "Active", inviteStatus: "CONNECTED", primaryLocationId: location.id },
+    data: {
+      firstName: "Ava",
+      lastName: "Active",
+      inviteStatus: "CONNECTED",
+      primaryLocationId: location.id,
+    },
   });
   await prisma.device.update({
     where: { id: e1.device.id },
-    data: { permissionState: "APPROVED", selectionState: "CONFIGURED", lastDeviceSyncAt: new Date(now) },
+    data: {
+      permissionState: "APPROVED",
+      selectionState: "CONFIGURED",
+      lastDeviceSyncAt: new Date(now),
+    },
   });
   await shift(e1.employee.id, new Date(now - HOUR), new Date(now + 3 * HOUR));
   await prisma.employeeWorkState.create({
-    data: { employeeId: e1.employee.id, state: "WORKING", source: "DEVICE_REPORT", reportedState: "WORKING", reportedAt: new Date(now) },
+    data: {
+      employeeId: e1.employee.id,
+      state: "WORKING",
+      source: "DEVICE_REPORT",
+      reportedState: "WORKING",
+      reportedAt: new Date(now),
+    },
   });
   await shift(e1.employee.id, new Date(now + 5 * HOUR), new Date(now + 9 * HOUR));
 
@@ -50,13 +72,23 @@ async function fixture() {
   });
   await prisma.device.update({
     where: { id: e3.device.id },
-    data: { permissionState: "DENIED", selectionState: "CONFIGURED", lastDeviceSyncAt: new Date(now) },
+    data: {
+      permissionState: "DENIED",
+      selectionState: "CONFIGURED",
+      lastDeviceSyncAt: new Date(now),
+    },
   });
   await shift(e3.employee.id, new Date(now - HOUR), new Date(now + 3 * HOUR));
 
   // E4: deactivated → excluded everywhere.
   await prisma.employee.create({
-    data: { organisationId, firstName: "Dee", lastName: "Departed", employmentStatus: "INACTIVE", inviteStatus: "DEACTIVATED" },
+    data: {
+      organisationId,
+      firstName: "Dee",
+      lastName: "Departed",
+      employmentStatus: "INACTIVE",
+      inviteStatus: "DEACTIVATED",
+    },
   });
 
   // Another tenant with an on-shift employee: never counted.
@@ -112,7 +144,13 @@ describe("GET /api/compliance/employees", () => {
     expect(all.items.map((r) => r.employee.lastName)).toEqual(["Active", "Beginner", "Careless"]);
 
     const attention = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { filter: "NEEDS_ATTENTION" }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { filter: "NEEDS_ATTENTION" },
+          jar,
+        })
+      ).body,
     );
     expect(attention.items).toHaveLength(1);
     const row = attention.items[0]!;
@@ -125,29 +163,59 @@ describe("GET /api/compliance/employees", () => {
     expect(row.lastSyncAt).not.toBeNull();
 
     const active = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { filter: "WORK_MODE_ACTIVE" }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { filter: "WORK_MODE_ACTIVE" },
+          jar,
+        })
+      ).body,
     );
     expect(active.items.map((r) => r.employee.id)).toEqual([e1.employee.id]);
     expect(active.items[0]!.reportedState).toBe("WORKING");
     expect(active.items[0]!.deviceStatus?.badge).toBe("WORK_MODE_ACTIVE");
 
     const awaiting = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { filter: "AWAITING_SETUP" }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { filter: "AWAITING_SETUP" },
+          jar,
+        })
+      ).body,
     );
     expect(awaiting.items.map((r) => r.employee.lastName)).toEqual(["Beginner", "Careless"]);
 
     const byLocation = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { locationId: location.id }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { locationId: location.id },
+          jar,
+        })
+      ).body,
     );
     expect(byLocation.items.map((r) => r.employee.id)).toEqual([e1.employee.id]);
 
     const search = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { search: "care" }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { search: "care" },
+          jar,
+        })
+      ).body,
     );
     expect(search.items.map((r) => r.employee.id)).toEqual([e3.employee.id]);
 
     const page = complianceEmployeesResponseSchema.parse(
-      (await callRoute(employeesRoute, { path: "/api/compliance/employees", query: { pageSize: 1, page: 2 }, jar })).body,
+      (
+        await callRoute(employeesRoute, {
+          path: "/api/compliance/employees",
+          query: { pageSize: 1, page: 2 },
+          jar,
+        })
+      ).body,
     );
     expect(page.items.map((r) => r.employee.lastName)).toEqual(["Beginner"]);
     expect(page.totalPages).toBe(3);
@@ -160,7 +228,9 @@ describe("GET /api/compliance/employees", () => {
     expect(bad.status).toBe(400);
     expect(bad.body.error.code).toBe("VALIDATION_ERROR");
 
-    const anonymous = await callRoute<ErrorBody>(employeesRoute, { path: "/api/compliance/employees" });
+    const anonymous = await callRoute<ErrorBody>(employeesRoute, {
+      path: "/api/compliance/employees",
+    });
     expect(anonymous.status).toBe(401);
   });
 });

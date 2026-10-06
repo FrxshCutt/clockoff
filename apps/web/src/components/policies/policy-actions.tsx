@@ -3,9 +3,10 @@
 import type { Policy } from "@workmode/validation/policies";
 import { Archive, Copy, MoreHorizontal, Pencil, Star, StarOff, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useNow } from "@/components/employees/use-now";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,7 @@ import { routeFor } from "@/config/navigation";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { AssignmentList } from "./assignments-panel";
-import { archiveGuard, canDelete, setDefaultGuard } from "./policy-view-model";
+import { archiveGuard, canDelete, openAssignments, setDefaultGuard } from "./policy-view-model";
 import {
   useArchivePolicy,
   useDeletePolicy,
@@ -56,26 +57,27 @@ export function usePolicyActionState() {
   };
 }
 
-/** Set / clear the organisation default with toasts. */
+/** Set / clear the organisation default with toasts. `toggle` is referentially stable (safe in memo deps). */
 export function useToggleDefaultPolicy() {
-  const setDefault = useSetDefaultPolicy();
+  const { mutateAsync, isPending } = useSetDefaultPolicy();
   const toastError = useApiErrorToast();
-  return {
-    isPending: setDefault.isPending,
-    toggle: async (policy: Policy) => {
+  const toggle = useCallback(
+    async (policy: Policy) => {
       try {
         if (policy.isDefault) {
-          await setDefault.mutateAsync({ policyId: null });
+          await mutateAsync({ policyId: null });
           toast.success(`${policy.name} is no longer the organisation default`);
         } else {
-          await setDefault.mutateAsync({ policyId: policy.id });
+          await mutateAsync({ policyId: policy.id });
           toast.success(`${policy.name} is now the organisation default`);
         }
       } catch (err) {
         toastError(err, { title: "Couldn't change the default policy" });
       }
     },
-  };
+    [mutateAsync, toastError],
+  );
+  return { isPending, toggle };
 }
 
 export interface PolicyMenuProps {
@@ -90,13 +92,26 @@ export interface PolicyMenuProps {
 }
 
 /** Card / header menu: edit, duplicate, set as default, archive, delete. */
-export function PolicyMenu({ policy, canEdit, onAction, onToggleDefault, hideEdit = false, defaultPending = false, align = "end" }: PolicyMenuProps) {
+export function PolicyMenu({
+  policy,
+  canEdit,
+  onAction,
+  onToggleDefault,
+  hideEdit = false,
+  defaultPending = false,
+  align = "end",
+}: PolicyMenuProps) {
   const defaultGuard = setDefaultGuard(policy);
   const archived = policy.status === "ARCHIVED";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${policy.name}`}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Actions for ${policy.name}`}
+        >
           <MoreHorizontal aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
@@ -129,7 +144,9 @@ export function PolicyMenu({ policy, canEdit, onAction, onToggleDefault, hideEdi
                 <Star aria-hidden="true" />
                 <span className="flex min-w-0 flex-col">
                   <span>Set as organisation default</span>
-                  {defaultGuard.ok ? null : <span className="text-muted-foreground text-xs">{defaultGuard.reason}</span>}
+                  {defaultGuard.ok ? null : (
+                    <span className="text-muted-foreground text-xs">{defaultGuard.reason}</span>
+                  )}
                 </span>
               </DropdownMenuItem>
             )}
@@ -161,7 +178,12 @@ export interface PolicyActionDialogsProps {
 }
 
 /** The dialogs behind `PolicyMenu`: duplicate (name prompt), archive (guarded) and delete (confirm). */
-export function PolicyActionDialogs({ request, onClose, onDuplicated, onRemoved }: PolicyActionDialogsProps) {
+export function PolicyActionDialogs({
+  request,
+  onClose,
+  onDuplicated,
+  onRemoved,
+}: PolicyActionDialogsProps) {
   return (
     <>
       <DuplicatePolicyDialog
@@ -183,7 +205,15 @@ export function PolicyActionDialogs({ request, onClose, onDuplicated, onRemoved 
   );
 }
 
-function DuplicatePolicyDialog({ policy, onClose, onDuplicated }: { policy: Policy | null; onClose: () => void; onDuplicated?: (policy: Policy) => void }) {
+function DuplicatePolicyDialog({
+  policy,
+  onClose,
+  onDuplicated,
+}: {
+  policy: Policy | null;
+  onClose: () => void;
+  onDuplicated?: (policy: Policy) => void;
+}) {
   const duplicate = useDuplicatePolicy();
   const [name, setName] = useState<string | null>(null);
   const inputId = useId();
@@ -200,7 +230,10 @@ function DuplicatePolicyDialog({ policy, onClose, onDuplicated }: { policy: Poli
     if (!policy) return;
     const trimmed = value.trim();
     try {
-      const created = await duplicate.mutateAsync({ id: policy.id, input: trimmed === "" ? {} : { name: trimmed.slice(0, 120) } });
+      const created = await duplicate.mutateAsync({
+        id: policy.id,
+        input: trimmed === "" ? {} : { name: trimmed.slice(0, 120) },
+      });
       toast.success(`Created "${created.name}" as a draft`);
       setName(null);
       onClose();
@@ -216,7 +249,8 @@ function DuplicatePolicyDialog({ policy, onClose, onDuplicated }: { policy: Poli
         <DialogHeader>
           <DialogTitle>Duplicate policy</DialogTitle>
           <DialogDescription>
-            Copies the configuration of <span className="font-medium">{policy?.name}</span> into a new draft. Assignments are not copied.
+            Copies the configuration of <span className="font-medium">{policy?.name}</span> into a
+            new draft. Assignments are not copied.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -233,13 +267,24 @@ function DuplicatePolicyDialog({ policy, onClose, onDuplicated }: { policy: Poli
           ) : null}
           <div className="space-y-2">
             <Label htmlFor={inputId}>Name</Label>
-            <Input id={inputId} value={value} maxLength={120} onChange={(event) => setName(event.target.value)} autoFocus disabled={duplicate.isPending} />
+            <Input
+              id={inputId}
+              value={value}
+              maxLength={120}
+              onChange={(event) => setName(event.target.value)}
+              autoFocus
+              disabled={duplicate.isPending}
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={close} disabled={duplicate.isPending}>
               Cancel
             </Button>
-            <Button type="submit" disabled={duplicate.isPending || value.trim() === ""} aria-busy={duplicate.isPending || undefined}>
+            <Button
+              type="submit"
+              disabled={duplicate.isPending || value.trim() === ""}
+              aria-busy={duplicate.isPending || undefined}
+            >
               <Copy aria-hidden="true" />
               Duplicate
             </Button>
@@ -250,15 +295,34 @@ function DuplicatePolicyDialog({ policy, onClose, onDuplicated }: { policy: Poli
   );
 }
 
-function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy | null; onClose: () => void; onArchived?: (policy: Policy) => void }) {
+function ArchivePolicyDialog({
+  policy,
+  onClose,
+  onArchived,
+}: {
+  policy: Policy | null;
+  onClose: () => void;
+  onArchived?: (policy: Policy) => void;
+}) {
   const archive = useArchivePolicy();
   const remove = useRemovePolicyAssignment();
   const toastError = useApiErrorToast();
-  const guard = policy ? archiveGuard(policy) : { blocked: false as const };
-  const assignments = usePolicyAssignments(policy?.id ?? null, { enabled: policy !== null && guard.blocked });
+  // `policy` is the snapshot the menu was opened with; once the assignments are loaded the guard follows them
+  // live, so removing the last one here turns this straight into the archive confirmation.
+  const snapshotGuard = policy ? archiveGuard(policy) : { blocked: false as const };
+  const assignments = usePolicyAssignments(policy?.id ?? null, {
+    enabled: policy !== null && snapshotGuard.blocked,
+  });
+  const now = useNow();
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   if (!policy) return null;
+
+  const openCount =
+    assignments.data && now !== null
+      ? openAssignments(assignments.data, now).length
+      : policy.assignmentCount;
+  const guard = archiveGuard({ isDefault: policy.isDefault, assignmentCount: openCount });
 
   if (!guard.blocked) {
     return (
@@ -295,8 +359,8 @@ function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy |
         <DialogHeader>
           <DialogTitle>Reassign before archiving</DialogTitle>
           <DialogDescription>
-            Archiving <span className="font-medium">{policy.name}</span> would silently move the people below to the next policy in the
-            hierarchy. Point them at another policy first.
+            Archiving <span className="font-medium">{policy.name}</span> would silently move the
+            people below to the next policy in the hierarchy. Point them at another policy first.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -305,7 +369,7 @@ function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy |
               <li key={reason}>{reason}</li>
             ))}
           </ul>
-          {policy.assignmentCount > 0 ? (
+          {openCount > 0 ? (
             <div className="space-y-2">
               <p className="text-sm font-medium">Current assignments</p>
               {assignments.isError ? (
@@ -321,7 +385,8 @@ function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy |
                       { assignmentId: assignment.id, policyId: policy.id },
                       {
                         onSuccess: () => toast.success("Assignment removed"),
-                        onError: (err) => toastError(err, { title: "Couldn't remove the assignment" }),
+                        onError: (err) =>
+                          toastError(err, { title: "Couldn't remove the assignment" }),
                         onSettled: () => setRemovingId(null),
                       },
                     );
@@ -333,7 +398,7 @@ function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy |
           <InlineAlert variant="info">
             {policy.isDefault
               ? "Choose another published policy as the organisation default from its menu, then come back to archive this one."
-              : "Once nothing points at this policy, Archive becomes available from its menu."}
+              : "Remove the assignments above, or assign another policy to those scopes. Once nothing points at this policy you can archive it right here."}
           </InlineAlert>
         </div>
         <DialogFooter>
@@ -346,7 +411,15 @@ function ArchivePolicyDialog({ policy, onClose, onArchived }: { policy: Policy |
   );
 }
 
-function DeletePolicyDialog({ policy, onClose, onDeleted }: { policy: Policy | null; onClose: () => void; onDeleted?: (policy: Policy) => void }) {
+function DeletePolicyDialog({
+  policy,
+  onClose,
+  onDeleted,
+}: {
+  policy: Policy | null;
+  onClose: () => void;
+  onDeleted?: (policy: Policy) => void;
+}) {
   const remove = useDeletePolicy();
   const toastError = useApiErrorToast();
   if (!policy) return null;
@@ -357,7 +430,7 @@ function DeletePolicyDialog({ policy, onClose, onDeleted }: { policy: Policy | n
         if (!open) onClose();
       }}
       title={`Delete ${policy.name}?`}
-      description="This permanently removes the policy and its version history. Nothing is assigned to it, so no employee's phone changes."
+      description="Removes the policy and its version history from your organisation; this can't be undone. Nothing is assigned to it, so no employee's phone changes."
       confirmLabel="Delete policy"
       destructive
       onConfirm={async () => {

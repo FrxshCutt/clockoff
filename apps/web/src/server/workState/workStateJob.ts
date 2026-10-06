@@ -18,7 +18,10 @@ import {
 } from "@/server/digest/digest.service";
 import { publishEvent } from "@/server/events";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
-import { ambiguousTeamWarnings, type EmployeePolicyResolution } from "@/server/sync/policyResolution";
+import {
+  ambiguousTeamWarnings,
+  type EmployeePolicyResolution,
+} from "@/server/sync/policyResolution";
 import { scheduledBreakWindow } from "@/server/sync/mobileMappers";
 import { markCompletedShifts, materialiseRecurrences } from "./externalServices";
 import { DAY_MS, findJobCandidates, type WorkStateInputs } from "./workState.repository";
@@ -26,6 +29,7 @@ import {
   evaluateOrganisation,
   persistEvaluation,
   publishWorkStateChanged,
+  recordSyncDelayedEpisode,
   type EmployeeEvaluation,
 } from "./workState.service";
 
@@ -136,12 +140,21 @@ export async function sweepExpiredBreakSessions(
             endReason: "SHIFT_ENDED" as const,
           }));
     } catch (err) {
-      log.error({ error: errorSummary(err), shiftId: shift.id }, "break sweep: closure computation failed");
+      log.error(
+        { error: errorSummary(err), shiftId: shift.id },
+        "break sweep: closure computation failed",
+      );
       continue;
     }
     if (closures.length === 0) continue;
     const applied = await applyBreakClosures(first.organisationId, closures);
-    const events = await recordClosureEvents(prisma, first.organisationId, first.employeeId, shift.id, applied);
+    const events = await recordClosureEvents(
+      prisma,
+      first.organisationId,
+      first.employeeId,
+      shift.id,
+      applied,
+    );
     for (const event of events) publishActivity(event);
     for (const closure of applied) {
       if (closure.endReason === "EXPIRED") report.expired += 1;
@@ -177,12 +190,17 @@ export async function startDueScheduledBreaks(
       },
     },
     include: {
-      shift: { select: { id: true, organisationId: true, employeeId: true, startsAt: true, endsAt: true } },
+      shift: {
+        select: { id: true, organisationId: true, employeeId: true, startsAt: true, endsAt: true },
+      },
     },
   });
   const due = candidates
     .map((sb) => ({ sb, window: scheduledBreakWindow(sb.shift, sb) }))
-    .filter(({ window }) => window.startsAt.getTime() <= now.getTime() && now.getTime() < window.endsAt.getTime());
+    .filter(
+      ({ window }) =>
+        window.startsAt.getTime() <= now.getTime() && now.getTime() < window.endsAt.getTime(),
+    );
   if (due.length === 0) return report;
 
   const existing = new Set(
@@ -216,9 +234,15 @@ export async function startDueScheduledBreaks(
     } catch (err) {
       if (isAppError(err)) {
         report.skipped += 1;
-        log.debug({ code: err.code, scheduledBreakId: sb.id, shiftId: sb.shift.id }, "scheduled break refused");
+        log.debug(
+          { code: err.code, scheduledBreakId: sb.id, shiftId: sb.shift.id },
+          "scheduled break refused",
+        );
       } else {
-        log.error({ error: errorSummary(err), scheduledBreakId: sb.id }, "scheduled break start failed");
+        log.error(
+          { error: errorSummary(err), scheduledBreakId: sb.id },
+          "scheduled break start failed",
+        );
       }
     }
   }
@@ -228,24 +252,6 @@ export async function startDueScheduledBreaks(
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Evaluation helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-async function recordSyncDelayedEpisode(evaluation: EmployeeEvaluation, now: Date): Promise<void> {
-  await recordActivity({
-    organisationId: evaluation.organisationId,
-    employeeId: evaluation.employee.id,
-    deviceId: evaluation.device?.id ?? null,
-    actorType: "SYSTEM",
-    type: "DEVICE_SYNC_DELAYED",
-    occurredAt: now,
-    metadata: {
-      badge: evaluation.badge?.badge ?? null,
-      reason: evaluation.badge?.reason ?? null,
-      lastDeviceSyncAt: evaluation.device?.lastDeviceSyncAt?.toISOString() ?? null,
-      expectedState: evaluation.expected.state,
-      activeShiftId: evaluation.expected.activeShift?.id ?? null,
-    },
-  });
-}
 
 /** `POLICY_RESOLUTION_WARNING` for AMBIGUOUS_TEAM_ASSIGNMENT, at most once per (employee, key) per day. */
 export async function recordResolutionWarnings(
@@ -322,7 +328,10 @@ export function digestCandidate(
 
 export function publishOverrideEvent(
   action: "OVERRIDE_CREATED" | "OVERRIDE_REVOKED" | "OVERRIDE_EXPIRED",
-  override: Pick<ManagerOverride, "id" | "organisationId" | "employeeId" | "type" | "startsAt" | "expiresAt">,
+  override: Pick<
+    ManagerOverride,
+    "id" | "organisationId" | "employeeId" | "type" | "startsAt" | "expiresAt"
+  >,
 ): void {
   const payload = {
     overrideId: override.id,
@@ -436,7 +445,9 @@ export async function runWorkModeTick(
         const { row, startedSyncDelayedEpisode } = await persistEvaluation(evaluation);
         report.employeesEvaluated += 1;
         if (previousExpected) {
-          const transitions = diffStates(previousExpected, evaluation.expected).filter((t) => t.eventType);
+          const transitions = diffStates(previousExpected, evaluation.expected).filter(
+            (t) => t.eventType,
+          );
           report.transitions += transitions.length;
           if (transitions.length > 0) {
             log.debug(
@@ -470,7 +481,10 @@ export async function runWorkModeTick(
         if (digest.sent) report.digestsSent += 1;
       }
     } catch (err) {
-      log.error({ error: errorSummary(err), organisationId }, "work mode tick: organisation failed");
+      log.error(
+        { error: errorSummary(err), organisationId },
+        "work mode tick: organisation failed",
+      );
       report.errors.push(organisationId);
     }
   }

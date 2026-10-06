@@ -1,6 +1,10 @@
 import type { Role } from "@workmode/shared/enums";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ComplianceEmployeeRow, ComplianceEmployeesResponse, ComplianceMetrics } from "@workmode/validation/compliance";
+import type {
+  ComplianceEmployeeRow,
+  ComplianceEmployeesResponse,
+  ComplianceMetrics,
+} from "@workmode/validation/compliance";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -37,7 +41,9 @@ const ORGANISATION: CurrentOrganisation = {
 };
 
 function render(node: ReactNode, seed: (client: QueryClient) => void) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  });
   seed(client);
   return renderToStaticMarkup(
     <QueryClientProvider client={client}>
@@ -48,8 +54,22 @@ function render(node: ReactNode, seed: (client: QueryClient) => void) {
 
 /** `GET /api/auth/me` for a manager of ORGANISATION with the given role. */
 const currentUser = (role: Role) => ({
-  user: { id: "u", email: "a@example.com", name: "Ada", emailVerified: true, createdAt: "2026-10-01T00:00:00Z" },
-  organisations: [{ id: ORGANISATION.organisation.id, name: "Harbour Café", slug: "harbour-cafe", role, timezone: "Europe/London" }],
+  user: {
+    id: "u",
+    email: "a@example.com",
+    name: "Ada",
+    emailVerified: true,
+    createdAt: "2026-10-01T00:00:00Z",
+  },
+  organisations: [
+    {
+      id: ORGANISATION.organisation.id,
+      name: "Harbour Café",
+      slug: "harbour-cafe",
+      role,
+      timezone: "Europe/London",
+    },
+  ],
   currentOrganisationId: ORGANISATION.organisation.id,
   csrfToken: "x",
 });
@@ -103,26 +123,46 @@ describe("OnboardingChecklist", () => {
     const failWith = (error: ApiClientError) => (c: QueryClient) => {
       // Keep the seeded error on mount (otherwise the observer optimistically re-fetches and shows loading).
       c.setQueryDefaults(queryKeys.onboarding, { retryOnMount: false });
-      c.getQueryCache()
-        .build(c, { queryKey: queryKeys.onboarding })
-        .setState({ status: "error", error, fetchStatus: "idle", errorUpdatedAt: 1, errorUpdateCount: 1 });
+      c.getQueryCache().build(c, { queryKey: queryKeys.onboarding }).setState({
+        status: "error",
+        error,
+        fetchStatus: "idle",
+        errorUpdatedAt: 1,
+        errorUpdateCount: 1,
+      });
     };
-    expect(render(<OnboardingChecklist />, failWith(new ApiClientError({ code: "NOT_FOUND", status: 404, message: "x" })))).toBe("");
-    const html = render(<OnboardingChecklist />, failWith(new ApiClientError({ code: "INTERNAL_ERROR", status: 500, message: "x" })));
+    expect(
+      render(
+        <OnboardingChecklist />,
+        failWith(new ApiClientError({ code: "NOT_FOUND", status: 404, message: "x" })),
+      ),
+    ).toBe("");
+    const html = render(
+      <OnboardingChecklist />,
+      failWith(new ApiClientError({ code: "INTERNAL_ERROR", status: 500, message: "x" })),
+    );
     expect(html).toContain("Couldn&#x27;t load your setup checklist");
     expect(html).toContain("Try again");
     expect(html).not.toContain("x</p>");
   });
 
   it("disappears once dismissed, whatever the role", () => {
-    const dismissed = checklist({ complete: true, completedCount: 2, dismissedAt: "2026-10-02T00:00:00Z" });
+    const dismissed = checklist({
+      complete: true,
+      completedCount: 2,
+      dismissedAt: "2026-10-02T00:00:00Z",
+    });
     expect(
       render(<OnboardingChecklist />, (c) => {
         c.setQueryData(queryKeys.onboarding, dismissed);
         c.setQueryData(queryKeys.currentUser, currentUser("OWNER"));
       }),
     ).toBe("");
-    expect(render(<OnboardingChecklist />, (c) => c.setQueryData(queryKeys.onboarding, checklist({ dismissedAt: "2026-10-02T00:00:00Z" })))).toBe("");
+    expect(
+      render(<OnboardingChecklist />, (c) =>
+        c.setQueryData(queryKeys.onboarding, checklist({ dismissedAt: "2026-10-02T00:00:00Z" })),
+      ),
+    ).toBe("");
   });
 });
 
@@ -142,7 +182,8 @@ describe("OverviewMetrics", () => {
     const html = render(<OverviewMetrics metrics={METRICS} />, () => {});
     for (const key of Object.keys(METRICS)) expect(html).toContain(`data-metric="${key}"`);
     expect(html).toContain('href="/employees"');
-    expect(html).toContain('href="/employees?filter=needsAttention"');
+    expect(html).toContain('href="/employees?filter=connected"');
+    expect(html).toContain('href="/activity?tab=compliance&amp;filter=NEEDS_ATTENTION"');
     expect(html).toContain('href="/activity?tab=compliance&amp;filter=WORK_MODE_ACTIVE"');
     expect(html).toContain('data-metric="needsAttention" data-tone="danger"');
     expect(html).toContain('data-metric="connected" data-tone="success"');
@@ -187,7 +228,10 @@ describe("AwaitingSetupPanel", () => {
     ...overrides,
   });
 
-  const page = (items: ComplianceEmployeeRow[], total = items.length): ComplianceEmployeesResponse => ({
+  const page = (
+    items: ComplianceEmployeeRow[],
+    total = items.length,
+  ): ComplianceEmployeesResponse => ({
     items,
     page: 1,
     pageSize: AWAITING_SETUP_PANEL_SIZE,
@@ -207,7 +251,10 @@ describe("AwaitingSetupPanel", () => {
         page(
           [
             row(JANE, "Jane", "Smith", "INVITED"),
-            row(SAM, "Sam", "Jones", "SETUP_INCOMPLETE", { permissionState: "DENIED", attentionReason: "Screen Time access was denied" }),
+            row(SAM, "Sam", "Jones", "SETUP_INCOMPLETE", {
+              permissionState: "DENIED",
+              attentionReason: "Screen Time access was denied",
+            }),
             row(PRIYA, "Priya", "Patel", "NOT_INVITED"),
           ],
           10,
@@ -228,7 +275,8 @@ describe("AwaitingSetupPanel", () => {
     expect(html).toContain('aria-label="Invite Priya Patel"');
 
     expect(html).toContain("View all 10");
-    expect(html).toContain('href="/employees?filter=awaitingSetup"');
+    // Same API filter as the panel itself, so the full list is exactly the rows behind the count.
+    expect(html).toContain('href="/activity?tab=compliance&amp;filter=AWAITING_SETUP"');
   });
 
   it("celebrates when everyone is set up", () => {
@@ -251,7 +299,11 @@ describe("join code widgets", () => {
   });
 
   it("hides the top-bar chip when there is no active code", () => {
-    expect(render(<JoinCodeQuickCopy />, (c) => c.setQueryData(queryKeys.currentOrganisation, { ...ORGANISATION, joinCode: null }))).toBe("");
+    expect(
+      render(<JoinCodeQuickCopy />, (c) =>
+        c.setQueryData(queryKeys.currentOrganisation, { ...ORGANISATION, joinCode: null }),
+      ),
+    ).toBe("");
   });
 });
 
@@ -262,14 +314,18 @@ describe("NotificationsBell", () => {
       unreadCount: 12,
       items: [],
     };
-    const html = render(<NotificationsBell />, (c) => c.setQueryData(queryKeys.notifications, feed));
+    const html = render(<NotificationsBell />, (c) =>
+      c.setQueryData(queryKeys.notifications, feed),
+    );
     expect(html).toContain('aria-label="Notifications, 12 unread"');
     expect(html).toContain(">9+<");
   });
 
   it("has a plain label with nothing unread", () => {
     const feed: NotificationsState = { available: false, unreadCount: 0, items: [] };
-    const html = render(<NotificationsBell />, (c) => c.setQueryData(queryKeys.notifications, feed));
+    const html = render(<NotificationsBell />, (c) =>
+      c.setQueryData(queryKeys.notifications, feed),
+    );
     expect(html).toContain('aria-label="Notifications"');
   });
 });
@@ -297,7 +353,11 @@ describe("BillingOverview", () => {
         .build(c, { queryKey: queryKeys.billing })
         .setState({
           status: "error",
-          error: new ApiClientError({ code: "INTERNAL_ERROR", status: 500, message: "stack trace here" }),
+          error: new ApiClientError({
+            code: "INTERNAL_ERROR",
+            status: 500,
+            message: "stack trace here",
+          }),
           fetchStatus: "idle",
           errorUpdatedAt: 1,
           errorUpdateCount: 1,

@@ -35,10 +35,16 @@ async function tick(): Promise<void> {
     try {
       const report = await runWorkModeTick(new Date(), { log });
       if (report.errors.length > 0) {
-        log.warn({ errors: report.errors.length, durationMs: report.durationMs }, "work mode tick finished with errors");
+        log.warn(
+          { errors: report.errors.length, durationMs: report.durationMs },
+          "work mode tick finished with errors",
+        );
       }
     } catch (err) {
-      log.error({ error: errorSummary(err), stack: stackFrames(err), durationMs: Date.now() - started }, "work mode tick failed");
+      log.error(
+        { error: errorSummary(err), stack: stackFrames(err), durationMs: Date.now() - started },
+        "work mode tick failed",
+      );
     } finally {
       running = null;
     }
@@ -83,7 +89,8 @@ export async function main(): Promise<void> {
 }
 
 const isEntrypoint =
-  typeof process.argv[1] === "string" && /[\\/]src[\\/]jobs[\\/]main\.(ts|js|mjs)$/.test(process.argv[1]);
+  typeof process.argv[1] === "string" &&
+  /[\\/]src[\\/]jobs[\\/]main\.(ts|js|mjs)$/.test(process.argv[1]);
 if (isEntrypoint) {
   main().catch((err: unknown) => {
     log.error({ error: errorSummary(err), stack: stackFrames(err) }, "jobs: fatal");

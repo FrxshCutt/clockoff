@@ -47,7 +47,8 @@ export const DEVICE_URL_PARAMS = {
   pageSize: "pageSize",
 } as const;
 
-type SearchParamsLike = URLSearchParams | Readonly<Record<string, string | readonly string[] | undefined>>;
+type SearchParamsLike =
+  URLSearchParams | Readonly<Record<string, string | readonly string[] | undefined>>;
 
 function readParam(params: SearchParamsLike, name: string): string | null {
   if (params instanceof URLSearchParams) return params.get(name);
@@ -91,7 +92,11 @@ export function parsePermissionList(values: readonly string[]): PermissionState[
 
 export function parseDeviceListParams(params: SearchParamsLike): DeviceListParams {
   const active = readParam(params, DEVICE_URL_PARAMS.active);
-  const pageSizeRaw = readPositiveInt(readParam(params, DEVICE_URL_PARAMS.pageSize), DEFAULT_DEVICE_LIST_PARAMS.pageSize, 200);
+  const pageSizeRaw = readPositiveInt(
+    readParam(params, DEVICE_URL_PARAMS.pageSize),
+    DEFAULT_DEVICE_LIST_PARAMS.pageSize,
+    200,
+  );
   const employeeId = readParam(params, DEVICE_URL_PARAMS.employeeId);
   const locationId = readParam(params, DEVICE_URL_PARAMS.locationId);
   return {
@@ -100,18 +105,23 @@ export function parseDeviceListParams(params: SearchParamsLike): DeviceListParam
     employeeId: isResourceId(employeeId) ? employeeId : null,
     locationId: isResourceId(locationId) ? locationId : null,
     page: readPositiveInt(readParam(params, DEVICE_URL_PARAMS.page), 1, 100_000),
-    pageSize: (DEVICE_PAGE_SIZES as readonly number[]).includes(pageSizeRaw) ? pageSizeRaw : DEFAULT_DEVICE_LIST_PARAMS.pageSize,
+    pageSize: (DEVICE_PAGE_SIZES as readonly number[]).includes(pageSizeRaw)
+      ? pageSizeRaw
+      : DEFAULT_DEVICE_LIST_PARAMS.pageSize,
   };
 }
 
 export function serializeDeviceListParams(params: DeviceListParams): string {
   const out = new URLSearchParams();
-  if (params.active !== DEFAULT_DEVICE_LIST_PARAMS.active) out.set(DEVICE_URL_PARAMS.active, params.active);
-  if (params.permission.length > 0) out.set(DEVICE_URL_PARAMS.permission, params.permission.join(","));
+  if (params.active !== DEFAULT_DEVICE_LIST_PARAMS.active)
+    out.set(DEVICE_URL_PARAMS.active, params.active);
+  if (params.permission.length > 0)
+    out.set(DEVICE_URL_PARAMS.permission, params.permission.join(","));
   if (params.employeeId) out.set(DEVICE_URL_PARAMS.employeeId, params.employeeId);
   if (params.locationId) out.set(DEVICE_URL_PARAMS.locationId, params.locationId);
   if (params.page > 1) out.set(DEVICE_URL_PARAMS.page, String(params.page));
-  if (params.pageSize !== DEFAULT_DEVICE_LIST_PARAMS.pageSize) out.set(DEVICE_URL_PARAMS.pageSize, String(params.pageSize));
+  if (params.pageSize !== DEFAULT_DEVICE_LIST_PARAMS.pageSize)
+    out.set(DEVICE_URL_PARAMS.pageSize, String(params.pageSize));
   return out.toString();
 }
 
@@ -185,7 +195,9 @@ export function describeClockSkew(seconds: number | null): string | null {
 }
 
 /** Policy version label from the summary's version number / id. */
-export function describePolicyVersion(device: Pick<DeviceSummary, "policyVersionId" | "policyVersionNumber">): string {
+export function describePolicyVersion(
+  device: Pick<DeviceSummary, "policyVersionId" | "policyVersionNumber">,
+): string {
   if (device.policyVersionNumber !== null) return `Version ${device.policyVersionNumber}`;
   return device.policyVersionId ? "Synced" : "Not synced yet";
 }

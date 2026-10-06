@@ -6,14 +6,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";
-import { normalizeCurrentOrganisation, normalizeJoinCode, normalizeMembers, normalizeOnboarding } from "./api-shapes";
+import {
+  normalizeCurrentOrganisation,
+  normalizeJoinCode,
+  normalizeMembers,
+  normalizeOnboarding,
+} from "./api-shapes";
 
 /** Queries and mutations for `/api/organisations/current/*`. */
 
 export function useCurrentOrganisation(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.currentOrganisation,
-    queryFn: async ({ signal }) => normalizeCurrentOrganisation(await api.get<unknown>("/api/organisations/current", undefined, signal)),
+    queryFn: async ({ signal }) =>
+      normalizeCurrentOrganisation(
+        await api.get<unknown>("/api/organisations/current", undefined, signal),
+      ),
     enabled: options.enabled ?? true,
   });
 }
@@ -21,7 +29,8 @@ export function useCurrentOrganisation(options: { enabled?: boolean } = {}) {
 export function useUpdateOrganisation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: UpdateOrganisationInput) => api.patch<unknown>("/api/organisations/current", input),
+    mutationFn: (input: UpdateOrganisationInput) =>
+      api.patch<unknown>("/api/organisations/current", input),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.currentOrganisation }),
@@ -36,7 +45,9 @@ export function useOnboarding() {
   return useQuery({
     queryKey: queryKeys.onboarding,
     queryFn: async ({ signal }) =>
-      normalizeOnboarding(await api.get<unknown>("/api/organisations/current/onboarding", undefined, signal)),
+      normalizeOnboarding(
+        await api.get<unknown>("/api/organisations/current/onboarding", undefined, signal),
+      ),
   });
 }
 
@@ -52,7 +63,9 @@ export function useMembers(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.members,
     queryFn: async ({ signal }) =>
-      normalizeMembers(await api.get<unknown>("/api/organisations/current/members", undefined, signal)),
+      normalizeMembers(
+        await api.get<unknown>("/api/organisations/current/members", undefined, signal),
+      ),
     enabled: options.enabled ?? true,
   });
 }
@@ -60,7 +73,8 @@ export function useMembers(options: { enabled?: boolean } = {}) {
 export function useInviteMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { email: string; role: Role }) => api.post<unknown>("/api/organisations/current/members", input),
+    mutationFn: (input: { email: string; role: Role }) =>
+      api.post<unknown>("/api/organisations/current/members", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.members }),
   });
 }
@@ -69,7 +83,8 @@ export function useInviteMember() {
 export function useResendManagerInvite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (inviteId: string) => api.post<unknown>("/api/organisations/current/members/invite", { inviteId }),
+    mutationFn: (inviteId: string) =>
+      api.post<unknown>("/api/organisations/current/members/invite", { inviteId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.members }),
   });
 }
@@ -79,7 +94,9 @@ export function useRevokeManagerInvite() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (inviteId: string) =>
-      api.delete<unknown>(`/api/organisations/current/members/invites/${encodeURIComponent(inviteId)}`),
+      api.delete<unknown>(
+        `/api/organisations/current/members/invites/${encodeURIComponent(inviteId)}`,
+      ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.members }),
   });
 }
@@ -88,7 +105,10 @@ export function useUpdateMemberRole() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { membershipId: string; role: Role }) =>
-      api.patch<unknown>(`/api/organisations/current/members/${encodeURIComponent(input.membershipId)}`, { role: input.role }),
+      api.patch<unknown>(
+        `/api/organisations/current/members/${encodeURIComponent(input.membershipId)}`,
+        { role: input.role },
+      ),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.members }),
@@ -109,7 +129,9 @@ export function useRemoveMember() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (membershipId: string) => {
-      const raw = await api.delete<unknown>(`/api/organisations/current/members/${encodeURIComponent(membershipId)}`);
+      const raw = await api.delete<unknown>(
+        `/api/organisations/current/members/${encodeURIComponent(membershipId)}`,
+      );
       const parsed = removeMemberResponseSchema.safeParse(raw ?? {});
       return { removedSelf: parsed.success ? (parsed.data.removedSelf ?? false) : false };
     },

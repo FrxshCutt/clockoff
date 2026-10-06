@@ -4,7 +4,14 @@ import type { Employee } from "@workmode/validation/employees";
 import { Check, ChevronsUpDown, LoaderCircle, UserRound } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getErrorMessage } from "@/lib/errorMessages";
@@ -25,8 +32,12 @@ export function formatEmployeeName(employee: Pick<Employee, "firstName" | "lastN
   return `${employee.firstName} ${employee.lastName}`.trim();
 }
 
-export function formatEmployeeHint(employee: Pick<Employee, "jobTitle" | "primaryLocation">): string | undefined {
-  const parts = [employee.jobTitle, employee.primaryLocation?.name].filter((p): p is string => Boolean(p));
+export function formatEmployeeHint(
+  employee: Pick<Employee, "jobTitle" | "primaryLocation">,
+): string | undefined {
+  const parts = [employee.jobTitle, employee.primaryLocation?.name].filter((p): p is string =>
+    Boolean(p),
+  );
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
@@ -62,7 +73,10 @@ export function EmployeePicker({
   const query = useEmployeeSearch(debounced, { enabled: open });
   const results = query.data?.items ?? [];
   const total = query.data?.total ?? 0;
-  const summary = selectedIds.size === 0 ? "Choose employees…" : `${selectedIds.size} ${selectedIds.size === 1 ? "employee" : "employees"} assigned`;
+  const summary =
+    selectedIds.size === 0
+      ? "Choose employees…"
+      : `${selectedIds.size} ${selectedIds.size === 1 ? "employee" : "employees"} assigned`;
 
   return (
     <div className="space-y-1.5">
@@ -83,7 +97,10 @@ export function EmployeePicker({
             aria-expanded={open}
             aria-haspopup="listbox"
             disabled={disabled}
-            className={cn("w-full justify-between font-normal", selectedIds.size === 0 && "text-muted-foreground")}
+            className={cn(
+              "w-full justify-between font-normal",
+              selectedIds.size === 0 && "text-muted-foreground",
+            )}
           >
             <span className="flex min-w-0 items-center gap-2">
               <UserRound className="text-muted-foreground" aria-hidden="true" />
@@ -102,7 +119,10 @@ export function EmployeePicker({
             />
             <CommandList className="max-h-64">
               {query.isPending ? (
-                <div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm" role="status">
+                <div
+                  className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm"
+                  role="status"
+                >
                   <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                   Searching…
                 </div>
@@ -112,7 +132,11 @@ export function EmployeePicker({
                 </div>
               ) : (
                 <>
-                  <CommandEmpty>{debounced.trim() === "" ? "No employees yet." : "No employees match that search."}</CommandEmpty>
+                  <CommandEmpty>
+                    {debounced.trim() === ""
+                      ? "No employees yet."
+                      : "No employees match that search."}
+                  </CommandEmpty>
                   <CommandGroup>
                     {results.map((employee) => {
                       const selected = selectedIds.has(employee.id);
@@ -130,24 +154,37 @@ export function EmployeePicker({
                           <span
                             className={cn(
                               "flex size-4 shrink-0 items-center justify-center rounded-[4px] border",
-                              selected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input",
                             )}
                             aria-hidden="true"
                           >
-                            {pending ? <LoaderCircle className="size-3 animate-spin" /> : selected ? <Check className="size-3" /> : null}
+                            {pending ? (
+                              <LoaderCircle className="size-3 animate-spin" />
+                            ) : selected ? (
+                              <Check className="size-3" />
+                            ) : null}
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate">{name}</span>
-                            {hint ? <span className="text-muted-foreground block truncate text-xs">{hint}</span> : null}
+                            {hint ? (
+                              <span className="text-muted-foreground block truncate text-xs">
+                                {hint}
+                              </span>
+                            ) : null}
                           </span>
-                          <span className="sr-only">{selected ? "(assigned)" : "(not assigned)"}</span>
+                          <span className="sr-only">
+                            {selected ? "(assigned)" : "(not assigned)"}
+                          </span>
                         </CommandItem>
                       );
                     })}
                   </CommandGroup>
                   {total > EMPLOYEE_SEARCH_PAGE_SIZE ? (
                     <p className="text-muted-foreground border-t px-3 py-2 text-xs">
-                      Showing the first {EMPLOYEE_SEARCH_PAGE_SIZE} of {total}. Keep typing to narrow it down.
+                      Showing the first {EMPLOYEE_SEARCH_PAGE_SIZE} of {total}. Keep typing to
+                      narrow it down.
                     </p>
                   ) : null}
                 </>
@@ -156,7 +193,9 @@ export function EmployeePicker({
           </Command>
         </PopoverContent>
       </Popover>
-      <p className="text-muted-foreground text-xs">{disabled && disabledReason ? disabledReason : description}</p>
+      <p className="text-muted-foreground text-xs">
+        {disabled && disabledReason ? disabledReason : description}
+      </p>
     </div>
   );
 }

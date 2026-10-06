@@ -6,6 +6,7 @@ import {
   buildCreateOverrideInput,
   computeOverrideExpiry,
   describeOverrideRemaining,
+  isOrganisationWideOverride,
   overrideMaxMinutes,
 } from "./override-helpers";
 
@@ -160,6 +161,22 @@ describe("buildCreateOverrideInput", () => {
     );
     expect(ok.ok).toBe(true);
     if (ok.ok) expect("employeeId" in ok.input).toBe(false);
+  });
+
+  it("sends the emergency override organisation-wide even when drafted for an employee", () => {
+    // The API rejects employeeId on EMERGENCY_POLICY_OVERRIDE, so the dialog must drop it.
+    expect(isOrganisationWideOverride("EMERGENCY_POLICY_OVERRIDE")).toBe(true);
+    expect(isOrganisationWideOverride("EXEMPT_TEMPORARILY")).toBe(false);
+    const result = buildCreateOverrideInput(
+      { ...base, type: "EMERGENCY_POLICY_OVERRIDE" },
+      NOW,
+      "ADMIN",
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect("employeeId" in result.input).toBe(false);
+      expect(result.input.type).toBe("EMERGENCY_POLICY_OVERRIDE");
+    }
   });
 
   it("has copy for every override type, in display order", () => {

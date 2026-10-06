@@ -2,12 +2,12 @@
 
 ## Prerequisites
 
-| Tool | Version | Notes |
-| --- | --- | --- |
-| Node.js | 24 (`.node-version`) | `nvm use` or fnm |
-| pnpm | 11.10 | `corepack enable` or `npm i -g pnpm@11` |
-| Docker Desktop | any recent | for Postgres (`pnpm db:up`) |
-| Xcode | 16.4+ (26.x used here) | iOS only; XcodeGen via `brew install xcodegen` |
+| Tool           | Version                | Notes                                          |
+| -------------- | ---------------------- | ---------------------------------------------- |
+| Node.js        | 24 (`.node-version`)   | `nvm use` or fnm                               |
+| pnpm           | 11.10                  | `corepack enable` or `npm i -g pnpm@11`        |
+| Docker Desktop | any recent             | for Postgres (`pnpm db:up`)                    |
+| Xcode          | 16.4+ (26.x used here) | iOS only; XcodeGen via `brew install xcodegen` |
 
 ## First run
 
@@ -35,15 +35,15 @@ Emails (verification, password reset, invites) are printed to the web server con
 
 ## Everyday commands
 
-| Command | What |
-| --- | --- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm test` | all packages via Turborepo |
-| `pnpm test:integration` | API + service tests against `workmode_test` (reset on every run) |
-| `pnpm --filter @workmode/web test:e2e` | Playwright smoke (needs `pnpm dev` running) |
-| `pnpm build` | production build of the web app (typechecks packages first) |
-| `pnpm openapi` | regenerate `docs/openapi.json` from the Zod schemas |
-| `pnpm db:studio` | Prisma Studio |
-| `make -C apps/ios generate build test build-release` | iOS project regen, build, test, release compile |
+| Command                                              | What                                                             |
+| ---------------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm test`         | all packages via Turborepo                                       |
+| `pnpm test:integration`                              | API + service tests against `workmode_test` (reset on every run) |
+| `pnpm --filter @workmode/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                      |
+| `pnpm build`                                         | production build of the web app (typechecks packages first)      |
+| `pnpm openapi`                                       | regenerate `docs/openapi.json` from the Zod schemas              |
+| `pnpm db:studio`                                     | Prisma Studio                                                    |
+| `make -C apps/ios generate build test build-release` | iOS project regen, build, test, release compile                  |
 
 ## Database workflow
 

@@ -30,16 +30,21 @@ import { z } from "zod";
 export const IMPORT_STEPS = ["upload", "map", "validate", "review", "import", "summary"] as const;
 export type ImportStep = (typeof IMPORT_STEPS)[number];
 
-export const IMPORT_STEP_META: Record<ImportStep, { label: string; title: string; description: string }> = {
+export const IMPORT_STEP_META: Record<
+  ImportStep,
+  { label: string; title: string; description: string }
+> = {
   upload: {
     label: "Upload",
     title: "Upload your rota",
-    description: "A CSV export from your rota software or spreadsheet. Nothing is saved until the final step.",
+    description:
+      "A CSV export from your rota software or spreadsheet. Nothing is saved until the final step.",
   },
   map: {
     label: "Map columns",
     title: "Match columns to shift fields",
-    description: "We've suggested a match for each column. Confirm the ones marked and fix any that are wrong.",
+    description:
+      "We've suggested a match for each column. Confirm the ones marked and fix any that are wrong.",
   },
   validate: {
     label: "Validate",
@@ -49,12 +54,14 @@ export const IMPORT_STEP_META: Record<ImportStep, { label: string; title: string
   review: {
     label: "Review",
     title: "Review rows",
-    description: "Fix or skip rows with problems. Warnings import as they are unless you skip them.",
+    description:
+      "Fix or skip rows with problems. Warnings import as they are unless you skip them.",
   },
   import: {
     label: "Import",
     title: "Create the shifts",
-    description: "Confirm what will be imported. Shifts switch Work Mode on automatically once created.",
+    description:
+      "Confirm what will be imported. Shifts switch Work Mode on automatically once created.",
   },
   summary: {
     label: "Done",
@@ -89,7 +96,10 @@ export function stepForImportStatus(status: ShiftImportStatus | null | undefined
  * Which steps the stepper may jump to for an import in `status`. Going back to earlier steps is always
  * possible until the import is committed; later steps unlock as the server advances the status.
  */
-export function isStepReachable(target: ImportStep, status: ShiftImportStatus | null | undefined): boolean {
+export function isStepReachable(
+  target: ImportStep,
+  status: ShiftImportStatus | null | undefined,
+): boolean {
   if (target === "upload") return status !== "IMPORTED";
   if (!status || status === "FAILED") return false;
   if (status === "IMPORTED") return target === "summary";
@@ -119,7 +129,9 @@ export function stepState(step: ImportStep, current: ImportStep): StepState {
 export const IMPORT_FILE_EXTENSIONS = [".csv", ".tsv", ".txt"] as const;
 
 /** `accept` attribute for the file input: the extensions plus every MIME type the API allows. */
-export const IMPORT_FILE_ACCEPT = [...IMPORT_FILE_EXTENSIONS, ...IMPORT_ACCEPTED_MIME_TYPES].join(",");
+export const IMPORT_FILE_ACCEPT = [...IMPORT_FILE_EXTENSIONS, ...IMPORT_ACCEPTED_MIME_TYPES].join(
+  ",",
+);
 
 export interface FileLike {
   name: string;
@@ -143,13 +155,24 @@ export function formatFileSize(bytes: number): string {
 export function checkImportFile(file: FileLike): FileCheck {
   const lower = file.name.toLowerCase();
   if (!IMPORT_FILE_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
-    return { ok: false, message: "Choose a .csv file (comma, semicolon or tab separated). Excel workbooks must be saved as CSV UTF-8 first." };
+    return {
+      ok: false,
+      message:
+        "Choose a .csv file (comma, semicolon or tab separated). Excel workbooks must be saved as CSV UTF-8 first.",
+    };
   }
   if (file.size === 0) return { ok: false, message: "The file is empty." };
   if (file.size > IMPORT_LIMITS.maxFileBytes) {
-    return { ok: false, message: `The file is ${formatFileSize(file.size)}; the limit is ${formatFileSize(IMPORT_LIMITS.maxFileBytes)}. Split it or remove unused columns.` };
+    return {
+      ok: false,
+      message: `The file is ${formatFileSize(file.size)}; the limit is ${formatFileSize(IMPORT_LIMITS.maxFileBytes)}. Split it or remove unused columns.`,
+    };
   }
-  const accepted = (IMPORT_ACCEPTED_MIME_TYPES as readonly string[]).includes(file.type) ? file.type : lower.endsWith(".csv") ? "text/csv" : "text/plain";
+  const accepted = (IMPORT_ACCEPTED_MIME_TYPES as readonly string[]).includes(file.type)
+    ? file.type
+    : lower.endsWith(".csv")
+      ? "text/csv"
+      : "text/plain";
   return { ok: true, contentType: accepted };
 }
 
@@ -180,7 +203,9 @@ export function effectiveImportTimezone(
   organisationTimezone: string,
 ): string {
   if (options.timezone) return options.timezone;
-  const location = options.locationId ? locations.find((l) => l.id === options.locationId) : undefined;
+  const location = options.locationId
+    ? locations.find((l) => l.id === options.locationId)
+    : undefined;
   return location?.timezone ?? organisationTimezone;
 }
 
@@ -196,7 +221,12 @@ export interface FieldOption {
 }
 
 export const FIELD_OPTIONS: readonly FieldOption[] = [
-  { value: IGNORE_COLUMN, label: "Ignore this column", requirement: "ignore", description: "The column is kept in the error report but not imported." },
+  {
+    value: IGNORE_COLUMN,
+    label: "Ignore this column",
+    requirement: "ignore",
+    description: "The column is kept in the error report but not imported.",
+  },
   ...IMPORT_FIELDS.map((field) => ({
     value: field,
     label: IMPORT_FIELD_INFO[field].label,
@@ -223,14 +253,22 @@ export function fieldOf(mapping: ColumnMapping, header: string): ImportField | n
  * The mapping the step starts from: the stored one when the manager already saved it, otherwise the upload
  * suggestion. Every header gets an entry (null = ignore) so the table and the request agree on the columns.
  */
-export function initialMapping(headers: readonly string[], stored: ColumnMapping, suggested: ColumnMapping | undefined): ColumnMapping {
+export function initialMapping(
+  headers: readonly string[],
+  stored: ColumnMapping,
+  suggested: ColumnMapping | undefined,
+): ColumnMapping {
   const hasStored = Object.keys(stored).some((header) => fieldOf(stored, header) !== null);
   const source = hasStored ? stored : (suggested ?? {});
   return Object.fromEntries(headers.map((header) => [header, fieldOf(source, header)]));
 }
 
 /** Maps `header` to `field` (or ignore), un-mapping any other header that used the same field. */
-export function setMappingField(mapping: ColumnMapping, header: string, field: ImportField | null): ColumnMapping {
+export function setMappingField(
+  mapping: ColumnMapping,
+  header: string,
+  field: ImportField | null,
+): ColumnMapping {
   const next: [string, ImportField | null][] = Object.keys(mapping).map((h) => {
     if (h === header) return [h, field];
     const current = fieldOf(mapping, h);
@@ -267,10 +305,16 @@ export function confidenceLabel(confidence: number | undefined): MappingConfiden
 }
 
 /** Up to `limit` distinct, non-empty sample values for a header from the upload preview rows. */
-export function sampleValues(rows: readonly Record<string, string>[], header: string, limit = 3): string[] {
+export function sampleValues(
+  rows: readonly Record<string, string>[],
+  header: string,
+  limit = 3,
+): string[] {
   const out: string[] = [];
   for (const row of rows) {
-    const value = Object.prototype.hasOwnProperty.call(row, header) ? row[header]?.trim() : undefined;
+    const value = Object.prototype.hasOwnProperty.call(row, header)
+      ? row[header]?.trim()
+      : undefined;
     if (!value || out.includes(value)) continue;
     out.push(value);
     if (out.length >= limit) break;
@@ -319,12 +363,24 @@ export interface MappingRequirement {
 export function mappingRequirements(mapping: ColumnMapping): MappingRequirement[] {
   const required = REQUIRED_IMPORT_FIELDS.map((field) => {
     const headers = headersFor(mapping, field);
-    return { key: field, label: IMPORT_FIELD_INFO[field].label, satisfied: headers.length === 1, headers };
+    return {
+      key: field,
+      label: IMPORT_FIELD_INFO[field].label,
+      satisfied: headers.length === 1,
+      headers,
+    };
   });
-  const identifierHeaders = EMPLOYEE_IDENTIFIER_FIELDS.flatMap((field) => headersFor(mapping, field));
+  const identifierHeaders = EMPLOYEE_IDENTIFIER_FIELDS.flatMap((field) =>
+    headersFor(mapping, field),
+  );
   return [
     ...required,
-    { key: "identifier", label: "Employee name, ID or email", satisfied: identifierHeaders.length > 0, headers: identifierHeaders },
+    {
+      key: "identifier",
+      label: "Employee name, ID or email",
+      satisfied: identifierHeaders.length > 0,
+      headers: identifierHeaders,
+    },
   ];
 }
 
@@ -339,9 +395,11 @@ export function readMappingCheckDetails(details: unknown): string[] {
   const parsed = mappingCheckDetailsSchema.safeParse(details);
   if (!parsed.success) return [];
   const out: string[] = [];
-  for (const field of parsed.data.missingRequired ?? []) out.push(isImportField(field) ? IMPORT_FIELD_INFO[field].label : field);
+  for (const field of parsed.data.missingRequired ?? [])
+    out.push(isImportField(field) ? IMPORT_FIELD_INFO[field].label : field);
   if (parsed.data.missingIdentifier) out.push("an employee identifier (name, ID or email)");
-  for (const field of parsed.data.duplicated ?? []) out.push(`${isImportField(field) ? IMPORT_FIELD_INFO[field].label : field} is mapped twice`);
+  for (const field of parsed.data.duplicated ?? [])
+    out.push(`${isImportField(field) ? IMPORT_FIELD_INFO[field].label : field} is mapped twice`);
   return out;
 }
 
@@ -357,7 +415,12 @@ export function readFileProblems(details: unknown): { code: string; message: str
 
 // ── Review ──────────────────────────────────────────────────────────────────
 
-export const REVIEW_TABS = ["VALID", "WARNING", "ERROR", "SKIPPED"] as const satisfies readonly ShiftImportRowStatus[];
+export const REVIEW_TABS = [
+  "VALID",
+  "WARNING",
+  "ERROR",
+  "SKIPPED",
+] as const satisfies readonly ShiftImportRowStatus[];
 export type ReviewTab = (typeof REVIEW_TABS)[number];
 
 export const REVIEW_TAB_META: Record<ReviewTab, { label: string; empty: string }> = {
@@ -371,7 +434,9 @@ export function isReviewTab(value: unknown): value is ReviewTab {
   return typeof value === "string" && (REVIEW_TABS as readonly string[]).includes(value);
 }
 
-export function reviewTabCounts(summary: ImportSummaryResponse | null | undefined): Record<ReviewTab, number> {
+export function reviewTabCounts(
+  summary: ImportSummaryResponse | null | undefined,
+): Record<ReviewTab, number> {
   return {
     VALID: summary?.valid ?? 0,
     WARNING: summary?.warning ?? 0,
@@ -395,7 +460,10 @@ export function clampPage(page: number, total: number, pageSize: number): number
 
 /** The wizard's summary while the import is not committed, derived from the import's stored counts. */
 export function summaryFromImport(
-  record: Pick<ShiftImport, "rowCount" | "validCount" | "warningCount" | "errorCount" | "skippedCount" | "importedCount">,
+  record: Pick<
+    ShiftImport,
+    "rowCount" | "validCount" | "warningCount" | "errorCount" | "skippedCount" | "importedCount"
+  >,
 ): ImportSummaryResponse {
   return {
     total: record.rowCount,
@@ -409,10 +477,12 @@ export function summaryFromImport(
 }
 
 /** Writes a fresh summary (validate / row-fix response) back onto the cached import so counts stay in sync. */
-export function applySummaryToImport<T extends Pick<ShiftImport, "rowCount" | "validCount" | "warningCount" | "errorCount" | "skippedCount" | "importedCount">>(
-  record: T,
-  summary: ImportSummaryResponse,
-): T {
+export function applySummaryToImport<
+  T extends Pick<
+    ShiftImport,
+    "rowCount" | "validCount" | "warningCount" | "errorCount" | "skippedCount" | "importedCount"
+  >,
+>(record: T, summary: ImportSummaryResponse): T {
   return {
     ...record,
     rowCount: summary.total,
@@ -461,7 +531,10 @@ export function rowFixes(row: Pick<ImportRow, "status" | "problems">): RowFixes 
 }
 
 /** `"Smith, Jane"` → Jane Smith; `"Jane Smith"` → Jane Smith; a single word becomes the last name. */
-export function splitName(full: string | undefined | null): { firstName: string; lastName: string } {
+export function splitName(full: string | undefined | null): {
+  firstName: string;
+  lastName: string;
+} {
   const value = (full ?? "").replace(/\s+/g, " ").trim();
   if (!value) return { firstName: "", lastName: "" };
   if (value.includes(",")) {
@@ -491,7 +564,9 @@ const suggestedEmployeeSchema = z.object({
  * Pre-fills the "create employee" form from the row: the matcher's `details.suggestedEmployee` when the
  * EMPLOYEE_NOT_FOUND problem carries one, else the parsed name / email / ID.
  */
-export function prefillCreateEmployee(row: Pick<ImportRow, "parsed" | "raw" | "problems">): CreateEmployeePrefill {
+export function prefillCreateEmployee(
+  row: Pick<ImportRow, "parsed" | "raw" | "problems">,
+): CreateEmployeePrefill {
   const parsed = row.parsed;
   const name = splitName(parsed?.employeeName);
   const fallback: CreateEmployeePrefill = {
@@ -527,40 +602,78 @@ export const createEmployeeFormSchema = z
   });
 export type CreateEmployeeFormValues = z.infer<typeof createEmployeeFormSchema>;
 
-export function createEmployeeFormDefaults(prefill: CreateEmployeePrefill): CreateEmployeeFormValues {
-  return { firstName: prefill.firstName, lastName: prefill.lastName, email: prefill.email, externalEmployeeId: prefill.externalEmployeeId, jobTitle: "" };
+export function createEmployeeFormDefaults(
+  prefill: CreateEmployeePrefill,
+): CreateEmployeeFormValues {
+  return {
+    firstName: prefill.firstName,
+    lastName: prefill.lastName,
+    email: prefill.email,
+    externalEmployeeId: prefill.externalEmployeeId,
+    jobTitle: "",
+  };
 }
 
 /** `PATCH /api/imports/:id/rows/:rowId` body for the create-employee resolution (`importCreateEmployeeSchema`). */
 export function toCreateEmployeeRowInput(values: CreateEmployeeFormValues): {
-  createEmployee: { firstName: string; lastName: string; email?: string; externalEmployeeId?: string; jobTitle?: string };
+  createEmployee: {
+    firstName: string;
+    lastName: string;
+    email?: string;
+    externalEmployeeId?: string;
+    jobTitle?: string;
+  };
 } {
-  const createEmployee: { firstName: string; lastName: string; email?: string; externalEmployeeId?: string; jobTitle?: string } = {
+  const createEmployee: {
+    firstName: string;
+    lastName: string;
+    email?: string;
+    externalEmployeeId?: string;
+    jobTitle?: string;
+  } = {
     firstName: values.firstName.trim(),
     lastName: values.lastName.trim(),
   };
   if (values.email.trim()) createEmployee.email = values.email.trim();
-  if (values.externalEmployeeId.trim()) createEmployee.externalEmployeeId = values.externalEmployeeId.trim();
+  if (values.externalEmployeeId.trim())
+    createEmployee.externalEmployeeId = values.externalEmployeeId.trim();
   if (values.jobTitle.trim()) createEmployee.jobTitle = values.jobTitle.trim();
   return { createEmployee };
 }
 
 /** Who the row is for, as shown in the review table. */
-export function rowEmployeeLabel(row: Pick<ImportRow, "matchedEmployee" | "createEmployee" | "parsed">): { label: string; kind: "matched" | "new" | "unmatched" } {
-  if (row.matchedEmployee) return { label: `${row.matchedEmployee.firstName} ${row.matchedEmployee.lastName}`.trim(), kind: "matched" };
-  if (row.createEmployee) return { label: `${row.createEmployee.firstName} ${row.createEmployee.lastName}`.trim(), kind: "new" };
-  const fallback = row.parsed?.employeeName ?? row.parsed?.email ?? row.parsed?.employeeExternalId ?? "—";
+export function rowEmployeeLabel(
+  row: Pick<ImportRow, "matchedEmployee" | "createEmployee" | "parsed">,
+): { label: string; kind: "matched" | "new" | "unmatched" } {
+  if (row.matchedEmployee)
+    return {
+      label: `${row.matchedEmployee.firstName} ${row.matchedEmployee.lastName}`.trim(),
+      kind: "matched",
+    };
+  if (row.createEmployee)
+    return {
+      label: `${row.createEmployee.firstName} ${row.createEmployee.lastName}`.trim(),
+      kind: "new",
+    };
+  const fallback =
+    row.parsed?.employeeName ?? row.parsed?.email ?? row.parsed?.employeeExternalId ?? "—";
   return { label: fallback, kind: "unmatched" };
 }
 
 /** `09:00–17:00`, or `22:00 → 06:00 (+1)` for an overnight row; `—` when the times did not parse. */
 export function rowTimeLabel(parsed: ImportRow["parsed"]): string {
   if (!parsed?.startTime || !parsed.endTime) return "—";
-  return parsed.overnight ? `${parsed.startTime} → ${parsed.endTime} (+1)` : `${parsed.startTime}–${parsed.endTime}`;
+  return parsed.overnight
+    ? `${parsed.startTime} → ${parsed.endTime} (+1)`
+    : `${parsed.startTime}–${parsed.endTime}`;
 }
 
 /** The raw cell for a field when the parsed value is missing (so a bad date is still visible). */
-export function rawCellFor(row: Pick<ImportRow, "raw">, mapping: ColumnMapping, field: ImportField): string | null {
+export function rawCellFor(
+  row: Pick<ImportRow, "raw">,
+  mapping: ColumnMapping,
+  field: ImportField,
+): string | null {
   const header = headersFor(mapping, field)[0];
   if (!header || !Object.prototype.hasOwnProperty.call(row.raw, header)) return null;
   const value = row.raw[header];
@@ -578,13 +691,19 @@ export interface CommitPlan {
   blockedByErrors: boolean;
 }
 
-export function planCommit(summary: ImportSummaryResponse, options: { includeWarnings: boolean; skipErrors: boolean }): CommitPlan {
+export function planCommit(
+  summary: ImportSummaryResponse,
+  options: { includeWarnings: boolean; skipErrors: boolean },
+): CommitPlan {
   const warnings = options.includeWarnings ? summary.warning : 0;
   const willImport = summary.valid + warnings;
   const blockedByErrors = summary.error > 0 && !options.skipErrors;
   return {
     willImport,
-    willSkip: summary.skipped + (options.includeWarnings ? 0 : summary.warning) + (options.skipErrors ? summary.error : 0),
+    willSkip:
+      summary.skipped +
+      (options.includeWarnings ? 0 : summary.warning) +
+      (options.skipErrors ? summary.error : 0),
     blockedByErrors,
   };
 }

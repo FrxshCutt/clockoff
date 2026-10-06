@@ -47,8 +47,14 @@ const DATE_FORMAT_OPTIONS: SelectOption[] = DATE_FORMATS.map((format) => ({
   hint: DATE_FORMAT_LABELS[format].example,
 }));
 
-const WEEK_START_LABELS: Record<(typeof WEEK_STARTS)[number], string> = { MONDAY: "Monday", SUNDAY: "Sunday" };
-const WEEK_START_OPTIONS: SelectOption[] = WEEK_STARTS.map((value) => ({ value, label: WEEK_START_LABELS[value] }));
+const WEEK_START_LABELS: Record<(typeof WEEK_STARTS)[number], string> = {
+  MONDAY: "Monday",
+  SUNDAY: "Sunday",
+};
+const WEEK_START_OPTIONS: SelectOption[] = WEEK_STARTS.map((value) => ({
+  value,
+  label: WEEK_START_LABELS[value],
+}));
 
 const TIME_FORMAT_LABELS: Record<(typeof TIME_FORMATS)[number], { label: string; hint: string }> = {
   H24: { label: "24-hour", hint: "14:30" },
@@ -60,7 +66,9 @@ const TIME_FORMAT_OPTIONS: SelectOption[] = TIME_FORMATS.map((value) => ({
   hint: TIME_FORMAT_LABELS[value].hint,
 }));
 
-export function toOrganisationFormValues(organisation: OrganisationSummary): OrganisationSettingsFormValues {
+export function toOrganisationFormValues(
+  organisation: OrganisationSummary,
+): OrganisationSettingsFormValues {
   return {
     name: organisation.name,
     timezone: organisation.timezone,
@@ -92,12 +100,26 @@ export function OrganisationSettings() {
     );
   }
   // Re-mount when switching organisation so the form never shows the previous organisation's values.
-  return <OrganisationSettingsForm key={data.organisation.id} organisation={data.organisation} canEdit={canEdit} />;
+  return (
+    <OrganisationSettingsForm
+      key={data.organisation.id}
+      organisation={data.organisation}
+      canEdit={canEdit}
+    />
+  );
 }
 
-function OrganisationSettingsForm({ organisation, canEdit }: { organisation: OrganisationSummary; canEdit: boolean }) {
+function OrganisationSettingsForm({
+  organisation,
+  canEdit,
+}: {
+  organisation: OrganisationSummary;
+  canEdit: boolean;
+}) {
   const update = useUpdateOrganisation();
-  const form = useZodForm(organisationSettingsFormSchema, { defaultValues: toOrganisationFormValues(organisation) });
+  const form = useZodForm(organisationSettingsFormSchema, {
+    defaultValues: toOrganisationFormValues(organisation),
+  });
   const { isDirty } = form.formState;
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -143,7 +165,11 @@ function OrganisationSettingsForm({ organisation, canEdit }: { organisation: Org
                 >
                   Discard changes
                 </Button>
-                <SubmitButton isPending={update.isPending} pendingLabel="Saving…" disabled={!isDirty}>
+                <SubmitButton
+                  isPending={update.isPending}
+                  pendingLabel="Saving…"
+                  disabled={!isDirty}
+                >
                   Save changes
                 </SubmitButton>
               </>

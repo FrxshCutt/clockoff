@@ -14,7 +14,10 @@ export const joinCodeInclude = {
 export type JoinCodeRow = Prisma.CompanyJoinCodeGetPayload<{ include: typeof joinCodeInclude }>;
 
 /** Every code of the organisation, newest first. */
-export async function findJoinCodes(organisationId: string, db: Db = prisma): Promise<JoinCodeRow[]> {
+export async function findJoinCodes(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<JoinCodeRow[]> {
   return db.companyJoinCode.findMany({
     where: { organisationId },
     include: joinCodeInclude,

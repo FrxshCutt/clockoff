@@ -32,7 +32,10 @@ export interface BillingUsage {
   integrations: number;
 }
 
-export async function countBillingUsage(organisationId: string, db: Db = prisma): Promise<BillingUsage> {
+export async function countBillingUsage(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<BillingUsage> {
   const [employees, locations, integrations] = await Promise.all([
     db.employee.count({ where: { organisationId, deletedAt: null, employmentStatus: "ACTIVE" } }),
     db.location.count({ where: { organisationId, deletedAt: null } }),

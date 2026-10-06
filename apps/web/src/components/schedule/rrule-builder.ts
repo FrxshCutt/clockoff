@@ -41,11 +41,15 @@ export interface RecurrenceOptions {
 export type BuildRuleResult = { ok: true; rule: string | null } | { ok: false; error: string };
 
 export function isWeekdayCode(value: unknown): value is RecurrenceWeekdayCode {
-  return typeof value === "string" && (RECURRENCE_WEEKDAY_CODES as readonly string[]).includes(value);
+  return (
+    typeof value === "string" && (RECURRENCE_WEEKDAY_CODES as readonly string[]).includes(value)
+  );
 }
 
 /** Sorts weekday codes Monday → Sunday and drops duplicates. */
-export function normaliseWeekdays(weekdays: readonly RecurrenceWeekdayCode[]): RecurrenceWeekdayCode[] {
+export function normaliseWeekdays(
+  weekdays: readonly RecurrenceWeekdayCode[],
+): RecurrenceWeekdayCode[] {
   return RECURRENCE_WEEKDAY_CODES.filter((code) => weekdays.includes(code));
 }
 
@@ -67,9 +71,13 @@ export function buildRecurrenceRule(options: RecurrenceOptions): BuildRuleResult
     }
     case "custom": {
       const text = options.customRule.trim().replace(/^RRULE:/i, "");
-      if (!text) return { ok: false, error: "Enter a repeat rule, e.g. FREQ=WEEKLY;INTERVAL=2;BYDAY=MO" };
+      if (!text)
+        return { ok: false, error: "Enter a repeat rule, e.g. FREQ=WEEKLY;INTERVAL=2;BYDAY=MO" };
       if (/(^|;)(UNTIL|COUNT)=/i.test(text)) {
-        return { ok: false, error: "Set the end with the 'Repeat until' date instead of UNTIL or COUNT" };
+        return {
+          ok: false,
+          error: "Set the end with the 'Repeat until' date instead of UNTIL or COUNT",
+        };
       }
       const result = validateRecurrenceRule(text);
       if (!result.ok) return { ok: false, error: result.error };
@@ -87,12 +95,24 @@ export function recurrenceOptionsFromRule(rule: string | null | undefined): Recu
   const result = validateRecurrenceRule(rule);
   if (!result.ok) return { repeat: "custom", weekdays: [], customRule: rule };
   const { parsed } = result;
-  const simple = parsed.interval === 1 && parsed.count === null && parsed.byMonth.length === 0 && parsed.byMonthDay.length === 0 && parsed.bySetPos.length === 0;
+  const simple =
+    parsed.interval === 1 &&
+    parsed.count === null &&
+    parsed.byMonth.length === 0 &&
+    parsed.byMonthDay.length === 0 &&
+    parsed.bySetPos.length === 0;
   if (simple && parsed.freq === "DAILY" && parsed.byDay.length === 0) {
     return { repeat: "daily", weekdays: [], customRule: "" };
   }
-  if (simple && parsed.freq === "WEEKLY" && parsed.byDay.length > 0 && parsed.byDay.every((d) => d.ordinal === undefined)) {
-    const weekdays = parsed.byDay.map((d) => RECURRENCE_WEEKDAY_CODES[d.weekday - 1]).filter(isWeekdayCode);
+  if (
+    simple &&
+    parsed.freq === "WEEKLY" &&
+    parsed.byDay.length > 0 &&
+    parsed.byDay.every((d) => d.ordinal === undefined)
+  ) {
+    const weekdays = parsed.byDay
+      .map((d) => RECURRENCE_WEEKDAY_CODES[d.weekday - 1])
+      .filter(isWeekdayCode);
     return { repeat: "weekly", weekdays: normaliseWeekdays(weekdays), customRule: "" };
   }
   return { repeat: "custom", weekdays: [], customRule: result.normalised };
@@ -113,11 +133,20 @@ export function describeRecurrenceRule(rule: string | null | undefined): string 
   const { parsed } = result;
   const unit = parsed.freq === "DAILY" ? "day" : parsed.freq === "WEEKLY" ? "week" : "month";
   const every = parsed.interval === 1 ? `Every ${unit}` : `Every ${parsed.interval} ${unit}s`;
-  const plainWeekdays = parsed.byDay.filter((d) => d.ordinal === undefined).map((d) => RECURRENCE_WEEKDAY_CODES[d.weekday - 1]).filter(isWeekdayCode);
+  const plainWeekdays = parsed.byDay
+    .filter((d) => d.ordinal === undefined)
+    .map((d) => RECURRENCE_WEEKDAY_CODES[d.weekday - 1])
+    .filter(isWeekdayCode);
   const ordinalDays = parsed.byDay.filter((d) => d.ordinal !== undefined);
-  if (parsed.byMonth.length > 0 || parsed.byMonthDay.length > 0 || parsed.bySetPos.length > 0 || ordinalDays.length > 0) {
+  if (
+    parsed.byMonth.length > 0 ||
+    parsed.byMonthDay.length > 0 ||
+    parsed.bySetPos.length > 0 ||
+    ordinalDays.length > 0
+  ) {
     return result.normalised;
   }
-  const on = plainWeekdays.length > 0 ? ` on ${listWeekdays(normaliseWeekdays(plainWeekdays))}` : "";
+  const on =
+    plainWeekdays.length > 0 ? ` on ${listWeekdays(normaliseWeekdays(plainWeekdays))}` : "";
   return `${every}${on}`;
 }

@@ -131,7 +131,10 @@ export async function endAssignmentsForScope(
   };
   const [policyRows, breakRows] = await Promise.all([
     tx.policyAssignment.findMany({ where: openWhere, select: { id: true, policyId: true } }),
-    tx.breakPolicyAssignment.findMany({ where: openWhere, select: { id: true, breakPolicyId: true } }),
+    tx.breakPolicyAssignment.findMany({
+      where: openWhere,
+      select: { id: true, breakPolicyId: true },
+    }),
   ]);
   if (policyRows.length > 0) {
     await tx.policyAssignment.updateMany({

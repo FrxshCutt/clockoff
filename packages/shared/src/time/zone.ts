@@ -125,7 +125,9 @@ function zoneOf(tz: string): IANAZone {
 
 function assertInstant(value: Date, name: string): void {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
-    throw new AppError("VALIDATION_ERROR", `${name} must be a valid Date`, { details: { field: name } });
+    throw new AppError("VALIDATION_ERROR", `${name} must be a valid Date`, {
+      details: { field: name },
+    });
   }
 }
 
@@ -188,13 +190,16 @@ export interface ResolvedWallClock {
 export function resolveWallClock(wc: WallClock, tz: string): ResolvedWallClock {
   const zone = zoneOf(tz);
   if (!isValidWallClock(wc)) {
-    throw new AppError("VALIDATION_ERROR", "Invalid wall-clock components", { details: { field: "wallClock" } });
+    throw new AppError("VALIDATION_ERROR", "Invalid wall-clock components", {
+      details: { field: "wallClock" },
+    });
   }
   const floating = wallClockToFloatingMs(wc);
   // Offsets a day either side of the wall time bracket any transition that can affect it.
   const offsetBefore = zone.offset(floating - MS_PER_DAY);
   const offsetAfter = zone.offset(floating + MS_PER_DAY);
-  const candidateOffsets = offsetBefore === offsetAfter ? [offsetBefore] : [offsetBefore, offsetAfter];
+  const candidateOffsets =
+    offsetBefore === offsetAfter ? [offsetBefore] : [offsetBefore, offsetAfter];
 
   const valid: Array<{ instantMs: number; offset: number }> = [];
   for (const offset of candidateOffsets) {
@@ -236,7 +241,14 @@ export function resolveWallClock(wc: WallClock, tz: string): ResolvedWallClock {
   // Unreachable for real tz data (would need two transitions within 48h). Defer to Luxon, which also
   // shifts forward out of gaps, so behaviour stays well defined.
   const dt = DateTime.fromObject(
-    { year: wc.year, month: wc.month, day: wc.day, hour: wc.hour, minute: wc.minute, second: wc.second },
+    {
+      year: wc.year,
+      month: wc.month,
+      day: wc.day,
+      hour: wc.hour,
+      minute: wc.minute,
+      second: wc.second,
+    },
     { zone },
   );
   return {
@@ -293,7 +305,10 @@ export function localToInstant(input: LocalToInstantInput): LocalToInstantResult
   if (resolved.warning) {
     result.warning = resolved.warning;
     if (resolved.warning === "NONEXISTENT_LOCAL_TIME_SHIFTED") {
-      result.normalisedLocalTime = formatLocalTime(resolved.wallClock.hour, resolved.wallClock.minute);
+      result.normalisedLocalTime = formatLocalTime(
+        resolved.wallClock.hour,
+        resolved.wallClock.minute,
+      );
     }
   }
   return result;
@@ -374,7 +389,11 @@ export function startOfLocalDay(instant: Date, timezone: string): Date {
  * day. Pair with `startOfLocalDay` for half-open `[start, end)` queries.
  */
 export function endOfLocalDay(instant: Date, timezone: string): Date {
-  return localDateTime(instant, timezone).startOf("day").plus({ days: 1 }).startOf("day").toJSDate();
+  return localDateTime(instant, timezone)
+    .startOf("day")
+    .plus({ days: 1 })
+    .startOf("day")
+    .toJSDate();
 }
 
 /** Start-of-day instant for a `YYYY-MM-DD` in `tz`. */
@@ -420,7 +439,9 @@ export function localDateRange(
 export function addLocalDays(date: LocalDateString, n: number): LocalDateString {
   assertLocalDate(date, "date");
   if (!Number.isInteger(n)) {
-    throw new AppError("VALIDATION_ERROR", "n must be an integer number of days", { details: { n } });
+    throw new AppError("VALIDATION_ERROR", "n must be an integer number of days", {
+      details: { n },
+    });
   }
   const { year, month, day } = splitLocalDate(date);
   const d = new Date(calendarToUtcMs(year, month, day + n));

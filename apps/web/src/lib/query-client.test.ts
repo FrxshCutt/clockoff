@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiClientError } from "./api-client";
-import { QUERY_DEFAULTS, isSessionChangeError, makeQueryClient, queryKeys, shouldRetryQuery } from "./query-client";
+import {
+  QUERY_DEFAULTS,
+  isSessionChangeError,
+  makeQueryClient,
+  queryKeys,
+  shouldRetryQuery,
+} from "./query-client";
 
 const error = (status: number, code: ApiClientError["code"] = "INTERNAL_ERROR") =>
   new ApiClientError({ code, status, message: "x" });
@@ -89,7 +95,12 @@ describe("makeQueryClient", () => {
   });
 
   it("scopes organisation data under the `org` key so it can be cleared together", () => {
-    for (const key of [queryKeys.currentOrganisation, queryKeys.members, queryKeys.onboarding, queryKeys.billing]) {
+    for (const key of [
+      queryKeys.currentOrganisation,
+      queryKeys.members,
+      queryKeys.onboarding,
+      queryKeys.billing,
+    ]) {
       expect(key[0]).toBe("org");
     }
     expect(queryKeys.currentUser[0]).toBe("auth");

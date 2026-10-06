@@ -56,7 +56,9 @@ export function OnboardingChecklist() {
 
   const allDone = data.complete || progress.allDone;
   const onDismiss = () =>
-    dismiss.mutate(undefined, { onError: (err) => toastError(err, { title: "Couldn't dismiss the checklist" }) });
+    dismiss.mutate(undefined, {
+      onError: (err) => toastError(err, { title: "Couldn't dismiss the checklist" }),
+    });
 
   if (allDone) {
     // Nothing left to do. Only roles that can dismiss see the note; for others it would linger forever.
@@ -78,11 +80,18 @@ export function OnboardingChecklist() {
               You&apos;re all set
             </h2>
             <p className="text-muted-foreground text-sm">
-              Every setup step is complete. Work Mode will switch on automatically during your employees&apos; shifts.
+              Every setup step is complete. Work Mode will switch on automatically during your
+              employees&apos; shifts.
             </p>
           </div>
         </div>
-        <Button type="button" variant="outline" size="sm" disabled={dismiss.isPending} onClick={onDismiss}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={dismiss.isPending}
+          onClick={onDismiss}
+        >
           <X aria-hidden="true" />
           Dismiss checklist
         </Button>
@@ -91,8 +100,14 @@ export function OnboardingChecklist() {
   }
 
   return (
-    <section aria-labelledby="onboarding-title" className="bg-card relative overflow-hidden rounded-xl border shadow-xs">
-      <div className="from-primary/8 pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent" aria-hidden="true" />
+    <section
+      aria-labelledby="onboarding-title"
+      className="bg-card relative overflow-hidden rounded-xl border shadow-xs"
+    >
+      <div
+        className="from-primary/8 pointer-events-none absolute inset-0 bg-gradient-to-br to-transparent"
+        aria-hidden="true"
+      />
       <div className="relative space-y-5 p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -117,7 +132,11 @@ export function OnboardingChecklist() {
             </Button>
           ) : null}
         </div>
-        <Progress value={progress.percent} aria-label={`Setup ${progress.percent}% complete`} className="h-2" />
+        <Progress
+          value={progress.percent}
+          aria-label={`Setup ${progress.percent}% complete`}
+          className="h-2"
+        />
         <ol className="grid gap-2 sm:grid-cols-2">
           {data.items.map((item) => (
             <li key={item.key}>
@@ -129,7 +148,10 @@ export function OnboardingChecklist() {
                 )}
               >
                 {item.done ? (
-                  <CircleCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                  <CircleCheck
+                    className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <Circle className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
                 )}

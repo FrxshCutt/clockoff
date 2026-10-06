@@ -29,9 +29,21 @@ export interface EmployeeViewProps {
 }
 
 /** One employee's shifts for the visible range as a sortable table. */
-export function EmployeeView({ employeeId, shifts, isLoading, timezone, dateFormat, onOpenShift, picker, emptyAction }: EmployeeViewProps) {
+export function EmployeeView({
+  employeeId,
+  shifts,
+  isLoading,
+  timezone,
+  dateFormat,
+  onOpenShift,
+  picker,
+  emptyAction,
+}: EmployeeViewProps) {
   const conflicts = useMemo(() => findConflicts(shifts), [shifts]);
-  const rows = useMemo(() => [...shifts].sort((a, b) => a.startsAt.localeCompare(b.startsAt)), [shifts]);
+  const rows = useMemo(
+    () => [...shifts].sort((a, b) => a.startsAt.localeCompare(b.startsAt)),
+    [shifts],
+  );
 
   const columns = useMemo<ColumnDef<Shift>[]>(
     () => [
@@ -43,7 +55,9 @@ export function EmployeeView({ employeeId, shifts, isLoading, timezone, dateForm
           return (
             <div className="min-w-0">
               <p className="font-medium">{formatLocalDay(times.startDate, "medium")}</p>
-              <p className="text-muted-foreground text-xs">{formatDate(row.original.startsAt, { timeZone: timezone, dateFormat })}</p>
+              <p className="text-muted-foreground text-xs">
+                {formatDate(row.original.startsAt, { timeZone: timezone, dateFormat })}
+              </p>
             </div>
           );
         },
@@ -51,23 +65,41 @@ export function EmployeeView({ employeeId, shifts, isLoading, timezone, dateForm
       {
         id: "time",
         enableSorting: false,
-        header: () => <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Time</span>,
+        header: () => (
+          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            Time
+          </span>
+        ),
         cell: ({ row }) => {
           const shift = row.original;
           const times = shiftLocalTimes(shift, timezone);
           const overlapping = conflicts.get(shift.id) ?? [];
           return (
-            <span className={cn("flex items-center gap-1.5 tabular-nums", shift.status === "CANCELLED" && "text-muted-foreground line-through")}>
+            <span
+              className={cn(
+                "flex items-center gap-1.5 tabular-nums",
+                shift.status === "CANCELLED" && "text-muted-foreground line-through",
+              )}
+            >
               {shiftTimeLabel(times)}
               {overlapping.length > 0 ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="inline-flex" aria-label={`Overlaps ${overlapping.length} other ${overlapping.length === 1 ? "shift" : "shifts"}`}>
-                      <TriangleAlert className="size-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                    <span
+                      className="inline-flex"
+                      aria-label={`Overlaps ${overlapping.length} other ${overlapping.length === 1 ? "shift" : "shifts"}`}
+                    >
+                      <TriangleAlert
+                        className="size-4 text-amber-600 dark:text-amber-400"
+                        aria-hidden="true"
+                      />
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Overlaps {overlapping.map((o) => shiftTimeLabel(shiftLocalTimes(o, timezone))).join(", ")}
+                    Overlaps{" "}
+                    {overlapping
+                      .map((o) => shiftTimeLabel(shiftLocalTimes(o, timezone)))
+                      .join(", ")}
                   </TooltipContent>
                 </Tooltip>
               ) : null}
@@ -79,31 +111,49 @@ export function EmployeeView({ employeeId, shifts, isLoading, timezone, dateForm
         id: "location",
         accessorFn: (row) => row.location?.name ?? "",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Location" />,
-        cell: ({ row }) => row.original.location?.name ?? <span className="text-muted-foreground">—</span>,
+        cell: ({ row }) =>
+          row.original.location?.name ?? <span className="text-muted-foreground">—</span>,
       },
       {
         accessorKey: "durationMinutes",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Length" />,
-        cell: ({ row }) => <span className="tabular-nums">{formatDurationMinutes(row.original.durationMinutes)}</span>,
+        cell: ({ row }) => (
+          <span className="tabular-nums">
+            {formatDurationMinutes(row.original.durationMinutes)}
+          </span>
+        ),
       },
       {
         id: "breaks",
         enableSorting: false,
-        header: () => <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Breaks</span>,
+        header: () => (
+          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            Breaks
+          </span>
+        ),
         cell: ({ row }) => {
           const count = row.original.scheduledBreaks.length;
-          return count === 0 ? <span className="text-muted-foreground">—</span> : `${count} scheduled`;
+          return count === 0 ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            `${count} scheduled`
+          );
         },
       },
       {
         id: "repeat",
         enableSorting: false,
-        header: () => <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Repeats</span>,
+        header: () => (
+          <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            Repeats
+          </span>
+        ),
         cell: ({ row }) => {
           const shift = row.original;
           const text = describeRecurrenceRule(shift.recurrenceRule);
           if (text) return <span className="text-sm">{text}</span>;
-          if (shift.parentRecurrenceId) return <span className="text-muted-foreground text-sm">Part of a series</span>;
+          if (shift.parentRecurrenceId)
+            return <span className="text-muted-foreground text-sm">Part of a series</span>;
           return <span className="text-muted-foreground">—</span>;
         },
       },

@@ -40,9 +40,10 @@ describe("quick filters → API query", () => {
     expect(
       toEmployeeApiQuery({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, filter: "connected" }).inviteStatus,
     ).toEqual(["CONNECTED"]);
+    // Same set as the Overview "Awaiting setup" metric (compliance AWAITING_SETUP), which links here.
     expect(
       toEmployeeApiQuery({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, filter: "awaitingSetup" }).inviteStatus,
-    ).toEqual(["INVITED", "JOINED", "SETUP_INCOMPLETE"]);
+    ).toEqual(["NOT_INVITED", "INVITED", "JOINED", "SETUP_INCOMPLETE"]);
     expect(
       toEmployeeApiQuery({ ...DEFAULT_EMPLOYEE_LIST_PARAMS, filter: "working" }).deviceStatus,
     ).toEqual(["WORKING", "WORK_MODE_ACTIVE"]);

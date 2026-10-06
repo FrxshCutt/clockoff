@@ -54,7 +54,9 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
   const toastError = useApiErrorToast();
 
   const today = useMemo(() => todayIn(timezone), [timezone]);
-  const [params, setParams] = useState<ScheduleParams>(() => parseScheduleParams(initialSearch, today));
+  const [params, setParams] = useState<ScheduleParams>(() =>
+    parseScheduleParams(initialSearch, today),
+  );
 
   // Mirror state → URL (skipping the first render, whose URL is what we parsed).
   const firstRender = useRef(true);
@@ -64,26 +66,50 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
       return;
     }
     const search = scheduleParamsToSearch(params, today);
-    window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}${window.location.hash}`);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${search}${window.location.hash}`,
+    );
   }, [params, today]);
 
-  const update = useCallback((patch: Partial<ScheduleParams>) => setParams((current) => ({ ...current, ...patch })), []);
+  const update = useCallback(
+    (patch: Partial<ScheduleParams>) => setParams((current) => ({ ...current, ...patch })),
+    [],
+  );
 
   const weekStartsOn = organisation.data?.organisation.settings.weekStartsOn;
   const dateFormat = organisation.data?.organisation.dateFormat ?? "DMY";
-  const range = useMemo(() => computeRange(params.view, params.date, timezone, weekStartsOn), [params.view, params.date, timezone, weekStartsOn]);
+  const range = useMemo(
+    () => computeRange(params.view, params.date, timezone, weekStartsOn),
+    [params.view, params.date, timezone, weekStartsOn],
+  );
 
   const shiftsQuery = useShifts(
     organisation.isPending
       ? null
-      : { from: range.from.toISOString(), to: range.to.toISOString(), employeeId: params.employeeId, locationId: params.locationId },
+      : {
+          from: range.from.toISOString(),
+          to: range.to.toISOString(),
+          employeeId: params.employeeId,
+          locationId: params.locationId,
+        },
   );
   const allShifts = useMemo(() => shiftsQuery.data ?? [], [shiftsQuery.data]);
-  const shifts = useMemo(() => visibleShifts(allShifts, { showCancelled: params.showCancelled }), [allShifts, params.showCancelled]);
+  const shifts = useMemo(
+    () => visibleShifts(allShifts, { showCancelled: params.showCancelled }),
+    [allShifts, params.showCancelled],
+  );
 
   const filteredEmployee = useEmployee(params.employeeId);
   const pinnedEmployee = filteredEmployee.data
-    ? { id: filteredEmployee.data.id, firstName: filteredEmployee.data.firstName, lastName: filteredEmployee.data.lastName, jobTitle: filteredEmployee.data.jobTitle, name: employeeName(filteredEmployee.data) }
+    ? {
+        id: filteredEmployee.data.id,
+        firstName: filteredEmployee.data.firstName,
+        lastName: filteredEmployee.data.lastName,
+        jobTitle: filteredEmployee.data.jobTitle,
+        name: employeeName(filteredEmployee.data),
+      }
     : null;
   const selectedEmployeeRef: EmployeeRef | null = filteredEmployee.data ?? null;
 
@@ -91,7 +117,13 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
   const openCreate = (input?: { employeeId?: string; date?: LocalDateString }) =>
     setDrawer({
       mode: "create",
-      date: input?.date ?? (params.view === "day" ? params.date : today >= range.startDate && today <= range.endDate ? today : range.startDate),
+      date:
+        input?.date ??
+        (params.view === "day"
+          ? params.date
+          : today >= range.startDate && today <= range.endDate
+            ? today
+            : range.startDate),
       employeeId: input?.employeeId ?? params.employeeId,
       employee: input?.employeeId ? null : selectedEmployeeRef,
       locationId: params.locationId,
@@ -107,7 +139,10 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
     updateShift.mutate(
       { id: shift.id, input: plan.patch, optimistic: plan.optimistic },
       {
-        onSuccess: () => toast.success(`Moved ${employeeName(shift.employee)}'s shift ${plan.deltaDays > 0 ? "forward" : "back"} ${Math.abs(plan.deltaDays)} ${Math.abs(plan.deltaDays) === 1 ? "day" : "days"}`),
+        onSuccess: () =>
+          toast.success(
+            `Moved ${employeeName(shift.employee)}'s shift ${plan.deltaDays > 0 ? "forward" : "back"} ${Math.abs(plan.deltaDays)} ${Math.abs(plan.deltaDays) === 1 ? "day" : "days"}`,
+          ),
         onError: (error) => toastError(error, { title: "Couldn't move the shift" }),
         onSettled: () =>
           setPendingIds((current) => {
@@ -131,9 +166,23 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
 
   let body: ReactNode;
   if (shiftsQuery.isError) {
-    body = <ErrorState title="Couldn't load the schedule" error={shiftsQuery.error} onRetry={() => void shiftsQuery.refetch()} isRetrying={shiftsQuery.isRefetching} />;
+    body = (
+      <ErrorState
+        title="Couldn't load the schedule"
+        error={shiftsQuery.error}
+        onRetry={() => void shiftsQuery.refetch()}
+        isRetrying={shiftsQuery.isRefetching}
+      />
+    );
   } else if (isLoading) {
-    body = params.view === "week" ? <WeekViewSkeleton /> : params.view === "day" ? <DayViewSkeleton /> : <TableSkeleton rows={6} columns={6} />;
+    body =
+      params.view === "week" ? (
+        <WeekViewSkeleton />
+      ) : params.view === "day" ? (
+        <DayViewSkeleton />
+      ) : (
+        <TableSkeleton rows={6} columns={6} />
+      );
   } else if (params.view === "employee") {
     body = (
       <EmployeeView
@@ -144,7 +193,14 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
         dateFormat={dateFormat}
         onOpenShift={openEdit}
         emptyAction={addShiftButton}
-        picker={<EmployeePicker value={params.employeeId} selected={selectedEmployeeRef} onChange={(employee) => update({ employeeId: employee?.id ?? null })} placeholder="Choose an employee" />}
+        picker={
+          <EmployeePicker
+            value={params.employeeId}
+            selected={selectedEmployeeRef}
+            onChange={(employee) => update({ employeeId: employee?.id ?? null })}
+            placeholder="Choose an employee"
+          />
+        }
       />
     );
   } else if (isEmpty) {
@@ -156,13 +212,17 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
         action={
           canImport && EMPTY_STATES.schedule.action.href ? (
             <Button asChild>
-              <Link href={EMPTY_STATES.schedule.action.href}>{EMPTY_STATES.schedule.action.label}</Link>
+              <Link href={EMPTY_STATES.schedule.action.href}>
+                {EMPTY_STATES.schedule.action.label}
+              </Link>
             </Button>
           ) : undefined
         }
         secondaryAction={addShiftButton}
       >
-        <p className="text-muted-foreground text-xs">Nothing scheduled between these dates. Use the arrows to look at another week.</p>
+        <p className="text-muted-foreground text-xs">
+          Nothing scheduled between these dates. Use the arrows to look at another week.
+        </p>
       </EmptyState>
     );
   } else if (params.view === "week") {
@@ -197,7 +257,10 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
 
   return (
     <>
-      <PageHeader title="Schedule" description="Shifts switch Work Mode on and off automatically on each employee's phone." />
+      <PageHeader
+        title="Schedule"
+        description="Shifts switch Work Mode on and off automatically on each employee's phone."
+      />
       <div className="space-y-6">
         <ScheduleToolbar
           params={params}
@@ -209,12 +272,20 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
           canImport={canImport}
           selectedEmployee={selectedEmployeeRef}
           onChange={update}
-          onNavigate={(direction) => update({ date: navigateDate(params.view, params.date, direction) })}
+          onNavigate={(direction) =>
+            update({ date: navigateDate(params.view, params.date, direction) })
+          }
           onAddShift={() => openCreate()}
         />
         <div aria-busy={shiftsQuery.isFetching || undefined}>{body}</div>
       </div>
-      <ShiftDrawer state={drawer} onClose={() => setDrawer({ mode: "closed" })} organisationTimezone={timezone} canEdit={canEdit} knownShifts={allShifts} />
+      <ShiftDrawer
+        state={drawer}
+        onClose={() => setDrawer({ mode: "closed" })}
+        organisationTimezone={timezone}
+        canEdit={canEdit}
+        knownShifts={allShifts}
+      />
     </>
   );
 }

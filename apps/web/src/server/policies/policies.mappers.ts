@@ -19,7 +19,10 @@ import { isWindowActive, scopeKey } from "./scopes";
  * fails it is a data-integrity bug: surface it as a 500 (with the version id in the error) rather than
  * ship a half-valid config to devices.
  */
-export function readRestrictionConfig(value: Prisma.JsonValue, versionId: string): RestrictionConfig {
+export function readRestrictionConfig(
+  value: Prisma.JsonValue,
+  versionId: string,
+): RestrictionConfig {
   const parsed = restrictionConfigSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error(`PolicyVersion ${versionId} has an invalid restrictionConfig`);
@@ -95,12 +98,16 @@ export function toPolicyAssignmentDto(
 }
 
 /** Compact, PII-free snapshot of an assignment for audit entries and `POLICY_ASSIGNED` error details. */
-export function summariseAssignment(row: PolicyAssignmentRow, scopeNames?: ReadonlyMap<string, string>) {
+export function summariseAssignment(
+  row: PolicyAssignmentRow,
+  scopeNames?: ReadonlyMap<string, string>,
+) {
   return {
     id: row.id,
     scopeType: row.scopeType,
     scopeId: row.scopeId,
-    scopeName: scopeNames?.get(scopeKey({ scopeType: row.scopeType, scopeId: row.scopeId })) ?? null,
+    scopeName:
+      scopeNames?.get(scopeKey({ scopeType: row.scopeType, scopeId: row.scopeId })) ?? null,
     effectiveFrom: row.effectiveFrom?.toISOString() ?? null,
     effectiveTo: row.effectiveTo?.toISOString() ?? null,
   };

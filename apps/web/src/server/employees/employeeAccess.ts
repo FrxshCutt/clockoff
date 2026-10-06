@@ -71,7 +71,12 @@ export async function revokeEmployeeAccess(
   });
   const endedBreakEvents: ActivityEvent[] = [];
   for (const session of runningBreaks) {
-    const endedAt = new Date(Math.max(session.startedAt.getTime(), Math.min(now.getTime(), session.plannedEndsAt.getTime())));
+    const endedAt = new Date(
+      Math.max(
+        session.startedAt.getTime(),
+        Math.min(now.getTime(), session.plannedEndsAt.getTime()),
+      ),
+    );
     await tx.breakSession.update({
       where: { id: session.id },
       data: { status: "ENDED", endedAt, endReason: input.breakEndReason },

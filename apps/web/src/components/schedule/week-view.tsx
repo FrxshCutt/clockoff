@@ -3,7 +3,7 @@
 import type { Shift } from "@workmode/validation/shifts";
 import type { LocalDateString } from "@workmode/shared/time/time";
 import { Plus } from "lucide-react";
-import { useMemo, useState, type DragEvent } from "react";
+import { useId, useMemo, useState, type DragEvent } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -38,6 +38,8 @@ const DRAG_MIME = "application/x-workmode-shift";
 interface DragPayload {
   shiftId: string;
   fromDay: LocalDateString;
+  /** A drag only moves the shift in time; cells of other employees' rows are never drop targets. */
+  employeeId: string;
 }
 
 function readDragPayload(event: DragEvent): DragPayload | null {
@@ -45,58 +47,106 @@ function readDragPayload(event: DragEvent): DragPayload | null {
     const raw = event.dataTransfer.getData(DRAG_MIME);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<DragPayload>;
-    if (typeof parsed.shiftId !== "string" || typeof parsed.fromDay !== "string") return null;
-    return { shiftId: parsed.shiftId, fromDay: parsed.fromDay };
+    if (
+      typeof parsed.shiftId !== "string" ||
+      typeof parsed.fromDay !== "string" ||
+      typeof parsed.employeeId !== "string"
+    )
+      return null;
+    return { shiftId: parsed.shiftId, fromDay: parsed.fromDay, employeeId: parsed.employeeId };
   } catch {
     return null;
   }
 }
 
 /**
- * Week grid: one row per employee, one column per day. Chips are draggable between day cells (the drawer's
- * date field is the keyboard alternative). Overnight shifts render on their start day with a `→ 06:00 (+1)`
- * suffix and a dashed continuation chip on the following day.
+ * Week grid: one row per employee, one column per day. Scheduled chips are draggable between the day cells
+ * of their own row (the drawer's date field is the keyboard alternative, and the table says so for assistive
+ * tech). Overnight shifts render on their start day with a `→ 06:00 (+1)` suffix and a dashed continuation
+ * chip on the following day.
  */
-export function WeekView({ days, shifts, timezone, today, canEdit, onOpenShift, onAddShift, onMoveShift, pendingShiftIds, pinnedEmployee, className }: WeekViewProps) {
+export function WeekView({
+  days,
+  shifts,
+  timezone,
+  today,
+  canEdit,
+  onOpenShift,
+  onAddShift,
+  onMoveShift,
+  pendingShiftIds,
+  pinnedEmployee,
+  className,
+}: WeekViewProps) {
   const [dragging, setDragging] = useState<DragPayload | null>(null);
   const [overCell, setOverCell] = useState<string | null>(null);
+  const hintId = useId();
 
   const rows = useMemo(() => {
     const fromShifts = employeeRows(shifts);
-    if (pinnedEmployee && !fromShifts.some((r) => r.id === pinnedEmployee.id)) return [pinnedEmployee, ...fromShifts];
+    if (pinnedEmployee && !fromShifts.some((r) => r.id === pinnedEmployee.id))
+      return [pinnedEmployee, ...fromShifts];
     return fromShifts;
   }, [shifts, pinnedEmployee]);
-  const chipsByDay = useMemo(() => placeShiftsOnDays(shifts, days, timezone), [shifts, days, timezone]);
+  const chipsByDay = useMemo(
+    () => placeShiftsOnDays(shifts, days, timezone),
+    [shifts, days, timezone],
+  );
   const conflicts = useMemo(() => findConflicts(shifts), [shifts]);
 
   const chipsFor = (employeeId: string, day: LocalDateString): ShiftChipModel[] =>
     (chipsByDay.get(day) ?? []).filter((chip) => chip.shift.employee.id === employeeId);
 
   const onDragStart = (event: DragEvent<HTMLElement>, chip: ShiftChipModel) => {
-    const payload: DragPayload = { shiftId: chip.shift.id, fromDay: chip.day };
+    const payload: DragPayload = {
+      shiftId: chip.shift.id,
+      fromDay: chip.day,
+      employeeId: chip.shift.employee.id,
+    };
     event.dataTransfer.setData(DRAG_MIME, JSON.stringify(payload));
     event.dataTransfer.effectAllowed = "move";
     setDragging(payload);
   };
 
-  const onDrop = (event: DragEvent<HTMLElement>, day: LocalDateString) => {
+  const onDrop = (event: DragEvent<HTMLElement>, day: LocalDateString, rowEmployeeId: string) => {
     event.preventDefault();
     const payload = readDragPayload(event) ?? dragging;
     setDragging(null);
     setOverCell(null);
-    if (!payload) return;
+    if (!payload || payload.employeeId !== rowEmployeeId) return;
     const shift = shifts.find((s) => s.id === payload.shiftId);
-    if (!shift || payload.fromDay === day) return;
+    if (!shift || shift.employee.id !== rowEmployeeId || payload.fromDay === day) return;
     onMoveShift(shift, payload.fromDay, day);
   };
 
-  const gridTemplate = { gridTemplateColumns: `minmax(9rem, 13rem) repeat(${days.length}, minmax(7.5rem, 1fr))` };
+  const gridTemplate = {
+    gridTemplateColumns: `minmax(9rem, 13rem) repeat(${days.length}, minmax(7.5rem, 1fr))`,
+  };
 
   return (
     <div className={cn("bg-card overflow-x-auto rounded-xl border shadow-xs", className)}>
-      <div role="grid" aria-label="Weekly schedule" aria-rowcount={rows.length + 1} className="min-w-[56rem]">
-        <div role="row" className="bg-muted/60 sticky top-0 z-10 grid border-b backdrop-blur" style={gridTemplate}>
-          <div role="columnheader" className="text-muted-foreground px-4 py-3 text-xs font-medium tracking-wide uppercase">
+      {canEdit ? (
+        <p id={hintId} className="sr-only">
+          Drag a scheduled shift to another day of the same row to move it. With a keyboard, open
+          the shift with Enter and change its date in the drawer.
+        </p>
+      ) : null}
+      <div
+        role="table"
+        aria-label="Weekly schedule"
+        aria-describedby={canEdit ? hintId : undefined}
+        aria-rowcount={rows.length + 1}
+        className="min-w-[56rem]"
+      >
+        <div
+          role="row"
+          className="bg-muted/60 sticky top-0 z-10 grid border-b backdrop-blur"
+          style={gridTemplate}
+        >
+          <div
+            role="columnheader"
+            className="text-muted-foreground px-4 py-3 text-xs font-medium tracking-wide uppercase"
+          >
             Employee
           </div>
           {days.map((day) => {
@@ -106,11 +156,16 @@ export function WeekView({ days, shifts, timezone, today, canEdit, onOpenShift, 
                 key={day}
                 role="columnheader"
                 aria-current={isToday ? "date" : undefined}
-                className={cn("border-l px-3 py-3 text-xs font-medium tracking-wide uppercase", isToday ? "text-primary" : "text-muted-foreground")}
+                className={cn(
+                  "border-l px-3 py-3 text-xs font-medium tracking-wide uppercase",
+                  isToday ? "text-primary" : "text-muted-foreground",
+                )}
               >
                 <span className="flex items-center gap-2">
                   {formatLocalDay(day, "short")}
-                  {isToday ? <span className="bg-primary size-1.5 rounded-full" aria-hidden="true" /> : null}
+                  {isToday ? (
+                    <span className="bg-primary size-1.5 rounded-full" aria-hidden="true" />
+                  ) : null}
                 </span>
               </div>
             );
@@ -118,38 +173,53 @@ export function WeekView({ days, shifts, timezone, today, canEdit, onOpenShift, 
         </div>
 
         {rows.map((row, rowIndex) => (
-          <div key={row.id} role="row" aria-rowindex={rowIndex + 2} className="grid border-b last:border-b-0" style={gridTemplate}>
+          <div
+            key={row.id}
+            role="row"
+            aria-rowindex={rowIndex + 2}
+            className="grid border-b last:border-b-0"
+            style={gridTemplate}
+          >
             <div role="rowheader" className="flex min-w-0 flex-col justify-center px-4 py-3">
               <span className="truncate text-sm font-medium">{row.name}</span>
-              {row.jobTitle ? <span className="text-muted-foreground truncate text-xs">{row.jobTitle}</span> : null}
+              {row.jobTitle ? (
+                <span className="text-muted-foreground truncate text-xs">{row.jobTitle}</span>
+              ) : null}
             </div>
             {days.map((day) => {
               const cellKey = `${row.id}:${day}`;
               const chips = chipsFor(row.id, day);
-              const isDropTarget = dragging !== null && dragging.fromDay !== day;
+              const isDropTarget =
+                dragging !== null && dragging.employeeId === row.id && dragging.fromDay !== day;
               return (
                 <div
                   key={day}
-                  role="gridcell"
+                  role="cell"
                   data-day={day}
                   className={cn(
                     "group/cell relative flex min-h-[4.5rem] flex-col gap-1.5 border-l p-1.5 transition-colors",
                     day === today && "bg-primary/[0.03]",
                     isDropTarget && "bg-accent/40",
-                    overCell === cellKey && isDropTarget && "bg-primary/10 ring-primary/40 ring-2 ring-inset",
+                    overCell === cellKey &&
+                      isDropTarget &&
+                      "bg-primary/10 ring-primary/40 ring-2 ring-inset",
                   )}
                   onDragOver={
                     canEdit
                       ? (event) => {
-                          if (!dragging) return;
+                          if (!isDropTarget) return;
                           event.preventDefault();
                           event.dataTransfer.dropEffect = "move";
                           if (overCell !== cellKey) setOverCell(cellKey);
                         }
                       : undefined
                   }
-                  onDragLeave={canEdit ? () => setOverCell((current) => (current === cellKey ? null : current)) : undefined}
-                  onDrop={canEdit ? (event) => onDrop(event, day) : undefined}
+                  onDragLeave={
+                    canEdit
+                      ? () => setOverCell((current) => (current === cellKey ? null : current))
+                      : undefined
+                  }
+                  onDrop={canEdit ? (event) => onDrop(event, day, row.id) : undefined}
                 >
                   {chips.map((chip) => (
                     <ShiftChip
@@ -173,7 +243,7 @@ export function WeekView({ days, shifts, timezone, today, canEdit, onOpenShift, 
                       onClick={() => onAddShift({ employeeId: row.id, date: day })}
                       aria-label={`Add shift for ${row.name} on ${formatLocalDay(day, "long")}`}
                       className={cn(
-                        "text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/50 mt-auto flex h-7 w-full items-center justify-center rounded-md border border-dashed border-transparent text-xs opacity-0 transition-opacity outline-none focus-visible:opacity-100 focus-visible:ring-[3px] group-hover/cell:border-border group-hover/cell:opacity-100",
+                        "text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/50 group-hover/cell:border-border mt-auto flex h-7 w-full items-center justify-center rounded-md border border-dashed border-transparent text-xs opacity-0 transition-opacity outline-none group-hover/cell:opacity-100 focus-visible:opacity-100 focus-visible:ring-[3px]",
                         chips.length === 0 && "flex-1",
                       )}
                     >
@@ -191,7 +261,9 @@ export function WeekView({ days, shifts, timezone, today, canEdit, onOpenShift, 
 }
 
 export function WeekViewSkeleton({ days = 7, rows = 5 }: { days?: number; rows?: number }) {
-  const gridTemplate = { gridTemplateColumns: `minmax(9rem, 13rem) repeat(${days}, minmax(7.5rem, 1fr))` };
+  const gridTemplate = {
+    gridTemplateColumns: `minmax(9rem, 13rem) repeat(${days}, minmax(7.5rem, 1fr))`,
+  };
   return (
     <div className="bg-card overflow-x-auto rounded-xl border shadow-xs" aria-hidden="true">
       <div className="min-w-[56rem]">

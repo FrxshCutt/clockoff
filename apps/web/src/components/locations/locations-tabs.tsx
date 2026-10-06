@@ -4,7 +4,12 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DepartmentsSection } from "./departments-list";
 import { LocationsSection } from "./locations-table";
-import { LOCATIONS_TABS, LOCATIONS_TAB_META, parseLocationsTab, type LocationsTab } from "./locations-view-model";
+import {
+  LOCATIONS_TABS,
+  LOCATIONS_TAB_META,
+  parseLocationsTab,
+  type LocationsTab,
+} from "./locations-view-model";
 import { TeamsSection } from "./teams-table";
 
 function TabBody({ tab }: { tab: LocationsTab }) {
@@ -30,7 +35,11 @@ export function LocationsTabs({ initialTab }: { initialTab: LocationsTab }) {
     setTab(next);
     const url = new URL(window.location.href);
     url.searchParams.set("tab", next);
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
   };
 
   return (

@@ -29,7 +29,7 @@ import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { hasErrorCode } from "@/lib/api-client";
 import { formatTimeZoneLabel } from "@/lib/format";
 import { useCreateShift, useLocations } from "./employee-api";
-import { ReferenceSelectField } from "./reference-select";
+import { ReferenceSelectField, referenceOptions } from "./reference-select";
 import {
   defaultShiftQuickFormValues,
   isOvernightRange,
@@ -185,7 +185,7 @@ function ShiftQuickForm({
           control={form.control}
           name="locationId"
           label="Location"
-          options={locations.data?.map((l) => ({
+          options={referenceOptions(locations, (l) => ({
             id: l.id,
             name: l.name,
             hint: l.timezone ? formatTimeZoneLabel(l.timezone, now) : undefined,

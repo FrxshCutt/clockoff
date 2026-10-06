@@ -3,6 +3,7 @@
 import type { Employee } from "@workmode/validation/employees";
 import {
   Archive,
+  Coffee,
   Eye,
   MoreHorizontal,
   Pencil,
@@ -37,7 +38,7 @@ export interface EmployeeRowActionsMenuProps {
   label?: string;
 }
 
-/** Row / header "…" menu: View, Edit, Invite/Resend, Assign policy, Deactivate/Reactivate, Archive. */
+/** Row / header "…" menu: View, Edit, Invite/Resend, Assign policy / Break Rules, Deactivate/Reactivate, Archive. */
 export function EmployeeRowActionsMenu({
   employee,
   canWrite,
@@ -87,6 +88,10 @@ export function EmployeeRowActionsMenu({
             <DropdownMenuItem onSelect={() => onAction("assignPolicy", employee)}>
               <ShieldCheck aria-hidden="true" />
               Assign policy
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onAction("assignBreakPolicy", employee)}>
+              <Coffee aria-hidden="true" />
+              Assign Break Rules
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {active ? (

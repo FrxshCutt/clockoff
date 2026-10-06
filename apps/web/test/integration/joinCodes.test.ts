@@ -1,7 +1,7 @@
 import { prisma } from "@workmode/db";
 import { JOIN_CODE_REGEX } from "@workmode/shared/joinCode";
 import type { JoinCodeResponse } from "@workmode/validation/organisation";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { POST as regenerateRoute } from "@/app/api/organisations/current/join-code/regenerate/route";
 import { POST as revokeRoute } from "@/app/api/organisations/current/join-code/revoke/route";
 import { GET as getRoute } from "@/app/api/organisations/current/join-code/route";
@@ -16,6 +16,20 @@ import {
 } from "../helpers";
 
 const PATH = "/api/organisations/current/join-code";
+
+/**
+ * Codes the next draws must return (consumed in order); empty = the real CSPRNG generator. Lets a test
+ * force a collision with an existing code to exercise the P2002 retry without touching the database schema.
+ */
+const { forcedDraws } = vi.hoisted(() => ({ forcedDraws: [] as string[] }));
+vi.mock("@workmode/shared/joinCode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@workmode/shared/joinCode")>();
+  return {
+    ...actual,
+    generateJoinCode: (...args: Parameters<typeof actual.generateJoinCode>) =>
+      forcedDraws.shift() ?? actual.generateJoinCode(...args),
+  };
+});
 
 async function setup() {
   const org = await createTestOrg();
@@ -146,6 +160,92 @@ describe("POST /api/organisations/current/join-code/regenerate", () => {
     });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("draws again when the generated code collides with an existing one (P2002 on `code`)", async () => {
+    const { org, jar } = await setup();
+    const other = await createTestOrg();
+    // First draw = the other organisation's ACTIVE code (globally unique); the second draw is real.
+    forcedDraws.push(other.joinCode.code);
+    const res = await callRoute<JoinCodeResponse>(regenerateRoute, {
+      method: "POST",
+      path: `${PATH}/regenerate`,
+      jar,
+      body: {},
+    });
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    expect(forcedDraws).toEqual([]);
+    expect(res.body.current?.code).toMatch(JOIN_CODE_REGEX);
+    expect(res.body.current?.code).not.toBe(other.joinCode.code);
+    expect(res.body.history.map((c) => c.code)).toEqual([org.joinCode.code]);
+
+    // The failed attempt rolled back completely: one ACTIVE code here, the other tenant untouched,
+    // exactly one audit row.
+    const rows = await prisma.companyJoinCode.findMany({
+      where: { organisationId: org.organisation.id },
+    });
+    expect(rows).toHaveLength(2);
+    expect(rows.filter((r) => r.status === "ACTIVE")).toHaveLength(1);
+    const otherRow = await prisma.companyJoinCode.findUniqueOrThrow({
+      where: { id: other.joinCode.id },
+    });
+    expect(otherRow).toMatchObject({ status: "ACTIVE", organisationId: other.organisation.id });
+    expect(
+      await prisma.auditLog.count({
+        where: { organisationId: org.organisation.id, action: "join_code.regenerated" },
+      }),
+    ).toBe(1);
+  });
+
+  it("gives up with CONFLICT (nothing changed) when every draw collides", async () => {
+    const { org, jar } = await setup();
+    const other = await createTestOrg();
+    for (let i = 0; i < 16; i++) forcedDraws.push(other.joinCode.code);
+    try {
+      const res = await callRoute<ErrorBody>(regenerateRoute, {
+        method: "POST",
+        path: `${PATH}/regenerate`,
+        jar,
+        body: {},
+      });
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("CONFLICT");
+    } finally {
+      forcedDraws.length = 0;
+    }
+    const body = await get(jar);
+    expect(body.current?.code).toBe(org.joinCode.code);
+    expect(body.history).toEqual([]);
+    expect(
+      await prisma.auditLog.count({
+        where: { organisationId: org.organisation.id, action: "join_code.regenerated" },
+      }),
+    ).toBe(0);
+  });
+
+  it("serialises concurrent regenerations: exactly one ACTIVE code survives", async () => {
+    const { org, jar } = await setup();
+    const results = await Promise.all(
+      [1, 2, 3].map(() =>
+        callRoute<JoinCodeResponse>(regenerateRoute, {
+          method: "POST",
+          path: `${PATH}/regenerate`,
+          jar: jar.clone(),
+          body: {},
+        }),
+      ),
+    );
+    for (const res of results) expect(res.status, JSON.stringify(res.body)).toBe(200);
+    const rows = await prisma.companyJoinCode.findMany({
+      where: { organisationId: org.organisation.id },
+    });
+    expect(rows).toHaveLength(4);
+    expect(rows.filter((r) => r.status === "ACTIVE")).toHaveLength(1);
+    expect(new Set(rows.map((r) => r.code)).size).toBe(4);
+    const body = await get(jar);
+    expect(body.current?.status).toBe("ACTIVE");
+    expect(body.history).toHaveLength(3);
+    expect(body.history.every((c) => c.status === "REVOKED" && c.revokedAt !== null)).toBe(true);
   });
 });
 

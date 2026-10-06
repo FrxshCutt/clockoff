@@ -23,7 +23,8 @@ export function OrgSwitcher({ me }: { me: CurrentUser }) {
   const toastError = useApiErrorToast();
   if (me.organisations.length < 2) return null;
 
-  const current = me.organisations.find((o) => o.id === me.currentOrganisationId) ?? me.organisations[0];
+  const current =
+    me.organisations.find((o) => o.id === me.currentOrganisationId) ?? me.organisations[0];
 
   return (
     <DropdownMenu>
@@ -41,7 +42,9 @@ export function OrgSwitcher({ me }: { me: CurrentUser }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Organisations</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+          Organisations
+        </DropdownMenuLabel>
         {me.organisations.map((org) => {
           const isCurrent = org.id === current?.id;
           return (
@@ -58,7 +61,9 @@ export function OrgSwitcher({ me }: { me: CurrentUser }) {
             >
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">{org.name}</span>
-                <span className="text-muted-foreground text-xs">{getStatusMeta("role", org.role).label}</span>
+                <span className="text-muted-foreground text-xs">
+                  {getStatusMeta("role", org.role).label}
+                </span>
               </span>
               {isCurrent ? <Check className="text-foreground" aria-hidden="true" /> : null}
             </DropdownMenuItem>

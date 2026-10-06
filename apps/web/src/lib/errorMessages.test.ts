@@ -45,12 +45,16 @@ describe("API_ERROR_MESSAGES", () => {
 
 describe("getErrorMessage", () => {
   it("maps API errors to their human copy, not the raw server message", () => {
-    expect(getErrorMessage(apiError("INVALID_CREDENTIALS"))).toBe(API_ERROR_MESSAGES.INVALID_CREDENTIALS);
+    expect(getErrorMessage(apiError("INVALID_CREDENTIALS"))).toBe(
+      API_ERROR_MESSAGES.INVALID_CREDENTIALS,
+    );
     expect(getErrorMessage(apiError("INVALID_CREDENTIALS"))).not.toContain("raw server message");
   });
 
   it("uses the fallback for anything that isn't an ApiClientError (never error.message)", () => {
-    expect(getErrorMessage(new Error("TypeError: x is undefined at foo.ts:12"))).toBe(DEFAULT_ERROR_MESSAGE);
+    expect(getErrorMessage(new Error("TypeError: x is undefined at foo.ts:12"))).toBe(
+      DEFAULT_ERROR_MESSAGE,
+    );
     expect(getErrorMessage("boom", "Custom fallback.")).toBe("Custom fallback.");
     expect(getErrorMessage(null)).toBe(DEFAULT_ERROR_MESSAGE);
   });
@@ -87,7 +91,9 @@ describe("getFieldErrors", () => {
   it("ignores other codes and malformed details", () => {
     expect(getFieldErrors(apiError("CONFLICT", { fieldErrors: { email: ["x"] } }))).toEqual({});
     expect(getFieldErrors(apiError("VALIDATION_ERROR", "nope"))).toEqual({});
-    expect(getFieldErrors(apiError("VALIDATION_ERROR", { fieldErrors: { a: "not-an-array" } }))).toEqual({});
+    expect(
+      getFieldErrors(apiError("VALIDATION_ERROR", { fieldErrors: { a: "not-an-array" } })),
+    ).toEqual({});
     expect(getFieldErrors(new Error("x"))).toEqual({});
   });
 });

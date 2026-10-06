@@ -8,6 +8,11 @@ import { createHandler } from "@/server/http/apiHandler";
  * DEACTIVATED, devices deactivated, tokens revoked, live invites revoked, running break ended. Shifts are kept.
  */
 export const POST = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema, body: deactivateEmployeeSchema },
+  {
+    auth: "manager",
+    permission: "employees:write",
+    params: idParamsSchema,
+    body: deactivateEmployeeSchema,
+  },
   async ({ ctx, params, body }) => ({ employee: await deactivateEmployee(ctx, params.id, body) }),
 );

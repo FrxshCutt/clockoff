@@ -42,7 +42,9 @@ export function PolicyVersionHistory({ policyId, policyName }: PolicyVersionHist
       <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
         <SheetHeader className="border-b">
           <SheetTitle>Version history</SheetTitle>
-          <SheetDescription>{policyName}. Newest first; each entry lists what changed from the version before.</SheetDescription>
+          <SheetDescription>
+            {policyName}. Newest first; each entry lists what changed from the version before.
+          </SheetDescription>
         </SheetHeader>
         <ScrollArea className="min-h-0 flex-1">
           <div className="p-4">
@@ -65,13 +67,17 @@ export function PolicyVersionHistory({ policyId, policyName }: PolicyVersionHist
                 isRetrying={versions.isRefetching}
               />
             ) : versions.data.length === 0 ? (
-              <p className="text-muted-foreground rounded-lg border border-dashed px-4 py-8 text-center text-sm">No versions yet.</p>
+              <p className="text-muted-foreground rounded-lg border border-dashed px-4 py-8 text-center text-sm">
+                No versions yet.
+              </p>
             ) : (
               <ol className="space-y-3">
                 {describeVersionHistory(versions.data).map(({ version, changes }) => (
                   <li key={version.id} className="space-y-2 rounded-lg border p-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-semibold tabular-nums">v{version.versionNumber}</span>
+                      <span className="text-base font-semibold tabular-nums">
+                        v{version.versionNumber}
+                      </span>
                       {version.publishedAt ? (
                         <Badge variant="secondary">Published</Badge>
                       ) : (
@@ -85,7 +91,9 @@ export function PolicyVersionHistory({ policyId, policyName }: PolicyVersionHist
                       {version.createdBy ? ` by ${version.createdBy.name}` : ""}
                     </p>
                     {version.changeNote ? (
-                      <blockquote className="border-l-2 pl-3 text-sm italic">{version.changeNote}</blockquote>
+                      <blockquote className="border-l-2 pl-3 text-sm italic">
+                        {version.changeNote}
+                      </blockquote>
                     ) : null}
                     <ul className="text-muted-foreground list-disc space-y-0.5 pl-5 text-sm">
                       {changes.map((change) => (

@@ -11,5 +11,6 @@ export const POST = createHandler(
     params: idParamsSchema,
     body: duplicatePolicySchema,
   },
-  async ({ ctx, params, body }) => json({ policy: await duplicatePolicy(ctx, params.id, body) }, 201),
+  async ({ ctx, params, body }) =>
+    json({ policy: await duplicatePolicy(ctx, params.id, body) }, 201),
 );

@@ -20,9 +20,12 @@ export interface PolicyCardProps {
 
 const MAX_VISIBLE_CATEGORIES = 4;
 
-/** One Work Policy in the grid: name, status, categories, who it applies to and the version line. */
+/**
+ * One Work Policy in the grid: name, status, categories, who it applies to and the version line. The category
+ * chips come from the published version (what devices enforce); only a never-published draft shows its draft.
+ */
 export function PolicyCard({ policy, actions, now, className }: PolicyCardProps) {
-  const version = policy.draftVersion ?? policy.currentVersion;
+  const version = policy.currentVersion ?? policy.draftVersion;
   const labels = version ? categoryLabels(version.restrictionConfig.categories) : [];
   const visible = labels.slice(0, MAX_VISIBLE_CATEGORIES);
   const hidden = labels.length - visible.length;
@@ -41,18 +44,22 @@ export function PolicyCard({ policy, actions, now, className }: PolicyCardProps)
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
-          <h3 id={headingId} className="min-w-0 text-base font-semibold tracking-tight">
+          <h2 id={headingId} className="min-w-0 text-base font-semibold tracking-tight">
             <Link
               href={routeFor.policy(policy.id)}
               className="line-clamp-2 outline-none after:absolute after:inset-0 after:rounded-xl after:content-['']"
             >
               {policy.name}
             </Link>
-          </h3>
+          </h2>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge kind="policyStatus" value={policy.status} size="sm" />
             {policy.isDefault ? (
-              <Badge variant="secondary" className="gap-1 font-normal" title="Applies to everyone without a more specific assignment">
+              <Badge
+                variant="secondary"
+                className="gap-1 font-normal"
+                title="Applies to everyone without a more specific assignment"
+              >
                 <Star className="fill-amber-400 text-amber-500" aria-hidden="true" />
                 Default
               </Badge>
@@ -62,7 +69,9 @@ export function PolicyCard({ policy, actions, now, className }: PolicyCardProps)
         {actions ? <div className="relative z-10 shrink-0">{actions}</div> : null}
       </div>
 
-      {policy.description ? <p className="text-muted-foreground line-clamp-2 text-sm">{policy.description}</p> : null}
+      {policy.description ? (
+        <p className="text-muted-foreground line-clamp-2 text-sm">{policy.description}</p>
+      ) : null}
 
       <ul className="flex flex-wrap gap-1.5" aria-label="Restricted categories">
         {visible.map((label) => (
@@ -74,12 +83,18 @@ export function PolicyCard({ policy, actions, now, className }: PolicyCardProps)
         ))}
         {hidden > 0 ? (
           <li>
-            <Badge variant="outline" className="text-muted-foreground font-normal" title={labels.slice(MAX_VISIBLE_CATEGORIES).join(", ")}>
+            <Badge
+              variant="outline"
+              className="text-muted-foreground font-normal"
+              title={labels.slice(MAX_VISIBLE_CATEGORIES).join(", ")}
+            >
               +{hidden} more
             </Badge>
           </li>
         ) : null}
-        {labels.length === 0 ? <li className="text-muted-foreground text-xs">No categories yet</li> : null}
+        {labels.length === 0 ? (
+          <li className="text-muted-foreground text-xs">No categories yet</li>
+        ) : null}
       </ul>
 
       <div className="text-muted-foreground mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t pt-3 text-xs">

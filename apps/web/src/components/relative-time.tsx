@@ -65,7 +65,11 @@ export function RelativeTime({ value, timeZone, fallback = "—", className }: R
     );
   }
   return (
-    <time dateTime={iso} title={formatDateTimeLong(date, { timeZone })} className={cn("whitespace-nowrap", className)}>
+    <time
+      dateTime={iso}
+      title={formatDateTimeLong(date, { timeZone })}
+      className={cn("whitespace-nowrap", className)}
+    >
       {formatRelativeTime(date, current)}
     </time>
   );

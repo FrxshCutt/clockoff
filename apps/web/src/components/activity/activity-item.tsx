@@ -67,17 +67,27 @@ export interface ActivityItemProps {
  * One feed entry: a toned icon for the event type, the plain-English sentence, and a meta line with the
  * type label, the employee (linked), the acting manager and a live relative time.
  */
-export function ActivityItem({ event, timeZone, hideEmployee = false, className }: ActivityItemProps) {
+export function ActivityItem({
+  event,
+  timeZone,
+  hideEmployee = false,
+  className,
+}: ActivityItemProps) {
   const meta = activityEventMeta(event.type);
   const Icon = ACTIVITY_ICON_COMPONENTS[meta.icon];
-  const employeeName = event.employee ? `${event.employee.firstName} ${event.employee.lastName}`.trim() : null;
+  const employeeName = event.employee
+    ? `${event.employee.firstName} ${event.employee.lastName}`.trim()
+    : null;
   const actor = event.actorType === "MANAGER" && event.actor ? event.actor.name : null;
 
   return (
     <li className={cn("flex gap-3 py-3", className)} data-event-type={event.type}>
       <span
         aria-hidden="true"
-        className={cn("mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border", TONE_CLASSES[meta.tone])}
+        className={cn(
+          "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border",
+          TONE_CLASSES[meta.tone],
+        )}
       >
         <Icon className="size-4" />
       </span>
@@ -119,17 +129,34 @@ export interface ActivityListProps {
   className?: string;
 }
 
-export function ActivityList({ events, timeZone, hideEmployee, label = "Activity", className }: ActivityListProps) {
+export function ActivityList({
+  events,
+  timeZone,
+  hideEmployee,
+  label = "Activity",
+  className,
+}: ActivityListProps) {
   return (
     <ul aria-label={label} className={cn("divide-border divide-y", className)}>
       {events.map((event) => (
-        <ActivityItem key={event.id} event={event} timeZone={timeZone} hideEmployee={hideEmployee} />
+        <ActivityItem
+          key={event.id}
+          event={event}
+          timeZone={timeZone}
+          hideEmployee={hideEmployee}
+        />
       ))}
     </ul>
   );
 }
 
-export function ActivityListSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
+export function ActivityListSkeleton({
+  rows = 5,
+  className,
+}: {
+  rows?: number;
+  className?: string;
+}) {
   return (
     <div className={cn("divide-border divide-y", className)} aria-hidden="true">
       {Array.from({ length: rows }, (_, i) => (

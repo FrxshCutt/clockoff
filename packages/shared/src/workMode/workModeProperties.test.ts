@@ -15,7 +15,11 @@ import type {
   ShiftStatus,
   WorkModeState,
 } from "../enums";
-import { computeExpectedState, restrictionSignature, toExpectedStateJson } from "./computeExpectedState";
+import {
+  computeExpectedState,
+  restrictionSignature,
+  toExpectedStateJson,
+} from "./computeExpectedState";
 import { diffStates, isWorkModeActiveState } from "./diffStates";
 import { replayTransitions } from "./replay";
 import type { ComputeExpectedStateInput, ExpectedState, Transition } from "./types";
@@ -130,7 +134,8 @@ const clampInstant = (m: number): number => Math.max(0, Math.min(LAST_INSTANT, m
 function randomCategories(rng: Rng): unknown[] {
   const out: unknown[] = [];
   const n = rng.int(0, 4);
-  for (let i = 0; i < n; i += 1) out.push(rng.chance(0.1) ? "NOT_A_CATEGORY" : rng.pick(RESTRICTION_CATEGORIES));
+  for (let i = 0; i < n; i += 1)
+    out.push(rng.chance(0.1) ? "NOT_A_CATEGORY" : rng.pick(RESTRICTION_CATEGORIES));
   if (rng.chance(0.05)) return [...RESTRICTION_CATEGORIES];
   return out;
 }
@@ -143,9 +148,12 @@ function generate(seed: number): Model {
     const prev = shifts[shifts.length - 1];
     const roll = rng.int(0, 99);
     let s: number;
-    if (prev !== undefined && roll < 35) s = prev.e; // back-to-back
-    else if (prev !== undefined && roll < 50) s = clampInstant(prev.e - rng.int(1, 60)); // overlap
-    else if (prev !== undefined && roll < 65) s = clampInstant(prev.e + rng.int(1, 20)); // small gap
+    if (prev !== undefined && roll < 35)
+      s = prev.e; // back-to-back
+    else if (prev !== undefined && roll < 50)
+      s = clampInstant(prev.e - rng.int(1, 60)); // overlap
+    else if (prev !== undefined && roll < 65)
+      s = clampInstant(prev.e + rng.int(1, 20)); // small gap
     else s = rng.int(20, LAST_INSTANT - 30);
     const e = rng.chance(0.03) ? s : clampInstant(s + rng.int(3, 240));
     shifts.push({
@@ -165,7 +173,13 @@ function generate(seed: number): Model {
     const planned = clampInstant(s + rng.int(1, 40));
     const status: BreakSessionStatus = rng.chance(0.7) ? "ACTIVE" : "ENDED";
     const ended =
-      status === "ENDED" ? (rng.chance(0.85) ? clampInstant(s + rng.int(0, 50)) : null) : rng.chance(0.15) ? clampInstant(s + rng.int(0, 50)) : null;
+      status === "ENDED"
+        ? rng.chance(0.85)
+          ? clampInstant(s + rng.int(0, 50))
+          : null
+        : rng.chance(0.15)
+          ? clampInstant(s + rng.int(0, 50))
+          : null;
     breaks.push({
       id: `break-${i}`,
       shiftId: rng.chance(0.05) ? "shift-orphan" : shift.id,
@@ -186,7 +200,9 @@ function generate(seed: number): Model {
     const type = rng.pick(OVERRIDE_TYPES);
     const payload: Record<string, unknown> = {};
     if (type === "TEMPORARY_EXCEPTION" && rng.chance(0.7)) {
-      payload.restrictionBehaviour = rng.chance(0.1) ? "NOT_A_BEHAVIOUR" : rng.pick(BREAK_RESTRICTION_BEHAVIOURS);
+      payload.restrictionBehaviour = rng.chance(0.1)
+        ? "NOT_A_BEHAVIOUR"
+        : rng.pick(BREAK_RESTRICTION_BEHAVIOURS);
       payload.relaxedCategories = randomCategories(rng);
     }
     overrides.push({
@@ -205,7 +221,9 @@ function generate(seed: number): Model {
     shifts,
     breaks,
     overrides,
-    permission: rng.chance(0.75) ? "APPROVED" : rng.pick(PERMISSION_STATES.filter((p) => p !== "APPROVED")),
+    permission: rng.chance(0.75)
+      ? "APPROVED"
+      : rng.pick(PERMISSION_STATES.filter((p) => p !== "APPROVED")),
     employeeId: rng.chance(0.9) ? "emp-1" : null,
     pre: custom ? rng.pick([0, 5, 30]) : 15,
     ending: custom ? rng.pick([0, 1, 10]) : 5,
@@ -266,20 +284,38 @@ interface Restriction {
   liftedCategories: RestrictionCategory[];
 }
 
-const WORK: Restriction = { effectiveRestriction: "WORK", restrictionsShouldBeActive: true, liftedCategories: [] };
-const NONE: Restriction = { effectiveRestriction: "NONE", restrictionsShouldBeActive: false, liftedCategories: [] };
+const WORK: Restriction = {
+  effectiveRestriction: "WORK",
+  restrictionsShouldBeActive: true,
+  liftedCategories: [],
+};
+const NONE: Restriction = {
+  effectiveRestriction: "NONE",
+  restrictionsShouldBeActive: false,
+  liftedCategories: [],
+};
 
 function relax(behaviour: unknown, categories: unknown): Restriction {
-  const known = Array.isArray(categories) ? RESTRICTION_CATEGORIES.filter((c) => categories.includes(c)) : [];
+  const known = Array.isArray(categories)
+    ? RESTRICTION_CATEGORIES.filter((c) => categories.includes(c))
+    : [];
   switch (behaviour) {
     case "KEEP_RESTRICTIONS":
       return WORK;
     case "RELAX_CATEGORIES":
       return known.length === 0
         ? WORK
-        : { effectiveRestriction: "BREAK_RELAXED", restrictionsShouldBeActive: known.length < RESTRICTION_CATEGORIES.length, liftedCategories: known };
+        : {
+            effectiveRestriction: "BREAK_RELAXED",
+            restrictionsShouldBeActive: known.length < RESTRICTION_CATEGORIES.length,
+            liftedCategories: known,
+          };
     default: // RELAX_ALL, and any missing / invalid payload behaviour
-      return { effectiveRestriction: "BREAK_RELAXED", restrictionsShouldBeActive: false, liftedCategories: [...RESTRICTION_CATEGORIES] };
+      return {
+        effectiveRestriction: "BREAK_RELAXED",
+        restrictionsShouldBeActive: false,
+        liftedCategories: [...RESTRICTION_CATEGORIES],
+      };
   }
 }
 
@@ -307,11 +343,19 @@ function reference(model: Model, now: number): RefOutput {
     while (m <= HORIZON && !working(m)) m += 1;
     imminent = m <= HORIZON && m - model.pre <= now;
   }
-  const off: RefOutput = { state: "OFF_SHIFT", ...NONE, activeShiftId: null, activeBreakId: null, activeOverrideId: null };
+  const off: RefOutput = {
+    state: "OFF_SHIFT",
+    ...NONE,
+    activeShiftId: null,
+    activeBreakId: null,
+    activeOverrideId: null,
+  };
   if (runStart === null && !imminent) return off;
 
   const runShifts =
-    runStart === null || runEnd === null ? [] : effective.filter((s) => s.s >= (runStart ?? 0) && s.s < (runEnd ?? 0));
+    runStart === null || runEnd === null
+      ? []
+      : effective.filter((s) => s.s >= (runStart ?? 0) && s.s < (runEnd ?? 0));
   const activeShift =
     [...runShifts]
       .filter((s) => s.s <= now && now < s.e)
@@ -336,13 +380,18 @@ function reference(model: Model, now: number): RefOutput {
   );
   const byStart = (a: MOverride, b: MOverride): number => a.s - b.s || a.id.localeCompare(b.id);
   const lifting =
-    applicable.filter((o) => o.type !== "TEMPORARY_EXCEPTION").sort((a, b) => LIFT_RANK[a.type] - LIFT_RANK[b.type] || byStart(a, b))[0] ??
-    null;
+    applicable
+      .filter((o) => o.type !== "TEMPORARY_EXCEPTION")
+      .sort((a, b) => LIFT_RANK[a.type] - LIFT_RANK[b.type] || byStart(a, b))[0] ?? null;
   const exception =
     applicable
       .filter((o) => o.type === "TEMPORARY_EXCEPTION")
       .sort(byStart)
-      .find((o) => relax(o.payload.restrictionBehaviour, o.payload.relaxedCategories).effectiveRestriction === "BREAK_RELAXED") ?? null;
+      .find(
+        (o) =>
+          relax(o.payload.restrictionBehaviour, o.payload.relaxedCategories)
+            .effectiveRestriction === "BREAK_RELAXED",
+      ) ?? null;
 
   let state: WorkModeState;
   let restriction: Restriction;
@@ -364,7 +413,10 @@ function reference(model: Model, now: number): RefOutput {
     restriction = NONE;
     activeOverrideId = lifting.id;
   } else if (runStart !== null && brk === null && exception !== null) {
-    restriction = relax(exception.payload.restrictionBehaviour, exception.payload.relaxedCategories);
+    restriction = relax(
+      exception.payload.restrictionBehaviour,
+      exception.payload.relaxedCategories,
+    );
     activeOverrideId = exception.id;
   }
   if (model.permission !== "APPROVED") state = "PERMISSION_ERROR";
@@ -418,70 +470,78 @@ const SEEDS = Array.from({ length: CASES }, (_, i) => 1000 + i * 7919);
 
 // Each case is ~20 ms; the generous timeout only guards against false failures on a heavily loaded machine.
 describe("Work Mode machine — randomised properties", { timeout: 60_000 }, () => {
-  it.each(SEEDS)("seed %i: matches the reference model and the nextTransitionAt / replay contracts", (seed) => {
-    const model = generate(seed);
-    const label = describeModel(seed, model);
-    const states = statesOverHorizon(model);
-    const signatures = states.map((s) => restrictionSignature(s));
+  it.each(SEEDS)(
+    "seed %i: matches the reference model and the nextTransitionAt / replay contracts",
+    (seed) => {
+      const model = generate(seed);
+      const label = describeModel(seed, model);
+      const states = statesOverHorizon(model);
+      const signatures = states.map((s) => restrictionSignature(s));
 
-    for (let m = 0; m <= HORIZON; m += 1) {
-      const state = states[m] as ExpectedState;
-      // 1. Reference model.
-      expect(observed(state), `${label} @${m}`).toEqual(reference(model, m));
+      for (let m = 0; m <= HORIZON; m += 1) {
+        const state = states[m] as ExpectedState;
+        // 1. Reference model.
+        expect(observed(state), `${label} @${m}`).toEqual(reference(model, m));
 
-      // 2. nextTransitionAt is the first later minute whose output differs (null if none in the horizon;
-      // nothing changes after the last generated instant).
-      let expectedNext: number | null = null;
-      for (let k = m + 1; k <= HORIZON; k += 1) {
-        if (signatures[k] !== signatures[m]) {
-          expectedNext = k;
-          break;
+        // 2. nextTransitionAt is the first later minute whose output differs (null if none in the horizon;
+        // nothing changes after the last generated instant).
+        let expectedNext: number | null = null;
+        for (let k = m + 1; k <= HORIZON; k += 1) {
+          if (signatures[k] !== signatures[m]) {
+            expectedNext = k;
+            break;
+          }
+        }
+        expect(
+          state.nextTransitionAt === null ? null : minuteOf(state.nextTransitionAt),
+          `${label} nta @${m}`,
+        ).toBe(expectedNext);
+      }
+
+      // 3. Replay over the whole horizon equals a minute-by-minute walk of diffStates.
+      const walked: string[] = [];
+      for (let m = 1; m <= HORIZON; m += 1) {
+        for (const t of diffStates(states[m - 1] as ExpectedState, states[m] as ExpectedState))
+          walked.push(eventView(t));
+      }
+      const replay = replayTransitions(toInput(model, HORIZON), isoAt(0));
+      expect(replay.transitions.map(eventView), label).toEqual(walked);
+      expect(replay.states.at(-1)?.computedAt.toISOString()).toBe(isoAt(HORIZON));
+
+      // ...and its events are well formed.
+      let active = isWorkModeActiveState(states[0]?.state ?? "OFF_SHIFT");
+      let runningBreak = states[0]?.activeBreak?.id ?? null;
+      for (const t of replay.transitions) {
+        switch (t.eventType) {
+          case "WORK_MODE_STARTED":
+            expect(active, `${label} ${eventView(t)}`).toBe(false);
+            active = true;
+            break;
+          case "WORK_MODE_ENDED":
+            expect(active, `${label} ${eventView(t)}`).toBe(true);
+            active = false;
+            break;
+          case "BREAK_STARTED":
+            expect(runningBreak, `${label} ${eventView(t)}`).toBeNull();
+            runningBreak = t.breakSessionId ?? null;
+            break;
+          case "BREAK_ENDED":
+          case "BREAK_EXPIRED":
+            expect(t.breakSessionId, `${label} ${eventView(t)}`).toBe(runningBreak);
+            runningBreak = null;
+            break;
+          default:
+            break;
+        }
+        if (t.eventType === "WORK_MODE_ENDED" || t.eventType === "OVERRIDE_EXPIRED") {
+          // The shift these events name is the one in progress just before the change.
+          const before = states[minuteOf(t.at) - 1];
+          if (before?.activeShift)
+            expect(t.shiftId, `${label} ${eventView(t)}`).toBe(before.activeShift.id);
         }
       }
-      expect(state.nextTransitionAt === null ? null : minuteOf(state.nextTransitionAt), `${label} nta @${m}`).toBe(expectedNext);
-    }
-
-    // 3. Replay over the whole horizon equals a minute-by-minute walk of diffStates.
-    const walked: string[] = [];
-    for (let m = 1; m <= HORIZON; m += 1) {
-      for (const t of diffStates(states[m - 1] as ExpectedState, states[m] as ExpectedState)) walked.push(eventView(t));
-    }
-    const replay = replayTransitions(toInput(model, HORIZON), isoAt(0));
-    expect(replay.transitions.map(eventView), label).toEqual(walked);
-    expect(replay.states.at(-1)?.computedAt.toISOString()).toBe(isoAt(HORIZON));
-
-    // ...and its events are well formed.
-    let active = isWorkModeActiveState(states[0]?.state ?? "OFF_SHIFT");
-    let runningBreak = states[0]?.activeBreak?.id ?? null;
-    for (const t of replay.transitions) {
-      switch (t.eventType) {
-        case "WORK_MODE_STARTED":
-          expect(active, `${label} ${eventView(t)}`).toBe(false);
-          active = true;
-          break;
-        case "WORK_MODE_ENDED":
-          expect(active, `${label} ${eventView(t)}`).toBe(true);
-          active = false;
-          break;
-        case "BREAK_STARTED":
-          expect(runningBreak, `${label} ${eventView(t)}`).toBeNull();
-          runningBreak = t.breakSessionId ?? null;
-          break;
-        case "BREAK_ENDED":
-        case "BREAK_EXPIRED":
-          expect(t.breakSessionId, `${label} ${eventView(t)}`).toBe(runningBreak);
-          runningBreak = null;
-          break;
-        default:
-          break;
-      }
-      if (t.eventType === "WORK_MODE_ENDED" || t.eventType === "OVERRIDE_EXPIRED") {
-        // The shift these events name is the one in progress just before the change.
-        const before = states[minuteOf(t.at) - 1];
-        if (before?.activeShift) expect(t.shiftId, `${label} ${eventView(t)}`).toBe(before.activeShift.id);
-      }
-    }
-  });
+    },
+  );
 
   it.each(SEEDS.slice(0, 30))("seed %i: output does not depend on input order", (seed) => {
     const model = generate(seed);
@@ -493,39 +553,45 @@ describe("Work Mode machine — randomised properties", { timeout: 60_000 }, () 
       overrides: rng.shuffle(model.overrides),
     };
     for (let m = 0; m <= HORIZON; m += 13) {
-      expect(toExpectedStateJson(computeExpectedState(toInput(shuffled, m))), describeModel(seed, model)).toEqual(
-        toExpectedStateJson(computeExpectedState(toInput(model, m))),
-      );
+      expect(
+        toExpectedStateJson(computeExpectedState(toInput(shuffled, m))),
+        describeModel(seed, model),
+      ).toEqual(toExpectedStateJson(computeExpectedState(toInput(model, m))));
     }
   });
 
-  it.each(SEEDS.slice(0, 30))("seed %i: splitting shifts into back-to-back pieces never changes the output", (seed) => {
-    const model: Model = { ...generate(seed), breaks: [] };
-    const rng = new Rng(seed ^ 0x27d4eb2d);
-    const split: Model = {
-      ...model,
-      shifts: model.shifts.flatMap((s) => {
-        if (s.e - s.s < 2) return [s];
-        const cut = rng.int(s.s + 1, s.e - 1);
-        return [
-          { ...s, id: `${s.id}-a`, e: cut },
-          { ...s, id: `${s.id}-b`, s: cut },
-        ];
-      }),
-    };
-    for (let m = 0; m <= HORIZON; m += 1) {
-      const whole = computeExpectedState(toInput(model, m));
-      const pieces = computeExpectedState(toInput(split, m));
-      const strip = (r: ExpectedState) => ({
-        state: r.state,
-        effectiveRestriction: r.effectiveRestriction,
-        restrictionsShouldBeActive: r.restrictionsShouldBeActive,
-        activeOverride: r.activeOverride?.id ?? null,
-        inProgress: r.activeShift !== null,
-        interval: r.workingInterval ? [r.workingInterval.startsAt.getTime(), r.workingInterval.endsAt.getTime()] : null,
-        nextTransitionAt: r.nextTransitionAt?.getTime() ?? null,
-      });
-      expect(strip(pieces), `${describeModel(seed, model)} @${m}`).toEqual(strip(whole));
-    }
-  });
+  it.each(SEEDS.slice(0, 30))(
+    "seed %i: splitting shifts into back-to-back pieces never changes the output",
+    (seed) => {
+      const model: Model = { ...generate(seed), breaks: [] };
+      const rng = new Rng(seed ^ 0x27d4eb2d);
+      const split: Model = {
+        ...model,
+        shifts: model.shifts.flatMap((s) => {
+          if (s.e - s.s < 2) return [s];
+          const cut = rng.int(s.s + 1, s.e - 1);
+          return [
+            { ...s, id: `${s.id}-a`, e: cut },
+            { ...s, id: `${s.id}-b`, s: cut },
+          ];
+        }),
+      };
+      for (let m = 0; m <= HORIZON; m += 1) {
+        const whole = computeExpectedState(toInput(model, m));
+        const pieces = computeExpectedState(toInput(split, m));
+        const strip = (r: ExpectedState) => ({
+          state: r.state,
+          effectiveRestriction: r.effectiveRestriction,
+          restrictionsShouldBeActive: r.restrictionsShouldBeActive,
+          activeOverride: r.activeOverride?.id ?? null,
+          inProgress: r.activeShift !== null,
+          interval: r.workingInterval
+            ? [r.workingInterval.startsAt.getTime(), r.workingInterval.endsAt.getTime()]
+            : null,
+          nextTransitionAt: r.nextTransitionAt?.getTime() ?? null,
+        });
+        expect(strip(pieces), `${describeModel(seed, model)} @${m}`).toEqual(strip(whole));
+      }
+    },
+  );
 });

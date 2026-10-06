@@ -4,8 +4,9 @@ import { describe, expect, it } from "vitest";
 import { POST as deactivateRoute } from "@/app/api/devices/[id]/deactivate/route";
 import { GET as getDeviceRoute } from "@/app/api/devices/[id]/route";
 import { GET as listDevicesRoute } from "@/app/api/devices/route";
+import { GET as meRoute } from "@/app/api/mobile/v1/me/route";
 import { getEventBus, type RealtimeEvent } from "@/server/events";
-import { issueMobileTokens } from "@/server/mobileAuth";
+import { issueMobileTokens, rotateRefreshToken } from "@/server/mobileAuth";
 import {
   addMember,
   callRoute,
@@ -23,8 +24,15 @@ async function setup() {
   return { org, jar };
 }
 
-async function list(jar: CookieJar, query: Record<string, string | number | boolean | undefined> = {}) {
-  const res = await callRoute<ListDevicesResponse>(listDevicesRoute, { path: "/api/devices", query, jar });
+async function list(
+  jar: CookieJar,
+  query: Record<string, string | number | boolean | undefined> = {},
+) {
+  const res = await callRoute<ListDevicesResponse>(listDevicesRoute, {
+    path: "/api/devices",
+    query,
+    jar,
+  });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body;
 }
@@ -37,7 +45,10 @@ describe("GET /api/devices", () => {
     });
     const a = await createTestDevice(org.organisation.id);
     const b = await createTestDevice(org.organisation.id);
-    await prisma.employee.update({ where: { id: b.employee.id }, data: { primaryLocationId: location.id } });
+    await prisma.employee.update({
+      where: { id: b.employee.id },
+      data: { primaryLocationId: location.id },
+    });
     await prisma.device.update({
       where: { id: b.device.id },
       data: {
@@ -51,7 +62,10 @@ describe("GET /api/devices", () => {
     });
     // Archived employees' devices are hidden.
     const archived = await createTestDevice(org.organisation.id);
-    await prisma.employee.update({ where: { id: archived.employee.id }, data: { deletedAt: new Date() } });
+    await prisma.employee.update({
+      where: { id: archived.employee.id },
+      data: { deletedAt: new Date() },
+    });
 
     const all = await list(jar);
     expect(all).toMatchObject({ page: 1, pageSize: 25, total: 2, totalPages: 1 });
@@ -66,15 +80,28 @@ describe("GET /api/devices", () => {
       isActive: true,
     });
     expect(itemA.device).not.toHaveProperty("pushTokenEncrypted");
-    expect(itemA.employee).toMatchObject({ id: a.employee.id, firstName: "Test", inviteStatus: "NOT_INVITED" });
+    expect(itemA.employee).toMatchObject({
+      id: a.employee.id,
+      firstName: "Test",
+      inviteStatus: "NOT_INVITED",
+    });
     expect(itemA.status).toMatchObject({ badge: "PERMISSIONS_MISSING", severity: "warning" });
-    expect(itemB.device).toMatchObject({ hasPushToken: true, selectionCounts: { applications: 7 } });
+    expect(itemB.device).toMatchObject({
+      hasPushToken: true,
+      selectionCounts: { applications: 7 },
+    });
     expect(itemB.employee.primaryLocation).toEqual({ id: location.id, name: "Dock" });
     expect(itemB.status).toMatchObject({ badge: "OFF_SHIFT", severity: "ok" });
 
-    expect((await list(jar, { employeeId: a.employee.id })).items.map((i) => i.device.id)).toEqual([a.device.id]);
-    expect((await list(jar, { locationId: location.id })).items.map((i) => i.device.id)).toEqual([b.device.id]);
-    expect((await list(jar, { permissionState: "APPROVED" })).items.map((i) => i.device.id)).toEqual([b.device.id]);
+    expect((await list(jar, { employeeId: a.employee.id })).items.map((i) => i.device.id)).toEqual([
+      a.device.id,
+    ]);
+    expect((await list(jar, { locationId: location.id })).items.map((i) => i.device.id)).toEqual([
+      b.device.id,
+    ]);
+    expect(
+      (await list(jar, { permissionState: "APPROVED" })).items.map((i) => i.device.id),
+    ).toEqual([b.device.id]);
     expect((await list(jar, { isActive: false })).total).toBe(0);
     const paged = await list(jar, { pageSize: 1, page: 2 });
     expect(paged).toMatchObject({ page: 2, pageSize: 1, total: 2, totalPages: 2 });
@@ -88,7 +115,10 @@ describe("GET /api/devices", () => {
     const location = await prisma.location.create({
       data: { organisationId: other.organisation.id, name: "Elsewhere" },
     });
-    await prisma.employee.update({ where: { id: employee.id }, data: { primaryLocationId: location.id } });
+    await prisma.employee.update({
+      where: { id: employee.id },
+      data: { primaryLocationId: location.id },
+    });
 
     expect(await list(jar, { employeeId: employee.id })).toMatchObject({ items: [], total: 0 });
     expect(await list(jar, { locationId: location.id })).toMatchObject({ items: [], total: 0 });
@@ -142,9 +172,16 @@ describe("POST /api/devices/:id/deactivate", () => {
     const { device, employee } = await createTestDevice(org.organisation.id);
     await prisma.device.update({
       where: { id: device.id },
-      data: { pushTokenEncrypted: new Uint8Array([1, 2, 3]), permissionState: "APPROVED", selectionState: "CONFIGURED" },
+      data: {
+        pushTokenEncrypted: new Uint8Array([1, 2, 3]),
+        permissionState: "APPROVED",
+        selectionState: "CONFIGURED",
+      },
     });
-    await prisma.employee.update({ where: { id: employee.id }, data: { inviteStatus: "CONNECTED" } });
+    await prisma.employee.update({
+      where: { id: employee.id },
+      data: { inviteStatus: "CONNECTED" },
+    });
     await issueMobileTokens(device);
     await issueMobileTokens(device);
     const events: RealtimeEvent[] = [];
@@ -168,10 +205,16 @@ describe("POST /api/devices/:id/deactivate", () => {
     expect(tokens.every((t) => t.revokedAt !== null)).toBe(true);
     const row = await prisma.device.findUniqueOrThrow({ where: { id: device.id } });
     expect(row.pushTokenEncrypted).toBeNull();
-    expect((await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus).toBe("DEACTIVATED");
+    expect(
+      (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus,
+    ).toBe("DEACTIVATED");
 
     const auditRow = await prisma.auditLog.findFirst({
-      where: { organisationId: org.organisation.id, action: "device.deactivated", entityId: device.id },
+      where: {
+        organisationId: org.organisation.id,
+        action: "device.deactivated",
+        entityId: device.id,
+      },
     });
     expect(auditRow?.actorUserId).toBe(manager.id);
     expect(auditRow?.after).toMatchObject({
@@ -205,6 +248,34 @@ describe("POST /api/devices/:id/deactivate", () => {
     ).toBe(1);
   });
 
+  it("cuts the phone off: the access token and the refresh token stop working immediately", async () => {
+    const { org, jar } = await setup();
+    const { device } = await createTestDevice(org.organisation.id);
+    const issued = await issueMobileTokens(device);
+    const headers = { authorization: `Bearer ${issued.accessToken}` };
+    const before = await callRoute(meRoute, { path: "/api/mobile/v1/me", headers });
+    expect(before.status, JSON.stringify(before.body)).toBe(200);
+
+    const res = await callRoute<DeviceResponse>(deactivateRoute, {
+      method: "POST",
+      path: `/api/devices/${device.id}/deactivate`,
+      params: { id: device.id },
+      jar,
+      body: {},
+    });
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+
+    // The still-unexpired access JWT is refused (the device row is re-checked on every request) …
+    const after = await callRoute<ErrorBody>(meRoute, { path: "/api/mobile/v1/me", headers });
+    expect(after.status).toBe(401);
+    expect(after.body.error.code).toBe("DEVICE_INACTIVE");
+    // … and the refresh token can no longer mint a new pair.
+    await expect(rotateRefreshToken(issued.refreshToken)).rejects.toMatchObject({
+      name: "AppError",
+      status: 401,
+    });
+  });
+
   it("rejects unknown body fields and needs the CSRF header", async () => {
     const { org, jar } = await setup();
     const { device } = await createTestDevice(org.organisation.id);
@@ -225,6 +296,8 @@ describe("POST /api/devices/:id/deactivate", () => {
       csrf: false,
     });
     expect(noCsrf.status).toBe(403);
-    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(true);
+    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(
+      true,
+    );
   });
 });

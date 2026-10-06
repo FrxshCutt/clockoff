@@ -49,6 +49,7 @@ import {
   assertScopeTargetExists,
   employeeIdsInScope,
   loadScopeNames,
+  parseAssignmentWindow,
   toInputJson,
   type ScopeRef,
 } from "./scopes";
@@ -233,7 +234,10 @@ export async function getPolicy(ctx: ManagerContext, id: string): Promise<Policy
 }
 
 /** `GET /api/policies/:id/versions` (policies:read), newest first. */
-export async function listPolicyVersions(ctx: ManagerContext, id: string): Promise<PolicyVersion[]> {
+export async function listPolicyVersions(
+  ctx: ManagerContext,
+  id: string,
+): Promise<PolicyVersion[]> {
   await loadPolicyOrThrow(ctx.organisation.id, id);
   const versions = await findPolicyVersions(ctx.organisation.id, id);
   return versions.map(toPolicyVersionDto);
@@ -306,7 +310,9 @@ export async function updatePolicy(
   const base = policy.draftVersion ?? policy.currentVersion ?? null;
   const restrictionConfig =
     input.restrictionConfig ??
-    (base ? readRestrictionConfig(base.restrictionConfig, base.id) : createDefaultRestrictionConfig());
+    (base
+      ? readRestrictionConfig(base.restrictionConfig, base.id)
+      : createDefaultRestrictionConfig());
   const breakBehaviourDefault =
     input.breakBehaviourDefault ??
     (base ? readBreakBehaviourDefault(base.breakBehaviourDefault) : BREAK_BEHAVIOUR_DEFAULT);
@@ -318,14 +324,22 @@ export async function updatePolicy(
     if (input.description !== undefined) data.description = input.description;
     const updated = await tx.policy.update({ where: { id: policy.id }, data });
 
-    let version: { id: string; versionNumber: number; restrictionConfig: Prisma.JsonValue; breakBehaviourDefault: Prisma.JsonValue } | null = null;
+    let version: {
+      id: string;
+      versionNumber: number;
+      restrictionConfig: Prisma.JsonValue;
+      breakBehaviourDefault: Prisma.JsonValue;
+    } | null = null;
     if (wantsVersionChange) {
       const versionData = {
         restrictionConfig: toInputJson(restrictionConfig),
         breakBehaviourDefault: toInputJson(breakBehaviourDefault),
       };
       version = policy.draftVersion
-        ? await tx.policyVersion.update({ where: { id: policy.draftVersion.id }, data: versionData })
+        ? await tx.policyVersion.update({
+            where: { id: policy.draftVersion.id },
+            data: versionData,
+          })
         : await tx.policyVersion.create({
             data: {
               policyId: policy.id,
@@ -554,9 +568,12 @@ export async function listPolicyAssignments(
 
 /**
  * `POST /api/policies/:id/assignments` (policies:write). The policy must be published; the scope target
- * must exist in the organisation (ORGANISATION → the organisation itself). Any assignment still open for
- * that scope is ended at the new one's start (`effectiveFrom ?? now`) in the same transaction, so there is
- * exactly one assignment per scope at any instant (the partial unique index only guards open-ended rows).
+ * must exist in the organisation (ORGANISATION → the organisation itself); `effectiveTo`, if given, must be
+ * in the future. Any assignment still open for that scope is ended at the new one's start
+ * (`effectiveFrom ?? now`) in the same transaction, so there is exactly one assignment per scope at any
+ * instant (the partial unique index only guards open-ended rows). A previous row scheduled to start after
+ * that instant is left with an empty window, i.e. cancelled; the audit entry records which rows were
+ * replaced.
  */
 export async function createPolicyAssignment(
   ctx: ManagerContext,
@@ -575,9 +592,7 @@ export async function createPolicyAssignment(
   }
   const scope: ScopeRef = { scopeType: input.scopeType, scopeId: input.scopeId };
   await assertScopeTargetExists(organisationId, scope);
-  const effectiveFrom = input.effectiveFrom ? new Date(input.effectiveFrom) : null;
-  const effectiveTo = input.effectiveTo ? new Date(input.effectiveTo) : null;
-  const replaceAt = effectiveFrom ?? now;
+  const { effectiveFrom, effectiveTo, replaceAt } = parseAssignmentWindow(input, now);
 
   const created = await prisma.$transaction(async (tx) => {
     const open = await findOpenAssignmentsForScope(organisationId, scope, now, tx);
@@ -587,7 +602,10 @@ export async function createPolicyAssignment(
           ? previous.effectiveTo
           : replaceAt;
       if (previous.effectiveTo && previous.effectiveTo.getTime() === endAt.getTime()) continue;
-      await tx.policyAssignment.update({ where: { id: previous.id }, data: { effectiveTo: endAt } });
+      await tx.policyAssignment.update({
+        where: { id: previous.id },
+        data: { effectiveTo: endAt },
+      });
       await audit(
         ctx,
         {
@@ -640,7 +658,10 @@ export async function createPolicyAssignment(
 }
 
 /** `DELETE /api/policy-assignments/:id` (policies:write): ends the assignment now. Idempotent. */
-export async function endPolicyAssignment(ctx: ManagerContext, assignmentId: string): Promise<void> {
+export async function endPolicyAssignment(
+  ctx: ManagerContext,
+  assignmentId: string,
+): Promise<void> {
   const now = new Date();
   const organisationId = ctx.organisation.id;
   const assignment = await findAssignmentById(organisationId, assignmentId);

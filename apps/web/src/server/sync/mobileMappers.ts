@@ -11,10 +11,7 @@ import {
   resolveBreakBehaviour,
   type BreakAllowance,
 } from "@workmode/shared/breaks/breakRules";
-import {
-  toExpectedStateJson,
-  type ExpectedState,
-} from "@workmode/shared/workMode/workModeMachine";
+import { toExpectedStateJson, type ExpectedState } from "@workmode/shared/workMode/workModeMachine";
 import type {
   MobileActiveOverride,
   MobileBreakPolicy,
@@ -90,7 +87,11 @@ export function toMobileResolvedPolicy(
 export function toMobileBreakPolicy(policy: BreakPolicy | null): MobileBreakPolicy | null {
   if (!policy) return null;
   const rules = breakPolicyFromRecord(policy);
-  return { id: policy.id, name: policy.name, rules: { ...rules, relaxedCategories: [...rules.relaxedCategories] } };
+  return {
+    id: policy.id,
+    name: policy.name,
+    rules: { ...rules, relaxedCategories: [...rules.relaxedCategories] },
+  };
 }
 
 export function toBreakSessionDto(session: BreakSession): BreakSessionResponse {
@@ -125,15 +126,22 @@ export function overrideBreakBehaviour(
 ): MobileActiveOverride["breakBehaviour"] {
   if (override.type !== "TEMPORARY_EXCEPTION") return null;
   const payload =
-    typeof override.payload === "object" && override.payload !== null && !Array.isArray(override.payload)
+    typeof override.payload === "object" &&
+    override.payload !== null &&
+    !Array.isArray(override.payload)
       ? (override.payload as Record<string, unknown>)
       : {};
   const behaviour = payload.restrictionBehaviour;
   const restrictionBehaviour =
-    behaviour === "RELAX_ALL" || behaviour === "RELAX_CATEGORIES" || behaviour === "KEEP_RESTRICTIONS"
+    behaviour === "RELAX_ALL" ||
+    behaviour === "RELAX_CATEGORIES" ||
+    behaviour === "KEEP_RESTRICTIONS"
       ? behaviour
       : "RELAX_ALL";
-  return resolveBreakBehaviour({ restrictionBehaviour, relaxedCategories: payload.relaxedCategories });
+  return resolveBreakBehaviour({
+    restrictionBehaviour,
+    relaxedCategories: payload.relaxedCategories,
+  });
 }
 
 export function toMobileActiveOverride(override: ManagerOverride): MobileActiveOverride {

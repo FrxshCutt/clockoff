@@ -1,6 +1,10 @@
 import { prisma } from "@workmode/db";
 import { AppError, isAppError } from "@workmode/shared/errors";
-import { isValidJoinCodeFormat, normaliseInviteCode, normaliseJoinCode } from "@workmode/shared/joinCode";
+import {
+  isValidJoinCodeFormat,
+  normaliseInviteCode,
+  normaliseJoinCode,
+} from "@workmode/shared/joinCode";
 import type {
   JoinConfirmInput,
   JoinConfirmResponse,
@@ -351,7 +355,9 @@ export async function confirmJoin(input: JoinConfirmInput): Promise<JoinConfirmR
  * `POST /api/mobile/v1/auth/refresh` (public, rate limited). An unknown token is INVALID_TOKEN (401);
  * TOKEN_EXPIRED / TOKEN_REUSED / DEVICE_INACTIVE come straight from the rotation.
  */
-export async function refreshMobileTokens(input: MobileRefreshInput): Promise<MobileRefreshResponse> {
+export async function refreshMobileTokens(
+  input: MobileRefreshInput,
+): Promise<MobileRefreshResponse> {
   try {
     const rotated = await rotateRefreshToken(input.refreshToken);
     return toTokensDto(rotated);

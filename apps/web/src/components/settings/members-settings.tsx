@@ -87,7 +87,9 @@ export function MembersSettings() {
       {
         accessorKey: "joinedAt",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Joined" />,
-        cell: ({ row }) => <RelativeTime value={row.original.joinedAt} className="text-muted-foreground text-sm" />,
+        cell: ({ row }) => (
+          <RelativeTime value={row.original.joinedAt} className="text-muted-foreground text-sm" />
+        ),
       },
       {
         accessorKey: "lastLoginAt",
@@ -95,7 +97,10 @@ export function MembersSettings() {
         sortUndefined: "last",
         cell: ({ row }) =>
           row.original.lastLoginAt ? (
-            <RelativeTime value={row.original.lastLoginAt} className="text-muted-foreground text-sm" />
+            <RelativeTime
+              value={row.original.lastLoginAt}
+              className="text-muted-foreground text-sm"
+            />
           ) : (
             <span className="text-muted-foreground text-sm">Never</span>
           ),
@@ -111,12 +116,19 @@ export function MembersSettings() {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${member.name}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Actions for ${member.name}`}
+                >
                   <MoreHorizontal aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Role</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                  Role
+                </DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={member.role}
                   onValueChange={(value) => {
@@ -126,7 +138,9 @@ export function MembersSettings() {
                       { membershipId: member.id, role },
                       {
                         onSuccess: () =>
-                          toast.success(`${member.name} is now ${getStatusMeta("role", role).label.toLowerCase()}`),
+                          toast.success(
+                            `${member.name} is now ${getStatusMeta("role", role).label.toLowerCase()}`,
+                          ),
                         onError: (err) => toastError(err, { title: "Couldn't change role" }),
                       },
                     );
@@ -153,10 +167,19 @@ export function MembersSettings() {
   );
 
   if (isError) {
-    return <ErrorState title="Couldn't load managers" error={error} onRetry={() => void refetch()} isRetrying={isRefetching} />;
+    return (
+      <ErrorState
+        title="Couldn't load managers"
+        error={error}
+        onRetry={() => void refetch()}
+        isRetrying={isRefetching}
+      />
+    );
   }
 
-  const members = data ? [...data.members].sort((a, b) => compareRoles(a.role, b.role) || a.name.localeCompare(b.name)) : undefined;
+  const members = data
+    ? [...data.members].sort((a, b) => compareRoles(a.role, b.role) || a.name.localeCompare(b.name))
+    : undefined;
   const onlyMe = members !== undefined && members.length <= 1;
 
   return (
@@ -192,7 +215,11 @@ export function MembersSettings() {
         ) : null}
       </SectionCard>
 
-      <PendingInvites invites={data?.pendingInvites ?? []} canManage={roles.length > 0} isLoading={isPending} />
+      <PendingInvites
+        invites={data?.pendingInvites ?? []}
+        canManage={roles.length > 0}
+        isLoading={isPending}
+      />
 
       <ConfirmDialog
         open={removing !== null}
@@ -235,10 +262,18 @@ function PendingInvites({
   if (isLoading || invites.length === 0) return null;
 
   return (
-    <SectionCard title="Pending invitations" description="Invitations that haven't been accepted yet. Expired ones can be re-sent." flush contentClassName="p-0">
+    <SectionCard
+      title="Pending invitations"
+      description="Invitations that haven't been accepted yet. Expired ones can be re-sent."
+      flush
+      contentClassName="p-0"
+    >
       <ul className="divide-y">
         {invites.map((invite) => (
-          <li key={invite.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <li
+            key={invite.id}
+            className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+          >
             <div className="min-w-0 space-y-1">
               <p className="truncate text-sm font-medium">{invite.email}</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -248,7 +283,9 @@ function PendingInvites({
                     Expired {formatDateTime(invite.expiresAt)}. Resend to send a new link.
                   </span>
                 ) : (
-                  <span className="text-muted-foreground text-xs">Expires {formatDateTime(invite.expiresAt)}</span>
+                  <span className="text-muted-foreground text-xs">
+                    Expires {formatDateTime(invite.expiresAt)}
+                  </span>
                 )}
               </div>
             </div>
@@ -262,7 +299,8 @@ function PendingInvites({
                   onClick={() =>
                     resend.mutate(invite.id, {
                       onSuccess: () => toast.success(`Invitation re-sent to ${invite.email}`),
-                      onError: (err) => toastError(err, { title: "Couldn't resend the invitation" }),
+                      onError: (err) =>
+                        toastError(err, { title: "Couldn't resend the invitation" }),
                     })
                   }
                 >

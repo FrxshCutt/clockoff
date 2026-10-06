@@ -890,12 +890,7 @@
           "endedAt": null,
           "status": "ACTIVE",
           "restrictionBehaviour": "RELAX_CATEGORIES",
-          "relaxedCategories": [
-            "GAMES",
-            "SOCIAL_MEDIA",
-            "NOT_A_CATEGORY",
-            "GAMES"
-          ]
+          "relaxedCategories": ["GAMES", "SOCIAL_MEDIA", "NOT_A_CATEGORY", "GAMES"]
         }
       ],
       "overrides": []
@@ -907,10 +902,7 @@
       "activeShiftId": "shift-day",
       "activeBreakId": "break-cat",
       "nextTransitionAt": "2026-01-12T12:15:00.000Z",
-      "liftedCategories": [
-        "SOCIAL_MEDIA",
-        "GAMES"
-      ]
+      "liftedCategories": ["SOCIAL_MEDIA", "GAMES"]
     }
   },
   {
@@ -2673,10 +2665,7 @@
           "employeeId": "emp-1",
           "payload": {
             "restrictionBehaviour": "RELAX_CATEGORIES",
-            "relaxedCategories": [
-              "VIDEO",
-              "SOCIAL_MEDIA"
-            ]
+            "relaxedCategories": ["VIDEO", "SOCIAL_MEDIA"]
           }
         }
       ]
@@ -2689,10 +2678,7 @@
       "activeBreakId": null,
       "nextTransitionAt": "2026-01-12T11:30:00.000Z",
       "activeOverrideId": "ov-temp",
-      "liftedCategories": [
-        "SOCIAL_MEDIA",
-        "VIDEO"
-      ]
+      "liftedCategories": ["SOCIAL_MEDIA", "VIDEO"]
     }
   },
   {
@@ -2872,9 +2858,7 @@
           "employeeId": "emp-1",
           "payload": {
             "restrictionBehaviour": "RELAX_CATEGORIES",
-            "relaxedCategories": [
-              "GAMES"
-            ]
+            "relaxedCategories": ["GAMES"]
           }
         }
       ]
@@ -2887,9 +2871,7 @@
       "activeBreakId": null,
       "nextTransitionAt": "2026-01-12T11:30:00.000Z",
       "activeOverrideId": "ov-games",
-      "liftedCategories": [
-        "GAMES"
-      ]
+      "liftedCategories": ["GAMES"]
     }
   },
   {

@@ -1,5 +1,13 @@
 import { useId, type ReactNode } from "react";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export interface SectionProps {
@@ -72,7 +80,9 @@ export function SectionCard({
         {actions ? <CardAction className="flex items-center gap-2">{actions}</CardAction> : null}
       </CardHeader>
       {children !== undefined ? (
-        <CardContent className={cn(flush ? "px-0" : "px-5 py-5 sm:px-6", contentClassName)}>{children}</CardContent>
+        <CardContent className={cn(flush ? "px-0" : "px-5 py-5 sm:px-6", contentClassName)}>
+          {children}
+        </CardContent>
       ) : null}
       {footer ? (
         <CardFooter className="bg-muted/40 flex flex-wrap justify-end gap-2 rounded-b-xl border-t px-5 py-3 sm:px-6">

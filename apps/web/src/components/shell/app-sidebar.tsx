@@ -44,7 +44,9 @@ export function SidebarNav({ organisationName }: { organisationName: string | nu
                 <span className="grid min-w-0 flex-1 leading-tight">
                   <span className="truncate font-semibold">{SITE.name}</span>
                   {organisationName ? (
-                    <span className="text-sidebar-foreground/70 truncate text-xs">{organisationName}</span>
+                    <span className="text-sidebar-foreground/70 truncate text-xs">
+                      {organisationName}
+                    </span>
                   ) : null}
                 </span>
               </Link>
@@ -64,7 +66,11 @@ export function SidebarNav({ organisationName }: { organisationName: string | nu
                     return (
                       <SidebarMenuItem key={item.href}>
                         <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                          <Link href={item.href} aria-current={isActive ? "page" : undefined} onClick={onNavigate}>
+                          <Link
+                            href={item.href}
+                            aria-current={isActive ? "page" : undefined}
+                            onClick={onNavigate}
+                          >
                             <item.icon aria-hidden="true" />
                             <span>{item.title}</span>
                           </Link>
@@ -79,7 +85,9 @@ export function SidebarNav({ organisationName }: { organisationName: string | nu
         </nav>
       </SidebarContent>
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <p className="text-sidebar-foreground/70 px-2 pb-1 text-xs leading-relaxed">{SITE.privacyLine}</p>
+        <p className="text-sidebar-foreground/70 px-2 pb-1 text-xs leading-relaxed">
+          {SITE.privacyLine}
+        </p>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

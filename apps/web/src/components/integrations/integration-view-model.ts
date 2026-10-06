@@ -37,10 +37,13 @@ export const ACTIVATION_MODE_COPY: Record<ActivationMode, ActivationModeCopy> = 
   },
 };
 
-export type IntegrationCardState = "coming-soon" | "not-connected" | "connected" | "error" | "disconnected";
+export type IntegrationCardState =
+  "coming-soon" | "not-connected" | "connected" | "error" | "disconnected";
 
 /** Availability first (a provider that isn't built can't be connected), then the stored connection status. */
-export function integrationCardState(integration: Pick<Integration, "availability" | "status">): IntegrationCardState {
+export function integrationCardState(
+  integration: Pick<Integration, "availability" | "status">,
+): IntegrationCardState {
   if (integration.availability === "COMING_SOON") return "coming-soon";
   switch (integration.status) {
     case "CONNECTED":
@@ -81,8 +84,7 @@ export function websiteLabel(value: string): string {
 
 export const INTEGRATIONS_EXPLAINER = {
   title: "Keep shifts in sync automatically",
-  body:
-    "Connect the software you already schedule in and Work Mode will import employees, locations, teams, shifts and clock events, so phones always know when a shift starts. Nothing about any phone is ever sent back to the provider.",
+  body: "Connect the software you already schedule in and Work Mode will import employees, locations, teams, shifts and clock events, so phones always know when a shift starts. Nothing about any phone is ever sent back to the provider.",
   comingSoon:
     "Every provider below is coming soon. Ask to be notified and we'll email you the moment yours is ready. In the meantime, CSV import brings in your rota in a couple of minutes.",
 } as const;

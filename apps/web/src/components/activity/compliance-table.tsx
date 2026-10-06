@@ -13,12 +13,24 @@ import { ErrorState } from "@/components/error-state";
 import { useComplianceEmployees } from "@/components/overview/compliance-api";
 import type { ComplianceListParams } from "@/components/overview/compliance-keys";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { ROUTES, routeFor } from "@/config/navigation";
+import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import Link from "next/link";
-import { COMPLIANCE_PAGE_SIZES, DEFAULT_COMPLIANCE_PARAMS, hasActiveComplianceFilters, isComplianceFilter } from "./activity-filters";
+import {
+  COMPLIANCE_PAGE_SIZES,
+  DEFAULT_COMPLIANCE_PARAMS,
+  hasActiveComplianceFilters,
+  isComplianceFilter,
+} from "./activity-filters";
 import { complianceColumns } from "./compliance-columns";
 import { COMPLIANCE_FILTER_META } from "./compliance-model";
 
@@ -38,15 +50,22 @@ export function ComplianceTable({ params, onChange }: ComplianceTableProps) {
   const router = useRouter();
   const query = useComplianceEmployees(params);
   const locations = useLocations();
-  const columns = useMemo(() => complianceColumns(), []);
+  const timeZone = useCurrentOrganisation().data?.organisation.timezone;
+  const columns = useMemo(() => complianceColumns(timeZone), [timeZone]);
 
   // Local echo of the search box so typing is instant while the URL (and the request) update debounced.
   const [search, setSearch] = useState({ value: params.search, source: params.search });
   if (search.source !== params.search) setSearch({ value: params.search, source: params.search });
-  const pushSearch = useDebouncedCallback((value: string) => onChange({ ...params, search: value, page: 1 }), 300);
+  const pushSearch = useDebouncedCallback(
+    (value: string) => onChange({ ...params, search: value, page: 1 }),
+    300,
+  );
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
-    const next = functionalUpdate(updater, { pageIndex: params.page - 1, pageSize: params.pageSize });
+    const next = functionalUpdate(updater, {
+      pageIndex: params.page - 1,
+      pageSize: params.pageSize,
+    });
     onChange({ ...params, page: next.pageIndex + 1, pageSize: next.pageSize });
   };
 
@@ -55,7 +74,14 @@ export function ComplianceTable({ params, onChange }: ComplianceTableProps) {
   const searchCopy = EMPTY_STATES.search;
 
   if (query.isError) {
-    return <ErrorState title="Couldn't load compliance" error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isRefetching} />;
+    return (
+      <ErrorState
+        title="Couldn't load compliance"
+        error={query.error}
+        onRetry={() => void query.refetch()}
+        isRetrying={query.isRefetching}
+      />
+    );
   }
 
   return (
@@ -73,7 +99,12 @@ export function ComplianceTable({ params, onChange }: ComplianceTableProps) {
         className="flex-wrap"
       >
         {COMPLIANCE_FILTERS.map((filter) => (
-          <ToggleGroupItem key={filter} value={filter} title={COMPLIANCE_FILTER_META[filter].description} className="h-8 rounded-full px-3 text-xs">
+          <ToggleGroupItem
+            key={filter}
+            value={filter}
+            title={COMPLIANCE_FILTER_META[filter].description}
+            className="h-8 rounded-full px-3 text-xs"
+          >
             {COMPLIANCE_FILTER_META[filter].label}
           </ToggleGroupItem>
         ))}
@@ -101,7 +132,9 @@ export function ComplianceTable({ params, onChange }: ComplianceTableProps) {
         toolbar={() => (
           <Select
             value={params.locationId ?? ALL_LOCATIONS}
-            onValueChange={(next) => onChange({ ...params, locationId: next === ALL_LOCATIONS ? null : next, page: 1 })}
+            onValueChange={(next) =>
+              onChange({ ...params, locationId: next === ALL_LOCATIONS ? null : next, page: 1 })
+            }
           >
             <SelectTrigger size="sm" className="h-9 w-44" aria-label="Filter by location">
               <SelectValue placeholder="All locations" />
@@ -125,7 +158,12 @@ export function ComplianceTable({ params, onChange }: ComplianceTableProps) {
               title={searchCopy.title}
               description={searchCopy.description}
               action={
-                <Button type="button" variant="outline" size="sm" onClick={() => onChange(DEFAULT_COMPLIANCE_PARAMS)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onChange(DEFAULT_COMPLIANCE_PARAMS)}
+                >
                   Clear filters
                 </Button>
               }

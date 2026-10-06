@@ -30,7 +30,11 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
     mutate({ token });
   }, [token, mutate]);
 
-  const continueHref = me ? (me.organisations.length > 0 ? ROUTES.overview : ROUTES.createOrganisation) : ROUTES.login;
+  const continueHref = me
+    ? me.organisations.length > 0
+      ? ROUTES.overview
+      : ROUTES.createOrganisation
+    : ROUTES.login;
   const continueLabel = me ? "Continue to Work Mode" : "Sign in";
 
   if (!token) {
@@ -50,7 +54,12 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
 
   if (verify.isSuccess) {
     return (
-      <AuthCard icon={CircleCheck} iconTone="success" title="Email verified" description="Thanks — your email address is confirmed.">
+      <AuthCard
+        icon={CircleCheck}
+        iconTone="success"
+        title="Email verified"
+        description="Thanks — your email address is confirmed."
+      >
         <Button asChild className="w-full">
           <Link href={continueHref}>{continueLabel}</Link>
         </Button>
@@ -60,7 +69,12 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
 
   if (verify.isError) {
     return (
-      <AuthCard icon={MailX} iconTone="danger" title="We couldn't verify your email" description={getErrorMessage(verify.error)}>
+      <AuthCard
+        icon={MailX}
+        iconTone="danger"
+        title="We couldn't verify your email"
+        description={getErrorMessage(verify.error)}
+      >
         <div className="space-y-3">
           {me && !me.user.emailVerified ? (
             <Button
@@ -74,10 +88,18 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
                 })
               }
             >
-              {resend.isSuccess ? "New link sent" : resend.isPending ? "Sending…" : "Send a new link"}
+              {resend.isSuccess
+                ? "New link sent"
+                : resend.isPending
+                  ? "Sending…"
+                  : "Send a new link"}
             </Button>
           ) : null}
-          <Button asChild variant={me && !me.user.emailVerified ? "outline" : "default"} className="w-full">
+          <Button
+            asChild
+            variant={me && !me.user.emailVerified ? "outline" : "default"}
+            className="w-full"
+          >
             <Link href={continueHref}>{continueLabel}</Link>
           </Button>
         </div>
@@ -86,7 +108,12 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
   }
 
   return (
-    <AuthCard icon={LoaderCircle} iconClassName="animate-spin" title="Verifying your email…" description="This only takes a moment.">
+    <AuthCard
+      icon={LoaderCircle}
+      iconClassName="animate-spin"
+      title="Verifying your email…"
+      description="This only takes a moment."
+    >
       <p className="sr-only" role="status">
         Verifying your email address
       </p>

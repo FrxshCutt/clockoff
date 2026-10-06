@@ -13,6 +13,9 @@ export interface DemoRequestData {
   source: string | null;
 }
 
-export async function createDemoRequest(data: DemoRequestData, db: Db = prisma): Promise<DemoRequest> {
+export async function createDemoRequest(
+  data: DemoRequestData,
+  db: Db = prisma,
+): Promise<DemoRequest> {
   return db.demoRequest.create({ data });
 }

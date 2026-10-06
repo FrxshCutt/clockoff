@@ -9,20 +9,20 @@ export const GET = createHandler(
   async ({ ctx, params }) => ({ department: await getDepartment(ctx, params.id) }),
 );
 
-/** `PATCH /api/departments/:id` (employees:write) `{ name }` → `{ department }`. */
+/** `PATCH /api/departments/:id` (org:manage) `{ name }` → `{ department }`. */
 export const PATCH = createHandler(
   {
     auth: "manager",
-    permission: "employees:write",
+    permission: "org:manage",
     params: idParamsSchema,
     body: updateDepartmentSchema,
   },
   async ({ ctx, params, body }) => ({ department: await updateDepartment(ctx, params.id, body) }),
 );
 
-/** `DELETE /api/departments/:id` (employees:write) → 204. Employees in it are left without a department. */
+/** `DELETE /api/departments/:id` (org:manage) → 204. Employees in it are left without a department. */
 export const DELETE = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema },
+  { auth: "manager", permission: "org:manage", params: idParamsSchema },
   async ({ ctx, params }) => {
     await deleteDepartment(ctx, params.id);
   },

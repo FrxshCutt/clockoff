@@ -18,6 +18,14 @@ final class OnboardingViewModelTests: XCTestCase {
         return model
     }
 
+    private func cachePolicies(breakPolicy: BreakPolicy = Fixtures.breakPolicy, policy: PolicySummary = Fixtures.policy) throws {
+        try env.cache.update { state in
+            state.policy = policy
+            state.breakPolicy = breakPolicy
+            state.lastSyncAt = env.clock.now
+        }
+    }
+
     // MARK: Screens 1–2
 
     func testWelcomeAndNameTransitions() {
@@ -26,6 +34,7 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertFalse(model.canGoBack)
         model.getStarted()
         XCTAssertEqual(model.step, .name)
+        XCTAssertEqual(env.onboardingProgress.step, .name, "progress is persisted for relaunch")
 
         model.submitName()
         XCTAssertEqual(model.step, .name, "names are required")
@@ -174,46 +183,137 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertNil(model.preview)
     }
 
-    // MARK: Screens 5–7
+    // MARK: Screens 5–6
 
-    func testAuthoriseWithMockApprovesAndQueuesPermissionGranted() async throws {
+    func testAuthoriseWithMockApprovesReportsAndQueuesPermissionGranted() async throws {
         try env.join()
         let model = env.makeOnboarding(step: .screenTimeExplained)
         model.continueFromScreenTimeExplained()
         XCTAssertEqual(model.step, .authorise)
         await model.authorise()
         XCTAssertEqual(model.step, .chooseApps)
+        XCTAssertEqual(model.authorisation, .approved)
         XCTAssertEqual(env.provider.authorizationStatus, .approved)
         XCTAssertEqual(env.outbox.pending().map(\.type), [.permissionGranted])
         XCTAssertEqual(env.cache.load()?.lastPermissionState, .approved)
+        let report = try XCTUnwrap(env.api.deviceStateReports.last, "the permission is reported straight away")
+        XCTAssertEqual(report.permissionState, .approved)
+        for _ in 0..<50 where env.notifications.permissionRequests == 0 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(env.notifications.permissionRequests, 1, "notification permission is asked right after Screen Time")
     }
 
-    func testAuthoriseDeniedOrFailedStaysWithError() async throws {
+    func testAuthoriseDeniedOffersSettingsAndRetryAndReportsAttention() async throws {
         try env.join()
         let model = env.makeOnboarding(step: .authorise)
         env.provider.authorizationOutcome = .deny
         await model.authorise()
         XCTAssertEqual(model.step, .authorise)
+        XCTAssertEqual(model.authorisation, .denied)
         XCTAssertNotNil(model.errorMessage)
+        let attention = try XCTUnwrap(env.outbox.pending().last)
+        XCTAssertEqual(attention.type, .permissionNeedsAttention)
+        XCTAssertEqual(attention.metadata?.permissionState, .denied)
+        XCTAssertEqual(attention.metadata?.reason, "PERMISSION_DENIED")
+        let report = try XCTUnwrap(env.api.deviceStateReports.last)
+        XCTAssertEqual(report.permissionState, .denied)
+        XCTAssertEqual(report.restrictionEngineState, .permissionError)
+        XCTAssertEqual(env.notifications.permissionRequests, 0, "no notification prompt without Screen Time")
+
+        // Try again after allowing it in Settings.
+        env.provider.authorizationOutcome = .approve
+        await model.authorise()
+        XCTAssertEqual(model.step, .chooseApps)
+        XCTAssertEqual(model.authorisation, .approved)
+        XCTAssertEqual(env.outbox.pending().map(\.type), [.permissionNeedsAttention, .permissionGranted])
+    }
+
+    func testAuthoriseFailureStaysWithRetry() async throws {
+        try env.join()
+        let model = env.makeOnboarding(step: .authorise)
         env.provider.authorizationOutcome = .fail
         await model.authorise()
         XCTAssertEqual(model.step, .authorise)
+        XCTAssertEqual(model.authorisation, .failed)
         XCTAssertNotNil(model.errorMessage)
         XCTAssertTrue(env.outbox.pending().isEmpty)
+        XCTAssertTrue(env.api.deviceStateReports.isEmpty)
     }
 
-    func testChooseAppsWithMockConfiguresSelection() async throws {
+    // MARK: Screen 7
+
+    func testChooseAppsWithMockConfiguresSelectionThenContinueRecordsIt() async throws {
         try env.join()
+        try cachePolicies()
         try await env.provider.requestAuthorization()
         let model = env.makeOnboarding(step: .chooseApps)
         XCTAssertTrue(model.canConfigureSelection)
+        XCTAssertEqual(model.policyCategoryLabels, ["Social Media", "Games"])
         XCTAssertFalse(model.hasSelection)
+        XCTAssertFalse(model.needsBreakKeptSelection, "RELAX_ALL needs no second picker")
+
+        await model.continueFromChooseApps()
+        XCTAssertEqual(model.step, .chooseApps, "a required selection cannot be skipped")
+        XCTAssertTrue(model.selectionIncompleteShown)
+        XCTAssertEqual(model.selectionProblem, "Choose at least one app or category to block during shifts.")
+
         model.chooseApps()
-        XCTAssertEqual(model.step, .confirmPolicy)
+        XCTAssertTrue(model.hasSelection)
         XCTAssertTrue(env.provider.hasSelection())
+        await model.continueFromChooseApps()
+        XCTAssertEqual(model.step, .confirmPolicy)
         let event = try XCTUnwrap(env.outbox.pending().last)
         XCTAssertEqual(event.type, .selectionConfigured)
         XCTAssertEqual(event.metadata?.selectionCounts, MockRestrictionProvider.defaultSelection)
+    }
+
+    func testRelaxCategoriesPolicyRequiresTheSecondPicker() async throws {
+        try env.join()
+        try cachePolicies(breakPolicy: Fixtures.relaxCategoriesBreakPolicy)
+        try await env.provider.requestAuthorization()
+        let model = env.makeOnboarding(step: .chooseApps)
+        XCTAssertTrue(model.needsBreakKeptSelection)
+        XCTAssertEqual(model.relaxedCategoryLabels, ["Social Media"])
+
+        model.chooseApps()
+        await model.continueFromChooseApps()
+        XCTAssertEqual(model.step, .chooseApps)
+        XCTAssertTrue(model.selectionIncompleteShown)
+        XCTAssertEqual(model.selectionProblem, "Choose the apps that stay blocked during breaks.")
+
+        model.chooseBreakKeptApps()
+        XCTAssertTrue(model.hasBreakKeptSelection)
+        XCTAssertNil(model.selectionProblem)
+        await model.continueFromChooseApps()
+        XCTAssertEqual(model.step, .confirmPolicy)
+        XCTAssertFalse(model.selectionIncompleteShown)
+    }
+
+    func testSelectionIsOptionalWhenThePolicySaysSo() async throws {
+        try env.join()
+        let optional = PolicySummary(policy: Fixtures.policy.policy, version: Fixtures.policy.version,
+                                     restrictionConfig: RestrictionConfig(categories: [.socialMedia], requireEmployeeAppSelection: false))
+        try cachePolicies(policy: optional)
+        try await env.provider.requestAuthorization()
+        let model = env.makeOnboarding(step: .chooseApps)
+        XCTAssertFalse(model.selectionRequired)
+        await model.continueFromChooseApps()
+        XCTAssertEqual(model.step, .confirmPolicy)
+        XCTAssertTrue(env.outbox.pending().isEmpty, "nothing was selected, so nothing is reported as configured")
+    }
+
+    func testRepairModeFinishesAfterTheSelectionWithACheckIn() async throws {
+        try env.join()
+        try cachePolicies()
+        try await env.provider.requestAuthorization()
+        var finished = false
+        let model = env.makeOnboarding(step: .chooseApps, mode: .repair) { finished = true }
+        model.chooseApps()
+        await model.continueFromChooseApps()
+        XCTAssertTrue(finished)
+        XCTAssertEqual(env.api.deviceStateReports.last?.selectionState, .configured)
+        XCTAssertNil(env.onboardingProgress.step, "repair never touches the setup progress")
     }
 
     // MARK: Screen 8
@@ -229,6 +329,7 @@ final class OnboardingViewModelTests: XCTestCase {
         await model.loadPolicy()
         XCTAssertEqual(model.policy?.policy.name, "Front of house")
         XCTAssertEqual(model.breakPolicy?.name, "Standard")
+        XCTAssertEqual(model.breakAllowanceSummary, "2 × 15 minutes")
         XCTAssertFalse(model.policyLoadFailed)
 
         await model.completeSetup()
@@ -269,11 +370,13 @@ final class OnboardingViewModelTests: XCTestCase {
         let model = env.makeOnboarding(step: .authorise)
         await model.authorise()
         model.chooseApps()
+        await model.continueFromChooseApps()
         // The employee goes back to screen 6 and forward again.
         model.back()
         model.back()
         await model.authorise()
         model.chooseApps()
+        await model.continueFromChooseApps()
         let types = env.outbox.pending().map(\.type)
         XCTAssertEqual(types.filter { $0 == .permissionGranted }.count, 1)
         XCTAssertEqual(types.filter { $0 == .selectionConfigured }.count, 1)
@@ -299,6 +402,7 @@ final class OnboardingViewModelTests: XCTestCase {
         let second = env.makeOnboarding(step: .confirmPolicy)
         await second.completeSetup()
         XCTAssertEqual(second.step, .chooseApps)
+        XCTAssertTrue(second.selectionIncompleteShown)
         XCTAssertTrue(env.api.deviceStateReports.isEmpty)
     }
 }

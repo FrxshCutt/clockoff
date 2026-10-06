@@ -19,7 +19,9 @@ export function ThemeMenuItems() {
   const { theme, setTheme } = useTheme();
   return (
     <>
-      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Theme</DropdownMenuLabel>
+      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+        Theme
+      </DropdownMenuLabel>
       <DropdownMenuRadioGroup value={theme ?? "system"} onValueChange={setTheme}>
         {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
           <DropdownMenuRadioItem key={value} value={value}>

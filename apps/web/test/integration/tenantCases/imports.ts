@@ -13,7 +13,12 @@ import { registerTenantIsolationCase } from "../../helpers/tenantIsolation";
 
 /** CSV import endpoints: org A's owner must never read, change or commit org B's imports or rows. */
 
-const MAPPING = { employee_id: "employee_id", date: "date", start_time: "start_time", end_time: "end_time" };
+const MAPPING = {
+  employee_id: "employee_id",
+  date: "date",
+  start_time: "start_time",
+  end_time: "end_time",
+};
 
 /** A validated import with one VALID row, written directly so each case is self-contained. */
 async function createValidatedImportInOrg(organisationId: string) {
@@ -62,7 +67,11 @@ registerTenantIsolationCase({
   name: "GET /api/imports/:id of another tenant",
   build: async (_a, b) => {
     const { record } = await createValidatedImportInOrg(b.organisation.id);
-    return { handler: getImportRoute, path: `/api/imports/${record.id}`, params: { id: record.id } };
+    return {
+      handler: getImportRoute,
+      path: `/api/imports/${record.id}`,
+      params: { id: record.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -81,7 +90,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.shiftImport.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const row = await prisma.shiftImport.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.status).toBe("VALIDATED");
   },
 });
@@ -105,7 +116,11 @@ registerTenantIsolationCase({
   name: "GET /api/imports/:id/rows of another tenant",
   build: async (_a, b) => {
     const { record } = await createValidatedImportInOrg(b.organisation.id);
-    return { handler: listRowsRoute, path: `/api/imports/${record.id}/rows`, params: { id: record.id } };
+    return {
+      handler: listRowsRoute,
+      path: `/api/imports/${record.id}/rows`,
+      params: { id: record.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -149,7 +164,9 @@ registerTenantIsolationCase({
     const row = await prisma.shiftImportRow.findFirstOrThrow({
       where: { import: { organisationId: a.organisation.id } },
     });
-    const bEmployee = await prisma.employee.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const bEmployee = await prisma.employee.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.matchedEmployeeId).not.toBe(bEmployee.id);
   },
 });
@@ -169,7 +186,9 @@ registerTenantIsolationCase({
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
     expect(await prisma.shift.count({ where: { organisationId: b.organisation.id } })).toBe(0);
-    const row = await prisma.shiftImport.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const row = await prisma.shiftImport.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.status).toBe("VALIDATED");
   },
 });

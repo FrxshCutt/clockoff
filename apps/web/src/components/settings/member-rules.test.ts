@@ -44,10 +44,8 @@ describe("canManageMember", () => {
 
 describe("compareRoles", () => {
   it("orders owners, then admins, then managers", () => {
-    expect(["MANAGER", "OWNER", "ADMIN"].sort((a, b) => compareRoles(a as never, b as never))).toEqual([
-      "OWNER",
-      "ADMIN",
-      "MANAGER",
-    ]);
+    expect(
+      ["MANAGER", "OWNER", "ADMIN"].sort((a, b) => compareRoles(a as never, b as never)),
+    ).toEqual(["OWNER", "ADMIN", "MANAGER"]);
   });
 });

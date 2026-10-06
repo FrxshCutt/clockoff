@@ -37,8 +37,10 @@ function walk(before: unknown, after: unknown, path: string, out: DiffEntry[]): 
     return;
   }
   const label = path || "(value)";
-  if (before === undefined && after !== undefined) out.push({ path: label, kind: "added", before, after });
-  else if (before !== undefined && after === undefined) out.push({ path: label, kind: "removed", before, after });
+  if (before === undefined && after !== undefined)
+    out.push({ path: label, kind: "added", before, after });
+  else if (before !== undefined && after === undefined)
+    out.push({ path: label, kind: "removed", before, after });
   else if (!sameValue(before, after)) out.push({ path: label, kind: "changed", before, after });
   else out.push({ path: label, kind: "unchanged", before, after });
 }
@@ -106,5 +108,7 @@ export function describeActor(entry: Pick<AuditLog, "actor">): string {
 
 /** Whether the entry carries a snapshot worth opening. */
 export function hasSnapshot(entry: Pick<AuditLog, "before" | "after">): boolean {
-  return entry.before !== null && entry.before !== undefined ? true : entry.after !== null && entry.after !== undefined;
+  return entry.before !== null && entry.before !== undefined
+    ? true
+    : entry.after !== null && entry.after !== undefined;
 }

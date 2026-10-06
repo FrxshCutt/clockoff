@@ -59,7 +59,8 @@ export function mergeShiftIntervals(shifts: readonly WorkModeShiftLike[]): Worki
   for (const ref of normaliseShifts(shifts)) {
     const last = intervals[intervals.length - 1];
     if (last !== undefined && ref.startsAt.getTime() <= last.endsAt.getTime()) {
-      if (ref.endsAt.getTime() > last.endsAt.getTime()) last.endsAt = new Date(ref.endsAt.getTime());
+      if (ref.endsAt.getTime() > last.endsAt.getTime())
+        last.endsAt = new Date(ref.endsAt.getTime());
       last.shiftIds.push(ref.id);
       last.shifts.push(ref);
     } else {
@@ -75,13 +76,19 @@ export function mergeShiftIntervals(shifts: readonly WorkModeShiftLike[]): Worki
 }
 
 /** The interval containing `at` (start inclusive, end exclusive), or null. */
-export function workingIntervalAt(intervals: readonly WorkingInterval[], at: Date): WorkingInterval | null {
+export function workingIntervalAt(
+  intervals: readonly WorkingInterval[],
+  at: Date,
+): WorkingInterval | null {
   const ms = at.getTime();
   return intervals.find((i) => i.startsAt.getTime() <= ms && ms < i.endsAt.getTime()) ?? null;
 }
 
 /** The first interval starting strictly after `at`, or null. */
-export function nextWorkingIntervalAfter(intervals: readonly WorkingInterval[], at: Date): WorkingInterval | null {
+export function nextWorkingIntervalAfter(
+  intervals: readonly WorkingInterval[],
+  at: Date,
+): WorkingInterval | null {
   const ms = at.getTime();
   return intervals.find((i) => i.startsAt.getTime() > ms) ?? null;
 }

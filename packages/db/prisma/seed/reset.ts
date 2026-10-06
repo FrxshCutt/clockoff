@@ -45,7 +45,8 @@ export async function resetDemoData(
     ]);
     const mobileUserIds = [...new Set([...devices, ...links].map((r) => r.mobileUserId))];
     if (mobileUserIds.length > 0) {
-      mobileUsers = (await tx.mobileUser.deleteMany({ where: { id: { in: mobileUserIds } } })).count;
+      mobileUsers = (await tx.mobileUser.deleteMany({ where: { id: { in: mobileUserIds } } }))
+        .count;
     }
   }
 

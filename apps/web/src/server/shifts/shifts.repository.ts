@@ -77,6 +77,8 @@ export interface ListShiftsFilter {
   locationId?: string | undefined;
   teamId?: string | undefined;
   statuses?: readonly ShiftStatus[] | undefined;
+  /** Maximum number of rows (earliest first). */
+  limit?: number | undefined;
 }
 
 export async function listShifts(
@@ -99,6 +101,7 @@ export async function listShifts(
     },
     include: shiftInclude,
     orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+    ...(filter.limit !== undefined ? { take: filter.limit } : {}),
   });
 }
 

@@ -95,8 +95,9 @@ export async function loadScopeNames(
   db: Db = prisma,
 ): Promise<Map<string, string>> {
   const names = new Map<string, string>();
-  const ids = (type: AssignmentScopeType) =>
-    [...new Set(scopes.filter((s) => s.scopeType === type).map((s) => s.scopeId))];
+  const ids = (type: AssignmentScopeType) => [
+    ...new Set(scopes.filter((s) => s.scopeType === type).map((s) => s.scopeId)),
+  ];
   const locationIds = ids("LOCATION");
   const teamIds = ids("TEAM");
   const employeeIds = ids("EMPLOYEE");
@@ -141,7 +142,10 @@ export async function loadScopeNames(
 }
 
 /** Ids of the organisation's active (not deleted, employment ACTIVE) employees. */
-export async function activeEmployeeIds(organisationId: string, db: Db = prisma): Promise<string[]> {
+export async function activeEmployeeIds(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<string[]> {
   const rows = await db.employee.findMany({
     where: { organisationId, deletedAt: null, employmentStatus: "ACTIVE" },
     select: { id: true },
@@ -197,6 +201,36 @@ export function isWindowActive(
   if (window.effectiveFrom && window.effectiveFrom.getTime() > t) return false;
   if (window.effectiveTo && window.effectiveTo.getTime() <= t) return false;
   return true;
+}
+
+export interface AssignmentWindow {
+  effectiveFrom: Date | null;
+  effectiveTo: Date | null;
+  /** The instant from which the new assignment is in force: `effectiveFrom ?? now`. */
+  replaceAt: Date;
+}
+
+/**
+ * The effective window of a new assignment. The schema already guarantees `effectiveTo > effectiveFrom`;
+ * `effectiveTo` must also lie in the future, because an assignment that has already ended can never apply
+ * — accepting it would end the scope's current assignment and leave nothing in its place.
+ */
+export function parseAssignmentWindow(
+  input: { effectiveFrom?: string; effectiveTo?: string },
+  now: Date,
+): AssignmentWindow {
+  const effectiveFrom = input.effectiveFrom ? new Date(input.effectiveFrom) : null;
+  const effectiveTo = input.effectiveTo ? new Date(input.effectiveTo) : null;
+  if (effectiveTo && effectiveTo.getTime() <= now.getTime()) {
+    throw new AppError("VALIDATION_ERROR", "Invalid body", {
+      details: {
+        source: "body",
+        formErrors: [],
+        fieldErrors: { effectiveTo: ["effectiveTo must be in the future"] },
+      },
+    });
+  }
+  return { effectiveFrom, effectiveTo, replaceAt: effectiveFrom ?? now };
 }
 
 /** Serialise a validated object for a Prisma `Json` column (drops `undefined` members). */

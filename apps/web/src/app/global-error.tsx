@@ -7,7 +7,13 @@ import { useEffect } from "react";
  * and cannot rely on providers, fonts or the design system (they may be what failed), so it uses plain
  * markup and inline styles. Never shows the error message or stack; the digest matches the server log.
  */
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -27,7 +33,11 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           padding: 16,
         }}
       >
-        <main id="main-content" tabIndex={-1} style={{ maxWidth: 480, textAlign: "center", outline: "none" }}>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          style={{ maxWidth: 480, textAlign: "center", outline: "none" }}
+        >
           <p style={{ fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 8 }}>Work Mode</p>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>Something went wrong</h1>
           <p style={{ color: "#525252", lineHeight: 1.5, margin: "0 0 20px" }}>
@@ -67,7 +77,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           </div>
           {error.digest ? (
             <p style={{ color: "#737373", fontSize: 12, marginTop: 20 }}>
-              Reference: <span style={{ fontFamily: "ui-monospace, monospace" }}>{error.digest}</span>
+              Reference:{" "}
+              <span style={{ fontFamily: "ui-monospace, monospace" }}>{error.digest}</span>
             </p>
           ) : null}
         </main>

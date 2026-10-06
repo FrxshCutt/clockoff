@@ -21,8 +21,10 @@ const SYDNEY = "Australia/Sydney";
 const DAY_MS = 86_400_000;
 
 const utc = (iso: string): Date => new Date(iso);
-const at = (date: string, time: string, timezone: string): Date => localToInstant({ date, time, timezone }).instant;
-const isoList = (xs: ReadonlyArray<{ startsAt: Date }>): string[] => xs.map((x) => x.startsAt.toISOString());
+const at = (date: string, time: string, timezone: string): Date =>
+  localToInstant({ date, time, timezone }).instant;
+const isoList = (xs: ReadonlyArray<{ startsAt: Date }>): string[] =>
+  xs.map((x) => x.startsAt.toISOString());
 const localTimes = (xs: ReadonlyArray<{ startsAt: Date }>, tz: string): string[] =>
   xs.map((x) => {
     const l = instantToLocal(x.startsAt, tz);
@@ -51,7 +53,10 @@ describe("validateRecurrenceRule", () => {
     ["FREQ=MONTHLY;BYDAY=+1MO", "FREQ=MONTHLY;BYDAY=1MO"],
     ["FREQ=MONTHLY;BYDAY=-1FR", "FREQ=MONTHLY;BYDAY=-1FR"],
     ["FREQ=MONTHLY;BYMONTHDAY=15,1,-1", "FREQ=MONTHLY;BYMONTHDAY=-1,1,15"],
-    ["FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1", "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1"],
+    [
+      "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+      "FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1",
+    ],
     ["FREQ=DAILY;COUNT=10;BYMONTH=12,1", "FREQ=DAILY;COUNT=10;BYMONTH=1,12"],
     [" FREQ=DAILY ; BYDAY=SA ", "FREQ=DAILY;BYDAY=SA"],
     ["FREQ=MONTHLY;BYMONTH=2;BYMONTHDAY=29", "FREQ=MONTHLY;BYMONTH=2;BYMONTHDAY=29"],
@@ -115,7 +120,10 @@ describe("validateRecurrenceRule", () => {
   });
 
   it("rejects non-strings without throwing", () => {
-    expect(validateRecurrenceRule(42 as unknown as string)).toEqual({ ok: false, error: "Rule must be a string" });
+    expect(validateRecurrenceRule(42 as unknown as string)).toEqual({
+      ok: false,
+      error: "Rule must be a string",
+    });
   });
 
   it("returns the parsed structure and formatRecurrenceRule round-trips it", () => {
@@ -156,8 +164,20 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       "2026-04-06T08:00:00.000Z",
       "2026-04-13T08:00:00.000Z",
     ]);
-    expect(localTimes(occ, LONDON).map((s) => s.slice(11))).toEqual(["09:00", "09:00", "09:00", "09:00", "09:00"]);
-    expect(occ.map((o) => o.localDate)).toEqual(["2026-03-16", "2026-03-23", "2026-03-30", "2026-04-06", "2026-04-13"]);
+    expect(localTimes(occ, LONDON).map((s) => s.slice(11))).toEqual([
+      "09:00",
+      "09:00",
+      "09:00",
+      "09:00",
+      "09:00",
+    ]);
+    expect(occ.map((o) => o.localDate)).toEqual([
+      "2026-03-16",
+      "2026-03-23",
+      "2026-03-30",
+      "2026-04-06",
+      "2026-04-13",
+    ]);
     for (const o of occ) {
       expect(o.endsAt.getTime() - o.startsAt.getTime()).toBe(360 * 60_000);
       expect(o.warnings).toEqual([]);
@@ -173,7 +193,11 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: LONDON,
       until: utc("2026-11-03T00:00:00Z"),
     });
-    expect(isoList(occ)).toEqual(["2026-10-19T08:00:00.000Z", "2026-10-26T09:00:00.000Z", "2026-11-02T09:00:00.000Z"]);
+    expect(isoList(occ)).toEqual([
+      "2026-10-19T08:00:00.000Z",
+      "2026-10-26T09:00:00.000Z",
+      "2026-11-02T09:00:00.000Z",
+    ]);
   });
 
   it("weekly Mon/Wed/Fri 09:00 New York across 2026-03-08", () => {
@@ -201,7 +225,11 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: SYDNEY,
       until: utc("2026-04-13T00:00:00Z"),
     });
-    expect(isoList(april)).toEqual(["2026-03-28T22:00:00.000Z", "2026-04-04T23:00:00.000Z", "2026-04-11T23:00:00.000Z"]);
+    expect(isoList(april)).toEqual([
+      "2026-03-28T22:00:00.000Z",
+      "2026-04-04T23:00:00.000Z",
+      "2026-04-11T23:00:00.000Z",
+    ]);
 
     const october = expandRecurrence({
       rule: "FREQ=WEEKLY",
@@ -221,7 +249,9 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: LONDON,
       until: utc("2026-03-31T00:00:00Z"),
     });
-    expect(spring.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([480, 420, 480, 480]);
+    expect(spring.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([
+      480, 420, 480, 480,
+    ]);
 
     const fall = expandRecurrence({
       rule: "FREQ=DAILY",
@@ -230,9 +260,16 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: LONDON,
       until: utc("2026-10-27T00:00:00Z"),
     });
-    expect(fall.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([480, 540, 480, 480]);
+    expect(fall.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([
+      480, 540, 480, 480,
+    ]);
 
-    const manual = buildShiftInstants({ date: "2026-10-24", startTime: "22:00", endTime: "06:00", timezone: LONDON });
+    const manual = buildShiftInstants({
+      date: "2026-10-24",
+      startTime: "22:00",
+      endTime: "06:00",
+      timezone: LONDON,
+    });
     expect(fall[1]!.startsAt).toEqual(manual.startsAt);
     expect(fall[1]!.endsAt).toEqual(manual.endsAt);
   });
@@ -245,8 +282,16 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: NEW_YORK,
       until: utc("2026-03-10T00:00:00Z"),
     });
-    expect(isoList(occ)).toEqual(["2026-03-07T07:30:00.000Z", "2026-03-08T07:30:00.000Z", "2026-03-09T06:30:00.000Z"]);
-    expect(localTimes(occ, NEW_YORK)).toEqual(["2026-03-07 02:30", "2026-03-08 03:30", "2026-03-09 02:30"]);
+    expect(isoList(occ)).toEqual([
+      "2026-03-07T07:30:00.000Z",
+      "2026-03-08T07:30:00.000Z",
+      "2026-03-09T06:30:00.000Z",
+    ]);
+    expect(localTimes(occ, NEW_YORK)).toEqual([
+      "2026-03-07 02:30",
+      "2026-03-08 03:30",
+      "2026-03-09 02:30",
+    ]);
     expect(occ.map((o) => o.warnings)).toEqual([[], ["START_NONEXISTENT_LOCAL_TIME_SHIFTED"], []]);
     // 02:30 + 8h wall-clock = 10:30 EDT, so the shifted occurrence is 7h long
     expect(occ[1]!.endsAt.toISOString()).toBe("2026-03-08T14:30:00.000Z");
@@ -261,7 +306,11 @@ describe("expandRecurrence — DST keeps the local wall-clock", () => {
       timezone: LONDON,
       until: utc("2026-10-27T00:00:00Z"),
     });
-    expect(isoList(occ)).toEqual(["2026-10-24T00:30:00.000Z", "2026-10-25T00:30:00.000Z", "2026-10-26T01:30:00.000Z"]);
+    expect(isoList(occ)).toEqual([
+      "2026-10-24T00:30:00.000Z",
+      "2026-10-25T00:30:00.000Z",
+      "2026-10-26T01:30:00.000Z",
+    ]);
     expect(occ[1]!.warnings).toEqual([
       "START_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE",
       "END_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE",
@@ -307,7 +356,9 @@ describe("expandRecurrence — rule semantics", () => {
   });
 
   it("always returns the anchor first, even when its weekday is not in BYDAY (RFC 5545 DTSTART)", () => {
-    const occ = expandRecurrence(base({ rule: "FREQ=WEEKLY;BYDAY=MO,FR", until: utc("2026-10-17T00:00:00Z") }));
+    const occ = expandRecurrence(
+      base({ rule: "FREQ=WEEKLY;BYDAY=MO,FR", until: utc("2026-10-17T00:00:00Z") }),
+    );
     expect(isoList(occ)).toEqual([
       "2026-10-07T09:00:00.000Z",
       "2026-10-09T09:00:00.000Z",
@@ -318,39 +369,93 @@ describe("expandRecurrence — rule semantics", () => {
   });
 
   it("weekdays-only daily rule", () => {
-    const occ = expandRecurrence(base({ rule: "FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR", until: utc("2026-10-14T00:00:00Z") }));
-    expect(occ.map((o) => o.localDate)).toEqual(["2026-10-07", "2026-10-08", "2026-10-09", "2026-10-12", "2026-10-13"]);
+    const occ = expandRecurrence(
+      base({ rule: "FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR", until: utc("2026-10-14T00:00:00Z") }),
+    );
+    expect(occ.map((o) => o.localDate)).toEqual([
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-09",
+      "2026-10-12",
+      "2026-10-13",
+    ]);
   });
 
   it("fortnightly with INTERVAL=2 honours the week phase of the anchor", () => {
-    const occ = expandRecurrence(base({ rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE", until: utc("2026-11-03T00:00:00Z") }));
-    expect(occ.map((o) => o.localDate)).toEqual(["2026-10-07", "2026-10-19", "2026-10-21", "2026-11-02"]);
+    const occ = expandRecurrence(
+      base({ rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE", until: utc("2026-11-03T00:00:00Z") }),
+    );
+    expect(occ.map((o) => o.localDate)).toEqual([
+      "2026-10-07",
+      "2026-10-19",
+      "2026-10-21",
+      "2026-11-02",
+    ]);
   });
 
   it("WKST changes which weeks an INTERVAL=2 rule hits", () => {
     // Anchor Wed 7 Oct. WKST=MO: the anchor's week is Mon 5–Sun 11 Oct (so Sun 11 is in), next period Mon 19 Oct.
     // WKST=SU: weeks start Sun 4 Oct → the anchor's week ends Sat 10 Oct; next period starts Sun 18 Oct.
-    const mo = expandRecurrence(base({ rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=WE,SU", until: utc("2026-10-26T00:00:00Z") }));
-    const su = expandRecurrence(
-      base({ rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=WE,SU;WKST=SU", until: utc("2026-10-26T00:00:00Z") }),
+    const mo = expandRecurrence(
+      base({ rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=WE,SU", until: utc("2026-10-26T00:00:00Z") }),
     );
-    expect(mo.map((o) => o.localDate)).toEqual(["2026-10-07", "2026-10-11", "2026-10-21", "2026-10-25"]);
+    const su = expandRecurrence(
+      base({
+        rule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=WE,SU;WKST=SU",
+        until: utc("2026-10-26T00:00:00Z"),
+      }),
+    );
+    expect(mo.map((o) => o.localDate)).toEqual([
+      "2026-10-07",
+      "2026-10-11",
+      "2026-10-21",
+      "2026-10-25",
+    ]);
     expect(su.map((o) => o.localDate)).toEqual(["2026-10-07", "2026-10-18", "2026-10-21"]);
   });
 
   it("monthly default uses the anchor's day of month and skips months without it", () => {
     const occ = expandRecurrence(
-      base({ rule: "FREQ=MONTHLY", firstStartsAt: utc("2026-01-31T09:00:00Z"), until: utc("2026-09-01T00:00:00Z") }),
+      base({
+        rule: "FREQ=MONTHLY",
+        firstStartsAt: utc("2026-01-31T09:00:00Z"),
+        until: utc("2026-09-01T00:00:00Z"),
+      }),
     );
-    expect(occ.map((o) => o.localDate)).toEqual(["2026-01-31", "2026-03-31", "2026-05-31", "2026-07-31", "2026-08-31"]);
+    expect(occ.map((o) => o.localDate)).toEqual([
+      "2026-01-31",
+      "2026-03-31",
+      "2026-05-31",
+      "2026-07-31",
+      "2026-08-31",
+    ]);
   });
 
   it("monthly last day of the month, last Friday, first Monday, last weekday", () => {
-    const window = { firstStartsAt: utc("2026-10-01T09:00:00Z"), until: utc("2027-01-01T00:00:00Z") };
-    const dates = (rule: string): string[] => expandRecurrence(base({ rule, ...window })).map((o) => o.localDate);
-    expect(dates("FREQ=MONTHLY;BYMONTHDAY=-1")).toEqual(["2026-10-01", "2026-10-31", "2026-11-30", "2026-12-31"]);
-    expect(dates("FREQ=MONTHLY;BYDAY=-1FR")).toEqual(["2026-10-01", "2026-10-30", "2026-11-27", "2026-12-25"]);
-    expect(dates("FREQ=MONTHLY;BYDAY=1MO")).toEqual(["2026-10-01", "2026-10-05", "2026-11-02", "2026-12-07"]);
+    const window = {
+      firstStartsAt: utc("2026-10-01T09:00:00Z"),
+      until: utc("2027-01-01T00:00:00Z"),
+    };
+    const dates = (rule: string): string[] =>
+      expandRecurrence(base({ rule, ...window })).map((o) => o.localDate);
+    expect(dates("FREQ=MONTHLY;BYMONTHDAY=-1")).toEqual([
+      "2026-10-01",
+      "2026-10-31",
+      "2026-11-30",
+      "2026-12-31",
+    ]);
+    expect(dates("FREQ=MONTHLY;BYDAY=-1FR")).toEqual([
+      "2026-10-01",
+      "2026-10-30",
+      "2026-11-27",
+      "2026-12-25",
+    ]);
+    expect(dates("FREQ=MONTHLY;BYDAY=1MO")).toEqual([
+      "2026-10-01",
+      "2026-10-05",
+      "2026-11-02",
+      "2026-12-07",
+    ]);
     expect(dates("FREQ=MONTHLY;BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1")).toEqual([
       "2026-10-01",
       "2026-10-30",
@@ -385,7 +490,12 @@ describe("expandRecurrence — rule semantics", () => {
         until: utc("2026-10-27T00:00:00Z"),
       }),
     );
-    expect(occ.map((o) => o.localDate)).toEqual(["2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26"]);
+    expect(occ.map((o) => o.localDate)).toEqual([
+      "2026-10-05",
+      "2026-10-12",
+      "2026-10-19",
+      "2026-10-26",
+    ]);
   });
 
   it("COUNT includes the anchor", () => {
@@ -427,33 +537,59 @@ describe("expandRecurrence — rule semantics", () => {
     const started = Date.now();
     const tenYears = { until: utc("2036-10-01T00:00:00Z") };
     // The first Monday is always day 1–7, so it is never the 20th.
-    expect(expandRecurrence(base({ rule: "FREQ=MONTHLY;BYDAY=1MO;BYMONTHDAY=20", ...tenYears }))).toHaveLength(1);
+    expect(
+      expandRecurrence(base({ rule: "FREQ=MONTHLY;BYDAY=1MO;BYMONTHDAY=20", ...tenYears })),
+    ).toHaveLength(1);
     // Every 7 days from a Wednesday never lands on a Tuesday.
-    expect(expandRecurrence(base({ rule: "FREQ=DAILY;INTERVAL=7;BYDAY=TU", ...tenYears }))).toHaveLength(1);
+    expect(
+      expandRecurrence(base({ rule: "FREQ=DAILY;INTERVAL=7;BYDAY=TU", ...tenYears })),
+    ).toHaveLength(1);
     // A month has at most five Mondays, never a tenth.
-    expect(expandRecurrence(base({ rule: "FREQ=MONTHLY;BYDAY=MO;BYSETPOS=10", ...tenYears }))).toHaveLength(1);
+    expect(
+      expandRecurrence(base({ rule: "FREQ=MONTHLY;BYDAY=MO;BYSETPOS=10", ...tenYears })),
+    ).toHaveLength(1);
     expect(Date.now() - started).toBeLessThan(1_000);
   });
 
   it("rejects windows longer than RECURRENCE_MAX_SPAN_DAYS", () => {
     const first = utc("2026-10-07T09:00:00Z");
     expect(() =>
-      expandRecurrence(base({ firstStartsAt: first, until: new Date(first.getTime() + RECURRENCE_MAX_SPAN_DAYS * DAY_MS) })),
+      expandRecurrence(
+        base({
+          firstStartsAt: first,
+          until: new Date(first.getTime() + RECURRENCE_MAX_SPAN_DAYS * DAY_MS),
+        }),
+      ),
     ).not.toThrow();
     expectAppError(
-      () => expandRecurrence(base({ until: new Date(first.getTime() + (RECURRENCE_MAX_SPAN_DAYS + 1) * DAY_MS) })),
+      () =>
+        expandRecurrence(
+          base({ until: new Date(first.getTime() + (RECURRENCE_MAX_SPAN_DAYS + 1) * DAY_MS) }),
+        ),
       "VALIDATION_ERROR",
     );
   });
 
   it("validates its inputs", () => {
     expectAppError(() => expandRecurrence(base({ rule: "FREQ=HOURLY" })), "INVALID_RECURRENCE");
-    expectAppError(() => expandRecurrence(base({ rule: "FREQ=DAILY;UNTIL=20270101" })), "INVALID_RECURRENCE");
+    expectAppError(
+      () => expandRecurrence(base({ rule: "FREQ=DAILY;UNTIL=20270101" })),
+      "INVALID_RECURRENCE",
+    );
     expectAppError(() => expandRecurrence(base({ timezone: "Mars/Base" })), "INVALID_TIMEZONE");
-    expectAppError(() => expandRecurrence(base({ firstStartsAt: new Date(Number.NaN) })), "VALIDATION_ERROR");
-    expectAppError(() => expandRecurrence(base({ until: new Date(Number.NaN) })), "VALIDATION_ERROR");
+    expectAppError(
+      () => expandRecurrence(base({ firstStartsAt: new Date(Number.NaN) })),
+      "VALIDATION_ERROR",
+    );
+    expectAppError(
+      () => expandRecurrence(base({ until: new Date(Number.NaN) })),
+      "VALIDATION_ERROR",
+    );
     expectAppError(() => expandRecurrence(base({ durationMinutes: 0 })), "VALIDATION_ERROR");
-    expectAppError(() => expandRecurrence(base({ durationMinutes: Number.NaN })), "VALIDATION_ERROR");
+    expectAppError(
+      () => expandRecurrence(base({ durationMinutes: Number.NaN })),
+      "VALIDATION_ERROR",
+    );
   });
 });
 
@@ -512,7 +648,14 @@ describe("expandRecurrence agrees with the rrule package (UTC, productive rules)
     for (const anchorIso of ANCHORS) {
       const anchor = utc(anchorIso);
       const until = new Date(anchor.getTime() + 500 * DAY_MS);
-      const ours = expandRecurrence({ rule, firstStartsAt: anchor, durationMinutes: 60, timezone: "UTC", until, max: 5000 });
+      const ours = expandRecurrence({
+        rule,
+        firstStartsAt: anchor,
+        durationMinutes: 60,
+        timezone: "UTC",
+        until,
+        max: 5000,
+      });
       expect(ours[0]!.startsAt.toISOString()).toBe(anchorIso.replace("Z", ".000Z"));
 
       const oracle = new RRule({ ...RRule.parseString(rule), dtstart: anchor })
@@ -524,11 +667,23 @@ describe("expandRecurrence agrees with the rrule package (UTC, productive rules)
   });
 
   it("COUNT matches rrule when the anchor itself matches the rule", () => {
-    for (const rule of ["FREQ=WEEKLY;BYDAY=MO,TH;COUNT=7", "FREQ=MONTHLY;BYDAY=1MO;COUNT=5", "FREQ=DAILY;INTERVAL=4;COUNT=9"]) {
+    for (const rule of [
+      "FREQ=WEEKLY;BYDAY=MO,TH;COUNT=7",
+      "FREQ=MONTHLY;BYDAY=1MO;COUNT=5",
+      "FREQ=DAILY;INTERVAL=4;COUNT=9",
+    ]) {
       const anchor = utc("2026-05-04T09:00:00Z"); // first Monday of May
       const until = utc("2028-01-01T00:00:00Z");
-      const ours = expandRecurrence({ rule, firstStartsAt: anchor, durationMinutes: 60, timezone: "UTC", until });
-      const oracle = new RRule({ ...RRule.parseString(rule), dtstart: anchor }).all().map((d) => d.toISOString());
+      const ours = expandRecurrence({
+        rule,
+        firstStartsAt: anchor,
+        durationMinutes: 60,
+        timezone: "UTC",
+        until,
+      });
+      const oracle = new RRule({ ...RRule.parseString(rule), dtstart: anchor })
+        .all()
+        .map((d) => d.toISOString());
       expect(isoList(ours), rule).toEqual(oracle);
     }
   });
@@ -545,7 +700,10 @@ describe("expandShiftSeries — typed form", () => {
     ...over,
   });
   const localRanges = (xs: ReadonlyArray<{ startsAt: Date; endsAt: Date }>, tz: string): string[] =>
-    xs.map((x) => `${instantToLocal(x.startsAt, tz).date} ${instantToLocal(x.startsAt, tz).time}-${instantToLocal(x.endsAt, tz).time}`);
+    xs.map(
+      (x) =>
+        `${instantToLocal(x.startsAt, tz).date} ${instantToLocal(x.startsAt, tz).time}-${instantToLocal(x.endsAt, tz).time}`,
+    );
 
   it("expands a typed weekly series with an inclusive untilDate", () => {
     const occ = expandShiftSeries(series({}));
@@ -579,7 +737,9 @@ describe("expandShiftSeries — typed form", () => {
       isAnchor: true,
       warnings: [],
     });
-    expect(occ.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([540, 480, 480]);
+    expect(occ.map((o) => (o.endsAt.getTime() - o.startsAt.getTime()) / 60_000)).toEqual([
+      540, 480, 480,
+    ]);
     expect(localRanges(occ, LONDON)).toEqual([
       "2026-10-24 22:00-06:00",
       "2026-10-31 22:00-06:00",
@@ -590,7 +750,13 @@ describe("expandShiftSeries — typed form", () => {
   it("keeps the typed start time when the FIRST shift falls in the spring-forward gap", () => {
     // London 2026-03-29 01:30 does not exist: the first shift is created at 02:30 BST, but the series is a 01:30 series.
     const occ = expandShiftSeries(
-      series({ date: "2026-03-29", startTime: "01:30", endTime: "09:30", rule: "FREQ=DAILY", untilDate: "2026-04-01" }),
+      series({
+        date: "2026-03-29",
+        startTime: "01:30",
+        endTime: "09:30",
+        rule: "FREQ=DAILY",
+        untilDate: "2026-04-01",
+      }),
     );
     expect(localRanges(occ, LONDON)).toEqual([
       "2026-03-29 02:30-09:30",
@@ -603,7 +769,12 @@ describe("expandShiftSeries — typed form", () => {
 
     // The instant-based API cannot know the typed time, so it would repeat the shifted 02:30 — why
     // expandShiftSeries exists.
-    const first = buildShiftInstants({ date: "2026-03-29", startTime: "01:30", endTime: "09:30", timezone: LONDON });
+    const first = buildShiftInstants({
+      date: "2026-03-29",
+      startTime: "01:30",
+      endTime: "09:30",
+      timezone: LONDON,
+    });
     const viaInstant = expandRecurrence({
       rule: "FREQ=DAILY",
       firstStartsAt: first.startsAt,
@@ -616,7 +787,13 @@ describe("expandShiftSeries — typed form", () => {
 
   it("an overnight daily series keeps 22:00 → 06:00 local through both 2026 London transitions", () => {
     const occ = expandShiftSeries(
-      series({ date: "2026-01-01", startTime: "22:00", endTime: "06:00", rule: "FREQ=DAILY", untilDate: "2026-12-31" }),
+      series({
+        date: "2026-01-01",
+        startTime: "22:00",
+        endTime: "06:00",
+        rule: "FREQ=DAILY",
+        untilDate: "2026-12-31",
+      }),
     );
     expect(occ).toHaveLength(365);
     const lengths = new Map<string, number>();
@@ -638,15 +815,21 @@ describe("expandShiftSeries — typed form", () => {
         series({ date: "2026-01-01", timezone: tz, rule: "FREQ=DAILY", untilDate: "2026-12-31" }),
       );
       expect(occ).toHaveLength(365);
-      expect(new Set(occ.map((o) => instantToLocal(o.startsAt, tz).time))).toEqual(new Set(["09:00"]));
-      expect(new Set(occ.map((o) => instantToLocal(o.endsAt, tz).time))).toEqual(new Set(["17:00"]));
+      expect(new Set(occ.map((o) => instantToLocal(o.startsAt, tz).time))).toEqual(
+        new Set(["09:00"]),
+      );
+      expect(new Set(occ.map((o) => instantToLocal(o.endsAt, tz).time))).toEqual(
+        new Set(["17:00"]),
+      );
       expect(new Set(occ.map((o) => o.localDate)).size).toBe(365);
       expect(occ.every((o) => o.warnings.length === 0)).toBe(true);
     },
   );
 
   it("a monthly first-Monday 09:00 London series moves between 09:00Z (GMT) and 08:00Z (BST)", () => {
-    const occ = expandShiftSeries(series({ date: "2026-01-05", rule: "FREQ=MONTHLY;BYDAY=1MO", untilDate: "2026-12-31" }));
+    const occ = expandShiftSeries(
+      series({ date: "2026-01-05", rule: "FREQ=MONTHLY;BYDAY=1MO", untilDate: "2026-12-31" }),
+    );
     expect(occ.map((o) => `${o.localDate} ${o.startsAt.toISOString().slice(11, 16)}`)).toEqual([
       "2026-01-05 09:00",
       "2026-02-02 09:00",
@@ -666,14 +849,30 @@ describe("expandShiftSeries — typed form", () => {
   it("Santiago's skipped midnight: a 00:30 series is moved to 01:30 on 2026-09-06 only", () => {
     const tz = "America/Santiago";
     const occ = expandShiftSeries(
-      series({ date: "2026-09-05", startTime: "00:30", endTime: "08:30", timezone: tz, rule: "FREQ=DAILY", untilDate: "2026-09-07" }),
+      series({
+        date: "2026-09-05",
+        startTime: "00:30",
+        endTime: "08:30",
+        timezone: tz,
+        rule: "FREQ=DAILY",
+        untilDate: "2026-09-07",
+      }),
     );
-    expect(localRanges(occ, tz)).toEqual(["2026-09-05 00:30-08:30", "2026-09-06 01:30-08:30", "2026-09-07 00:30-08:30"]);
+    expect(localRanges(occ, tz)).toEqual([
+      "2026-09-05 00:30-08:30",
+      "2026-09-06 01:30-08:30",
+      "2026-09-07 00:30-08:30",
+    ]);
     expect(occ[1]!.warnings).toEqual(["START_NONEXISTENT_LOCAL_TIME_SHIFTED"]);
   });
 
   it("agrees with expandRecurrence whenever the first shift's start exists", () => {
-    for (const rule of ["FREQ=DAILY", "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,SA", "FREQ=MONTHLY;BYMONTHDAY=-1", "FREQ=DAILY;COUNT=40"]) {
+    for (const rule of [
+      "FREQ=DAILY",
+      "FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,SA",
+      "FREQ=MONTHLY;BYMONTHDAY=-1",
+      "FREQ=DAILY;COUNT=40",
+    ]) {
       for (const tz of [LONDON, NEW_YORK, SYDNEY]) {
         const typed = { date: "2026-02-10", startTime: "21:00", endTime: "05:30", timezone: tz };
         const first = buildShiftInstants(typed);
@@ -691,9 +890,15 @@ describe("expandShiftSeries — typed form", () => {
   });
 
   it("COUNT includes the first shift; max truncates", () => {
-    expect(expandShiftSeries(series({ rule: "FREQ=DAILY;COUNT=3", untilDate: "2027-01-01" }))).toHaveLength(3);
-    expect(expandShiftSeries(series({ rule: "FREQ=DAILY", untilDate: "2027-01-01", max: 10 }))).toHaveLength(10);
-    expect(expandShiftSeries(series({ rule: "FREQ=DAILY", untilDate: "2030-01-01" }))).toHaveLength(DEFAULT_RECURRENCE_MAX);
+    expect(
+      expandShiftSeries(series({ rule: "FREQ=DAILY;COUNT=3", untilDate: "2027-01-01" })),
+    ).toHaveLength(3);
+    expect(
+      expandShiftSeries(series({ rule: "FREQ=DAILY", untilDate: "2027-01-01", max: 10 })),
+    ).toHaveLength(10);
+    expect(expandShiftSeries(series({ rule: "FREQ=DAILY", untilDate: "2030-01-01" }))).toHaveLength(
+      DEFAULT_RECURRENCE_MAX,
+    );
   });
 
   it("returns [] when untilDate is before the first shift's date, and the first shift alone when equal", () => {

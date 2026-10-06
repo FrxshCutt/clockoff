@@ -1,7 +1,11 @@
 "use client";
 
 import { useContext, useMemo, type ReactNode } from "react";
-import { RealtimeContext, useRealtimeConnection, type RealtimeContextValue } from "@/hooks/useRealtime";
+import {
+  RealtimeContext,
+  useRealtimeConnection,
+  type RealtimeContextValue,
+} from "@/hooks/useRealtime";
 
 export interface RealtimeProviderProps {
   children: ReactNode;
@@ -21,7 +25,10 @@ export function RealtimeProvider({ children, enabled = true }: RealtimeProviderP
 }
 
 function RealtimeConnection({ children, enabled }: { children: ReactNode; enabled: boolean }) {
-  const status = useRealtimeConnection({ enabled });
-  const value = useMemo<RealtimeContextValue>(() => ({ status, active: enabled }), [status, enabled]);
+  const { status, connecting } = useRealtimeConnection({ enabled });
+  const value = useMemo<RealtimeContextValue>(
+    () => ({ status, active: enabled, connecting: enabled && connecting }),
+    [status, enabled, connecting],
+  );
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }

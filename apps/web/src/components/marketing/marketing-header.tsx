@@ -6,7 +6,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BrandLogo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { SITE } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { MARKETING_CTA, MARKETING_NAV, MARKETING_ROUTES } from "./marketing-content";
@@ -43,8 +50,10 @@ export function MarketingHeader() {
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "focus-visible:ring-ring/50 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px]",
-                      active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                      "focus-visible:ring-ring/50 inline-flex h-9 items-center rounded-md px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px]",
+                      active
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
                     )}
                   >
                     {item.label}
@@ -64,7 +73,13 @@ export function MarketingHeader() {
           </Button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button type="button" variant="outline" size="icon-sm" className="lg:hidden" aria-label="Open menu">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="lg:hidden"
+                aria-label="Open menu"
+              >
                 <Menu aria-hidden="true" />
               </Button>
             </SheetTrigger>

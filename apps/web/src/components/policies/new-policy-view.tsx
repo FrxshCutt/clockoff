@@ -25,7 +25,11 @@ export function NewPolicyView() {
       {me.isPending ? (
         <FormSkeleton fields={6} />
       ) : canEdit ? (
-        <PolicyBuilder policy={null} canEdit onSaved={(policy) => router.replace(routeFor.policy(policy.id))} />
+        <PolicyBuilder
+          policy={null}
+          canEdit
+          onSaved={(policy) => router.replace(routeFor.policy(policy.id))}
+        />
       ) : (
         <InlineAlert variant="info" title="View only">
           Only owners and admins can create policies.

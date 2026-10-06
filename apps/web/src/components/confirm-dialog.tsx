@@ -64,7 +64,8 @@ export function ConfirmDialog({
     onOpenChange?.(next);
   };
 
-  const confirmDisabled = pending || (confirmationText !== undefined && typed.trim() !== confirmationText);
+  const confirmDisabled =
+    pending || (confirmationText !== undefined && typed.trim() !== confirmationText);
 
   const handleConfirm = async () => {
     setPending(true);

@@ -1,4 +1,5 @@
-import type { AssignmentScopeType } from "@workmode/shared/enums";
+import { PLANS, type AssignmentScopeType, type Plan } from "@workmode/shared/enums";
+import { PLAN_CONFIG } from "@workmode/shared/plans";
 import { isValidTimeZone } from "@workmode/shared/time/time";
 import type { BreakPolicy } from "@workmode/validation/breakPolicies";
 import type {
@@ -13,6 +14,7 @@ import type {
 } from "@workmode/validation/locationsTeams";
 import type { Policy } from "@workmode/validation/policies";
 import { z } from "zod";
+import { isApiClientError } from "@/lib/api-client";
 import { formatCount, formatTimeZoneLabel } from "@/lib/format";
 
 /**
@@ -37,7 +39,8 @@ export const DEFAULT_LOCATIONS_TAB: LocationsTab = "locations";
 export const LOCATIONS_TAB_META: Record<LocationsTab, { label: string; description: string }> = {
   locations: {
     label: "Locations",
-    description: "Your sites. Each location can have its own time zone, Work Policy and Break Rules.",
+    description:
+      "Your sites. Each location can have its own time zone, Work Policy and Break Rules.",
   },
   departments: {
     label: "Departments",
@@ -45,7 +48,8 @@ export const LOCATIONS_TAB_META: Record<LocationsTab, { label: string; descripti
   },
   teams: {
     label: "Teams",
-    description: "Groups of employees, optionally within a location, that share a Work Policy or Break Rules.",
+    description:
+      "Groups of employees, optionally within a location, that share a Work Policy or Break Rules.",
   },
 };
 
@@ -68,7 +72,11 @@ export const LOCATION_LIMITS = { nameMaxLength: 120, addressMaxLength: 300 } as 
  */
 export const locationFormSchema = z
   .object({
-    name: z.string().trim().min(1, "Enter a name for this location").max(LOCATION_LIMITS.nameMaxLength),
+    name: z
+      .string()
+      .trim()
+      .min(1, "Enter a name for this location")
+      .max(LOCATION_LIMITS.nameMaxLength),
     useOrganisationTimezone: z.boolean(),
     timezone: z.string(),
     address: z.string().trim().max(LOCATION_LIMITS.addressMaxLength),
@@ -84,7 +92,10 @@ export function emptyLocationForm(organisationTimezone: string): LocationFormVal
   return { name: "", useOrganisationTimezone: true, timezone: organisationTimezone, address: "" };
 }
 
-export function locationToFormValues(location: Location, organisationTimezone: string): LocationFormValues {
+export function locationToFormValues(
+  location: Location,
+  organisationTimezone: string,
+): LocationFormValues {
   return {
     name: location.name,
     useOrganisationTimezone: location.timezone === null,
@@ -101,7 +112,10 @@ export function toCreateLocationInput(values: LocationFormValues): CreateLocatio
 }
 
 /** Only the fields that changed, or `null` when nothing did (so "Save" with no edits is a no-op). */
-export function toUpdateLocationInput(values: LocationFormValues, location: Location): UpdateLocationBody | null {
+export function toUpdateLocationInput(
+  values: LocationFormValues,
+  location: Location,
+): UpdateLocationBody | null {
   const input: UpdateLocationBody = {};
   if (values.name !== location.name) input.name = values.name;
   const nextTimezone = values.useOrganisationTimezone ? null : values.timezone;
@@ -118,13 +132,17 @@ export function describeLocationTimezone(
 ): { label: string; inherited: boolean } {
   if (location.timezone) return { label: formatTimeZoneLabel(location.timezone), inherited: false };
   return {
-    label: organisationTimezone ? `Organisation default · ${formatTimeZoneLabel(organisationTimezone)}` : "Organisation default",
+    label: organisationTimezone
+      ? `Organisation default · ${formatTimeZoneLabel(organisationTimezone)}`
+      : "Organisation default",
     inherited: true,
   };
 }
 
 /** What deleting a location changes for other records. Empty when nothing depends on it. */
-export function locationDeleteWarnings(location: Pick<Location, "employeeCount" | "teamCount">): string[] {
+export function locationDeleteWarnings(
+  location: Pick<Location, "employeeCount" | "teamCount">,
+): string[] {
   const warnings: string[] = [];
   if (location.employeeCount > 0) {
     warnings.push(
@@ -142,7 +160,11 @@ export function locationDeleteWarnings(location: Pick<Location, "employeeCount" 
 // ── Departments ─────────────────────────────────────────────────────────────
 
 export const departmentFormSchema = z.object({
-  name: z.string().trim().min(1, "Enter a name for this department").max(LOCATION_LIMITS.nameMaxLength),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Enter a name for this department")
+    .max(LOCATION_LIMITS.nameMaxLength),
 });
 export type DepartmentFormValues = z.infer<typeof departmentFormSchema>;
 
@@ -209,7 +231,11 @@ export function assignableWorkPolicies(policies: readonly Policy[]): PolicyOptio
       return {
         id: policy.id,
         name: policy.name,
-        hint: !published ? "Draft — publish it first" : policy.isDefault ? "Organisation default" : undefined,
+        hint: !published
+          ? "Draft — publish it first"
+          : policy.isDefault
+            ? "Organisation default"
+            : undefined,
         disabled: !published,
       };
     })
@@ -222,7 +248,12 @@ export function assignableBreakPolicies(breakPolicies: readonly BreakPolicy[]): 
     .map((policy) => ({
       id: policy.id,
       name: policy.name,
-      hint: policy.status !== "ACTIVE" ? "Draft — publish it first" : policy.isDefault ? "Organisation default" : undefined,
+      hint:
+        policy.status !== "ACTIVE"
+          ? "Draft — publish it first"
+          : policy.isDefault
+            ? "Organisation default"
+            : undefined,
       disabled: policy.status !== "ACTIVE",
     }))
     .sort(compareOptions);
@@ -246,9 +277,17 @@ export interface ScopeAssignmentSummary {
  * Summarises the assignment the API embeds on each location / team row (`policyAssignment` /
  * `breakPolicyAssignment`, at most one open per scope). `undefined` (field not sent) reads as none.
  */
-export function summariseScopeAssignment(assignment: ScopeAssignment | null | undefined): ScopeAssignmentSummary {
-  if (!assignment) return { label: "Inherited", assigned: false, assignmentId: null, policyId: null };
-  return { label: assignment.policy.name, assigned: true, assignmentId: assignment.id, policyId: assignment.policy.id };
+export function summariseScopeAssignment(
+  assignment: ScopeAssignment | null | undefined,
+): ScopeAssignmentSummary {
+  if (!assignment)
+    return { label: "Inherited", assigned: false, assignmentId: null, policyId: null };
+  return {
+    label: assignment.policy.name,
+    assigned: true,
+    assignmentId: assignment.id,
+    policyId: assignment.policy.id,
+  };
 }
 
 /** Human noun for the kind of policy being assigned. */
@@ -256,6 +295,60 @@ export const POLICY_KIND_NOUN = { policy: "Work Policy", breakPolicy: "Break Rul
 export type PolicyKind = keyof typeof POLICY_KIND_NOUN;
 
 export const SCOPE_NOUN: Record<AssignableScope, string> = { LOCATION: "location", TEAM: "team" };
+
+// ── API conflicts (409) ─────────────────────────────────────────────────────
+
+export type StructureKind = "location" | "department" | "team";
+
+export interface StructureConflict {
+  /** The form field the conflict is about, when it is about one field (shown inline, not as an alert). */
+  readonly field: "name" | null;
+  readonly message: string;
+}
+
+function readDetails(details: unknown): Record<string, unknown> {
+  return typeof details === "object" && details !== null && !Array.isArray(details)
+    ? (details as Record<string, unknown>)
+    : {};
+}
+
+function isPlan(value: unknown): value is Plan {
+  return typeof value === "string" && (PLANS as readonly string[]).includes(value);
+}
+
+/**
+ * Human copy for the CONFLICT responses the locations / departments / teams API sends, read from the
+ * structured `details` the services attach: `{ field: "name" }` for a duplicate name,
+ * `{ reason: "PLAN_LIMIT_REACHED", limit, plan }` for the plan's location cap and
+ * `{ reason: "UPCOMING_SHIFTS", upcomingShiftCount }` when a location still has shifts scheduled. Null for
+ * any other error, so callers fall back to the generic copy in `errorMessages.ts`.
+ */
+export function describeStructureConflict(
+  error: unknown,
+  kind: StructureKind,
+): StructureConflict | null {
+  if (!isApiClientError(error) || error.code !== "CONFLICT") return null;
+  const details = readDetails(error.details);
+  if (details.field === "name") {
+    return { field: "name", message: `A ${kind} with this name already exists.` };
+  }
+  if (details.reason === "PLAN_LIMIT_REACHED") {
+    const limit = typeof details.limit === "number" ? details.limit : null;
+    const planName = isPlan(details.plan) ? `${PLAN_CONFIG[details.plan].name} plan` : "plan";
+    const allowance = limit === null ? `${kind}s` : formatCount(limit, kind);
+    return {
+      field: null,
+      message: `Your ${planName} allows up to ${allowance}. Contact sales from Billing to add more.`,
+    };
+  }
+  if (details.reason === "UPCOMING_SHIFTS") {
+    const count =
+      typeof details.upcomingShiftCount === "number" ? details.upcomingShiftCount : null;
+    const shifts = count === null ? "scheduled shifts" : formatCount(count, "scheduled shift");
+    return { field: null, message: `This ${kind} still has ${shifts}. Move or cancel them first.` };
+  }
+  return null;
+}
 
 /** Sort rows by name for stable tables. */
 export function compareByName<T extends { name: string }>(a: T, b: T): number {

@@ -9,13 +9,15 @@ export const LOCATIONS_EMPTY_STATES = {
   departments: {
     icon: Building2,
     title: "No departments yet",
-    description: "Departments group employees for reporting and filtering, such as Kitchen, Front of house or Warehouse.",
+    description:
+      "Departments group employees for reporting and filtering, such as Kitchen, Front of house or Warehouse.",
     action: { label: "Add department" },
   },
   teams: {
     icon: Users,
     title: "No teams yet",
-    description: "Teams let you assign a Work Policy or Break Rules to a group of people at once, optionally within a location.",
+    description:
+      "Teams let you assign a Work Policy or Break Rules to a group of people at once, optionally within a location.",
     action: { label: "Add team" },
   },
   teamMembers: {
@@ -26,6 +28,7 @@ export const LOCATIONS_EMPTY_STATES = {
   locationsReadOnly: {
     icon: MapPin,
     title: "No locations yet",
-    description: "Only owners and admins can add locations. Ask one of them to set up your sites.",
+    description:
+      "You don't have permission to add locations. Ask an owner or admin to set up your sites.",
   },
 } as const satisfies Record<string, EmptyStateCopy>;

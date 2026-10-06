@@ -26,7 +26,10 @@ describe("GET /api/settings", () => {
     const { org, jar } = await setup();
     const res = await callRoute<SettingsResponse>(getSettingsRoute, { path: "/api/settings", jar });
     expect(res.status).toBe(200);
-    expect(res.body.organisation).toMatchObject({ id: org.organisation.id, name: org.organisation.name });
+    expect(res.body.organisation).toMatchObject({
+      id: org.organisation.id,
+      name: org.organisation.name,
+    });
     expect(res.body.role).toBe("OWNER");
     expect(res.body.notificationPreferences).toEqual(NOTIFICATION_PREFERENCE_DEFAULTS);
   });
@@ -42,7 +45,12 @@ describe("PATCH /api/settings", () => {
       method: "PATCH",
       path: "/api/settings",
       jar,
-      body: { notificationPreferences: { EMPLOYEE_JOINED: { email: true }, OVERRIDE_EXPIRED: { inApp: false } } },
+      body: {
+        notificationPreferences: {
+          EMPLOYEE_JOINED: { email: true },
+          OVERRIDE_EXPIRED: { inApp: false },
+        },
+      },
     });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.notificationPreferences).toEqual({
@@ -54,7 +62,9 @@ describe("PATCH /api/settings", () => {
     const stored = await prisma.organisationMembership.findUniqueOrThrow({
       where: { id: org.membership.id },
     });
-    expect(stored.notificationPreferences).toMatchObject({ EMPLOYEE_JOINED: { inApp: true, email: true } });
+    expect(stored.notificationPreferences).toMatchObject({
+      EMPLOYEE_JOINED: { inApp: true, email: true },
+    });
     const untouched = await prisma.organisationMembership.findUniqueOrThrow({
       where: { id: colleagueMembership.id },
     });
@@ -68,8 +78,14 @@ describe("PATCH /api/settings", () => {
     });
     expect(auditRow?.entityId).toBe(org.membership.id);
 
-    const again = await callRoute<SettingsResponse>(getSettingsRoute, { path: "/api/settings", jar });
-    expect(again.body.notificationPreferences.EMPLOYEE_JOINED).toEqual({ inApp: true, email: true });
+    const again = await callRoute<SettingsResponse>(getSettingsRoute, {
+      path: "/api/settings",
+      jar,
+    });
+    expect(again.body.notificationPreferences.EMPLOYEE_JOINED).toEqual({
+      inApp: true,
+      email: true,
+    });
   });
 
   it("requires org:manage for organisation fields and writes nothing when refused", async () => {
@@ -89,7 +105,9 @@ describe("PATCH /api/settings", () => {
     });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("FORBIDDEN");
-    const org2 = await prisma.organisation.findUniqueOrThrow({ where: { id: org.organisation.id } });
+    const org2 = await prisma.organisation.findUniqueOrThrow({
+      where: { id: org.organisation.id },
+    });
     expect(org2.name).toBe(org.organisation.name);
     const membership = await prisma.organisationMembership.findFirstOrThrow({
       where: { organisationId: org.organisation.id, userId: user.id },
@@ -105,7 +123,10 @@ describe("PATCH /api/settings", () => {
     });
     expect(own.status).toBe(200);
     expect(own.body.role).toBe("MANAGER");
-    expect(own.body.notificationPreferences.DEVICE_SYNC_DELAYED).toEqual({ inApp: false, email: false });
+    expect(own.body.notificationPreferences.DEVICE_SYNC_DELAYED).toEqual({
+      inApp: false,
+      email: false,
+    });
   });
 
   it("lets an OWNER update organisation fields through the audited organisations path", async () => {
@@ -145,6 +166,21 @@ describe("PATCH /api/settings", () => {
     });
     expect(unknown.status).toBe(400);
   });
+
+  it("rejects an invalid IANA timezone before anything is written (VALIDATION_ERROR, not INVALID_TIMEZONE)", async () => {
+    const { org, jar } = await setup();
+    const res = await callRoute<ErrorBody>(patchSettingsRoute, {
+      method: "PATCH",
+      path: "/api/settings",
+      jar,
+      body: { organisation: { timezone: "Mars/Olympus" } },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    expect(res.body.error.details).toMatchObject({ source: "body" });
+    const row = await prisma.organisation.findUniqueOrThrow({ where: { id: org.organisation.id } });
+    expect(row.timezone).toBe(org.organisation.timezone);
+  });
 });
 
 describe("GET /api/settings/billing", () => {
@@ -153,14 +189,22 @@ describe("GET /api/settings/billing", () => {
     await prisma.employee.createMany({
       data: [
         { organisationId: org.organisation.id, firstName: "A", lastName: "Active" },
-        { organisationId: org.organisation.id, firstName: "B", lastName: "Inactive", employmentStatus: "INACTIVE" },
+        {
+          organisationId: org.organisation.id,
+          firstName: "B",
+          lastName: "Inactive",
+          employmentStatus: "INACTIVE",
+        },
       ],
     });
     await prisma.integration.create({
       data: { organisationId: org.organisation.id, provider: "PLANDAY", status: "CONNECTED" },
     });
 
-    const res = await callRoute<BillingResponse>(billingRoute, { path: "/api/settings/billing", jar });
+    const res = await callRoute<BillingResponse>(billingRoute, {
+      path: "/api/settings/billing",
+      jar,
+    });
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       plan: "STARTER",
@@ -198,7 +242,12 @@ describe("POST /api/request-demo", () => {
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body).toEqual({ ok: true });
     const row = await prisma.demoRequest.findFirst({ where: { email: valid.email } });
-    expect(row).toMatchObject({ name: valid.name, company: valid.company, teamSize: "10-25", source: "pricing" });
+    expect(row).toMatchObject({
+      name: valid.name,
+      company: valid.company,
+      teamSize: "10-25",
+      source: "pricing",
+    });
   });
 
   it("silently drops submissions that fill the honeypot", async () => {

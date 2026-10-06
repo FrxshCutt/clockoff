@@ -21,6 +21,7 @@ import { POST as assignLocationRoute } from "@/app/api/employees/[id]/assign-loc
 import { POST as assignPolicyRoute } from "@/app/api/employees/[id]/assign-policy/route";
 import { POST as assignTeamRoute } from "@/app/api/employees/[id]/assign-team/route";
 import { POST as deactivateRoute } from "@/app/api/employees/[id]/deactivate/route";
+import { POST as createInviteRoute } from "@/app/api/employees/[id]/invites/route";
 import { POST as reactivateRoute } from "@/app/api/employees/[id]/reactivate/route";
 import {
   DELETE as deleteRoute,
@@ -34,11 +35,13 @@ import { GET as listRoute, POST as createRoute } from "@/app/api/employees/route
 import { hashToken } from "@/lib/tokens";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { issueMobileTokens } from "@/server/mobileAuth";
+import { RATE_LIMITS, getRateLimiter, rateLimitKey } from "@/server/rateLimit";
 import {
   callRoute,
   createTestDevice,
   createTestOrg,
   loginAs,
+  testEmails,
   type CookieJar,
   type ErrorBody,
   type TestOrg,
@@ -167,7 +170,11 @@ describe("POST /api/employees", () => {
 
     const other = await createTestOrg();
     const otherJar = await loginAs(other.owner, { organisationId: other.organisation.id });
-    await createEmployee(otherJar, { firstName: "C", lastName: "Three", externalEmployeeId: "X-1" });
+    await createEmployee(otherJar, {
+      firstName: "C",
+      lastName: "Three",
+      externalEmployeeId: "X-1",
+    });
   });
 
   it("validates the body and the references", async () => {
@@ -272,7 +279,10 @@ describe("POST /api/employees", () => {
       name: "Floor policy",
       resolvedFrom: "EMPLOYEE",
     });
-    expect(employee.resolvedBreakPolicy).toMatchObject({ id: breakPolicy.id, resolvedFrom: "EMPLOYEE" });
+    expect(employee.resolvedBreakPolicy).toMatchObject({
+      id: breakPolicy.id,
+      resolvedFrom: "EMPLOYEE",
+    });
     const assignments = await prisma.policyAssignment.findMany({
       where: { organisationId: org.organisation.id, scopeType: "EMPLOYEE", scopeId: employee.id },
     });
@@ -310,7 +320,9 @@ describe("POST /api/employees", () => {
       body: { firstName: "X", lastName: "Tenant", policyId: foreignPolicy.id },
     });
     expect(crossTenant.status).toBe(400);
-    expect(crossTenant.body.error.details).toMatchObject({ fieldErrors: { policyId: [expect.any(String)] } });
+    expect(crossTenant.body.error.details).toMatchObject({
+      fieldErrors: { policyId: [expect.any(String)] },
+    });
   });
 
   it("requires a session and a CSRF token", async () => {
@@ -402,7 +414,9 @@ describe("GET /api/employees", () => {
     expect((await list({ locationId: location.id })).items.map((e) => e.id).sort()).toEqual(
       [alice.id, carol.id].sort(),
     );
-    expect((await list({ departmentId: department.id })).items.map((e) => e.id)).toEqual([alice.id]);
+    expect((await list({ departmentId: department.id })).items.map((e) => e.id)).toEqual([
+      alice.id,
+    ]);
     expect((await list({ teamId: team.id })).items.map((e) => e.id)).toEqual([alice.id]);
     expect((await list({ policyId: policy.id })).items.map((e) => e.id)).toEqual([alice.id]);
     expect((await list({ inviteStatus: "INVITED,JOINED" })).total).toBe(0);
@@ -488,7 +502,9 @@ describe("GET / PATCH / DELETE /api/employees/:id", () => {
   it("updates fields, clears with null, replaces sets and removes overrides", async () => {
     const { org, jar, location } = await setup();
     const policy = await seedPublishedPolicy(org.organisation.id, "P");
-    const team = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "T" } });
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "T" },
+    });
     const other = await prisma.location.create({
       data: { organisationId: org.organisation.id, name: "Other" },
     });
@@ -533,11 +549,19 @@ describe("GET / PATCH / DELETE /api/employees/:id", () => {
     expect(live).toHaveLength(0);
     expect(
       await prisma.auditLog.count({
-        where: { organisationId: org.organisation.id, action: "employee.updated", entityId: created.id },
+        where: {
+          organisationId: org.organisation.id,
+          action: "employee.updated",
+          entityId: created.id,
+        },
       }),
     ).toBe(1);
 
-    const taken = await createEmployee(jar, { firstName: "T", lastName: "K", externalEmployeeId: "E-9" });
+    const taken = await createEmployee(jar, {
+      firstName: "T",
+      lastName: "K",
+      externalEmployeeId: "E-9",
+    });
     void taken;
     const conflict = await callRoute<ErrorBody>(patchRoute, {
       method: "PATCH",
@@ -563,8 +587,12 @@ describe("GET / PATCH / DELETE /api/employees/:id", () => {
     const row = await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } });
     expect(row.deletedAt).not.toBeNull();
     expect(row).toMatchObject({ employmentStatus: "INACTIVE", inviteStatus: "DEACTIVATED" });
-    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(false);
-    expect(await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } })).toBe(0);
+    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(
+      false,
+    );
+    expect(
+      await prisma.refreshToken.count({ where: { deviceId: device.id, revokedAt: null } }),
+    ).toBe(0);
     const gone = await callRoute<ErrorBody>(getRoute, {
       path: `/api/employees/${employee.id}`,
       params: { id: employee.id },
@@ -572,7 +600,9 @@ describe("GET / PATCH / DELETE /api/employees/:id", () => {
     });
     expect(gone.status).toBe(404);
     expect(
-      await prisma.auditLog.count({ where: { action: "employee.archived", entityId: employee.id } }),
+      await prisma.auditLog.count({
+        where: { action: "employee.archived", entityId: employee.id },
+      }),
     ).toBe(1);
   });
 });
@@ -619,23 +649,40 @@ describe("lifecycle actions", () => {
       inviteStatus: "DEACTIVATED",
       deviceStatus: null,
     });
-    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(false);
+    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(
+      false,
+    );
     expect(
-      (await prisma.refreshToken.findUniqueOrThrow({ where: { tokenHash: hashToken(issued.refreshToken) } }))
-        .revokedAt,
+      (
+        await prisma.refreshToken.findUniqueOrThrow({
+          where: { tokenHash: hashToken(issued.refreshToken) },
+        })
+      ).revokedAt,
     ).not.toBeNull();
     expect(
-      (await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } })).unlinkedAt,
+      (await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } }))
+        .unlinkedAt,
     ).not.toBeNull();
-    expect(await prisma.breakSession.findUniqueOrThrow({ where: { id: breakSession.id } })).toMatchObject({
+    expect(
+      await prisma.breakSession.findUniqueOrThrow({ where: { id: breakSession.id } }),
+    ).toMatchObject({
       status: "ENDED",
       endReason: "MANAGER_ENDED",
     });
-    expect(await prisma.employeeInvite.count({ where: { employeeId: employee.id, status: "REVOKED" } })).toBe(1);
-    expect((await prisma.shift.findUniqueOrThrow({ where: { id: shift.id } })).status).toBe("SCHEDULED");
+    expect(
+      await prisma.employeeInvite.count({ where: { employeeId: employee.id, status: "REVOKED" } }),
+    ).toBe(1);
+    expect((await prisma.shift.findUniqueOrThrow({ where: { id: shift.id } })).status).toBe(
+      "SCHEDULED",
+    );
     expect(
       await prisma.activityEvent.count({
-        where: { employeeId: employee.id, type: "BREAK_ENDED", actorType: "MANAGER", actorUserId: org.owner.id },
+        where: {
+          employeeId: employee.id,
+          type: "BREAK_ENDED",
+          actorType: "MANAGER",
+          actorUserId: org.owner.id,
+        },
       }),
     ).toBe(1);
     const auditRow = await prisma.auditLog.findFirstOrThrow({
@@ -672,12 +719,14 @@ describe("lifecycle actions", () => {
     const { org, jar, location } = await setup();
     const policy = await seedPublishedPolicy(org.organisation.id, "Assigned");
     const breakPolicy = await seedBreakPolicy(org.organisation.id, "Assigned breaks");
-    const team = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Team" } });
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Team" },
+    });
     const other = await prisma.location.create({
       data: { organisationId: org.organisation.id, name: "Annex" },
     });
     const employee = await createEmployee(jar, { firstName: "Assign", lastName: "Me" });
-    const post = async <T,>(handler: typeof assignPolicyRoute, action: string, body: unknown) =>
+    const post = async <T>(handler: typeof assignPolicyRoute, action: string, body: unknown) =>
       callRoute<T>(handler, {
         method: "POST",
         path: `/api/employees/${employee.id}/${action}`,
@@ -686,7 +735,9 @@ describe("lifecycle actions", () => {
         body,
       });
 
-    const p = await post<EmployeeResponse>(assignPolicyRoute, "assign-policy", { policyId: policy.id });
+    const p = await post<EmployeeResponse>(assignPolicyRoute, "assign-policy", {
+      policyId: policy.id,
+    });
     expect(p.status).toBe(200);
     expect(p.body.employee.policyOverride).toEqual({ id: policy.id, name: "Assigned" });
     expect(p.body.employee.resolvedPolicy?.resolvedFrom).toBe("EMPLOYEE");
@@ -695,9 +746,14 @@ describe("lifecycle actions", () => {
       breakPolicyId: breakPolicy.id,
     });
     expect(b.status).toBe(200);
-    expect(b.body.employee.breakPolicyOverride).toEqual({ id: breakPolicy.id, name: "Assigned breaks" });
+    expect(b.body.employee.breakPolicyOverride).toEqual({
+      id: breakPolicy.id,
+      name: "Assigned breaks",
+    });
 
-    const cleared = await post<EmployeeResponse>(assignPolicyRoute, "assign-policy", { policyId: null });
+    const cleared = await post<EmployeeResponse>(assignPolicyRoute, "assign-policy", {
+      policyId: null,
+    });
     expect(cleared.body.employee.policyOverride).toBeNull();
 
     const l = await post<EmployeeResponse>(assignLocationRoute, "assign-location", {
@@ -706,7 +762,9 @@ describe("lifecycle actions", () => {
     });
     expect(l.status).toBe(200);
     expect(l.body.employee.primaryLocation?.id).toBe(location.id);
-    expect(l.body.employee.locations.map((x) => x.id).sort()).toEqual([location.id, other.id].sort());
+    expect(l.body.employee.locations.map((x) => x.id).sort()).toEqual(
+      [location.id, other.id].sort(),
+    );
     const emptyLocation = await post<ErrorBody>(assignLocationRoute, "assign-location", {});
     expect(emptyLocation.status).toBe(400);
 
@@ -773,7 +831,9 @@ describe("POST /api/employees/bulk", () => {
       body: { action: "INVITE", employeeIds: [a.id, b.id] },
     });
     expect(invited.body.succeeded).toBe(2);
-    expect(await prisma.employeeInvite.count({ where: { organisationId: org.organisation.id } })).toBe(2);
+    expect(
+      await prisma.employeeInvite.count({ where: { organisationId: org.organisation.id } }),
+    ).toBe(2);
 
     const deactivated = await callRoute<BulkEmployeeActionResponse>(bulkRoute, {
       method: "POST",
@@ -794,6 +854,66 @@ describe("POST /api/employees/bulk", () => {
     });
     expect(invalid.status).toBe(400);
   });
+
+  it("bulk EMAIL invites draw on the per-IP invite rate limit, so one request cannot send hundreds of emails", async () => {
+    const { jar } = await setup();
+    const c = await createEmployee(jar, {
+      firstName: "Mail",
+      lastName: "C",
+      email: "bulk-c@example.test",
+    });
+    const d = await createEmployee(jar, {
+      firstName: "Mail",
+      lastName: "D",
+      email: "bulk-d@example.test",
+    });
+    const ip = "203.0.113.77";
+    const rule = RATE_LIMITS.employeeInvite;
+    // Spend all but one hit of this address's budget (the limiter is fresh for every test).
+    const limiter = getRateLimiter();
+    for (let i = 0; i < rule.limit - 1; i++) {
+      await limiter.hit(rateLimitKey(rule.key, ip), rule.limit, rule.windowSeconds);
+    }
+
+    const res = await callRoute<BulkEmployeeActionResponse>(bulkRoute, {
+      method: "POST",
+      path: "/api/employees/bulk",
+      jar,
+      ip,
+      body: { action: "INVITE", employeeIds: [c.id, d.id], payload: { channel: "EMAIL" } },
+    });
+    expect(res.status, JSON.stringify(res.body)).toBe(200);
+    expect(res.body).toMatchObject({ action: "INVITE", processed: 2, succeeded: 1 });
+    expect(res.body.failed).toEqual([
+      { employeeId: d.id, code: "RATE_LIMITED", message: expect.any(String) },
+    ]);
+    expect(testEmails().sent.map((m) => m.to)).toEqual(["bulk-c@example.test"]);
+    expect(await prisma.employeeInvite.count({ where: { employeeId: d.id } })).toBe(0);
+
+    // Same budget as the single-invite route from that address…
+    const single = await callRoute<ErrorBody>(createInviteRoute, {
+      method: "POST",
+      path: `/api/employees/${d.id}/invites`,
+      params: { id: d.id },
+      jar,
+      ip,
+      body: { channel: "EMAIL" },
+    });
+    expect(single.status).toBe(429);
+    expect(single.body.error.code).toBe("RATE_LIMITED");
+
+    // …while LINK invites deliver nothing and are not throttled.
+    const links = await callRoute<BulkEmployeeActionResponse>(bulkRoute, {
+      method: "POST",
+      path: "/api/employees/bulk",
+      jar,
+      ip,
+      body: { action: "INVITE", employeeIds: [d.id] },
+    });
+    expect(links.status).toBe(200);
+    expect(links.body).toMatchObject({ succeeded: 1, failed: [] });
+    expect(testEmails().sent).toHaveLength(1);
+  });
 });
 
 describe("state, shifts and activity", () => {
@@ -813,7 +933,10 @@ describe("state, shifts and activity", () => {
         lastDeviceSyncAt: new Date(),
       },
     });
-    await prisma.employee.update({ where: { id: employee.id }, data: { inviteStatus: "CONNECTED" } });
+    await prisma.employee.update({
+      where: { id: employee.id },
+      data: { inviteStatus: "CONNECTED" },
+    });
     const now = Date.now();
     const shift = await seedShift(org, employee.id, new Date(now - HOUR), new Date(now + 3 * HOUR));
     await recordActivity({

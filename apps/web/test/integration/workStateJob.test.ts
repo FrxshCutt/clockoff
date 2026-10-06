@@ -2,9 +2,11 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@workmode/db";
 import { afterEach, describe, expect, it } from "vitest";
 import { POST as tickRoute } from "@/app/api/jobs/tick/route";
+import { GET as syncRoute } from "@/app/api/mobile/v1/sync/route";
 import { encrypt } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { getEventBus, publishEvent, type RealtimeEvent } from "@/server/events";
+import { issueMobileTokens } from "@/server/mobileAuth";
 import type { AlertPushPayload, PushProvider, PushReport, SilentPushPayload } from "@/server/push";
 import { setPushProviderForTesting } from "@/server/push";
 import {
@@ -15,7 +17,15 @@ import {
 import { SYNC_DELAYED_MARKER } from "@/server/workState/workState.service";
 import { runWorkModeTick, scheduledBreakClientId } from "@/server/workState/workStateJob";
 import { DIGEST_NOTIFICATION_TYPE } from "@/server/digest/digest.service";
-import { callRoute, createTestDevice, createTestOrg, createTestUser, addMember, testEmails, type ErrorBody } from "../helpers";
+import {
+  callRoute,
+  createTestDevice,
+  createTestOrg,
+  createTestUser,
+  addMember,
+  testEmails,
+  type ErrorBody,
+} from "../helpers";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -26,10 +36,24 @@ class MockPushProvider implements PushProvider {
   readonly silent: Array<{ tokens: string[]; payload: SilentPushPayload }> = [];
   async sendSilent(deviceTokens: string[], payload: SilentPushPayload): Promise<PushReport> {
     this.silent.push({ tokens: deviceTokens, payload });
-    return { provider: "noop", requested: deviceTokens.length, sent: deviceTokens.length, failed: 0, invalidTokens: [], failures: [] };
+    return {
+      provider: "noop",
+      requested: deviceTokens.length,
+      sent: deviceTokens.length,
+      failed: 0,
+      invalidTokens: [],
+      failures: [],
+    };
   }
   async sendAlert(deviceTokens: string[], _payload: AlertPushPayload): Promise<PushReport> {
-    return { provider: "noop", requested: deviceTokens.length, sent: 0, failed: 0, invalidTokens: [], failures: [] };
+    return {
+      provider: "noop",
+      requested: deviceTokens.length,
+      sent: 0,
+      failed: 0,
+      invalidTokens: [],
+      failures: [],
+    };
   }
 }
 
@@ -44,9 +68,16 @@ async function connectedFixture(now: Date) {
   await prisma.employee.update({ where: { id: employee.id }, data: { inviteStatus: "CONNECTED" } });
   const connected = await prisma.device.update({
     where: { id: device.id },
-    data: { permissionState: "APPROVED", selectionState: "CONFIGURED", lastDeviceSyncAt: now, lastSeenAt: now },
+    data: {
+      permissionState: "APPROVED",
+      selectionState: "CONFIGURED",
+      lastDeviceSyncAt: now,
+      lastSeenAt: now,
+    },
   });
-  const policy = await prisma.breakPolicy.create({ data: { organisationId: org.organisation.id, name: "Breaks" } });
+  const policy = await prisma.breakPolicy.create({
+    data: { organisationId: org.organisation.id, name: "Breaks" },
+  });
   await prisma.organisation.update({
     where: { id: org.organisation.id },
     data: { defaultBreakPolicyId: policy.id },
@@ -78,7 +109,9 @@ describe("runWorkModeTick", () => {
     const report = await runWorkModeTick(now, { sendDigest: false });
     expect(report.errors).toEqual([]);
     expect(report.employeesEvaluated).toBeGreaterThanOrEqual(1);
-    const row = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const row = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(row.expectedState).toBe("WORKING");
     expect(row.expectedRestriction).toBe("WORK");
     expect(row.state).toBe("WORKING");
@@ -86,7 +119,9 @@ describe("runWorkModeTick", () => {
     expect(row.activeShiftId).toBe(shift.id);
     expect(row.nextTransitionAt?.getTime()).toBe(shift.endsAt.getTime() - 5 * MINUTE);
     expect(row.attentionReason).toBeNull();
-    expect(seen.some((e) => e.type === "employee.work_state.changed" && e.employeeId === employee.id)).toBe(true);
+    expect(
+      seen.some((e) => e.type === "employee.work_state.changed" && e.employeeId === employee.id),
+    ).toBe(true);
 
     // A second tick a minute later changes nothing and publishes nothing new.
     seen.length = 0;
@@ -140,7 +175,9 @@ describe("runWorkModeTick", () => {
     expect(orphanRow.endReason).toBe("SHIFT_ENDED");
     expect(await countEvents(employee.id, org.organisation.id, "BREAK_EXPIRED")).toBe(1);
     expect(await countEvents(employee.id, org.organisation.id, "BREAK_ENDED")).toBe(1);
-    const row = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const row = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(row.activeBreakSessionId).toBeNull();
     expect(row.breaksTakenCount).toBe(1);
     expect(row.breakMinutesUsed).toBe(15);
@@ -153,9 +190,18 @@ describe("runWorkModeTick", () => {
   it("emits OVERRIDE_EXPIRED exactly once per expired override and never for revoked ones", async () => {
     const now = new Date();
     const { org, employee } = await connectedFixture(now);
-    const base = { organisationId: org.organisation.id, reason: "cover", startsAt: new Date(now.getTime() - 2 * HOUR) };
+    const base = {
+      organisationId: org.organisation.id,
+      reason: "cover",
+      startsAt: new Date(now.getTime() - 2 * HOUR),
+    };
     const expired = await prisma.managerOverride.create({
-      data: { ...base, employeeId: employee.id, type: "EXEMPT_TEMPORARILY", expiresAt: new Date(now.getTime() - MINUTE) },
+      data: {
+        ...base,
+        employeeId: employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        expiresAt: new Date(now.getTime() - MINUTE),
+      },
     });
     await prisma.managerOverride.create({
       data: {
@@ -167,7 +213,11 @@ describe("runWorkModeTick", () => {
       },
     });
     const orgWide = await prisma.managerOverride.create({
-      data: { ...base, type: "EMERGENCY_POLICY_OVERRIDE", expiresAt: new Date(now.getTime() - 5 * MINUTE) },
+      data: {
+        ...base,
+        type: "EMERGENCY_POLICY_OVERRIDE",
+        expiresAt: new Date(now.getTime() - 5 * MINUTE),
+      },
     });
     const seen: RealtimeEvent[] = [];
     const unsubscribe = getEventBus().subscribe(org.organisation.id, (e) => seen.push(e));
@@ -176,8 +226,14 @@ describe("runWorkModeTick", () => {
     expect(first.overridesExpired).toBe(2);
     expect(await countEvents(employee.id, org.organisation.id, "OVERRIDE_EXPIRED")).toBe(1);
     expect(await countEvents(null, org.organisation.id, "OVERRIDE_EXPIRED")).toBe(2);
-    expect((await prisma.managerOverride.findUniqueOrThrow({ where: { id: expired.id } })).expiredEventEmittedAt).not.toBeNull();
-    expect((await prisma.managerOverride.findUniqueOrThrow({ where: { id: orgWide.id } })).expiredEventEmittedAt).not.toBeNull();
+    expect(
+      (await prisma.managerOverride.findUniqueOrThrow({ where: { id: expired.id } }))
+        .expiredEventEmittedAt,
+    ).not.toBeNull();
+    expect(
+      (await prisma.managerOverride.findUniqueOrThrow({ where: { id: orgWide.id } }))
+        .expiredEventEmittedAt,
+    ).not.toBeNull();
     expect(seen.filter((e) => e.type === "OVERRIDE_EXPIRED")).toHaveLength(2);
     expect(seen.filter((e) => e.type === "override.changed")).toHaveLength(2);
 
@@ -196,7 +252,9 @@ describe("runWorkModeTick", () => {
     });
 
     await runWorkModeTick(now, { sendDigest: false });
-    const row = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const row = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(row.attentionReason).toContain(SYNC_DELAYED_MARKER);
     expect(await countEvents(employee.id, org.organisation.id, "DEVICE_SYNC_DELAYED")).toBe(1);
 
@@ -205,14 +263,50 @@ describe("runWorkModeTick", () => {
     expect(await countEvents(employee.id, org.organisation.id, "DEVICE_SYNC_DELAYED")).toBe(1);
 
     // The device syncs again: the episode ends…
-    await prisma.device.update({ where: { id: device.id }, data: { lastDeviceSyncAt: new Date(now.getTime() + 3 * MINUTE) } });
+    await prisma.device.update({
+      where: { id: device.id },
+      data: { lastDeviceSyncAt: new Date(now.getTime() + 3 * MINUTE) },
+    });
     await runWorkModeTick(new Date(now.getTime() + 3 * MINUTE), { sendDigest: false });
-    expect((await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } })).attentionReason).toBeNull();
+    expect(
+      (await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } }))
+        .attentionReason,
+    ).toBeNull();
 
     // …and a new silence starts a new episode.
-    await prisma.device.update({ where: { id: device.id }, data: { lastDeviceSyncAt: new Date(now.getTime() - 3 * HOUR) } });
+    await prisma.device.update({
+      where: { id: device.id },
+      data: { lastDeviceSyncAt: new Date(now.getTime() - 3 * HOUR) },
+    });
     await runWorkModeTick(new Date(now.getTime() + 4 * MINUTE), { sendDigest: false });
     expect(await countEvents(employee.id, org.organisation.id, "DEVICE_SYNC_DELAYED")).toBe(2);
+  });
+
+  it("records DEVICE_SYNC_DELAYED once when an on-demand evaluation (GET /sync) is the first to see the episode", async () => {
+    const now = new Date();
+    const { org, employee, device } = await connectedFixture(now);
+    const silent = await prisma.device.update({
+      where: { id: device.id },
+      data: { lastDeviceSyncAt: new Date(now.getTime() - 3 * HOUR) },
+    });
+    const { accessToken } = await issueMobileTokens(silent);
+
+    // The phone fetches its bundle without having posted /device/state for 3 h on shift: the sync evaluation
+    // claims the episode and must emit the event — otherwise the job, seeing the marker, never would.
+    const res = await callRoute(syncRoute, {
+      path: "/api/mobile/v1/sync",
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    expect(res.status).toBe(200);
+    const row = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
+    expect(row.attentionReason).toContain(SYNC_DELAYED_MARKER);
+    expect(await countEvents(employee.id, org.organisation.id, "DEVICE_SYNC_DELAYED")).toBe(1);
+
+    const tick = await runWorkModeTick(new Date(now.getTime() + MINUTE), { sendDigest: false });
+    expect(tick.syncDelayedEpisodes).toBe(0);
+    expect(await countEvents(employee.id, org.organisation.id, "DEVICE_SYNC_DELAYED")).toBe(1);
   });
 
   it("starts scheduled breaks server-side when their window opens, once", async () => {
@@ -221,7 +315,9 @@ describe("runWorkModeTick", () => {
     const scheduled = await prisma.scheduledBreak.create({
       data: { shiftId: shift.id, offsetMinutesFromStart: 119, durationMinutes: 15 },
     });
-    await prisma.scheduledBreak.create({ data: { shiftId: shift.id, offsetMinutesFromStart: 200, durationMinutes: 15 } });
+    await prisma.scheduledBreak.create({
+      data: { shiftId: shift.id, offsetMinutesFromStart: 200, durationMinutes: 15 },
+    });
 
     const report = await runWorkModeTick(now, { sendDigest: false });
     expect(report.scheduledBreaksStarted).toBe(1);
@@ -231,10 +327,14 @@ describe("runWorkModeTick", () => {
     expect(session.status).toBe("ACTIVE");
     expect(session.startedAt.getTime()).toBe(shift.startsAt.getTime() + 119 * MINUTE);
     expect(session.plannedEndsAt.getTime()).toBe(session.startedAt.getTime() + 15 * MINUTE);
-    const started = await prisma.activityEvent.findFirstOrThrow({ where: { employeeId: employee.id, type: "BREAK_STARTED" } });
+    const started = await prisma.activityEvent.findFirstOrThrow({
+      where: { employeeId: employee.id, type: "BREAK_STARTED" },
+    });
     expect(started.actorType).toBe("SYSTEM");
     expect((started.metadata as { trigger: string }).trigger).toBe("SCHEDULED");
-    const row = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const row = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(row.expectedState).toBe("ON_BREAK");
     expect(row.activeBreakSessionId).toBe(session.id);
 
@@ -252,7 +352,9 @@ describe("runWorkModeTick", () => {
     const admin = await createTestUser({ name: "Quiet Admin" });
     await addMember(org.organisation.id, admin.user, "ADMIN");
     await prisma.organisationMembership.update({
-      where: { userId_organisationId: { userId: admin.user.id, organisationId: org.organisation.id } },
+      where: {
+        userId_organisationId: { userId: admin.user.id, organisationId: org.organisation.id },
+      },
       data: { notificationPreferences: { digestEmail: false } },
     });
     const manager = await createTestUser({ name: "Plain Manager" });
@@ -263,16 +365,24 @@ describe("runWorkModeTick", () => {
     const notifications = await prisma.notification.findMany({
       where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE },
     });
-    expect(notifications.map((n) => n.recipientId).sort()).toEqual([org.owner.id, admin.user.id].sort());
+    expect(notifications.map((n) => n.recipientId).sort()).toEqual(
+      [org.owner.id, admin.user.id].sort(),
+    );
     expect(notifications[0]!.title).toContain("needs attention");
-    expect((notifications[0]!.metadata as { employeeIds: string[] }).employeeIds).toEqual([employee.id]);
+    expect((notifications[0]!.metadata as { employeeIds: string[] }).employeeIds).toEqual([
+      employee.id,
+    ]);
     const emails = testEmails().sent.filter((m) => m.subject.includes("attention"));
     expect(emails.map((m) => m.to.toLowerCase())).toEqual([org.owner.email.toLowerCase()]);
     expect(emails[0]!.text).toContain("Permissions missing");
 
     const again = await runWorkModeTick(new Date(now.getTime() + 10 * MINUTE));
     expect(again.digestsSent).toBe(0);
-    expect(await prisma.notification.count({ where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE } })).toBe(2);
+    expect(
+      await prisma.notification.count({
+        where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE },
+      }),
+    ).toBe(2);
 
     const later = await runWorkModeTick(new Date(now.getTime() + 61 * MINUTE));
     expect(later.digestsSent).toBe(1);
@@ -292,14 +402,28 @@ describe("runWorkModeTick", () => {
       ],
     });
     const [policyA, policyB] = await Promise.all([
-      prisma.breakPolicy.create({ data: { organisationId: org.organisation.id, name: "Bar breaks" } }),
-      prisma.breakPolicy.create({ data: { organisationId: org.organisation.id, name: "Floor breaks" } }),
+      prisma.breakPolicy.create({
+        data: { organisationId: org.organisation.id, name: "Bar breaks" },
+      }),
+      prisma.breakPolicy.create({
+        data: { organisationId: org.organisation.id, name: "Floor breaks" },
+      }),
     ]);
     await prisma.breakPolicyAssignment.create({
-      data: { organisationId: org.organisation.id, breakPolicyId: policyA.id, scopeType: "TEAM", scopeId: teamA.id },
+      data: {
+        organisationId: org.organisation.id,
+        breakPolicyId: policyA.id,
+        scopeType: "TEAM",
+        scopeId: teamA.id,
+      },
     });
     await prisma.breakPolicyAssignment.create({
-      data: { organisationId: org.organisation.id, breakPolicyId: policyB.id, scopeType: "TEAM", scopeId: teamB.id },
+      data: {
+        organisationId: org.organisation.id,
+        breakPolicyId: policyB.id,
+        scopeType: "TEAM",
+        scopeId: teamB.id,
+      },
     });
 
     const first = await runWorkModeTick(now, { sendDigest: false });
@@ -307,12 +431,16 @@ describe("runWorkModeTick", () => {
     const warning = await prisma.activityEvent.findFirstOrThrow({
       where: { employeeId: employee.id, type: "POLICY_RESOLUTION_WARNING" },
     });
-    expect((warning.metadata as { code: string; kind: string }).code).toBe("AMBIGUOUS_TEAM_ASSIGNMENT");
+    expect((warning.metadata as { code: string; kind: string }).code).toBe(
+      "AMBIGUOUS_TEAM_ASSIGNMENT",
+    );
     expect((warning.metadata as { kind: string }).kind).toBe("break");
 
     const second = await runWorkModeTick(new Date(now.getTime() + MINUTE), { sendDigest: false });
     expect(second.resolutionWarnings).toBe(0);
-    expect(await countEvents(employee.id, org.organisation.id, "POLICY_RESOLUTION_WARNING")).toBe(1);
+    expect(await countEvents(employee.id, org.organisation.id, "POLICY_RESOLUTION_WARNING")).toBe(
+      1,
+    );
   });
 });
 
@@ -326,11 +454,19 @@ describe("push bridge", () => {
     const token = "ab".repeat(32);
     await prisma.device.update({
       where: { id: device.id },
-      data: { pushTokenEncrypted: new Uint8Array(encrypt(JSON.stringify({ token, environment: "sandbox" }))) },
+      data: {
+        pushTokenEncrypted: new Uint8Array(
+          encrypt(JSON.stringify({ token, environment: "sandbox" })),
+        ),
+      },
     });
     await prisma.device.update({
       where: { id: other.device.id },
-      data: { pushTokenEncrypted: new Uint8Array(encrypt(JSON.stringify({ token: "cd".repeat(32), environment: "sandbox" }))) },
+      data: {
+        pushTokenEncrypted: new Uint8Array(
+          encrypt(JSON.stringify({ token: "cd".repeat(32), environment: "sandbox" })),
+        ),
+      },
     });
     ensureOrganisationBridged(org.organisation.id);
 
@@ -358,7 +494,10 @@ describe("push bridge", () => {
     });
     await flushPushBridge();
     expect(provider.silent).toHaveLength(3);
-    const tokens = provider.silent.slice(1).flatMap((s) => s.tokens).sort();
+    const tokens = provider.silent
+      .slice(1)
+      .flatMap((s) => s.tokens)
+      .sort();
     expect(tokens).toEqual([token, "cd".repeat(32)].sort());
 
     // Unrelated event kinds are ignored.
@@ -370,7 +509,10 @@ describe("push bridge", () => {
 
 describe("POST /api/jobs/tick", () => {
   it("requires the scheduler secret and returns the tick report", async () => {
-    const anonymous = await callRoute<ErrorBody>(tickRoute, { method: "POST", path: "/api/jobs/tick" });
+    const anonymous = await callRoute<ErrorBody>(tickRoute, {
+      method: "POST",
+      path: "/api/jobs/tick",
+    });
     expect(anonymous.status).toBe(401);
     const wrong = await callRoute<ErrorBody>(tickRoute, {
       method: "POST",
@@ -379,11 +521,14 @@ describe("POST /api/jobs/tick", () => {
     });
     expect(wrong.status).toBe(401);
 
-    const res = await callRoute<{ ok: boolean; report: { now: string; errors: string[] } }>(tickRoute, {
-      method: "POST",
-      path: "/api/jobs/tick",
-      headers: { authorization: `Bearer ${env().CRON_SECRET}` },
-    });
+    const res = await callRoute<{ ok: boolean; report: { now: string; errors: string[] } }>(
+      tickRoute,
+      {
+        method: "POST",
+        path: "/api/jobs/tick",
+        headers: { authorization: `Bearer ${env().CRON_SECRET}` },
+      },
+    );
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.report.errors).toEqual([]);

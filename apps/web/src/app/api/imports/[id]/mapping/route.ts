@@ -8,6 +8,11 @@ import { saveImportMapping } from "@/server/imports";
  * status MAPPED. IMPORT_MAPPING_INCOMPLETE unless date, start, end and an employee identifier are mapped.
  */
 export const POST = createHandler(
-  { auth: "manager", permission: "imports:write", params: idParamsSchema, body: importMappingSchema },
+  {
+    auth: "manager",
+    permission: "imports:write",
+    params: idParamsSchema,
+    body: importMappingSchema,
+  },
   async ({ ctx, params, body }) => saveImportMapping(ctx, params.id, body),
 );

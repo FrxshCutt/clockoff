@@ -77,7 +77,9 @@ export function BreakBehaviourField({
                       <RadioGroupItem id={id} value={option.value} className="mt-0.5" />
                       <span className="min-w-0 space-y-0.5">
                         <span className="block text-sm leading-5 font-medium">{option.label}</span>
-                        <span className="text-muted-foreground block text-xs leading-4">{option.description}</span>
+                        <span className="text-muted-foreground block text-xs leading-4">
+                          {option.description}
+                        </span>
                       </span>
                     </label>
                   );

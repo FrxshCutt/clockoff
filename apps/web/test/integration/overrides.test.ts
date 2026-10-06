@@ -1,14 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@workmode/db";
 import { mobileSyncResponseSchema } from "@workmode/validation/mobile";
-import { listOverridesResponseSchema, overrideResponseSchema } from "@workmode/validation/overrides";
+import {
+  listOverridesResponseSchema,
+  overrideResponseSchema,
+} from "@workmode/validation/overrides";
 import { describe, expect, it } from "vitest";
 import { GET as syncRoute } from "@/app/api/mobile/v1/sync/route";
 import { POST as revokeRoute } from "@/app/api/overrides/[id]/revoke/route";
 import { GET as listRoute, POST as createRoute } from "@/app/api/overrides/route";
 import { getEventBus, type RealtimeEvent } from "@/server/events";
 import { issueMobileTokens } from "@/server/mobileAuth";
-import { addMember, callRoute, createTestDevice, createTestOrg, createTestUser, loginAs, type CookieJar, type ErrorBody } from "../helpers";
+import {
+  addMember,
+  callRoute,
+  createTestDevice,
+  createTestOrg,
+  createTestUser,
+  loginAs,
+  type CookieJar,
+  type ErrorBody,
+} from "../helpers";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -19,7 +31,11 @@ async function fixture() {
   const { device, employee } = await createTestDevice(organisationId);
   const connected = await prisma.device.update({
     where: { id: device.id },
-    data: { permissionState: "APPROVED", selectionState: "CONFIGURED", lastDeviceSyncAt: new Date() },
+    data: {
+      permissionState: "APPROVED",
+      selectionState: "CONFIGURED",
+      lastDeviceSyncAt: new Date(),
+    },
   });
   const now = Date.now();
   const shift = await prisma.shift.create({
@@ -35,13 +51,27 @@ async function fixture() {
   await addMember(organisationId, managerUser.user, "MANAGER");
   const ownerJar = await loginAs(org.owner, { organisationId });
   const managerJar = await loginAs(managerUser.user, { organisationId });
-  return { org, organisationId, device: connected, employee, shift, ownerJar, managerJar, managerUser };
+  return {
+    org,
+    organisationId,
+    device: connected,
+    employee,
+    shift,
+    ownerJar,
+    managerJar,
+    managerUser,
+  };
 }
 
 type OverrideBody = Record<string, unknown>;
 
 async function create(jar: CookieJar, body: OverrideBody) {
-  return callRoute<ErrorBody & { override?: unknown }>(createRoute, { method: "POST", path: "/api/overrides", jar, body });
+  return callRoute<ErrorBody & { override?: unknown }>(createRoute, {
+    method: "POST",
+    path: "/api/overrides",
+    jar,
+    body,
+  });
 }
 
 async function revoke(jar: CookieJar, id: string, body: OverrideBody = {}) {
@@ -60,7 +90,11 @@ describe("POST /api/overrides", () => {
     const seen: RealtimeEvent[] = [];
     const unsubscribe = getEventBus().subscribe(organisationId, (e) => seen.push(e));
 
-    const res = await create(managerJar, { employeeId: employee.id, type: "EXEMPT_TEMPORARILY", reason: "Family emergency" });
+    const res = await create(managerJar, {
+      employeeId: employee.id,
+      type: "EXEMPT_TEMPORARILY",
+      reason: "Family emergency",
+    });
     expect(res.status, JSON.stringify(res.body)).toBe(201);
     const { override } = overrideResponseSchema.parse(res.body);
     expect(override.status).toBe("ACTIVE");
@@ -69,25 +103,42 @@ describe("POST /api/overrides", () => {
     expect(override.payload).toEqual({});
     expect(Date.parse(override.expiresAt) - Date.parse(override.startsAt)).toBe(60 * MINUTE);
 
-    const audit = await prisma.auditLog.findFirstOrThrow({ where: { organisationId, action: "override.created" } });
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { organisationId, action: "override.created" },
+    });
     expect(audit.entityId).toBe(override.id);
     expect(audit.actorUserId).toBe(managerUser.user.id);
-    const activity = await prisma.activityEvent.findFirstOrThrow({ where: { organisationId, type: "OVERRIDE_CREATED" } });
+    const activity = await prisma.activityEvent.findFirstOrThrow({
+      where: { organisationId, type: "OVERRIDE_CREATED" },
+    });
     expect(activity.actorType).toBe("MANAGER");
     expect(activity.actorUserId).toBe(managerUser.user.id);
     expect(activity.employeeId).toBe(employee.id);
     expect((activity.metadata as { overrideId: string }).overrideId).toBe(override.id);
 
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.expectedState).toBe("MANAGER_OVERRIDE");
     expect(workState.expectedRestriction).toBe("NONE");
-    expect(seen.some((e) => e.type === "OVERRIDE_CREATED" && (e.payload as { overrideId: string }).overrideId === override.id)).toBe(true);
+    expect(
+      seen.some(
+        (e) =>
+          e.type === "OVERRIDE_CREATED" &&
+          (e.payload as { overrideId: string }).overrideId === override.id,
+      ),
+    ).toBe(true);
     expect(seen.some((e) => e.type === "override.changed")).toBe(true);
 
     // The device learns about it through /sync.
     const { accessToken } = await issueMobileTokens(device);
     const bundle = mobileSyncResponseSchema.parse(
-      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: { authorization: `Bearer ${accessToken}` } })).body,
+      (
+        await callRoute(syncRoute, {
+          path: "/api/mobile/v1/sync",
+          headers: { authorization: `Bearer ${accessToken}` },
+        })
+      ).body,
     );
     expect(bundle.activeOverrides.map((o) => o.id)).toEqual([override.id]);
     expect(bundle.expectedState.state).toBe("MANAGER_OVERRIDE");
@@ -97,11 +148,21 @@ describe("POST /api/overrides", () => {
   it("caps the duration by role and reserves EMERGENCY_POLICY_OVERRIDE for org:manage, organisation-wide", async () => {
     const { employee, managerJar, ownerJar } = await fixture();
 
-    const tooLong = await create(managerJar, { employeeId: employee.id, type: "EXEMPT_TEMPORARILY", reason: "Long cover", durationMinutes: 25 * 60 });
+    const tooLong = await create(managerJar, {
+      employeeId: employee.id,
+      type: "EXEMPT_TEMPORARILY",
+      reason: "Long cover",
+      durationMinutes: 25 * 60,
+    });
     expect(tooLong.status).toBe(400);
     expect(tooLong.body.error.code).toBe("OVERRIDE_TOO_LONG");
 
-    const ownerLong = await create(ownerJar, { employeeId: employee.id, type: "EXEMPT_TEMPORARILY", reason: "Long cover", durationMinutes: 25 * 60 });
+    const ownerLong = await create(ownerJar, {
+      employeeId: employee.id,
+      type: "EXEMPT_TEMPORARILY",
+      reason: "Long cover",
+      durationMinutes: 25 * 60,
+    });
     expect(ownerLong.status).toBe(201);
 
     const ownerTooLong = await create(ownerJar, {
@@ -122,15 +183,25 @@ describe("POST /api/overrides", () => {
     expect(past.status).toBe(400);
     expect(past.body.error.code).toBe("VALIDATION_ERROR");
 
-    const managerEmergency = await create(managerJar, { type: "EMERGENCY_POLICY_OVERRIDE", reason: "Fire alarm" });
+    const managerEmergency = await create(managerJar, {
+      type: "EMERGENCY_POLICY_OVERRIDE",
+      reason: "Fire alarm",
+    });
     expect(managerEmergency.status).toBe(403);
     expect(managerEmergency.body.error.code).toBe("FORBIDDEN");
 
-    const scoped = await create(ownerJar, { employeeId: employee.id, type: "EMERGENCY_POLICY_OVERRIDE", reason: "Fire alarm" });
+    const scoped = await create(ownerJar, {
+      employeeId: employee.id,
+      type: "EMERGENCY_POLICY_OVERRIDE",
+      reason: "Fire alarm",
+    });
     expect(scoped.status).toBe(400);
     expect(scoped.body.error.code).toBe("VALIDATION_ERROR");
 
-    const emergency = await create(ownerJar, { type: "EMERGENCY_POLICY_OVERRIDE", reason: "Fire alarm" });
+    const emergency = await create(ownerJar, {
+      type: "EMERGENCY_POLICY_OVERRIDE",
+      reason: "Fire alarm",
+    });
     expect(emergency.status).toBe(201);
     const { override } = overrideResponseSchema.parse(emergency.body);
     expect(override.employee).toBeNull();
@@ -141,7 +212,10 @@ describe("POST /api/overrides", () => {
     expect(activity.employeeId).toBeNull();
     expect((activity.metadata as { orgWide: boolean }).orgWide).toBe(true);
 
-    const missingEmployee = await create(managerJar, { type: "EXEMPT_TEMPORARILY", reason: "No one" });
+    const missingEmployee = await create(managerJar, {
+      type: "EXEMPT_TEMPORARILY",
+      reason: "No one",
+    });
     expect(missingEmployee.status).toBe(400);
   });
 
@@ -165,12 +239,24 @@ describe("POST /api/overrides", () => {
     });
     expect(exception.status, JSON.stringify(exception.body)).toBe(201);
     const stored = overrideResponseSchema.parse(exception.body).override;
-    expect(stored.payload).toEqual({ restrictionBehaviour: "RELAX_CATEGORIES", relaxedCategories: ["GAMES"], breakPolicyId: breakPolicy.id });
+    expect(stored.payload).toEqual({
+      restrictionBehaviour: "RELAX_CATEGORIES",
+      relaxedCategories: ["GAMES"],
+      breakPolicyId: breakPolicy.id,
+    });
     const { accessToken } = await issueMobileTokens(device);
     const bundle = mobileSyncResponseSchema.parse(
-      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: { authorization: `Bearer ${accessToken}` } })).body,
+      (
+        await callRoute(syncRoute, {
+          path: "/api/mobile/v1/sync",
+          headers: { authorization: `Bearer ${accessToken}` },
+        })
+      ).body,
     );
-    expect(bundle.activeOverrides[0]?.breakBehaviour).toEqual({ restrictionBehaviour: "RELAX_CATEGORIES", relaxedCategories: ["GAMES"] });
+    expect(bundle.activeOverrides[0]?.breakBehaviour).toEqual({
+      restrictionBehaviour: "RELAX_CATEGORIES",
+      relaxedCategories: ["GAMES"],
+    });
     expect(bundle.expectedState.effectiveRestriction).toBe("BREAK_RELAXED");
     expect(bundle.expectedState.relaxation?.liftedCategories).toEqual(["GAMES"]);
 
@@ -180,10 +266,20 @@ describe("POST /api/overrides", () => {
       reason: "Second exception",
       payload: { restrictionBehaviour: "KEEP_RESTRICTIONS" },
     });
-    expect(overrideResponseSchema.parse(explicit.body).override.payload).toEqual({ restrictionBehaviour: "KEEP_RESTRICTIONS", relaxedCategories: [] });
+    expect(overrideResponseSchema.parse(explicit.body).override.payload).toEqual({
+      restrictionBehaviour: "KEEP_RESTRICTIONS",
+      relaxedCategories: [],
+    });
 
-    const bare = await create(managerJar, { employeeId: employee.id, type: "TEMPORARY_EXCEPTION", reason: "Third exception" });
-    expect(overrideResponseSchema.parse(bare.body).override.payload).toEqual({ restrictionBehaviour: "RELAX_ALL", relaxedCategories: [] });
+    const bare = await create(managerJar, {
+      employeeId: employee.id,
+      type: "TEMPORARY_EXCEPTION",
+      reason: "Third exception",
+    });
+    expect(overrideResponseSchema.parse(bare.body).override.payload).toEqual({
+      restrictionBehaviour: "RELAX_ALL",
+      relaxedCategories: [],
+    });
 
     const payloadOnLifting = await create(managerJar, {
       employeeId: employee.id,
@@ -194,7 +290,9 @@ describe("POST /api/overrides", () => {
     expect(payloadOnLifting.status).toBe(400);
 
     const other = await createTestOrg();
-    const foreignPolicy = await prisma.breakPolicy.create({ data: { organisationId: other.organisation.id, name: "Theirs" } });
+    const foreignPolicy = await prisma.breakPolicy.create({
+      data: { organisationId: other.organisation.id, name: "Theirs" },
+    });
     const foreign = await create(managerJar, {
       employeeId: employee.id,
       type: "TEMPORARY_EXCEPTION",
@@ -203,18 +301,32 @@ describe("POST /api/overrides", () => {
     });
     expect(foreign.status).toBe(404);
 
-    const early = await create(managerJar, { employeeId: employee.id, type: "END_WORK_MODE_EARLY", reason: "Sent home early" });
+    const early = await create(managerJar, {
+      employeeId: employee.id,
+      type: "END_WORK_MODE_EARLY",
+      reason: "Sent home early",
+    });
     expect(early.status).toBe(201);
-    expect(overrideResponseSchema.parse(early.body).override.expiresAt).toBe(shift.endsAt.toISOString());
+    expect(overrideResponseSchema.parse(early.body).override.expiresAt).toBe(
+      shift.endsAt.toISOString(),
+    );
 
     const inactive = await prisma.employee.create({
       data: { organisationId, firstName: "Gone", lastName: "Away", employmentStatus: "INACTIVE" },
     });
-    const forInactive = await create(managerJar, { employeeId: inactive.id, type: "EXEMPT_TEMPORARILY", reason: "Not here" });
+    const forInactive = await create(managerJar, {
+      employeeId: inactive.id,
+      type: "EXEMPT_TEMPORARILY",
+      reason: "Not here",
+    });
     expect(forInactive.status).toBe(409);
     expect(forInactive.body.error.code).toBe("EMPLOYEE_INACTIVE");
 
-    const unknown = await create(managerJar, { employeeId: randomUUID(), type: "EXEMPT_TEMPORARILY", reason: "Nobody" });
+    const unknown = await create(managerJar, {
+      employeeId: randomUUID(),
+      type: "EXEMPT_TEMPORARILY",
+      reason: "Nobody",
+    });
     expect(unknown.status).toBe(404);
     expect(unknown.body.error.code).toBe("EMPLOYEE_NOT_FOUND");
   });
@@ -226,7 +338,13 @@ describe("POST /api/overrides/:id/revoke and GET /api/overrides", () => {
     const seen: RealtimeEvent[] = [];
     const unsubscribe = getEventBus().subscribe(organisationId, (e) => seen.push(e));
     const created = overrideResponseSchema.parse(
-      (await create(managerJar, { employeeId: employee.id, type: "EXEMPT_TEMPORARILY", reason: "Cover shift" })).body,
+      (
+        await create(managerJar, {
+          employeeId: employee.id,
+          type: "EXEMPT_TEMPORARILY",
+          reason: "Cover shift",
+        })
+      ).body,
     ).override;
 
     const revoked = await revoke(managerJar, created.id, { reason: "Back at work" });
@@ -234,15 +352,21 @@ describe("POST /api/overrides/:id/revoke and GET /api/overrides", () => {
     const revokedDto = overrideResponseSchema.parse(revoked.body).override;
     expect(revokedDto.status).toBe("REVOKED");
     expect(revokedDto.revokedAt).not.toBeNull();
-    expect(await prisma.auditLog.count({ where: { organisationId, action: "override.revoked" } })).toBe(1);
+    expect(
+      await prisma.auditLog.count({ where: { organisationId, action: "override.revoked" } }),
+    ).toBe(1);
     expect(seen.filter((e) => e.type === "OVERRIDE_REVOKED")).toHaveLength(1);
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.expectedState).toBe("WORKING");
 
     const again = await revoke(managerJar, created.id);
     expect(again.status).toBe(200);
     expect(overrideResponseSchema.parse(again.body).override.revokedAt).toBe(revokedDto.revokedAt);
-    expect(await prisma.auditLog.count({ where: { organisationId, action: "override.revoked" } })).toBe(1);
+    expect(
+      await prisma.auditLog.count({ where: { organisationId, action: "override.revoked" } }),
+    ).toBe(1);
 
     const expired = await prisma.managerOverride.create({
       data: {
@@ -262,30 +386,57 @@ describe("POST /api/overrides/:id/revoke and GET /api/overrides", () => {
     expect(missing.status).toBe(404);
 
     const active = overrideResponseSchema.parse(
-      (await create(ownerJar, { employeeId: employee.id, type: "END_WORK_MODE_EARLY", reason: "Going home" })).body,
+      (
+        await create(ownerJar, {
+          employeeId: employee.id,
+          type: "END_WORK_MODE_EARLY",
+          reason: "Going home",
+        })
+      ).body,
     ).override;
 
-    const all = listOverridesResponseSchema.parse((await callRoute(listRoute, { path: "/api/overrides", jar: managerJar })).body);
+    const all = listOverridesResponseSchema.parse(
+      (await callRoute(listRoute, { path: "/api/overrides", jar: managerJar })).body,
+    );
     expect(all.items.map((o) => o.id)).toEqual([active.id, expired.id, created.id]);
     expect(all.items.map((o) => o.status)).toEqual(["ACTIVE", "EXPIRED", "REVOKED"]);
 
     const onlyActive = listOverridesResponseSchema.parse(
-      (await callRoute(listRoute, { path: "/api/overrides", query: { status: "ACTIVE" }, jar: managerJar })).body,
+      (
+        await callRoute(listRoute, {
+          path: "/api/overrides",
+          query: { status: "ACTIVE" },
+          jar: managerJar,
+        })
+      ).body,
     );
     expect(onlyActive.items.map((o) => o.id)).toEqual([active.id]);
 
     const revokedOrExpired = listOverridesResponseSchema.parse(
-      (await callRoute(listRoute, { path: "/api/overrides", query: { status: "REVOKED,EXPIRED", type: "EXEMPT_TEMPORARILY" }, jar: managerJar })).body,
+      (
+        await callRoute(listRoute, {
+          path: "/api/overrides",
+          query: { status: "REVOKED,EXPIRED", type: "EXEMPT_TEMPORARILY" },
+          jar: managerJar,
+        })
+      ).body,
     );
     expect(revokedOrExpired.items.map((o) => o.id)).toEqual([expired.id, created.id]);
 
     const paged = listOverridesResponseSchema.parse(
-      (await callRoute(listRoute, { path: "/api/overrides", query: { limit: 2 }, jar: managerJar })).body,
+      (await callRoute(listRoute, { path: "/api/overrides", query: { limit: 2 }, jar: managerJar }))
+        .body,
     );
     expect(paged.items).toHaveLength(2);
     expect(paged.nextCursor).not.toBeNull();
     const rest = listOverridesResponseSchema.parse(
-      (await callRoute(listRoute, { path: "/api/overrides", query: { limit: 2, cursor: paged.nextCursor! }, jar: managerJar })).body,
+      (
+        await callRoute(listRoute, {
+          path: "/api/overrides",
+          query: { limit: 2, cursor: paged.nextCursor! },
+          jar: managerJar,
+        })
+      ).body,
     );
     expect(rest.items.map((o) => o.id)).toEqual([created.id]);
     expect(rest.nextCursor).toBeNull();
@@ -293,7 +444,13 @@ describe("POST /api/overrides/:id/revoke and GET /api/overrides", () => {
     const other = await createTestOrg();
     const otherJar = await loginAs(other.owner, { organisationId: other.organisation.id });
     const foreignList = listOverridesResponseSchema.parse(
-      (await callRoute(listRoute, { path: "/api/overrides", query: { employeeId: employee.id }, jar: otherJar })).body,
+      (
+        await callRoute(listRoute, {
+          path: "/api/overrides",
+          query: { employeeId: employee.id },
+          jar: otherJar,
+        })
+      ).body,
     );
     expect(foreignList.items).toEqual([]);
     unsubscribe();

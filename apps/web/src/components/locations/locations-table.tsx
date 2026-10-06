@@ -26,7 +26,12 @@ import { cn } from "@/lib/utils";
 import { AssignScopePolicyPopover } from "./assign-scope-policy-popover";
 import { LocationFormSheet } from "./location-form-sheet";
 import { LOCATIONS_EMPTY_STATES } from "./locations-copy";
-import { compareByName, describeLocationTimezone, locationDeleteWarnings } from "./locations-view-model";
+import {
+  compareByName,
+  describeLocationTimezone,
+  describeStructureConflict,
+  locationDeleteWarnings,
+} from "./locations-view-model";
 import { useDeleteLocation, useLocationsList } from "./use-locations-teams";
 import { usePolicyOptions } from "./use-scope-assignments";
 
@@ -37,13 +42,17 @@ import { usePolicyOptions } from "./use-scope-assignments";
 export function LocationsSection() {
   const organisation = useCurrentOrganisation();
   const organisationTimezone = organisation.data?.organisation.timezone;
+  // Organisation structure is edited by owners and admins only (`org:manage`), as the API enforces.
   const canManage = usePermission("org:manage");
   const canAssign = usePermission("policies:write");
   const locations = useLocationsList();
   const { workPolicies, breakPolicies } = usePolicyOptions({ enabled: canAssign });
   const remove = useDeleteLocation();
   const toastError = useApiErrorToast();
-  const [sheet, setSheet] = useState<{ open: boolean; location: Location | null }>({ open: false, location: null });
+  const [sheet, setSheet] = useState<{ open: boolean; location: Location | null }>({
+    open: false,
+    location: null,
+  });
   const [deleting, setDeleting] = useState<Location | null>(null);
 
   const columns = useMemo<ColumnDef<Location>[]>(
@@ -59,7 +68,13 @@ export function LocationsSection() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="Time zone" />,
         cell: ({ row }) => {
           const zone = describeLocationTimezone(row.original, organisationTimezone);
-          return <span className={cn("text-sm whitespace-nowrap", zone.inherited && "text-muted-foreground")}>{zone.label}</span>;
+          return (
+            <span
+              className={cn("text-sm whitespace-nowrap", zone.inherited && "text-muted-foreground")}
+            >
+              {zone.label}
+            </span>
+          );
         },
       },
       {
@@ -77,12 +92,16 @@ export function LocationsSection() {
       {
         accessorKey: "employeeCount",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Employees" />,
-        cell: ({ row }) => <span className="text-sm tabular-nums">{formatNumber(row.original.employeeCount)}</span>,
+        cell: ({ row }) => (
+          <span className="text-sm tabular-nums">{formatNumber(row.original.employeeCount)}</span>
+        ),
       },
       {
         accessorKey: "teamCount",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Teams" />,
-        cell: ({ row }) => <span className="text-sm tabular-nums">{formatNumber(row.original.teamCount)}</span>,
+        cell: ({ row }) => (
+          <span className="text-sm tabular-nums">{formatNumber(row.original.teamCount)}</span>
+        ),
       },
       {
         id: "workPolicy",
@@ -123,7 +142,12 @@ export function LocationsSection() {
           canManage ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${row.original.name}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Actions for ${row.original.name}`}
+                >
                   <MoreHorizontal aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
@@ -218,7 +242,9 @@ export function LocationsSection() {
                 {warning}
               </span>
             ))}
-            <span className="block">Shifts already scheduled here keep their times. This can&apos;t be undone.</span>
+            <span className="block">
+              Shifts already scheduled here keep their times. This can&apos;t be undone.
+            </span>
           </span>
         }
         confirmLabel="Delete location"
@@ -230,7 +256,11 @@ export function LocationsSection() {
             await remove.mutateAsync(deleting.id);
             toast.success(`${deleting.name} deleted`);
           } catch (error) {
-            toastError(error, { title: "Couldn't delete the location" });
+            // The API refuses (409) while shifts are still scheduled here; say so instead of the generic copy.
+            const conflict = describeStructureConflict(error, "location");
+            if (conflict)
+              toast.error("Couldn't delete the location", { description: conflict.message });
+            else toastError(error, { title: "Couldn't delete the location" });
             throw error;
           }
         }}

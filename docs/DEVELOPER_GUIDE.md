@@ -23,7 +23,12 @@ import { idParamsSchema, updateWidgetSchema } from "@workmode/validation";
 import { updateWidget } from "@/server/widgets/widgets.service";
 
 export const PATCH = createHandler(
-  { auth: "manager", permission: "widgets:write", params: idParamsSchema, body: updateWidgetSchema },
+  {
+    auth: "manager",
+    permission: "widgets:write",
+    params: idParamsSchema,
+    body: updateWidgetSchema,
+  },
   async ({ ctx, params, body }) => ({ widget: await updateWidget(ctx, params.id, body) }),
 );
 ```
@@ -46,7 +51,7 @@ export const PATCH = createHandler(
 - **Audit**: every manager mutation calls `audit(ctx, { action, entityType, entityId, before?, after? }, tx?)`
   (`@/server/audit/audit`).
 - **Activity**: domain events call `recordActivity({ organisationId, employeeId?, deviceId?, actorType, actorUserId?, type,
-  occurredAt?, metadata?, clientEventId? }, { db?, publish? })` (`@/server/activity/recordActivity`). It is idempotent
+occurredAt?, metadata?, clientEventId? }, { db?, publish? })` (`@/server/activity/recordActivity`). It is idempotent
   on `(deviceId, clientEventId)` and safe inside a transaction (pass `publish: false`, then `publishActivity(event)` after
   commit). Metadata is operational only (ids, versions, states, counts).
 - **Realtime**: `publishEvent({ type, organisationId, employeeId?, payload })` (`@/server/events`) feeds the SSE stream
@@ -69,11 +74,11 @@ functions; they never re-implement them. The state machine and break rules are m
 
 ## Tests
 
-| Kind | Where | Command |
-| --- | --- | --- |
-| Pure unit | `packages/*/src/**/*.test.ts` | `pnpm --filter @workmode/shared test` |
-| Web unit | `apps/web/src/**/*.test.ts(x)` (node env, no DOM) | `pnpm --filter @workmode/web test` |
-| Web integration | `apps/web/test/integration/*.test.ts` | `pnpm test:integration` |
+| Kind            | Where                                             | Command                               |
+| --------------- | ------------------------------------------------- | ------------------------------------- |
+| Pure unit       | `packages/*/src/**/*.test.ts`                     | `pnpm --filter @workmode/shared test` |
+| Web unit        | `apps/web/src/**/*.test.ts(x)` (node env, no DOM) | `pnpm --filter @workmode/web test`    |
+| Web integration | `apps/web/test/integration/*.test.ts`             | `pnpm test:integration`               |
 
 Integration helpers (`apps/web/test/helpers`): `callRoute(handler, { method, path, params, query, body, jar })`,
 `createTestUser()`, `createTestOrg({ owner })`, `addMember(orgId, user, role)`, `loginAs(user)` → cookie jar with CSRF,

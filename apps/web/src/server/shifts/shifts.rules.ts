@@ -40,7 +40,9 @@ export function assertShiftDuration(startsAt: Date, endsAt: Date): number {
     throw new AppError(
       "SHIFT_TOO_SHORT",
       `A shift must last at least ${SHIFT_LIMITS.minDurationMinutes} minutes`,
-      { details: { durationMinutes: minutes, minDurationMinutes: SHIFT_LIMITS.minDurationMinutes } },
+      {
+        details: { durationMinutes: minutes, minDurationMinutes: SHIFT_LIMITS.minDurationMinutes },
+      },
     );
   }
   if (minutes > SHIFT_LIMITS.maxDurationMinutes) {
@@ -152,14 +154,16 @@ export function scheduledBreakWarnings(
   if (!policy.breaksEnabled) {
     warnings.push({
       code: "SCHEDULED_BREAKS_NOT_ALLOWED",
-      message: "The employee's break policy has breaks disabled, so scheduled breaks will not start.",
+      message:
+        "The employee's break policy has breaks disabled, so scheduled breaks will not start.",
     });
     return warnings;
   }
   if (!policy.scheduledBreaksAllowed) {
     warnings.push({
       code: "SCHEDULED_BREAKS_NOT_ALLOWED",
-      message: "The employee's break policy does not allow scheduled breaks, so they will not start.",
+      message:
+        "The employee's break policy does not allow scheduled breaks, so they will not start.",
     });
   }
   const sorted = [...breaks].sort((a, b) => a.offsetMinutesFromStart - b.offsetMinutesFromStart);

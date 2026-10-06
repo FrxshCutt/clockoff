@@ -1,6 +1,7 @@
 import type { Policy } from "@workmode/validation/policies";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { DetailHeaderSkeleton } from "./detail-header-skeleton";
 import { PolicyCard } from "./policy-card";
 import { PrecedenceExplainer } from "./precedence-explainer";
 import { DEFAULT_SHIELD_PREVIEW_MESSAGE, ShieldPreview } from "./shield-preview";
@@ -46,6 +47,9 @@ describe("PolicyCard", () => {
   it("shows name, status, default marker, category chips (capped) and the version line", () => {
     const html = renderToStaticMarkup(<PolicyCard policy={POLICY} now={NOW} />);
     expect(html).toContain("Front of house");
+    // Cards sit directly under the page h1, so each is an h2.
+    expect(html).toMatch(/<h2[^>]*>/);
+    expect(html).not.toContain("<h3");
     expect(html).toContain('href="/policies/6f1c2c1e-4d1b-4a8e-9b51-2f6f0f1c9a10"');
     expect(html).toContain('data-kind="policyStatus"');
     expect(html).toContain('data-value="ACTIVE"');
@@ -54,6 +58,40 @@ describe("PolicyCard", () => {
     expect(html).toContain("+2 more");
     expect(html).toContain("12 employees · 2 assignments");
     expect(html).toContain("v3 · published 2d ago");
+  });
+
+  it("shows the published version's categories (what devices enforce), not an unpublished draft's", () => {
+    const withDraft: Policy = {
+      ...POLICY,
+      draftVersion: {
+        ...POLICY.currentVersion!,
+        id: "9d8c7b6a-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+        versionNumber: 4,
+        publishedAt: null,
+        restrictionConfig: { ...POLICY.currentVersion!.restrictionConfig, categories: ["DATING"] },
+      },
+    };
+    const html = renderToStaticMarkup(<PolicyCard policy={withDraft} now={NOW} />);
+    expect(html).toContain("Social Media");
+    expect(html).not.toContain("Dating");
+    expect(html).toContain("unpublished changes");
+  });
+});
+
+describe("DetailHeaderSkeleton", () => {
+  it("renders exactly one h1 with a screen-reader loading label and a back link", () => {
+    const html = renderToStaticMarkup(
+      <DetailHeaderSkeleton
+        backHref="/policies"
+        backLabel="Policies"
+        loadingLabel="Loading policy…"
+      />,
+    );
+    expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
+    expect(html).toContain("Loading policy…");
+    expect(html).toContain('href="/policies"');
+    // The visual bars are decorative.
+    expect((html.match(/aria-hidden="true"/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -74,6 +112,7 @@ describe("PrecedenceExplainer", () => {
     const html = renderToStaticMarkup(<PrecedenceExplainer noun="policy" defaultOpen />);
     expect(html).toContain("Which policy applies?");
     expect(html).toContain("Employee &gt; Team &gt; Location &gt; Organisation");
-    for (const label of ["Employee", "Team", "Location", "Organisation"]) expect(html).toContain(label);
+    for (const label of ["Employee", "Team", "Location", "Organisation"])
+      expect(html).toContain(label);
   });
 });

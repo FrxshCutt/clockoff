@@ -14,7 +14,7 @@ import {
   isQuickFilter,
   type EmployeeListParams,
 } from "./employee-filters";
-import { ReferenceSelect } from "./reference-select";
+import { ReferenceSelect, referenceOptions } from "./reference-select";
 
 export interface EmployeeFilterBarProps {
   params: EmployeeListParams;
@@ -42,6 +42,18 @@ export function EmployeeFilterBar({
   const teams = useTeams();
   const policies = usePolicies();
   const active = hasActiveEmployeeFilters(params) || searchInput.trim() !== "";
+
+  const locationOptions = referenceOptions(locations, (l) => ({ id: l.id, name: l.name }));
+  const departmentOptions = referenceOptions(departments, (d) => ({ id: d.id, name: d.name }));
+  const teamOptions = referenceOptions(teams, (t) => ({
+    id: t.id,
+    name: t.name,
+    hint: t.location?.name,
+  }));
+  const policyOptions = referenceOptions(
+    { data: policies.data?.filter((p) => p.status !== "ARCHIVED"), isError: policies.isError },
+    (p) => ({ id: p.id, name: p.name, hint: p.isDefault ? "Organisation default" : undefined }),
+  );
 
   const selectClass = "h-9 w-full sm:w-44";
 
@@ -100,7 +112,7 @@ export function EmployeeFilterBar({
             id={`${ids}-location`}
             value={params.locationId ?? ""}
             onChange={(id) => onChange({ locationId: id || null, page: 1 })}
-            options={locations.data?.map((l) => ({ id: l.id, name: l.name }))}
+            options={locationOptions}
             isLoading={locations.isPending}
             noneLabel="All locations"
             className={selectClass}
@@ -114,7 +126,7 @@ export function EmployeeFilterBar({
             id={`${ids}-department`}
             value={params.departmentId ?? ""}
             onChange={(id) => onChange({ departmentId: id || null, page: 1 })}
-            options={departments.data?.map((d) => ({ id: d.id, name: d.name }))}
+            options={departmentOptions}
             isLoading={departments.isPending}
             noneLabel="All departments"
             className={selectClass}
@@ -128,7 +140,7 @@ export function EmployeeFilterBar({
             id={`${ids}-team`}
             value={params.teamId ?? ""}
             onChange={(id) => onChange({ teamId: id || null, page: 1 })}
-            options={teams.data?.map((t) => ({ id: t.id, name: t.name, hint: t.location?.name }))}
+            options={teamOptions}
             isLoading={teams.isPending}
             noneLabel="All teams"
             className={selectClass}
@@ -142,13 +154,7 @@ export function EmployeeFilterBar({
             id={`${ids}-policy`}
             value={params.policyId ?? ""}
             onChange={(id) => onChange({ policyId: id || null, page: 1 })}
-            options={policies.data
-              ?.filter((p) => p.status !== "ARCHIVED")
-              .map((p) => ({
-                id: p.id,
-                name: p.name,
-                hint: p.isDefault ? "Organisation default" : undefined,
-              }))}
+            options={policyOptions}
             isLoading={policies.isPending}
             noneLabel="All policies"
             className={selectClass}

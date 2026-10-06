@@ -1,12 +1,24 @@
 "use client";
 
-import { listActivityResponseSchema, type ActivityEvent, type ListActivityResponse } from "@workmode/validation/activity";
-import { listAuditLogsResponseSchema, type ListAuditLogsResponse } from "@workmode/validation/auditLogs";
+import {
+  listActivityResponseSchema,
+  type ActivityEvent,
+  type ListActivityResponse,
+} from "@workmode/validation/activity";
+import {
+  listAuditLogsResponseSchema,
+  type ListAuditLogsResponse,
+} from "@workmode/validation/auditLogs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { parseResponse } from "@/hooks/api-shapes";
 import { api, type QueryParams } from "@/lib/api-client";
 import type { DateInput } from "@/lib/format";
-import { resolveDateRange, toActivityApiQuery, type ActivityFeedParams, type DateRangePreset } from "./activity-filters";
+import {
+  resolveDateRange,
+  toActivityApiQuery,
+  type ActivityFeedParams,
+  type DateRangePreset,
+} from "./activity-filters";
 import { activityKeys, auditLogKeys } from "./activity-keys";
 
 /**
@@ -48,7 +60,11 @@ export function useRecentActivity(limit = 20, options: { enabled?: boolean } = {
   return useQuery({
     queryKey: activityKeys.feed({ recent: true, limit }),
     queryFn: async ({ signal }): Promise<ActivityEvent[]> =>
-      parseResponse(listActivityResponseSchema, await api.get<unknown>("/api/activity", { limit }, signal), "GET /api/activity").items,
+      parseResponse(
+        listActivityResponseSchema,
+        await api.get<unknown>("/api/activity", { limit }, signal),
+        "GET /api/activity",
+      ).items,
     enabled: options.enabled ?? true,
   });
 }
@@ -112,7 +128,10 @@ export function useAuditLogs(
     queryFn: async ({ pageParam, signal }): Promise<ListAuditLogsResponse> => {
       const raw = await api.get<unknown>(
         "/api/audit-logs",
-        { ...toAuditLogApiQuery(params, Date.now(), timeZone, limit), ...(pageParam ? { cursor: pageParam } : {}) },
+        {
+          ...toAuditLogApiQuery(params, Date.now(), timeZone, limit),
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
         signal,
       );
       return parseResponse(listAuditLogsResponseSchema, raw, "GET /api/audit-logs");

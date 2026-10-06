@@ -27,7 +27,14 @@ describe("device list URL state", () => {
   });
 
   it("round-trips every filter", () => {
-    const state: DeviceListParams = { active: "all", permission: ["DENIED", "REVOKED"], employeeId: EMPLOYEE_ID, locationId: LOCATION_ID, page: 2, pageSize: 50 };
+    const state: DeviceListParams = {
+      active: "all",
+      permission: ["DENIED", "REVOKED"],
+      employeeId: EMPLOYEE_ID,
+      locationId: LOCATION_ID,
+      page: 2,
+      pageSize: 50,
+    };
     const qs = serializeDeviceListParams(state);
     expect(qs).toContain("active=all");
     expect(qs).toContain("permission=DENIED%2CREVOKED");
@@ -35,15 +42,36 @@ describe("device list URL state", () => {
   });
 
   it("falls back for invalid values", () => {
-    const state = parse("active=bogus&permission=BOGUS,DENIED&employee=nope&location=1&page=-1&pageSize=7");
+    const state = parse(
+      "active=bogus&permission=BOGUS,DENIED&employee=nope&location=1&page=-1&pageSize=7",
+    );
     expect(state).toEqual({ ...DEFAULT_DEVICE_LIST_PARAMS, permission: ["DENIED"] });
-    expect(parsePermissionList(["DENIED", "denied", "DENIED,APPROVED"])).toEqual(["DENIED", "APPROVED"]);
+    expect(parsePermissionList(["DENIED", "denied", "DENIED,APPROVED"])).toEqual([
+      "DENIED",
+      "APPROVED",
+    ]);
   });
 
   it("maps to GET /api/devices parameters", () => {
-    expect(toDeviceApiQuery(DEFAULT_DEVICE_LIST_PARAMS)).toEqual({ page: 1, pageSize: 25, isActive: true });
-    expect(toDeviceApiQuery({ ...DEFAULT_DEVICE_LIST_PARAMS, active: "inactive" })).toEqual({ page: 1, pageSize: 25, isActive: false });
-    expect(toDeviceApiQuery({ ...DEFAULT_DEVICE_LIST_PARAMS, active: "all", permission: ["DENIED"], employeeId: EMPLOYEE_ID, locationId: LOCATION_ID })).toEqual({
+    expect(toDeviceApiQuery(DEFAULT_DEVICE_LIST_PARAMS)).toEqual({
+      page: 1,
+      pageSize: 25,
+      isActive: true,
+    });
+    expect(toDeviceApiQuery({ ...DEFAULT_DEVICE_LIST_PARAMS, active: "inactive" })).toEqual({
+      page: 1,
+      pageSize: 25,
+      isActive: false,
+    });
+    expect(
+      toDeviceApiQuery({
+        ...DEFAULT_DEVICE_LIST_PARAMS,
+        active: "all",
+        permission: ["DENIED"],
+        employeeId: EMPLOYEE_ID,
+        locationId: LOCATION_ID,
+      }),
+    ).toEqual({
       page: 1,
       pageSize: 25,
       permissionState: ["DENIED"],
@@ -54,17 +82,27 @@ describe("device list URL state", () => {
 
   it("knows when filters are active (paging alone is not a filter)", () => {
     expect(hasActiveDeviceFilters(DEFAULT_DEVICE_LIST_PARAMS)).toBe(false);
-    expect(hasActiveDeviceFilters({ ...DEFAULT_DEVICE_LIST_PARAMS, page: 3, pageSize: 50 })).toBe(false);
+    expect(hasActiveDeviceFilters({ ...DEFAULT_DEVICE_LIST_PARAMS, page: 3, pageSize: 50 })).toBe(
+      false,
+    );
     expect(hasActiveDeviceFilters({ ...DEFAULT_DEVICE_LIST_PARAMS, active: "all" })).toBe(true);
-    expect(hasActiveDeviceFilters({ ...DEFAULT_DEVICE_LIST_PARAMS, permission: ["APPROVED"] })).toBe(true);
+    expect(
+      hasActiveDeviceFilters({ ...DEFAULT_DEVICE_LIST_PARAMS, permission: ["APPROVED"] }),
+    ).toBe(true);
   });
 });
 
 describe("descriptions (§12 operational fields only)", () => {
   it("describes selection counts without naming anything", () => {
-    expect(describeSelectionCounts({ categories: 0, applications: 0, webDomains: 0 })).toBe("Nothing selected");
-    expect(describeSelectionCounts({ categories: 1, applications: 12, webDomains: 2 })).toBe("1 category · 12 apps · 2 websites");
-    expect(describeSelectionCounts({ categories: 3, applications: 0, webDomains: 1 })).toBe("3 categories · 1 website");
+    expect(describeSelectionCounts({ categories: 0, applications: 0, webDomains: 0 })).toBe(
+      "Nothing selected",
+    );
+    expect(describeSelectionCounts({ categories: 1, applications: 12, webDomains: 2 })).toBe(
+      "1 category · 12 apps · 2 websites",
+    );
+    expect(describeSelectionCounts({ categories: 3, applications: 0, webDomains: 1 })).toBe(
+      "3 categories · 1 website",
+    );
   });
 
   it("formats OS and app versions", () => {
@@ -75,9 +113,15 @@ describe("descriptions (§12 operational fields only)", () => {
   });
 
   it("names the device after its owner", () => {
-    expect(deviceDisplayName({ deviceModel: "iPhone 15" }, { firstName: "Jane", lastName: "Smith" })).toBe("Jane Smith's iPhone 15");
-    expect(deviceDisplayName({ deviceModel: null }, { firstName: "Chris", lastName: "Ross" })).toBe("Chris Ross' iPhone");
-    expect(deviceDisplayName({ deviceModel: " iPhone SE " }, { firstName: "", lastName: "" })).toBe("iPhone SE");
+    expect(
+      deviceDisplayName({ deviceModel: "iPhone 15" }, { firstName: "Jane", lastName: "Smith" }),
+    ).toBe("Jane Smith's iPhone 15");
+    expect(deviceDisplayName({ deviceModel: null }, { firstName: "Chris", lastName: "Ross" })).toBe(
+      "Chris Ross' iPhone",
+    );
+    expect(deviceDisplayName({ deviceModel: " iPhone SE " }, { firstName: "", lastName: "" })).toBe(
+      "iPhone SE",
+    );
   });
 
   it("describes clock skew in minutes with direction", () => {
@@ -90,8 +134,14 @@ describe("descriptions (§12 operational fields only)", () => {
   });
 
   it("describes the synced policy version", () => {
-    expect(describePolicyVersion({ policyVersionId: "v", policyVersionNumber: 3 })).toBe("Version 3");
-    expect(describePolicyVersion({ policyVersionId: "v", policyVersionNumber: null })).toBe("Synced");
-    expect(describePolicyVersion({ policyVersionId: null, policyVersionNumber: null })).toBe("Not synced yet");
+    expect(describePolicyVersion({ policyVersionId: "v", policyVersionNumber: 3 })).toBe(
+      "Version 3",
+    );
+    expect(describePolicyVersion({ policyVersionId: "v", policyVersionNumber: null })).toBe(
+      "Synced",
+    );
+    expect(describePolicyVersion({ policyVersionId: null, policyVersionNumber: null })).toBe(
+      "Not synced yet",
+    );
   });
 });

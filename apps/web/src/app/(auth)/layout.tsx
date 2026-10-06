@@ -18,7 +18,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <BrandLogo />
         </Link>
       </header>
-      <main id="main-content" tabIndex={-1} className="flex flex-1 items-start justify-center px-4 pb-10 outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex flex-1 items-start justify-center px-4 pb-10 outline-none"
+      >
         <div className="w-full max-w-[26rem]">{children}</div>
       </main>
       <footer className="text-muted-foreground flex flex-col items-center gap-2 px-4 pb-8 text-center text-xs">
@@ -28,7 +32,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </p>
         <p>
           Need help?{" "}
-          <a href={`mailto:${SITE.supportEmail}`} className="hover:text-foreground underline underline-offset-4">
+          <a
+            href={`mailto:${SITE.supportEmail}`}
+            className="hover:text-foreground underline underline-offset-4"
+          >
             {SITE.supportEmail}
           </a>
         </p>

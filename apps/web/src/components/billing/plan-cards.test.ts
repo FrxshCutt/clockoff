@@ -41,15 +41,31 @@ describe("plan limit formatting", () => {
   it("produces the same four rows for every plan, in order", () => {
     for (const plan of PLANS) {
       const lines = planLimitLines(plan);
-      expect(lines.map((line) => line.key), plan).toEqual([...PLAN_LIMIT_KEYS]);
-      for (const line of lines) expect(line.label && line.value, `${plan}.${line.key}`).toBeTruthy();
+      expect(
+        lines.map((line) => line.key),
+        plan,
+      ).toEqual([...PLAN_LIMIT_KEYS]);
+      for (const line of lines)
+        expect(line.label && line.value, `${plan}.${line.key}`).toBeTruthy();
     }
     const starter = planLimitLines("STARTER");
-    expect(starter.find((l) => l.key === "integrations")).toMatchObject({ value: "Not included", included: false });
-    expect(starter.find((l) => l.key === "analytics")).toMatchObject({ value: "Not included", included: false });
+    expect(starter.find((l) => l.key === "integrations")).toMatchObject({
+      value: "Not included",
+      included: false,
+    });
+    expect(starter.find((l) => l.key === "analytics")).toMatchObject({
+      value: "Not included",
+      included: false,
+    });
     const enterprise = planLimitLines("ENTERPRISE");
-    expect(enterprise.find((l) => l.key === "employees")).toMatchObject({ value: "Unlimited", included: true });
-    expect(enterprise.find((l) => l.key === "analytics")).toMatchObject({ value: "Included", included: true });
+    expect(enterprise.find((l) => l.key === "employees")).toMatchObject({
+      value: "Unlimited",
+      included: true,
+    });
+    expect(enterprise.find((l) => l.key === "analytics")).toMatchObject({
+      value: "Included",
+      included: true,
+    });
   });
 
   it("keeps only the hand-written feature bullets as highlights", () => {
@@ -71,7 +87,11 @@ describe("plan limit formatting", () => {
 
 describe("salesMailto", () => {
   it("encodes the subject and body for a mailto link", () => {
-    expect(salesMailto("Upgrade to Pro")).toBe("mailto:support@workmode.app?subject=Upgrade%20to%20Pro");
-    expect(salesMailto("Plan", "Hi there & thanks")).toBe("mailto:support@workmode.app?subject=Plan&body=Hi%20there%20%26%20thanks");
+    expect(salesMailto("Upgrade to Pro")).toBe(
+      "mailto:support@workmode.app?subject=Upgrade%20to%20Pro",
+    );
+    expect(salesMailto("Plan", "Hi there & thanks")).toBe(
+      "mailto:support@workmode.app?subject=Plan&body=Hi%20there%20%26%20thanks",
+    );
   });
 });

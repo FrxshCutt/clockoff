@@ -13,12 +13,16 @@ import { encrypt } from "@/lib/crypto";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import type { DeviceContext } from "@/server/tenancy/context";
-import { computePolicyVersionString, resolveEmployeePolicies } from "@/server/workState/externalServices";
+import {
+  computePolicyVersionString,
+  resolveEmployeePolicies,
+} from "@/server/workState/externalServices";
 import { DAY_MS } from "@/server/workState/workState.repository";
 import {
   evaluateOrganisation,
   persistEvaluation,
   publishWorkStateChanged,
+  recordSyncDelayedEpisode,
 } from "@/server/workState/workState.service";
 import {
   toBreakAllowanceDto,
@@ -58,7 +62,10 @@ function scheduleWindow(now: Date, query?: MobileScheduleQuery): { from: Date; t
 }
 
 async function mobileEmployee(ctx: DeviceContext): Promise<MobileMeResponse["employee"]> {
-  const location = await loadEmployeePrimaryLocation(ctx.organisation.id, ctx.employee.primaryLocationId);
+  const location = await loadEmployeePrimaryLocation(
+    ctx.organisation.id,
+    ctx.employee.primaryLocationId,
+  );
   return {
     id: ctx.employee.id,
     firstName: ctx.employee.firstName,
@@ -97,7 +104,12 @@ export async function getSchedule(
 ): Promise<MobileScheduleResponse> {
   const { from, to } = scheduleWindow(now, query);
   const [shifts, scheduleVersion] = await Promise.all([
-    loadEmployeeShifts({ organisationId: ctx.organisation.id, employeeId: ctx.employee.id, from, to }),
+    loadEmployeeShifts({
+      organisationId: ctx.organisation.id,
+      employeeId: ctx.employee.id,
+      from,
+      to,
+    }),
     loadScheduleVersion(ctx.organisation.id, ctx.employee.id),
     updateDevice(ctx.device.id, { lastSeenAt: now }),
   ]);
@@ -125,14 +137,22 @@ export async function getSyncBundle(
   const { from, to } = scheduleWindow(now);
 
   const [evaluated, shifts, overrides, scheduleVersion] = await Promise.all([
-    evaluateOrganisation({ organisationId, employeeIds: [employeeId], now, shiftWindow: { from, to } }),
+    evaluateOrganisation({
+      organisationId,
+      employeeIds: [employeeId],
+      now,
+      shiftWindow: { from, to },
+    }),
     loadEmployeeShifts({ organisationId, employeeId, from, to }),
     loadActiveOverridesForEmployee({ organisationId, employeeId, now }),
     loadScheduleVersion(organisationId, employeeId),
   ]);
   const evaluation = evaluated.evaluations[0];
   if (!evaluation) throw new Error("sync: employee missing from its own organisation");
-  const { row } = await persistEvaluation(evaluation);
+  const { row, startedSyncDelayedEpisode } = await persistEvaluation(evaluation);
+  // This evaluation may be the first to notice a silent device (the badge reads lastDeviceSyncAt, which only
+  // /device/state moves): it owns the episode's event exactly like a job tick would.
+  if (startedSyncDelayedEpisode) await recordSyncDelayedEpisode(evaluation, now);
   if (evaluation.changed) publishWorkStateChanged(evaluation, row);
 
   const resolution = evaluation.policy;
@@ -179,7 +199,9 @@ export async function getSyncBundle(
   const expected = evaluation.expected;
   const activeBreakId = expected.activeBreak?.id ?? null;
   const activeBreakSession = activeBreakId
-    ? await prisma.breakSession.findFirst({ where: { id: activeBreakId, organisationId, employeeId } })
+    ? await prisma.breakSession.findFirst({
+        where: { id: activeBreakId, organisationId, employeeId },
+      })
     : null;
 
   const allowanceShift = expected.activeShift ?? expected.upcomingShift;
@@ -211,7 +233,10 @@ export async function registerPushToken(
   input: PushTokenInput,
   now: Date = new Date(),
 ): Promise<OkResponse> {
-  const payload = JSON.stringify({ token: input.token.toLowerCase(), environment: input.environment });
+  const payload = JSON.stringify({
+    token: input.token.toLowerCase(),
+    environment: input.environment,
+  });
   await updateDevice(ctx.device.id, {
     pushTokenEncrypted: new Uint8Array(encrypt(payload)),
     lastSeenAt: now,

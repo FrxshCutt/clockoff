@@ -9,7 +9,10 @@ function LoadingLabel({ label = "Loading…" }: { label?: string }) {
 
 export function PageHeaderSkeleton({ withActions = true }: { withActions?: boolean }) {
   return (
-    <div className="flex flex-col gap-4 pb-6 sm:flex-row sm:items-end sm:justify-between" aria-hidden="true">
+    <div
+      className="flex flex-col gap-4 pb-6 sm:flex-row sm:items-end sm:justify-between"
+      aria-hidden="true"
+    >
       <div className="space-y-2.5">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-72 max-w-full" />
@@ -43,7 +46,15 @@ export function MetricCardsSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-export function TableSkeleton({ rows = 6, columns = 4, className }: { rows?: number; columns?: number; className?: string }) {
+export function TableSkeleton({
+  rows = 6,
+  columns = 4,
+  className,
+}: {
+  rows?: number;
+  columns?: number;
+  className?: string;
+}) {
   return (
     <div className={cn("bg-card overflow-hidden rounded-xl border", className)} aria-hidden="true">
       <div className="bg-muted/40 flex gap-4 border-b px-4 py-3">
@@ -95,7 +106,10 @@ export function FullPageShellSkeleton({ label = "Loading your workspace…" }: {
   return (
     <div role="status" aria-live="polite" className="bg-background flex min-h-svh w-full">
       <LoadingLabel label={label} />
-      <div className="bg-sidebar hidden w-64 shrink-0 flex-col gap-6 border-r p-4 md:flex" aria-hidden="true">
+      <div
+        className="bg-sidebar hidden w-64 shrink-0 flex-col gap-6 border-r p-4 md:flex"
+        aria-hidden="true"
+      >
         <div className="flex items-center gap-2.5">
           <Skeleton className="size-8 rounded-lg" />
           <Skeleton className="h-4 w-28" />

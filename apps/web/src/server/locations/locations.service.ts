@@ -86,7 +86,11 @@ export async function listLocationsForOrg(
   );
 }
 
-async function hydrate(organisationId: string, row: LocationRow, db: Db = prisma): Promise<Location> {
+async function hydrate(
+  organisationId: string,
+  row: LocationRow,
+  db: Db = prisma,
+): Promise<Location> {
   const [employeeCounts, assignments] = await Promise.all([
     countEmployeesByLocation(organisationId, db),
     getActiveAssignmentsForScope(organisationId, "LOCATION", [row.id], { db }),
@@ -94,7 +98,11 @@ async function hydrate(organisationId: string, row: LocationRow, db: Db = prisma
   return toLocationDto(row, employeeCounts.get(row.id) ?? 0, assignments.get(row.id));
 }
 
-async function loadLocationOrThrow(organisationId: string, id: string, db?: Db): Promise<LocationRow> {
+async function loadLocationOrThrow(
+  organisationId: string,
+  id: string,
+  db?: Db,
+): Promise<LocationRow> {
   const row = await findLocationInOrganisation(organisationId, id, db);
   if (!row) throw new AppError("NOT_FOUND", "Location not found");
   return row;
@@ -121,7 +129,10 @@ export async function getLocation(ctx: ManagerContext, id: string): Promise<Loca
  * `POST /api/locations`: unique name per organisation and within the plan's location limit (both checked
  * under the organisation row lock so two concurrent creates cannot both pass).
  */
-export async function createLocation(ctx: ManagerContext, input: CreateLocationInput): Promise<Location> {
+export async function createLocation(
+  ctx: ManagerContext,
+  input: CreateLocationInput,
+): Promise<Location> {
   const organisationId = ctx.organisation.id;
   const plan = ctx.organisation.plan;
   const created = await prisma.$transaction(async (tx) => {
@@ -145,7 +156,12 @@ export async function createLocation(ctx: ManagerContext, input: CreateLocationI
     });
     await audit(
       ctx,
-      { action: "location.created", entityType: "Location", entityId: row.id, after: snapshot(row) },
+      {
+        action: "location.created",
+        entityType: "Location",
+        entityId: row.id,
+        after: snapshot(row),
+      },
       tx,
     );
     return row;

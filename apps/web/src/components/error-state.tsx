@@ -41,17 +41,28 @@ export function ErrorState({
         className,
       )}
     >
-      <div className="bg-destructive/10 text-destructive flex size-11 items-center justify-center rounded-full" aria-hidden="true">
+      <div
+        className="bg-destructive/10 text-destructive flex size-11 items-center justify-center rounded-full"
+        aria-hidden="true"
+      >
         <CircleAlert className="size-5" />
       </div>
       <div className="max-w-md space-y-1.5">
         <h2 className="text-foreground text-base font-semibold">{title}</h2>
-        <p className="text-muted-foreground text-sm text-pretty">{description ?? getErrorMessage(error)}</p>
+        <p className="text-muted-foreground text-sm text-pretty">
+          {description ?? getErrorMessage(error)}
+        </p>
       </div>
       {onRetry || actions ? (
         <div className="flex flex-wrap items-center justify-center gap-2">
           {onRetry ? (
-            <Button type="button" variant="outline" size="sm" onClick={onRetry} disabled={isRetrying}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRetry}
+              disabled={isRetrying}
+            >
               <RefreshCw className={cn(isRetrying && "animate-spin")} aria-hidden="true" />
               {retryLabel}
             </Button>

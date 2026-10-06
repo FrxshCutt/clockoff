@@ -27,13 +27,25 @@ export interface MetricCardProps {
 
 const TREND_ICONS = { up: ArrowUpRight, down: ArrowDownRight, flat: Minus } as const;
 
-export function MetricCard({ label, value, description, icon: Icon, trend, href, isLoading, className }: MetricCardProps) {
+export function MetricCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+  trend,
+  href,
+  isLoading,
+  className,
+}: MetricCardProps) {
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-muted-foreground text-sm font-medium">{label}</p>
         {Icon ? (
-          <span className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-lg" aria-hidden="true">
+          <span
+            className="bg-muted text-muted-foreground flex size-8 items-center justify-center rounded-lg"
+            aria-hidden="true"
+          >
             <Icon className="size-4" />
           </span>
         ) : null}
@@ -41,16 +53,21 @@ export function MetricCard({ label, value, description, icon: Icon, trend, href,
       {isLoading ? (
         <Skeleton className="mt-3 h-8 w-20" />
       ) : (
-        <p className="text-foreground mt-2 text-3xl font-semibold tracking-tight tabular-nums">{value}</p>
+        <p className="text-foreground mt-2 text-3xl font-semibold tracking-tight tabular-nums">
+          {value}
+        </p>
       )}
       {trend && !isLoading ? <TrendLine trend={trend} /> : null}
-      {description && !isLoading ? <p className="text-muted-foreground mt-1 text-xs">{description}</p> : null}
+      {description && !isLoading ? (
+        <p className="text-muted-foreground mt-1 text-xs">{description}</p>
+      ) : null}
     </>
   );
 
   const classes = cn(
     "bg-card text-card-foreground block rounded-xl border p-5 shadow-xs transition-colors",
-    href && "hover:border-primary/40 hover:bg-accent/40 focus-visible:ring-ring/50 outline-none focus-visible:ring-[3px]",
+    href &&
+      "hover:border-primary/40 hover:bg-accent/40 focus-visible:ring-ring/50 outline-none focus-visible:ring-[3px]",
     className,
   );
 

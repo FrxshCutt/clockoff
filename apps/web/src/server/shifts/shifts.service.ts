@@ -86,6 +86,10 @@ import {
  *   occurrences up to 8 weeks ahead are created immediately, the rest by `materialiseRecurrences`.
  * - Every mutation bumps `version`, writes an audit entry, records an activity event and publishes
  *   `SCHEDULE_CHANGED` for the employee so their device re-syncs.
+ * - Writes are optimistic-locked on `version` (`updateShiftRow`): a change that lands between reading and
+ *   writing a shift answers CONFLICT, with or without `expectedVersion`.
+ * - Only SCHEDULED shifts can be rescheduled; a cancelled or completed shift keeps its times (duplicate it
+ *   instead). Notes, location and scheduled breaks stay editable on any status.
  */
 
 const TRANSACTION_OPTIONS = { timeout: 60_000, maxWait: 10_000 } as const;
@@ -111,7 +115,11 @@ async function requireLocation(organisationId: string, locationId: string, db: D
   return location;
 }
 
-async function requireShift(organisationId: string, shiftId: string, db: Db = prisma): Promise<ShiftRow> {
+async function requireShift(
+  organisationId: string,
+  shiftId: string,
+  db: Db = prisma,
+): Promise<ShiftRow> {
   const shift = await findShift(organisationId, shiftId, db);
   if (!shift) throw new AppError("NOT_FOUND", "Shift not found");
   return shift;
@@ -171,7 +179,17 @@ async function recordShiftActivity(
   tx: Prisma.TransactionClient,
   ctx: ManagerContext,
   type: "SHIFT_CREATED" | "SHIFT_UPDATED" | "SHIFT_CANCELLED",
-  row: { id: string; employeeId: string; startsAt: Date; endsAt: Date; timezone: string; version: number; status: string; parentRecurrenceId: string | null; source: string },
+  row: {
+    id: string;
+    employeeId: string;
+    startsAt: Date;
+    endsAt: Date;
+    timezone: string;
+    version: number;
+    status: string;
+    parentRecurrenceId: string | null;
+    source: string;
+  },
   extra: Record<string, unknown> = {},
 ): Promise<ActivityEvent> {
   const { event } = await recordActivity(
@@ -212,6 +230,48 @@ function auditSnapshot(row: ShiftRow) {
   };
 }
 
+/**
+ * Writes `data` to a shift only while its `version` is still the one the caller read (optimistic lock) and
+ * bumps the version. A change that landed in between — another manager's edit, a cancel, a delete —
+ * answers CONFLICT with the current version (NOT_FOUND once the row is gone) instead of overwriting it.
+ * `breaks`, when given, replace the scheduled breaks. Returns the fresh row.
+ */
+async function updateShiftRow(
+  tx: Prisma.TransactionClient,
+  organisationId: string,
+  current: Pick<ShiftRow, "id" | "version">,
+  data: Omit<Prisma.ShiftUncheckedUpdateManyInput, "id" | "organisationId" | "version">,
+  breaks?: readonly ScheduledBreakInput[],
+): Promise<ShiftRow> {
+  const result = await tx.shift.updateMany({
+    where: { id: current.id, organisationId, version: current.version, deletedAt: null },
+    data: { ...data, version: { increment: 1 } },
+  });
+  if (result.count === 0) {
+    const latest = await tx.shift.findFirst({
+      where: { id: current.id, organisationId },
+      select: { version: true, deletedAt: true },
+    });
+    if (!latest || latest.deletedAt) throw new AppError("NOT_FOUND", "Shift not found");
+    throw new AppError("CONFLICT", "The shift was changed by someone else; reload and try again", {
+      details: { currentVersion: latest.version },
+    });
+  }
+  if (breaks !== undefined) {
+    await tx.scheduledBreak.deleteMany({ where: { shiftId: current.id } });
+    if (breaks.length > 0) {
+      await tx.scheduledBreak.createMany({
+        data: breaks.map((b) => ({
+          shiftId: current.id,
+          offsetMinutesFromStart: b.offsetMinutesFromStart,
+          durationMinutes: b.durationMinutes,
+        })),
+      });
+    }
+  }
+  return tx.shift.findUniqueOrThrow({ where: { id: current.id }, include: shiftInclude });
+}
+
 // ── reads ───────────────────────────────────────────────────────────────────
 
 function weekStartsOnFor(ctx: ManagerContext): 1 | 7 {
@@ -243,7 +303,10 @@ export function resolveShiftWindow(
 }
 
 /** `GET /api/shifts` */
-export async function listShifts(ctx: ManagerContext, query: ShiftQuery): Promise<ListShiftsResponse> {
+export async function listShifts(
+  ctx: ManagerContext,
+  query: ShiftQuery,
+): Promise<ListShiftsResponse> {
   const { from, to } = resolveShiftWindow(query, ctx);
   const rows = await listShiftRows(ctx.organisation.id, {
     from,
@@ -263,17 +326,23 @@ export async function listShiftsForEmployee(
   query: EmployeeShiftsQuery,
   now: Date = new Date(),
 ): Promise<ListShiftsResponse> {
+  const maxRangeMs = SHIFT_LIMITS.maxQueryRangeDays * MS_PER_DAY;
   const from = query.from ? new Date(query.from) : new Date(now.getTime() - 7 * MS_PER_DAY);
-  const to = query.to
+  const requestedTo = query.to
     ? new Date(query.to)
-    : new Date(Math.max(from.getTime(), now.getTime()) + SHIFT_LIMITS.maxQueryRangeDays * MS_PER_DAY);
+    : new Date(Math.max(from.getTime(), now.getTime()) + maxRangeMs);
+  // The employee query has no range refinement of its own, so the window is clamped to the same cap as
+  // GET /shifts and `limit` is applied by the database rather than in memory.
+  const to = new Date(Math.min(requestedTo.getTime(), from.getTime() + maxRangeMs));
+  if (to.getTime() <= from.getTime()) return { shifts: [] };
   const rows = await listShiftRows(organisationId, {
     from,
     to,
     employeeId,
     statuses: query.status,
+    limit: query.limit,
   });
-  return { shifts: rows.slice(0, query.limit).map(toShiftDto) };
+  return { shifts: rows.map(toShiftDto) };
 }
 
 /** `GET /api/shifts/:id` */
@@ -299,7 +368,13 @@ function planSeries(input: CreateShiftInput, timezone: string): SeriesPlan {
     if (!input.recurrence) {
       return {
         occurrences: [
-          { startsAt, endsAt, localDate: localDateOf(startsAt, timezone), isAnchor: true, warnings: [] },
+          {
+            startsAt,
+            endsAt,
+            localDate: localDateOf(startsAt, timezone),
+            isAnchor: true,
+            warnings: [],
+          },
         ],
         storedRule: null,
       };
@@ -346,9 +421,13 @@ function planSeries(input: CreateShiftInput, timezone: string): SeriesPlan {
     });
   }
   if (occurrences.length === 0) {
-    throw new AppError("INVALID_RECURRENCE", "The series end date must be on or after the first shift", {
-      details: { field: "recurrence.until" },
-    });
+    throw new AppError(
+      "INVALID_RECURRENCE",
+      "The series end date must be on or after the first shift",
+      {
+        details: { field: "recurrence.until" },
+      },
+    );
   }
   if (occurrences.length > max) {
     throw new AppError(
@@ -361,11 +440,16 @@ function planSeries(input: CreateShiftInput, timezone: string): SeriesPlan {
 }
 
 /** `POST /api/shifts` */
-export async function createShift(ctx: ManagerContext, input: CreateShiftInput): Promise<CreateShiftResponse> {
+export async function createShift(
+  ctx: ManagerContext,
+  input: CreateShiftInput,
+): Promise<CreateShiftResponse> {
   const organisationId = ctx.organisation.id;
   const now = new Date();
   const employee = await requireActiveEmployee(organisationId, input.employeeId);
-  const location = input.locationId ? await requireLocation(organisationId, input.locationId) : null;
+  const location = input.locationId
+    ? await requireLocation(organisationId, input.locationId)
+    : null;
   const timezone = input.timezone ?? location?.timezone ?? ctx.organisation.timezone;
 
   const series = planSeries(input, timezone);
@@ -378,20 +462,28 @@ export async function createShift(ctx: ManagerContext, input: CreateShiftInput):
   const children = series.occurrences
     .slice(1)
     .filter((o) => o.startsAt.getTime() < horizon.getTime());
-  for (const child of children) warnings.push(...dstWarnings(child.warnings, { date: child.localDate }));
+  for (const child of children)
+    warnings.push(...dstWarnings(child.warnings, { date: child.localDate }));
 
   const windowEnd = [anchor, ...children].reduce(
     (max, o) => (o.endsAt.getTime() > max.getTime() ? o.endsAt : max),
     anchor.endsAt,
   );
-  const existing = await listScheduledIntervals(organisationId, [employee.id], anchor.startsAt, windowEnd);
+  const existing = await listScheduledIntervals(
+    organisationId,
+    [employee.id],
+    anchor.startsAt,
+    windowEnd,
+  );
   assertNoOverlap(anchor.startsAt, anchor.endsAt, existing, { allowOverlap: input.allowOverlap });
 
   const taken = [...existing, { id: "anchor", startsAt: anchor.startsAt, endsAt: anchor.endsAt }];
   const skippedOccurrences: SkippedOccurrence[] = [];
   const planned: RecurrenceOccurrence[] = [];
   for (const child of children) {
-    const conflicts = input.allowOverlap ? [] : conflictingShiftIds(child.startsAt, child.endsAt, taken);
+    const conflicts = input.allowOverlap
+      ? []
+      : conflictingShiftIds(child.startsAt, child.endsAt, taken);
     if (conflicts.length > 0) {
       skippedOccurrences.push({ ...instantsOf(child), conflictingShiftIds: conflicts });
       continue;
@@ -489,7 +581,8 @@ interface NewTimes {
 /** Applies a PATCH body's time fields to the current row (local fields fall back to the current local values). */
 function computeNewTimes(current: ShiftRow, input: UpdateShiftInput): NewTimes {
   const timezone = input.timezone ?? current.timezone;
-  const hasLocal = input.date !== undefined || input.startTime !== undefined || input.endTime !== undefined;
+  const hasLocal =
+    input.date !== undefined || input.startTime !== undefined || input.endTime !== undefined;
   const hasInstant = input.startsAt !== undefined || input.endsAt !== undefined;
   if (hasLocal) {
     const start = instantToLocal(current.startsAt, current.timezone);
@@ -519,15 +612,36 @@ function computeNewTimes(current: ShiftRow, input: UpdateShiftInput): NewTimes {
       timezone,
       warnings: [],
       timesChanged:
-        startsAt.getTime() !== current.startsAt.getTime() || endsAt.getTime() !== current.endsAt.getTime(),
+        startsAt.getTime() !== current.startsAt.getTime() ||
+        endsAt.getTime() !== current.endsAt.getTime(),
     };
   }
-  return { startsAt: current.startsAt, endsAt: current.endsAt, timezone, warnings: [], timesChanged: false };
+  return {
+    startsAt: current.startsAt,
+    endsAt: current.endsAt,
+    timezone,
+    warnings: [],
+    timesChanged: false,
+  };
+}
+
+/** True when the body carries any of the time fields (a reschedule, as opposed to a metadata edit). */
+function reschedules(input: UpdateShiftInput): boolean {
+  return (
+    input.date !== undefined ||
+    input.startTime !== undefined ||
+    input.endTime !== undefined ||
+    input.startsAt !== undefined ||
+    input.endsAt !== undefined
+  );
 }
 
 function changedFields(input: UpdateShiftInput): string[] {
   return Object.entries(input)
-    .filter(([key, value]) => value !== undefined && !["expectedVersion", "applyTo", "allowOverlap"].includes(key))
+    .filter(
+      ([key, value]) =>
+        value !== undefined && !["expectedVersion", "applyTo", "allowOverlap"].includes(key),
+    )
     .map(([key]) => key);
 }
 
@@ -544,6 +658,13 @@ export async function updateShift(
     throw new AppError("CONFLICT", "The shift was changed by someone else; reload and try again", {
       details: { currentVersion: current.version },
     });
+  }
+  if (reschedules(input) && current.status !== "SCHEDULED") {
+    throw new AppError(
+      "CONFLICT",
+      "Only scheduled shifts can be rescheduled; duplicate the shift to put it back on the rota",
+      { details: { status: current.status } },
+    );
   }
   const inSeries = current.recurrenceRule !== null || current.parentRecurrenceId !== null;
   if ((input.applyTo ?? "THIS") === "THIS_AND_FUTURE" && inSeries) {
@@ -573,7 +694,12 @@ async function updateSingleShift(
     durationMinutes,
   );
   if (times.timesChanged && current.status === "SCHEDULED") {
-    const others = await listScheduledIntervals(organisationId, [current.employeeId], times.startsAt, times.endsAt);
+    const others = await listScheduledIntervals(
+      organisationId,
+      [current.employeeId],
+      times.startsAt,
+      times.endsAt,
+    );
     assertNoOverlap(times.startsAt, times.endsAt, others, {
       allowOverlap: input.allowOverlap,
       excludeIds: new Set([current.id]),
@@ -583,34 +709,39 @@ async function updateSingleShift(
   if (breaks.length > 0 && (input.scheduledBreaks !== undefined || times.timesChanged)) {
     const employee = await findEmployee(organisationId, current.employeeId);
     if (employee) {
-      const policy = await loadBreakPolicyFor(organisationId, employee, ctx.organisation.defaultBreakPolicyId, now);
+      const policy = await loadBreakPolicyFor(
+        organisationId,
+        employee,
+        ctx.organisation.defaultBreakPolicyId,
+        now,
+      );
       warnings.push(...scheduledBreakWarnings(breaks, policy));
     }
   }
 
   const { row, events } = await prisma.$transaction(async (tx) => {
-    const row = await tx.shift.update({
-      where: { id: current.id },
-      data: {
+    const row = await updateShiftRow(
+      tx,
+      organisationId,
+      current,
+      {
         startsAt: times.startsAt,
         endsAt: times.endsAt,
         timezone: times.timezone,
         ...(locationId !== undefined ? { locationId } : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
-        version: { increment: 1 },
-        ...(input.scheduledBreaks !== undefined
-          ? { scheduledBreaks: { deleteMany: {}, create: breaks } }
-          : {}),
       },
-      include: shiftInclude,
-    });
+      input.scheduledBreaks !== undefined ? breaks : undefined,
+    );
     const events: ActivityEvent[] = [];
     if (times.timesChanged) {
       const breakEvent = await endActiveBreakOutside(tx, ctx, row, times, now);
       if (breakEvent) events.push(breakEvent);
     }
     events.push(
-      await recordShiftActivity(tx, ctx, "SHIFT_UPDATED", row, { changedFields: changedFields(input) }),
+      await recordShiftActivity(tx, ctx, "SHIFT_UPDATED", row, {
+        changedFields: changedFields(input),
+      }),
     );
     await audit(
       ctx,
@@ -627,7 +758,11 @@ async function updateSingleShift(
   }, TRANSACTION_OPTIONS);
 
   for (const event of events) publishActivity(event);
-  publishScheduleChanged(organisationId, { employeeId: row.employeeId, shiftIds: [row.id], reason: "UPDATED" });
+  publishScheduleChanged(organisationId, {
+    employeeId: row.employeeId,
+    shiftIds: [row.id],
+    reason: "UPDATED",
+  });
   return { shift: toShiftDto(row), ...(warnings.length > 0 ? { warnings } : {}) };
 }
 
@@ -657,14 +792,17 @@ async function updateSeriesFrom(
   const locationId = await resolveLocationPatch(organisationId, input.locationId);
   const times = computeNewTimes(current, input);
   const timezone = times.timezone;
-  const futureMembers = (await listFutureSeriesMembers(organisationId, anchorId, current.startsAt)).filter(
-    (m) => m.id !== current.id,
-  );
+  const futureMembers = (
+    await listFutureSeriesMembers(organisationId, anchorId, current.startsAt)
+  ).filter((m) => m.id !== current.id);
   const members: ShiftRow[] = [current, ...futureMembers];
 
   const newStart = instantToLocal(times.startsAt, timezone);
   const newEnd = instantToLocal(times.endsAt, timezone);
-  const dateDelta = daysBetweenLocalDates(localDateOf(current.startsAt, current.timezone), newStart.date);
+  const dateDelta = daysBetweenLocalDates(
+    localDateOf(current.startsAt, current.timezone),
+    newStart.date,
+  );
   const retime = times.timesChanged || input.timezone !== undefined;
 
   const plans: MemberPlan[] = members.map((row) => {
@@ -702,14 +840,28 @@ async function updateSeriesFrom(
 
   if (retime) {
     const memberIds = new Set(members.map((m) => m.id));
-    const windowStart = plans.reduce((min, p) => (p.startsAt < min ? p.startsAt : min), plans[0]!.startsAt);
+    const windowStart = plans.reduce(
+      (min, p) => (p.startsAt < min ? p.startsAt : min),
+      plans[0]!.startsAt,
+    );
     const windowEnd = plans.reduce((max, p) => (p.endsAt > max ? p.endsAt : max), plans[0]!.endsAt);
-    const others = await listScheduledIntervals(organisationId, [current.employeeId], windowStart, windowEnd);
+    const others = await listScheduledIntervals(
+      organisationId,
+      [current.employeeId],
+      windowStart,
+      windowEnd,
+    );
     const planned = plans.map((p) => ({ id: p.row.id, startsAt: p.startsAt, endsAt: p.endsAt }));
     const conflicts = new Set<string>();
     for (const plan of plans) {
-      for (const id of conflictingShiftIds(plan.startsAt, plan.endsAt, others, memberIds)) conflicts.add(id);
-      for (const id of conflictingShiftIds(plan.startsAt, plan.endsAt, planned, new Set([plan.row.id]))) {
+      for (const id of conflictingShiftIds(plan.startsAt, plan.endsAt, others, memberIds))
+        conflicts.add(id);
+      for (const id of conflictingShiftIds(
+        plan.startsAt,
+        plan.endsAt,
+        planned,
+        new Set([plan.row.id]),
+      )) {
         conflicts.add(id);
       }
     }
@@ -718,13 +870,26 @@ async function updateSeriesFrom(
 
   const warnings: ShiftWarning[] = [];
   for (const plan of plans) {
-    warnings.push(...dstWarnings(plan.warnings, plan.row.id === current.id ? undefined : { date: localDateOf(plan.startsAt, timezone) }));
+    warnings.push(
+      ...dstWarnings(
+        plan.warnings,
+        plan.row.id === current.id ? undefined : { date: localDateOf(plan.startsAt, timezone) },
+      ),
+    );
   }
   const currentPlan = plans[0]!;
-  if (currentPlan.breaks.length > 0 && (input.scheduledBreaks !== undefined || times.timesChanged)) {
+  if (
+    currentPlan.breaks.length > 0 &&
+    (input.scheduledBreaks !== undefined || times.timesChanged)
+  ) {
     const employee = await findEmployee(organisationId, current.employeeId);
     if (employee) {
-      const policy = await loadBreakPolicyFor(organisationId, employee, ctx.organisation.defaultBreakPolicyId, now);
+      const policy = await loadBreakPolicyFor(
+        organisationId,
+        employee,
+        ctx.organisation.defaultBreakPolicyId,
+        now,
+      );
       warnings.push(...scheduledBreakWarnings(currentPlan.breaks, policy));
     }
   }
@@ -740,13 +905,18 @@ async function updateSeriesFrom(
       });
       const parsed = anchor?.recurrenceRule ? parseSeriesRule(anchor.recurrenceRule) : null;
       const seriesRows = await listSeriesRows(anchorId, tx);
-      const before = seriesRows.filter((r) => r.startsAt.getTime() < current.startsAt.getTime()).length;
+      const before = seriesRows.filter(
+        (r) => r.startsAt.getTime() < current.startsAt.getTime(),
+      ).length;
       if (anchor && parsed) {
         await tx.shift.update({
           where: { id: anchor.id },
           data: { recurrenceRule: withCount(parsed, Math.max(1, before)) },
         });
-        newAnchorRule = withCount(parsed, parsed.count === null ? null : Math.max(1, parsed.count - before));
+        newAnchorRule = withCount(
+          parsed,
+          parsed.count === null ? null : Math.max(1, parsed.count - before),
+        );
       } else {
         newAnchorRule = anchor?.recurrenceRule ?? null;
       }
@@ -766,20 +936,22 @@ async function updateSeriesFrom(
     for (const plan of plans) {
       const isCurrent = plan.row.id === current.id;
       const replaceBreaks = input.scheduledBreaks !== undefined || (retime && !isCurrent);
-      const row = await tx.shift.update({
-        where: { id: plan.row.id },
-        data: {
+      const row = await updateShiftRow(
+        tx,
+        organisationId,
+        plan.row,
+        {
           startsAt: plan.startsAt,
           endsAt: plan.endsAt,
           timezone,
           ...(locationId !== undefined ? { locationId } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
-          version: { increment: 1 },
-          ...(isCurrent && split ? { parentRecurrenceId: null, recurrenceRule: newAnchorRule } : {}),
-          ...(replaceBreaks ? { scheduledBreaks: { deleteMany: {}, create: plan.breaks } } : {}),
+          ...(isCurrent && split
+            ? { parentRecurrenceId: null, recurrenceRule: newAnchorRule }
+            : {}),
         },
-        include: shiftInclude,
-      });
+        replaceBreaks ? plan.breaks : undefined,
+      );
       rows.push(row);
       if (retime) {
         const breakEvent = await endActiveBreakOutside(tx, ctx, row, plan, now);
@@ -828,28 +1000,35 @@ export async function deleteShift(ctx: ManagerContext, shiftId: string): Promise
   const now = new Date();
   const current = await requireShift(organisationId, shiftId);
   const events = await prisma.$transaction(async (tx) => {
-    const row = await tx.shift.update({
-      where: { id: current.id },
-      data: { deletedAt: now, version: { increment: 1 } },
-    });
+    const row = await updateShiftRow(tx, organisationId, current, { deletedAt: now });
     const events: ActivityEvent[] = [];
     const breakEvent = await endActiveBreakOutside(tx, ctx, row, null, now);
     if (breakEvent) events.push(breakEvent);
     events.push(await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", row, { removed: true }));
     await audit(
       ctx,
-      { action: "shift.deleted", entityType: "Shift", entityId: row.id, before: auditSnapshot(current) },
+      {
+        action: "shift.deleted",
+        entityType: "Shift",
+        entityId: row.id,
+        before: auditSnapshot(current),
+      },
       tx,
     );
     return events;
   });
   for (const event of events) publishActivity(event);
-  publishScheduleChanged(organisationId, { employeeId: current.employeeId, shiftIds: [current.id], reason: "DELETED" });
+  publishScheduleChanged(organisationId, {
+    employeeId: current.employeeId,
+    shiftIds: [current.id],
+    reason: "DELETED",
+  });
 }
 
 function assertCancellable(row: Pick<ShiftRow, "status">): void {
   if (row.status === "CANCELLED") throw new AppError("CONFLICT", "The shift is already cancelled");
-  if (row.status === "COMPLETED") throw new AppError("CONFLICT", "A completed shift cannot be cancelled");
+  if (row.status === "COMPLETED")
+    throw new AppError("CONFLICT", "A completed shift cannot be cancelled");
 }
 
 /** `POST /api/shifts/:id/cancel` — status CANCELLED; ends Work Mode (and any break) if in progress. */
@@ -863,11 +1042,7 @@ export async function cancelShift(
   const current = await requireShift(organisationId, shiftId);
   assertCancellable(current);
   const { row, events } = await prisma.$transaction(async (tx) => {
-    const row = await tx.shift.update({
-      where: { id: current.id },
-      data: { status: "CANCELLED", version: { increment: 1 } },
-      include: shiftInclude,
-    });
+    const row = await updateShiftRow(tx, organisationId, current, { status: "CANCELLED" });
     const events: ActivityEvent[] = [];
     const breakEvent = await endActiveBreakOutside(tx, ctx, row, null, now);
     if (breakEvent) events.push(breakEvent);
@@ -886,7 +1061,11 @@ export async function cancelShift(
     return { row, events };
   });
   for (const event of events) publishActivity(event);
-  publishScheduleChanged(organisationId, { employeeId: row.employeeId, shiftIds: [row.id], reason: "CANCELLED" });
+  publishScheduleChanged(organisationId, {
+    employeeId: row.employeeId,
+    shiftIds: [row.id],
+    reason: "CANCELLED",
+  });
   return { shift: toShiftDto(row) };
 }
 
@@ -911,7 +1090,12 @@ export async function duplicateShift(
   });
   const durationMinutes = assertShiftDuration(built.startsAt, built.endsAt);
   const breaks = breaksFitting(breakInputs(source), durationMinutes);
-  const others = await listScheduledIntervals(organisationId, [source.employeeId], built.startsAt, built.endsAt);
+  const others = await listScheduledIntervals(
+    organisationId,
+    [source.employeeId],
+    built.startsAt,
+    built.endsAt,
+  );
   assertNoOverlap(built.startsAt, built.endsAt, others);
 
   const { row, event } = await prisma.$transaction(async (tx) => {
@@ -930,7 +1114,9 @@ export async function duplicateShift(
       },
       include: shiftInclude,
     });
-    const event = await recordShiftActivity(tx, ctx, "SHIFT_CREATED", row, { duplicatedFromShiftId: source.id });
+    const event = await recordShiftActivity(tx, ctx, "SHIFT_CREATED", row, {
+      duplicatedFromShiftId: source.id,
+    });
     await audit(
       ctx,
       {
@@ -944,7 +1130,11 @@ export async function duplicateShift(
     return { row, event };
   });
   publishActivity(event);
-  publishScheduleChanged(organisationId, { employeeId: row.employeeId, shiftIds: [row.id], reason: "CREATED" });
+  publishScheduleChanged(organisationId, {
+    employeeId: row.employeeId,
+    shiftIds: [row.id],
+    reason: "CREATED",
+  });
   const warnings = dstWarnings(built.warnings);
   return { shift: toShiftDto(row), ...(warnings.length > 0 ? { warnings } : {}) };
 }
@@ -957,20 +1147,29 @@ interface BulkFailure {
   message: string;
 }
 
-function notFoundFailures(requested: readonly string[], found: ReadonlyMap<string, ShiftRow>): BulkFailure[] {
+function notFoundFailures(
+  requested: readonly string[],
+  found: ReadonlyMap<string, ShiftRow>,
+): BulkFailure[] {
   return requested
     .filter((id) => !found.has(id))
     .map((shiftId) => ({ shiftId, code: "NOT_FOUND" as const, message: "Shift not found" }));
 }
 
 /** Shifts the same wall-clock start/end by whole days and minutes in the shift's timezone. */
-function shiftWallClock(row: ShiftRow, deltaDays: number, deltaMinutes: number): { startsAt: Date; endsAt: Date } {
+function shiftWallClock(
+  row: ShiftRow,
+  deltaDays: number,
+  deltaMinutes: number,
+): { startsAt: Date; endsAt: Date } {
   const deltaMs = deltaDays * MS_PER_DAY + deltaMinutes * MS_PER_MINUTE;
-  const startFloating = wallClockToFloatingMs(instantToWallClock(row.startsAt, row.timezone)) + deltaMs;
+  const startFloating =
+    wallClockToFloatingMs(instantToWallClock(row.startsAt, row.timezone)) + deltaMs;
   const endFloating = wallClockToFloatingMs(instantToWallClock(row.endsAt, row.timezone)) + deltaMs;
   const start = resolveWallClock(floatingMsToWallClock(startFloating), row.timezone).instant;
   let end = resolveWallClock(floatingMsToWallClock(endFloating), row.timezone).instant;
-  if (end.getTime() <= start.getTime()) end = new Date(start.getTime() + (row.endsAt.getTime() - row.startsAt.getTime()));
+  if (end.getTime() <= start.getTime())
+    end = new Date(start.getTime() + (row.endsAt.getTime() - row.startsAt.getTime()));
   return { startsAt: start, endsAt: end };
 }
 
@@ -994,7 +1193,8 @@ export async function bulkShiftAction(
           assertCancellable(row);
           targets.push(row);
         } catch (err) {
-          if (err instanceof AppError) failed.push({ shiftId: row.id, code: err.code, message: err.message });
+          if (err instanceof AppError)
+            failed.push({ shiftId: row.id, code: err.code, message: err.message });
           else throw err;
         }
       }
@@ -1017,7 +1217,11 @@ export async function bulkShiftAction(
           {
             action: "shift.bulk_cancelled",
             entityType: "Shift",
-            after: { shiftIds: updated.map((u) => u.id), reason: input.payload?.reason ?? null, failed },
+            after: {
+              shiftIds: updated.map((u) => u.id),
+              reason: input.payload?.reason ?? null,
+              failed,
+            },
           },
           tx,
         );
@@ -1025,7 +1229,13 @@ export async function bulkShiftAction(
       }, TRANSACTION_OPTIONS);
       for (const event of events) publishActivity(event);
       publishScheduleChangedForShifts(organisationId, updated, "CANCELLED");
-      return { action: "CANCEL", processed: rows.length, succeeded: updated.length, failed, shifts: updated.map(toShiftDto) };
+      return {
+        action: "CANCEL",
+        processed: rows.length,
+        succeeded: updated.length,
+        failed,
+        shifts: updated.map(toShiftDto),
+      };
     }
 
     case "DELETE": {
@@ -1038,25 +1248,41 @@ export async function bulkShiftAction(
           });
           const breakEvent = await endActiveBreakOutside(tx, ctx, u, null, now);
           if (breakEvent) events.push(breakEvent);
-          events.push(await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", u, { removed: true, bulk: true }));
+          events.push(
+            await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", u, { removed: true, bulk: true }),
+          );
         }
         await audit(
           ctx,
-          { action: "shift.bulk_deleted", entityType: "Shift", after: { shiftIds: ordered.map((r) => r.id), failed } },
+          {
+            action: "shift.bulk_deleted",
+            entityType: "Shift",
+            after: { shiftIds: ordered.map((r) => r.id), failed },
+          },
           tx,
         );
         return events;
       }, TRANSACTION_OPTIONS);
       for (const event of events) publishActivity(event);
       publishScheduleChangedForShifts(organisationId, ordered, "DELETED");
-      return { action: "DELETE", processed: rows.length, succeeded: ordered.length, failed, shifts: [] };
+      return {
+        action: "DELETE",
+        processed: rows.length,
+        succeeded: ordered.length,
+        failed,
+        shifts: [],
+      };
     }
 
     case "MOVE": {
       const plans: Array<{ row: ShiftRow; startsAt: Date; endsAt: Date }> = [];
       for (const row of ordered) {
         if (row.status !== "SCHEDULED") {
-          failed.push({ shiftId: row.id, code: "CONFLICT", message: "Only scheduled shifts can be moved" });
+          failed.push({
+            shiftId: row.id,
+            code: "CONFLICT",
+            message: "Only scheduled shifts can be moved",
+          });
           continue;
         }
         const moved = shiftWallClock(row, input.payload.deltaDays, input.payload.deltaMinutes);
@@ -1098,7 +1324,12 @@ export async function bulkShiftAction(
           {
             action: "shift.bulk_moved",
             entityType: "Shift",
-            after: { shiftIds: updated.map((u) => u.id), deltaDays: input.payload.deltaDays, deltaMinutes: input.payload.deltaMinutes, failed },
+            after: {
+              shiftIds: updated.map((u) => u.id),
+              deltaDays: input.payload.deltaDays,
+              deltaMinutes: input.payload.deltaMinutes,
+              failed,
+            },
           },
           tx,
         );
@@ -1106,11 +1337,22 @@ export async function bulkShiftAction(
       }, TRANSACTION_OPTIONS);
       for (const event of events) publishActivity(event);
       publishScheduleChangedForShifts(organisationId, updated, "UPDATED");
-      return { action: "MOVE", processed: rows.length, succeeded: updated.length, failed, shifts: updated.map(toShiftDto) };
+      return {
+        action: "MOVE",
+        processed: rows.length,
+        succeeded: updated.length,
+        failed,
+        shifts: updated.map(toShiftDto),
+      };
     }
 
     case "REPEAT": {
-      const plans: Array<{ row: ShiftRow; startsAt: Date; endsAt: Date; breaks: ScheduledBreakInput[] }> = [];
+      const plans: Array<{
+        row: ShiftRow;
+        startsAt: Date;
+        endsAt: Date;
+        breaks: ScheduledBreakInput[];
+      }> = [];
       const inactive = new Set<string>();
       for (const row of ordered) {
         if (row.employee && !inactive.has(row.employeeId)) {
@@ -1118,7 +1360,11 @@ export async function bulkShiftAction(
           if (!employee || employee.employmentStatus !== "ACTIVE") inactive.add(row.employeeId);
         }
         if (inactive.has(row.employeeId)) {
-          failed.push({ shiftId: row.id, code: "EMPLOYEE_INACTIVE", message: "The employee is no longer active" });
+          failed.push({
+            shiftId: row.id,
+            code: "EMPLOYEE_INACTIVE",
+            message: "The employee is no longer active",
+          });
           continue;
         }
         const start = instantToLocal(row.startsAt, row.timezone);
@@ -1159,14 +1405,24 @@ export async function bulkShiftAction(
             include: shiftInclude,
           });
           created.push(c);
-          events.push(await recordShiftActivity(tx, ctx, "SHIFT_CREATED", c, { duplicatedFromShiftId: plan.row.id, bulk: true }));
+          events.push(
+            await recordShiftActivity(tx, ctx, "SHIFT_CREATED", c, {
+              duplicatedFromShiftId: plan.row.id,
+              bulk: true,
+            }),
+          );
         }
         await audit(
           ctx,
           {
             action: "shift.bulk_repeated",
             entityType: "Shift",
-            after: { sourceShiftIds: ordered.map((r) => r.id), createdShiftIds: created.map((c) => c.id), weeks: input.payload.weeks, failed },
+            after: {
+              sourceShiftIds: ordered.map((r) => r.id),
+              createdShiftIds: created.map((c) => c.id),
+              weeks: input.payload.weeks,
+              failed,
+            },
           },
           tx,
         );
@@ -1176,7 +1432,13 @@ export async function bulkShiftAction(
       publishScheduleChangedForShifts(organisationId, created, "CREATED");
       const failedSources = new Set(failed.map((f) => f.shiftId));
       const succeeded = ordered.filter((r) => !failedSources.has(r.id)).length;
-      return { action: "REPEAT", processed: rows.length, succeeded, failed, shifts: created.map(toShiftDto) };
+      return {
+        action: "REPEAT",
+        processed: rows.length,
+        succeeded,
+        failed,
+        shifts: created.map(toShiftDto),
+      };
     }
 
     default: {
@@ -1198,9 +1460,17 @@ async function filterConflicting<T extends { row: ShiftRow; startsAt: Date; ends
 ): Promise<T[]> {
   if (plans.length === 0) return [];
   const employeeIds = [...new Set(plans.map((p) => p.row.employeeId))];
-  const windowStart = plans.reduce((min, p) => (p.startsAt < min ? p.startsAt : min), plans[0]!.startsAt);
+  const windowStart = plans.reduce(
+    (min, p) => (p.startsAt < min ? p.startsAt : min),
+    plans[0]!.startsAt,
+  );
   const windowEnd = plans.reduce((max, p) => (p.endsAt > max ? p.endsAt : max), plans[0]!.endsAt);
-  const existing = await listScheduledIntervals(organisationId, employeeIds, windowStart, windowEnd);
+  const existing = await listScheduledIntervals(
+    organisationId,
+    employeeIds,
+    windowStart,
+    windowEnd,
+  );
   const excluded = options.copies ? new Set<string>() : new Set(plans.map((p) => p.row.id));
   const takenByEmployee = new Map<string, Array<{ id: string; startsAt: Date; endsAt: Date }>>();
   for (const e of existing) {
@@ -1231,7 +1501,10 @@ async function filterConflicting<T extends { row: ShiftRow; startsAt: Date; ends
 // ── jobs ────────────────────────────────────────────────────────────────────
 
 /** Job entry point: SCHEDULED shifts that ended at or before `now` become COMPLETED. Returns the count. */
-export async function markCompletedShifts(now: Date = new Date(), db: Db = prisma): Promise<number> {
+export async function markCompletedShifts(
+  now: Date = new Date(),
+  db: Db = prisma,
+): Promise<number> {
   return completeEndedShifts(now, db);
 }
 

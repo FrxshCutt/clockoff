@@ -10,7 +10,13 @@ import { ROUTES } from "@/config/navigation";
  * Error boundary for dashboard pages: keeps the sidebar and top bar, replaces only the page body. Never shows
  * the raw error message or stack; the digest lets support match the server log.
  */
-export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function DashboardError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
     console.error(error);
   }, [error]);

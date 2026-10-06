@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { FLOW, HOW_IT_WORKS_STRIP } from "@/components/marketing/marketing-content";
-import { CtaBand, PageIntro, PageSection, SectionHeading, StepNumber } from "@/components/marketing/marketing-sections";
+import {
+  CtaBand,
+  PageIntro,
+  PageSection,
+  SectionHeading,
+  StepNumber,
+} from "@/components/marketing/marketing-sections";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 
@@ -50,13 +56,18 @@ export default function HowItWorksPage() {
         <ol className="relative mt-12 space-y-8 border-l pl-10 sm:pl-12">
           {FLOW.map((step, index) => (
             <li key={step.key} id={step.key} className="relative scroll-mt-24">
-              <StepNumber n={index + 1} className="ring-background absolute top-0 -left-[calc(2.5rem+1px)] -translate-x-1/2 ring-4 sm:-left-[calc(3rem+1px)]" />
+              <StepNumber
+                n={index + 1}
+                className="ring-background absolute top-0 -left-[calc(2.5rem+1px)] -translate-x-1/2 ring-4 sm:-left-[calc(3rem+1px)]"
+              />
               <div className="bg-card space-y-3 rounded-xl border p-5 shadow-xs sm:p-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className={ACTOR_TONE[step.actor]}>
                     {step.actor}
                   </Badge>
-                  {step.state ? <StatusBadge kind="workModeState" value={step.state} size="sm" /> : null}
+                  {step.state ? (
+                    <StatusBadge kind="workModeState" value={step.state} size="sm" />
+                  ) : null}
                 </div>
                 <h3 className="text-lg font-semibold">{step.title}</h3>
                 <p className="text-muted-foreground leading-relaxed">{step.body}</p>
@@ -75,14 +86,32 @@ export default function HowItWorksPage() {
           />
           <dl className="grid gap-4 sm:grid-cols-2">
             {[
-              { term: "Offline shifts", detail: "Upcoming shifts and the policy are synced ahead of time. Shields start and stop on schedule with no connection." },
-              { term: "Rota changes", detail: "A silent push asks the phone to sync within minutes when it is online; otherwise it catches up at its next check-in." },
-              { term: "Wrong clock", detail: "The server measures the phone's clock skew and flags devices that drift, so a shift never silently starts late." },
-              { term: "Leaving", detail: "An employee can leave the workplace from the app at any time. Shields and schedules are removed from the phone immediately." },
+              {
+                term: "Offline shifts",
+                detail:
+                  "Upcoming shifts and the policy are synced ahead of time. Shields start and stop on schedule with no connection.",
+              },
+              {
+                term: "Rota changes",
+                detail:
+                  "A silent push asks the phone to sync within minutes when it is online; otherwise it catches up at its next check-in.",
+              },
+              {
+                term: "Wrong clock",
+                detail:
+                  "The server measures the phone's clock skew and flags devices that drift, so a shift never silently starts late.",
+              },
+              {
+                term: "Leaving",
+                detail:
+                  "An employee can leave the workplace from the app at any time. Shields and schedules are removed from the phone immediately.",
+              },
             ].map((item) => (
               <div key={item.term} className="bg-card rounded-lg border p-4 shadow-xs">
                 <dt className="font-medium">{item.term}</dt>
-                <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">{item.detail}</dd>
+                <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                  {item.detail}
+                </dd>
               </div>
             ))}
           </dl>

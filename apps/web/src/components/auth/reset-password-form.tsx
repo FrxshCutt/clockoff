@@ -2,7 +2,13 @@
 
 import { CircleCheck, Link2Off } from "lucide-react";
 import Link from "next/link";
-import { FormErrorAlert, PasswordField, SubmitButton, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  PasswordField,
+  SubmitButton,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ROUTES, getPostAuthRedirect } from "@/config/navigation";
@@ -14,7 +20,9 @@ import { parseLinkToken, resetPasswordFormSchema } from "./schemas";
 export function ResetPasswordForm({ token: rawToken }: { token: string | null }) {
   const token = parseLinkToken("resetPassword", rawToken);
   const reset = useResetPassword();
-  const form = useZodForm(resetPasswordFormSchema, { defaultValues: { password: "", confirmPassword: "" } });
+  const form = useZodForm(resetPasswordFormSchema, {
+    defaultValues: { password: "", confirmPassword: "" },
+  });
 
   const onSubmit = form.handleSubmit(async ({ password }) => {
     if (!token) return;
@@ -56,7 +64,9 @@ export function ResetPasswordForm({ token: rawToken }: { token: string | null })
       >
         <Button asChild className="w-full">
           {me ? (
-            <Link href={getPostAuthRedirect({ organisationCount: me.organisations.length })}>Continue to Work Mode</Link>
+            <Link href={getPostAuthRedirect({ organisationCount: me.organisations.length })}>
+              Continue to Work Mode
+            </Link>
           ) : (
             <Link href={ROUTES.login}>Sign in</Link>
           )}
@@ -85,9 +95,24 @@ export function ResetPasswordForm({ token: rawToken }: { token: string | null })
               <Link href={ROUTES.forgotPassword}>Request a new link</Link>
             </Button>
           ) : null}
-          <PasswordField control={form.control} name="password" label="New password" autoComplete="new-password" autoFocus />
-          <PasswordField control={form.control} name="confirmPassword" label="Confirm new password" autoComplete="new-password" />
-          <SubmitButton className="w-full" isPending={reset.isPending} pendingLabel="Updating password…">
+          <PasswordField
+            control={form.control}
+            name="password"
+            label="New password"
+            autoComplete="new-password"
+            autoFocus
+          />
+          <PasswordField
+            control={form.control}
+            name="confirmPassword"
+            label="Confirm new password"
+            autoComplete="new-password"
+          />
+          <SubmitButton
+            className="w-full"
+            isPending={reset.isPending}
+            pendingLabel="Updating password…"
+          >
             Update password
           </SubmitButton>
         </form>

@@ -49,16 +49,24 @@ describe("auth screens", () => {
     const reset = render(<ResetPasswordForm token={truncated} />);
     expect(reset).toContain("This reset link is incomplete");
     expect(reset).not.toContain('type="password"');
-    expect(render(<VerifyEmailPanel token={truncated} />)).toContain("This verification link is incomplete");
-    expect(render(<AcceptInvitePanel token={truncated} />)).toContain("This invitation link is incomplete");
+    expect(render(<VerifyEmailPanel token={truncated} />)).toContain(
+      "This verification link is incomplete",
+    );
+    expect(render(<AcceptInvitePanel token={truncated} />)).toContain(
+      "This invitation link is incomplete",
+    );
   });
 
   it("accept invite: looks the invitation up when the token is well formed", () => {
-    expect(render(<AcceptInvitePanel token={"t".repeat(40)} />)).toContain("Checking your invitation");
+    expect(render(<AcceptInvitePanel token={"t".repeat(40)} />)).toContain(
+      "Checking your invitation",
+    );
   });
 
   it("verify email: explains a missing token, and shows progress while verifying", () => {
-    expect(render(<VerifyEmailPanel token={null} />)).toContain("This verification link is incomplete");
+    expect(render(<VerifyEmailPanel token={null} />)).toContain(
+      "This verification link is incomplete",
+    );
     expect(render(<VerifyEmailPanel token={"t".repeat(40)} />)).toContain("Verifying your email");
   });
 });

@@ -11,7 +11,12 @@ export const GET = createHandler(
 
 /** `PATCH /api/policies/:id` (policies:write) → `{ policy }`; config edits land in the draft version. */
 export const PATCH = createHandler(
-  { auth: "manager", permission: "policies:write", params: idParamsSchema, body: updatePolicySchema },
+  {
+    auth: "manager",
+    permission: "policies:write",
+    params: idParamsSchema,
+    body: updatePolicySchema,
+  },
   async ({ ctx, params, body }) => ({ policy: await updatePolicy(ctx, params.id, body) }),
 );
 

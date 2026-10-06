@@ -25,9 +25,13 @@ export function PageIntro({ eyebrow, title, lead, children, className }: PageInt
   return (
     <Container className={cn("py-16 sm:py-20", className)}>
       <div className="max-w-3xl space-y-5">
-        {eyebrow ? <p className="text-primary text-sm font-semibold tracking-wide uppercase">{eyebrow}</p> : null}
+        {eyebrow ? (
+          <p className="text-primary text-sm font-semibold tracking-wide uppercase">{eyebrow}</p>
+        ) : null}
         <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">{title}</h1>
-        {lead ? <p className="text-muted-foreground text-lg text-pretty sm:text-xl">{lead}</p> : null}
+        {lead ? (
+          <p className="text-muted-foreground text-lg text-pretty sm:text-xl">{lead}</p>
+        ) : null}
         {children}
       </div>
     </Container>
@@ -43,14 +47,27 @@ export interface SectionHeadingProps {
   className?: string;
 }
 
-export function SectionHeading({ id, eyebrow, title, description, align = "start", className }: SectionHeadingProps) {
+export function SectionHeading({
+  id,
+  eyebrow,
+  title,
+  description,
+  align = "start",
+  className,
+}: SectionHeadingProps) {
   return (
-    <div className={cn("max-w-2xl space-y-3", align === "center" && "mx-auto text-center", className)}>
-      {eyebrow ? <p className="text-primary text-sm font-semibold tracking-wide uppercase">{eyebrow}</p> : null}
+    <div
+      className={cn("max-w-2xl space-y-3", align === "center" && "mx-auto text-center", className)}
+    >
+      {eyebrow ? (
+        <p className="text-primary text-sm font-semibold tracking-wide uppercase">{eyebrow}</p>
+      ) : null}
       <h2 id={id} className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
         {title}
       </h2>
-      {description ? <p className="text-muted-foreground text-base text-pretty sm:text-lg">{description}</p> : null}
+      {description ? (
+        <p className="text-muted-foreground text-base text-pretty sm:text-lg">{description}</p>
+      ) : null}
     </div>
   );
 }
@@ -65,9 +82,23 @@ export interface PageSectionProps {
   "aria-label"?: string;
 }
 
-export function PageSection({ id, tone = "default", children, className, ...aria }: PageSectionProps) {
+export function PageSection({
+  id,
+  tone = "default",
+  children,
+  className,
+  ...aria
+}: PageSectionProps) {
   return (
-    <section id={id} {...aria} className={cn("scroll-mt-20 py-16 sm:py-20", tone === "muted" && "bg-muted/40 border-y", className)}>
+    <section
+      id={id}
+      {...aria}
+      className={cn(
+        "scroll-mt-20 py-16 sm:py-20",
+        tone === "muted" && "bg-muted/40 border-y",
+        className,
+      )}
+    >
       <Container>{children}</Container>
     </section>
   );
@@ -81,7 +112,11 @@ export interface CtaBandProps {
 }
 
 /** Closing call to action used at the bottom of every page. */
-export function CtaBand({ title = "See it on your own rota", description = "A 20-minute walkthrough with your shifts, your policies and your questions.", source }: CtaBandProps) {
+export function CtaBand({
+  title = "See it on your own rota",
+  description = "A 20-minute walkthrough with your shifts, your policies and your questions.",
+  source,
+}: CtaBandProps) {
   return (
     <section aria-labelledby="cta-band-title" className="py-16 sm:py-20">
       <Container>
@@ -92,7 +127,10 @@ export function CtaBand({ title = "See it on your own rota", description = "A 20
           />
           <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl space-y-3">
-              <h2 id="cta-band-title" className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+              <h2
+                id="cta-band-title"
+                className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl"
+              >
                 {title}
               </h2>
               <p className="text-primary-foreground/85 text-pretty">{description}</p>
@@ -105,7 +143,12 @@ export function CtaBand({ title = "See it on your own rota", description = "A 20
                   <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="ghost" className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground">
+              <Button
+                asChild
+                size="lg"
+                variant="ghost"
+                className="text-primary-foreground hover:text-primary-foreground hover:bg-white/10"
+              >
                 <Link href={MARKETING_CTA.login.href}>{MARKETING_CTA.login.label}</Link>
               </Button>
             </div>
@@ -120,7 +163,10 @@ export function CtaBand({ title = "See it on your own rota", description = "A 20
 export function StepNumber({ n, className }: { n: number; className?: string }) {
   return (
     <span
-      className={cn("bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums", className)}
+      className={cn(
+        "bg-primary text-primary-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold tabular-nums",
+        className,
+      )}
       aria-hidden="true"
     >
       {n}

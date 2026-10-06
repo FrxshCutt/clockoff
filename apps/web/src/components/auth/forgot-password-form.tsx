@@ -4,7 +4,13 @@ import { forgotPasswordSchema } from "@workmode/validation/auth";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { FormErrorAlert, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { ROUTES } from "@/config/navigation";
@@ -33,8 +39,8 @@ export function ForgotPasswordForm() {
         title="Check your email"
         description={
           <>
-            If an account exists for <span className="text-foreground font-medium">{sentTo}</span>, we&apos;ve sent a link to
-            reset your password. It expires soon, so use it promptly.
+            If an account exists for <span className="text-foreground font-medium">{sentTo}</span>,
+            we&apos;ve sent a link to reset your password. It expires soon, so use it promptly.
           </>
         }
         footer={
@@ -69,8 +75,20 @@ export function ForgotPasswordForm() {
       <Form {...form}>
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <FormErrorAlert error={forgot.error} />
-          <TextField control={form.control} name="email" label="Work email" type="email" autoComplete="email" inputMode="email" autoFocus />
-          <SubmitButton className="w-full" isPending={forgot.isPending} pendingLabel="Sending link…">
+          <TextField
+            control={form.control}
+            name="email"
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            autoFocus
+          />
+          <SubmitButton
+            className="w-full"
+            isPending={forgot.isPending}
+            pendingLabel="Sending link…"
+          >
             Send reset link
           </SubmitButton>
         </form>

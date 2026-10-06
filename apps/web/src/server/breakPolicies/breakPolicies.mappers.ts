@@ -1,5 +1,9 @@
 import { parseRelaxedCategories } from "@workmode/shared/breaks/breakRules";
-import type { BreakPolicy, BreakPolicyAssignment, BreakPolicyRules } from "@workmode/validation/breakPolicies";
+import type {
+  BreakPolicy,
+  BreakPolicyAssignment,
+  BreakPolicyRules,
+} from "@workmode/validation/breakPolicies";
 import { isWindowActive, scopeKey } from "@/server/policies/scopes";
 import type { BreakPolicyAssignmentRow, BreakPolicyRow } from "./breakPolicies.repository";
 
@@ -73,7 +77,8 @@ export function summariseBreakAssignment(
     id: row.id,
     scopeType: row.scopeType,
     scopeId: row.scopeId,
-    scopeName: scopeNames?.get(scopeKey({ scopeType: row.scopeType, scopeId: row.scopeId })) ?? null,
+    scopeName:
+      scopeNames?.get(scopeKey({ scopeType: row.scopeType, scopeId: row.scopeId })) ?? null,
     effectiveFrom: row.effectiveFrom?.toISOString() ?? null,
     effectiveTo: row.effectiveTo?.toISOString() ?? null,
   };

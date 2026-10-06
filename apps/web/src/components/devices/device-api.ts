@@ -24,7 +24,11 @@ export function useDevices(params: DeviceListParams, options: { enabled?: boolea
     queryFn: async ({ signal }): Promise<ListDevicesResponse> =>
       parseResponse(
         listDevicesResponseSchema,
-        await api.get<unknown>("/api/devices", toDeviceApiQuery(params) as unknown as QueryParams, signal),
+        await api.get<unknown>(
+          "/api/devices",
+          toDeviceApiQuery(params) as unknown as QueryParams,
+          signal,
+        ),
         "GET /api/devices",
       ),
     placeholderData: keepPreviousData,
@@ -36,7 +40,11 @@ export function useDevice(id: string, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: deviceKeys.detail(id),
     queryFn: async ({ signal }): Promise<DeviceWithEmployee> =>
-      parseResponse(deviceResponseSchema, await api.get<unknown>(`/api/devices/${encode(id)}`, undefined, signal), "GET /api/devices/:id"),
+      parseResponse(
+        deviceResponseSchema,
+        await api.get<unknown>(`/api/devices/${encode(id)}`, undefined, signal),
+        "GET /api/devices/:id",
+      ),
     enabled: options.enabled ?? true,
   });
 }
@@ -48,11 +56,20 @@ export function useDevice(id: string, options: { enabled?: boolean } = {}) {
 export function useDeactivateDevice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason?: string }): Promise<DeviceWithEmployee> => {
+    mutationFn: async ({
+      id,
+      reason,
+    }: {
+      id: string;
+      reason?: string;
+    }): Promise<DeviceWithEmployee> => {
       const trimmed = reason?.trim();
       return parseResponse(
         deviceResponseSchema,
-        await api.post<unknown>(`/api/devices/${encode(id)}/deactivate`, trimmed ? { reason: trimmed } : {}),
+        await api.post<unknown>(
+          `/api/devices/${encode(id)}/deactivate`,
+          trimmed ? { reason: trimmed } : {},
+        ),
         "POST /api/devices/:id/deactivate",
       );
     },

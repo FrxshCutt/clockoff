@@ -1,5 +1,9 @@
 import { prisma } from "@workmode/db";
-import type { EmployeeDetailResponse, EmployeeResponse } from "@workmode/validation/employees";
+import type {
+  EmployeeDetailResponse,
+  EmployeeResponse,
+  ListEmployeesResponse,
+} from "@workmode/validation/employees";
 import {
   createEmployeeInviteResponseSchema,
   employeeInviteResponseSchema,
@@ -11,7 +15,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { POST as createInviteRoute } from "@/app/api/employees/[id]/invites/route";
 import { GET as getEmployeeRoute } from "@/app/api/employees/[id]/route";
-import { POST as createEmployeeRoute } from "@/app/api/employees/route";
+import { GET as listEmployeesRoute, POST as createEmployeeRoute } from "@/app/api/employees/route";
 import { GET as instructionsRoute } from "@/app/api/invites/[id]/instructions/route";
 import { POST as resendRoute } from "@/app/api/invites/[id]/resend/route";
 import { POST as revokeRoute } from "@/app/api/invites/[id]/revoke/route";
@@ -57,6 +61,27 @@ async function invite(jar: CookieJar, employeeId: string, body: Record<string, u
 
 async function inviteStatusOf(employeeId: string) {
   return (await prisma.employee.findUniqueOrThrow({ where: { id: employeeId } })).inviteStatus;
+}
+
+async function getDetail(jar: CookieJar, employeeId: string) {
+  const res = await callRoute<EmployeeDetailResponse>(getEmployeeRoute, {
+    path: `/api/employees/${employeeId}`,
+    params: { id: employeeId },
+    jar,
+  });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  return res.body.employee;
+}
+
+/** Ids returned by `GET /api/employees?inviteStatus=…`. */
+async function listedWith(jar: CookieJar, inviteStatus: string) {
+  const res = await callRoute<ListEmployeesResponse>(listEmployeesRoute, {
+    path: "/api/employees",
+    jar,
+    query: { inviteStatus },
+  });
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  return res.body.items.map((e) => e.id);
 }
 
 describe("POST /api/employees/:id/invites", () => {
@@ -192,6 +217,54 @@ describe("POST /api/employees/:id/invites", () => {
     const d = await invite(jar, linked.id, { channel: "FAX" });
     expect(d.status).toBe(400);
   });
+
+  it("re-invites an employee whose only phone was deactivated: the dead link is ended and they read INVITED", async () => {
+    const { org, jar } = await setup();
+    // What `POST /api/devices/:id/deactivate` leaves behind: an active link whose every device is inactive.
+    const { employee, device } = await createTestDevice(org.organisation.id, { isActive: false });
+    expect((await getDetail(jar, employee.id)).inviteStatus).toBe("DEACTIVATED");
+
+    const res = await invite(jar, employee.id);
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    expect(res.body.invite.status).toBe("SENT");
+    expect(
+      (await prisma.employeeUserLink.findUniqueOrThrow({ where: { employeeId: employee.id } }))
+        .unlinkedAt,
+    ).not.toBeNull();
+    expect((await prisma.device.findUniqueOrThrow({ where: { id: device.id } })).isActive).toBe(
+      false,
+    );
+    expect(await inviteStatusOf(employee.id)).toBe("INVITED");
+    expect((await getDetail(jar, employee.id)).inviteStatus).toBe("INVITED");
+    const auditRow = await prisma.auditLog.findFirstOrThrow({
+      where: { action: "employee.invite_created", entityId: res.body.invite.id },
+    });
+    expect(auditRow.after).toMatchObject({ endedDeadLink: true });
+
+    // Re-sending it is fine (nothing left to unlink)…
+    const resent = await callRoute<EmployeeInviteResponse>(resendRoute, {
+      method: "POST",
+      path: `/api/invites/${res.body.invite.id}/resend`,
+      params: { id: res.body.invite.id },
+      jar,
+      body: {},
+    });
+    expect(resent.status, JSON.stringify(resent.body)).toBe(200);
+    expect(await inviteStatusOf(employee.id)).toBe("INVITED");
+
+    // …while an employee whose phone IS still in use stays EMPLOYEE_ALREADY_LINKED and keeps the link.
+    const active = await createTestDevice(org.organisation.id);
+    const refused = await invite(jar, active.employee.id);
+    expect(refused.status).toBe(409);
+    expect((refused.body as unknown as ErrorBody).error.code).toBe("EMPLOYEE_ALREADY_LINKED");
+    expect(
+      (
+        await prisma.employeeUserLink.findUniqueOrThrow({
+          where: { employeeId: active.employee.id },
+        })
+      ).unlinkedAt,
+    ).toBeNull();
+  });
 });
 
 describe("invite lifecycle: instructions → resend → revoke", () => {
@@ -251,7 +324,9 @@ describe("invite lifecycle: instructions → resend → revoke", () => {
     expect(Date.parse(resentInvite.expiresAt) - Date.now()).toBeGreaterThan(13 * DAY);
     expect(testEmails().sent.map((m) => m.to)).toEqual(["life@example.test"]);
     expect(
-      await prisma.auditLog.count({ where: { action: "employee.invite_resent", entityId: inviteId } }),
+      await prisma.auditLog.count({
+        where: { action: "employee.invite_resent", entityId: inviteId },
+      }),
     ).toBe(1);
     expect(await inviteStatusOf(employee.id)).toBe("INVITED");
 
@@ -276,7 +351,9 @@ describe("invite lifecycle: instructions → resend → revoke", () => {
     });
     expect(again.status).toBe(200);
     expect(
-      await prisma.auditLog.count({ where: { action: "employee.invite_revoked", entityId: inviteId } }),
+      await prisma.auditLog.count({
+        where: { action: "employee.invite_revoked", entityId: inviteId },
+      }),
     ).toBe(1);
 
     // A revoked invite can neither be re-sent nor shared.
@@ -303,16 +380,21 @@ describe("invite lifecycle: instructions → resend → revoke", () => {
     const employee = await createEmployee(jar, { firstName: "Ex", lastName: "Pired" });
     const created = await invite(jar, employee.id);
     const inviteId = created.body.invite.id;
+    expect(await listedWith(jar, "INVITED")).toContain(employee.id);
     await prisma.employeeInvite.update({
       where: { id: inviteId },
       data: { expiresAt: new Date(Date.now() - 1000) },
     });
-    const detail = await callRoute<EmployeeDetailResponse>(getEmployeeRoute, {
-      path: `/api/employees/${employee.id}`,
-      params: { id: employee.id },
-      jar,
-    });
-    expect(detail.body.employee.latestInvite?.status).toBe("EXPIRED");
+    const detail = await getDetail(jar, employee.id);
+    expect(detail.latestInvite?.status).toBe("EXPIRED");
+    // Nothing recomputed the stored column (expiry is passive), yet the API derives the lifecycle live:
+    // the detail, the list and the `inviteStatus` filter all agree the employee is NOT_INVITED again.
+    expect(await inviteStatusOf(employee.id)).toBe("INVITED");
+    expect(detail.inviteStatus).toBe("NOT_INVITED");
+    expect(await listedWith(jar, "INVITED")).not.toContain(employee.id);
+    expect(await listedWith(jar, "NOT_INVITED")).toContain(employee.id);
+    expect(await listedWith(jar, "NOT_INVITED,INVITED")).toContain(employee.id);
+    expect(await listedWith(jar, "JOINED,DEACTIVATED")).not.toContain(employee.id);
 
     const resent = await callRoute<EmployeeInviteResponse>(resendRoute, {
       method: "POST",
@@ -324,6 +406,9 @@ describe("invite lifecycle: instructions → resend → revoke", () => {
     expect(resent.status).toBe(200);
     expect(resent.body.invite.status).toBe("SENT");
     expect(await inviteStatusOf(employee.id)).toBe("INVITED");
+    expect((await getDetail(jar, employee.id)).inviteStatus).toBe("INVITED");
+    expect(await listedWith(jar, "INVITED")).toContain(employee.id);
+    expect(await listedWith(jar, "NOT_INVITED")).not.toContain(employee.id);
   });
 
   it("unknown invite ids are 404 INVITE_INVALID", async () => {

@@ -1,10 +1,17 @@
 "use client";
 
-import type { NotificationPreferences, UpdateNotificationPreferencesInput } from "@workmode/validation/notifications";
+import type {
+  NotificationPreferences,
+  UpdateNotificationPreferencesInput,
+} from "@workmode/validation/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, hasErrorCode } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";
-import { normalizeBilling, normalizeNotificationPreferences, type BillingSummary } from "./api-shapes";
+import {
+  normalizeBilling,
+  normalizeNotificationPreferences,
+  type BillingSummary,
+} from "./api-shapes";
 
 /**
  * `/api/settings` (the caller's notification preferences) and `/api/settings/billing`. Both endpoints may not
@@ -42,10 +49,13 @@ export function useUpdateNotificationPreferences() {
       return normalizeNotificationPreferences(raw);
     },
     onSuccess: (preferences) => {
-      queryClient.setQueryData<Availability<NotificationPreferences>>(queryKeys.notificationPreferences, {
-        available: true,
-        data: preferences,
-      });
+      queryClient.setQueryData<Availability<NotificationPreferences>>(
+        queryKeys.notificationPreferences,
+        {
+          available: true,
+          data: preferences,
+        },
+      );
     },
   });
 }

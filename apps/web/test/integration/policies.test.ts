@@ -12,6 +12,7 @@ import {
   type PolicyVersionsResponse,
 } from "@workmode/validation/policies";
 import type { OrganisationResponse } from "@workmode/validation/organisation";
+import { REALTIME_EVENT_TYPES as CONTRACT_EVENT_TYPES } from "@workmode/validation/realtime";
 import { describe, expect, it } from "vitest";
 import { POST as defaultPolicyRoute } from "@/app/api/organisations/current/default-policy/route";
 import { DELETE as endAssignmentRoute } from "@/app/api/policy-assignments/[id]/route";
@@ -29,13 +30,22 @@ import {
 } from "@/app/api/policies/[id]/route";
 import { GET as versionsRoute } from "@/app/api/policies/[id]/versions/route";
 import { GET as listPoliciesRoute, POST as createPolicyRoute } from "@/app/api/policies/route";
-import { getEventBus, type RealtimeEvent } from "@/server/events";
+import {
+  getEventBus,
+  REALTIME_EVENT_TYPES as SERVER_EVENT_TYPES,
+  type RealtimeEvent,
+} from "@/server/events";
 import {
   computePolicyVersionString,
   resolveEmployeePolicies,
   resolveForEmployees,
   toResolvedPolicyRefs,
 } from "@/server/policies/policies.service";
+import {
+  affectedEmployeeIds,
+  isOrganisationBridged,
+  PUSH_BRIDGE_EVENT_TYPES,
+} from "@/server/realtime/pushBridge";
 import {
   addMember,
   callRoute,
@@ -361,7 +371,11 @@ describe("work policies: create / read / update", () => {
       body: { name: "Nights", description: null },
     });
     expect(renamed.status).toBe(200);
-    expect(renamed.body.policy).toMatchObject({ name: "Nights", description: null, status: "DRAFT" });
+    expect(renamed.body.policy).toMatchObject({
+      name: "Nights",
+      description: null,
+      status: "DRAFT",
+    });
     const config = await callRoute<PolicyResponse>(patchPolicyRoute, {
       method: "PATCH",
       path: `/api/policies/${draft.id}`,
@@ -396,7 +410,11 @@ describe("work policies: create / read / update", () => {
       body: {},
     });
     expect(copy.status).toBe(201);
-    expect(copy.body.policy).toMatchObject({ name: "Warehouse (copy)", status: "DRAFT", currentVersion: null });
+    expect(copy.body.policy).toMatchObject({
+      name: "Warehouse (copy)",
+      status: "DRAFT",
+      currentVersion: null,
+    });
     expect(copy.body.policy.id).not.toBe(source.id);
     expect(copy.body.policy.draftVersion).toMatchObject({
       versionNumber: 1,
@@ -427,7 +445,10 @@ describe("work policies: create / read / update", () => {
     expect(arch.status).toBe(200);
     expect(arch.body.policy.status).toBe("ARCHIVED");
 
-    const list = await callRoute<ListPoliciesResponse>(listPoliciesRoute, { path: "/api/policies", jar });
+    const list = await callRoute<ListPoliciesResponse>(listPoliciesRoute, {
+      path: "/api/policies",
+      jar,
+    });
     expect(list.status).toBe(200);
     expect(listPoliciesResponseSchema.parse(list.body)).toBeTruthy();
     expect(list.body.policies.map((p) => p.name)).toEqual(["Alpha", "Beta draft"]);
@@ -437,16 +458,18 @@ describe("work policies: create / read / update", () => {
       query: { includeArchived: "true" },
       jar,
     });
-    expect(withArchived.body.policies.map((p) => p.name)).toEqual(["Alpha", "Beta draft", "Gamma old"]);
+    expect(withArchived.body.policies.map((p) => p.name)).toEqual([
+      "Alpha",
+      "Beta draft",
+      "Gamma old",
+    ]);
 
     const drafts = await callRoute<ListPoliciesResponse>(listPoliciesRoute, {
       path: "/api/policies",
       query: { status: "DRAFT" },
       jar,
     });
-    expect(drafts.body.policies.map((p) => p.id)).toEqual(
-      expect.not.arrayContaining([a.id]),
-    );
+    expect(drafts.body.policies.map((p) => p.id)).toEqual(expect.not.arrayContaining([a.id]));
     expect(drafts.body.policies).toHaveLength(1);
 
     const search = await callRoute<ListPoliciesResponse>(listPoliciesRoute, {
@@ -464,7 +487,10 @@ describe("work policies: create / read / update", () => {
     await addMember(org.organisation.id, manager, "MANAGER");
     const jar = await loginAs(manager, { organisationId: org.organisation.id });
 
-    const read = await callRoute<ListPoliciesResponse>(listPoliciesRoute, { path: "/api/policies", jar });
+    const read = await callRoute<ListPoliciesResponse>(listPoliciesRoute, {
+      path: "/api/policies",
+      jar,
+    });
     expect(read.status).toBe(200);
     expect(read.body.policies.map((p) => p.id)).toEqual([policy.id]);
 
@@ -618,7 +644,9 @@ describe("policy assignments", () => {
     const { org, jar } = await setup();
     const current = await createPublishedPolicy(jar, "Current");
     const next = await createPublishedPolicy(jar, "Next month");
-    const team = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Bar" } });
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Bar" },
+    });
     const first = await assign(jar, current.id, { scopeType: "TEAM", scopeId: team.id });
     const startsAt = new Date(Date.now() + 7 * 86_400_000);
     const scheduled = await assign(jar, next.id, {
@@ -632,6 +660,38 @@ describe("policy assignments", () => {
     });
     expect(previous.effectiveTo?.toISOString()).toBe(startsAt.toISOString());
     expect(scheduled.assignment.scope).toEqual({ id: team.id, name: "Bar" });
+  });
+
+  it("rejects an assignment whose window has already ended and leaves the scope's current one untouched", async () => {
+    const { org, jar } = await setup();
+    const policy = await createPublishedPolicy(jar, "Current");
+    const other = await createPublishedPolicy(jar, "Dead on arrival");
+    const employee = await createEmployee(org);
+    const current = await assign(jar, policy.id, { scopeType: "EMPLOYEE", scopeId: employee.id });
+
+    // The schema only checks effectiveTo > effectiveFrom; a window that is entirely in the past would
+    // otherwise end the current assignment and leave the employee with nothing.
+    const past = await assign(
+      jar,
+      other.id,
+      {
+        scopeType: "EMPLOYEE",
+        scopeId: employee.id,
+        effectiveFrom: new Date(Date.now() - 120_000).toISOString(),
+        effectiveTo: new Date(Date.now() - 60_000).toISOString(),
+      },
+      400,
+    );
+    expect(past.error.code).toBe("VALIDATION_ERROR");
+    expect(past.error.details).toMatchObject({
+      source: "body",
+      fieldErrors: { effectiveTo: expect.any(Array) },
+    });
+    const row = await prisma.policyAssignment.findUniqueOrThrow({
+      where: { id: current.assignment.id },
+    });
+    expect(row.effectiveTo).toBeNull();
+    expect(await prisma.policyAssignment.count({ where: { policyId: other.id } })).toBe(0);
   });
 });
 
@@ -697,7 +757,10 @@ describe("archive and delete", () => {
       body: {},
     });
     expect(defaultBlocked.status).toBe(409);
-    expect(defaultBlocked.body.error.details).toMatchObject({ isDefault: true, assignmentCount: 0 });
+    expect(defaultBlocked.body.error.details).toMatchObject({
+      isDefault: true,
+      assignmentCount: 0,
+    });
 
     await callRoute(defaultPolicyRoute, {
       method: "POST",
@@ -813,7 +876,10 @@ describe("organisation default policy", () => {
     expect(seen).toHaveLength(2);
     expect(
       await prisma.auditLog.count({
-        where: { organisationId: org.organisation.id, action: "organisation.default_policy_changed" },
+        where: {
+          organisationId: org.organisation.id,
+          action: "organisation.default_policy_changed",
+        },
       }),
     ).toBe(2);
     unsubscribe();
@@ -826,8 +892,12 @@ describe("resolution service", () => {
     const location = await prisma.location.findFirstOrThrow({
       where: { organisationId: org.organisation.id },
     });
-    const teamA = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Team A" } });
-    const teamB = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Team B" } });
+    const teamA = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Team A" },
+    });
+    const teamB = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Team B" },
+    });
     const employee = await createEmployee(org, { primaryLocationId: location.id });
     await prisma.employeeTeam.createMany({
       data: [
@@ -856,7 +926,10 @@ describe("resolution service", () => {
     });
     const viaDefault = await resolveEmployeePolicies(org.organisation.id, employee.id);
     expect(viaDefault.policy?.id).toBe(pDefault.id);
-    expect(viaDefault.policy?.currentVersion).toMatchObject({ versionNumber: 1, restrictionConfig });
+    expect(viaDefault.policy?.currentVersion).toMatchObject({
+      versionNumber: 1,
+      restrictionConfig,
+    });
     expect(viaDefault.policyResolvedFrom).toMatchObject({
       via: "DEFAULT",
       scopeType: "ORGANISATION",
@@ -874,7 +947,10 @@ describe("resolution service", () => {
     await assign(jar, pOrg.id, { scopeType: "ORGANISATION", scopeId: org.organisation.id });
     const viaOrg = await resolveEmployeePolicies(org.organisation.id, employee.id);
     expect(viaOrg.policy?.id).toBe(pOrg.id);
-    expect(viaOrg.policyResolvedFrom).toMatchObject({ via: "ASSIGNMENT", scopeType: "ORGANISATION" });
+    expect(viaOrg.policyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "ORGANISATION",
+    });
 
     await assign(jar, pLoc.id, { scopeType: "LOCATION", scopeId: location.id });
     const viaLocation = await resolveEmployeePolicies(org.organisation.id, employee.id);
@@ -913,7 +989,10 @@ describe("resolution service", () => {
     await assign(jar, pEmp.id, { scopeType: "EMPLOYEE", scopeId: employee.id });
     const viaEmployee = await resolveEmployeePolicies(org.organisation.id, employee.id);
     expect(viaEmployee.policy?.id).toBe(pEmp.id);
-    expect(viaEmployee.policyResolvedFrom).toMatchObject({ via: "ASSIGNMENT", scopeType: "EMPLOYEE" });
+    expect(viaEmployee.policyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "EMPLOYEE",
+    });
     expect(viaEmployee.warnings).toEqual([]);
 
     // Batched resolution agrees, and the list reflects who resolves to what.
@@ -921,8 +1000,13 @@ describe("resolution service", () => {
     const batch = await resolveForEmployees(org.organisation.id, [employee.id, second.id]);
     expect(batch.get(employee.id)?.policy?.id).toBe(pEmp.id);
     expect(batch.get(second.id)?.policy?.id).toBe(pOrg.id);
-    const list = await callRoute<ListPoliciesResponse>(listPoliciesRoute, { path: "/api/policies", jar });
-    const counts = Object.fromEntries(list.body.policies.map((p) => [p.name, p.assignedEmployeeCount]));
+    const list = await callRoute<ListPoliciesResponse>(listPoliciesRoute, {
+      path: "/api/policies",
+      jar,
+    });
+    const counts = Object.fromEntries(
+      list.body.policies.map((p) => [p.name, p.assignedEmployeeCount]),
+    );
     expect(counts).toMatchObject({ "P employee": 1, "P org": 1, "P default": 0, "P team B": 0 });
   });
 
@@ -934,5 +1018,157 @@ describe("resolution service", () => {
       code: "EMPLOYEE_NOT_FOUND",
     });
     expect((await resolveForEmployees(org.organisation.id, [foreign.id])).size).toBe(0);
+  });
+
+  it("ignores scheduled and ended windows, skips archived and foreign policies with a warning, and reports duplicate rows", async () => {
+    const { org, jar } = await setup();
+    const organisationId = org.organisation.id;
+    const employee = await createEmployee(org);
+    const team = await prisma.team.create({ data: { organisationId, name: "Grill" } });
+    await prisma.employeeTeam.create({ data: { employeeId: employee.id, teamId: team.id } });
+    const pDefault = await createPublishedPolicy(jar, "Default");
+    const pLater = await createPublishedPolicy(jar, "Later");
+    const pRetired = await createPublishedPolicy(jar, "Retired");
+    await callRoute(defaultPolicyRoute, {
+      method: "POST",
+      path: "/api/organisations/current/default-policy",
+      jar,
+      body: { policyId: pDefault.id },
+    });
+
+    // A scheduled assignment is inactive until its start: the default applies now, the scheduled policy
+    // from its start (`now` is a parameter, so previews are free).
+    const startsAt = new Date(Date.now() + 86_400_000);
+    const scheduled = await assign(jar, pLater.id, {
+      scopeType: "EMPLOYEE",
+      scopeId: employee.id,
+      effectiveFrom: startsAt.toISOString(),
+    });
+    const beforeStart = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(beforeStart.policy?.id).toBe(pDefault.id);
+    expect(beforeStart.warnings).toEqual([]);
+    const atStart = await resolveEmployeePolicies(organisationId, employee.id, startsAt);
+    expect(atStart.policy?.id).toBe(pLater.id);
+    expect(atStart.policyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "EMPLOYEE",
+      assignmentId: scheduled.assignment.id,
+    });
+
+    // Ending it before it starts cancels it, even when evaluated at the planned start.
+    await callRoute(endAssignmentRoute, {
+      method: "DELETE",
+      path: `/api/policy-assignments/${scheduled.assignment.id}`,
+      params: { id: scheduled.assignment.id },
+      jar,
+    });
+    expect((await resolveEmployeePolicies(organisationId, employee.id, startsAt)).policy?.id).toBe(
+      pDefault.id,
+    );
+
+    // A policy archived behind the API's back (it refuses while assigned) is skipped with a warning and
+    // resolution falls through to the next level.
+    const retired = await assign(jar, pRetired.id, { scopeType: "TEAM", scopeId: team.id });
+    await prisma.policy.update({ where: { id: pRetired.id }, data: { status: "ARCHIVED" } });
+    const skipped = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(skipped.policy?.id).toBe(pDefault.id);
+    expect(skipped.warnings.map((w) => w.code)).toEqual(["INACTIVE_POLICY_SKIPPED"]);
+    expect(skipped.warnings[0]?.details).toMatchObject({
+      policyId: pRetired.id,
+      scopeType: "TEAM",
+      assignmentId: retired.assignment.id,
+    });
+    await callRoute(endAssignmentRoute, {
+      method: "DELETE",
+      path: `/api/policy-assignments/${retired.assignment.id}`,
+      params: { id: retired.assignment.id },
+      jar,
+    });
+
+    // A row pointing at another organisation's policy (a tenancy bug written directly — the API returns
+    // 404 for it) is never applied.
+    const otherOrg = await createTestOrg();
+    const otherJar = await loginAs(otherOrg.owner, { organisationId: otherOrg.organisation.id });
+    const foreignPolicy = await createPublishedPolicy(otherJar, "Foreign");
+    const foreignRow = await prisma.policyAssignment.create({
+      data: { organisationId, policyId: foreignPolicy.id, scopeType: "TEAM", scopeId: team.id },
+    });
+    const mismatch = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(mismatch.policy?.id).toBe(pDefault.id);
+    expect(mismatch.warnings.map((w) => w.code)).toEqual(["POLICY_ORGANISATION_MISMATCH"]);
+    expect(mismatch.warnings[0]?.details).toMatchObject({
+      policyId: foreignPolicy.id,
+      assignmentId: foreignRow.id,
+    });
+    await prisma.policyAssignment.delete({ where: { id: foreignRow.id } });
+
+    // Two overlapping rows for one scope (the DB only forbids two open-ended ones): the newest wins and
+    // the warning names both so the stale row can be cleaned up.
+    const pDup = await createPublishedPolicy(jar, "Duplicate");
+    const older = await prisma.policyAssignment.create({
+      data: {
+        organisationId,
+        policyId: pDefault.id,
+        scopeType: "TEAM",
+        scopeId: team.id,
+        effectiveTo: new Date(Date.now() + 3_600_000),
+        createdAt: new Date(Date.now() - 60_000),
+      },
+    });
+    const newer = await prisma.policyAssignment.create({
+      data: { organisationId, policyId: pDup.id, scopeType: "TEAM", scopeId: team.id },
+    });
+    const duplicate = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(duplicate.policy?.id).toBe(pDup.id);
+    expect(duplicate.policyResolvedFrom).toMatchObject({ assignmentId: newer.id });
+    expect(duplicate.warnings.map((w) => w.code)).toEqual(["DUPLICATE_SCOPE_ASSIGNMENT"]);
+    expect(duplicate.warnings[0]?.details).toMatchObject({
+      scopeType: "TEAM",
+      scopeId: team.id,
+      winnerAssignmentId: newer.id,
+      assignmentIds: [newer.id, older.id],
+    });
+  });
+
+  it("leaves soft-deleted employees out of resolution", async () => {
+    const { org, jar } = await setup();
+    const policy = await createPublishedPolicy(jar, "Default");
+    await callRoute(defaultPolicyRoute, {
+      method: "POST",
+      path: "/api/organisations/current/default-policy",
+      jar,
+      body: { policyId: policy.id },
+    });
+    const gone = await createEmployee(org);
+    await prisma.employee.update({ where: { id: gone.id }, data: { deletedAt: new Date() } });
+    expect((await resolveForEmployees(org.organisation.id, [gone.id])).size).toBe(0);
+    await expect(resolveEmployeePolicies(org.organisation.id, gone.id)).rejects.toMatchObject({
+      code: "EMPLOYEE_NOT_FOUND",
+    });
+  });
+});
+
+describe("realtime contract", () => {
+  it("publishes POLICY_CHANGED as a documented kind the dashboard subscribes to and the push bridge understands", async () => {
+    // The server and validation copies of REALTIME_EVENT_TYPES must stay identical (the dashboard's SSE
+    // client only listens for the kinds in the validation copy).
+    expect([...SERVER_EVENT_TYPES]).toEqual([...CONTRACT_EVENT_TYPES]);
+    expect(CONTRACT_EVENT_TYPES).toEqual(
+      expect.arrayContaining(["POLICY_CHANGED", "BREAK_POLICY_CHANGED"]),
+    );
+    expect(PUSH_BRIDGE_EVENT_TYPES).toEqual(
+      expect.arrayContaining(["POLICY_CHANGED", "BREAK_POLICY_CHANGED"]),
+    );
+
+    const { org, jar } = await setup();
+    const employee = await createEmployee(org);
+    const policy = await createPublishedPolicy(jar, "Bridged");
+    const { seen, unsubscribe } = collectEvents(org.organisation.id, "POLICY_CHANGED");
+    await assign(jar, policy.id, { scopeType: "EMPLOYEE", scopeId: employee.id });
+    unsubscribe();
+    expect(seen).toHaveLength(1);
+    expect(affectedEmployeeIds(seen[0]!)).toEqual([employee.id]);
+    // Publishing bridges the organisation first, so the silent push also fires from this process.
+    expect(isOrganisationBridged(org.organisation.id)).toBe(true);
   });
 });

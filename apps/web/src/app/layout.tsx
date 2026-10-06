@@ -21,7 +21,16 @@ const inter = Inter({
   variable: "--font-inter",
   adjustFontFallback: false,
   // next/font options must be literals (they are read at compile time). Keep in sync with `--font-sans`.
-  fallback: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+  fallback: [
+    "ui-sans-serif",
+    "system-ui",
+    "-apple-system",
+    "Segoe UI",
+    "Roboto",
+    "Helvetica Neue",
+    "Arial",
+    "sans-serif",
+  ],
 });
 
 export const metadata: Metadata = {

@@ -8,6 +8,7 @@ import {
   mobileSyncResponseSchema,
 } from "@workmode/validation/mobile";
 import { describe, expect, it } from "vitest";
+import { POST as startBreakRoute } from "@/app/api/mobile/v1/breaks/start/route";
 import { POST as pushTokenRoute } from "@/app/api/mobile/v1/device/push-token/route";
 import { POST as deviceStateRoute } from "@/app/api/mobile/v1/device/state/route";
 import { POST as eventsRoute } from "@/app/api/mobile/v1/events/route";
@@ -26,7 +27,12 @@ async function bearer(device: Device): Promise<Record<string, string>> {
   return { authorization: `Bearer ${accessToken}` };
 }
 
-async function createShift(organisationId: string, employeeId: string, startsAt: Date, endsAt: Date) {
+async function createShift(
+  organisationId: string,
+  employeeId: string,
+  startsAt: Date,
+  endsAt: Date,
+) {
   return prisma.shift.create({
     data: { organisationId, employeeId, startsAt, endsAt, timezone: "Europe/London" },
   });
@@ -41,7 +47,9 @@ const restrictionConfig = {
 };
 
 /** A published policy set as the organisation default; returns the current version id. */
-async function publishDefaultPolicy(organisationId: string): Promise<{ policyId: string; versionId: string }> {
+async function publishDefaultPolicy(
+  organisationId: string,
+): Promise<{ policyId: string; versionId: string }> {
   const policy = await prisma.policy.create({
     data: {
       organisationId,
@@ -53,12 +61,17 @@ async function publishDefaultPolicy(organisationId: string): Promise<{ policyId:
   });
   const versionId = policy.versions[0]!.id;
   await prisma.policy.update({ where: { id: policy.id }, data: { currentVersionId: versionId } });
-  await prisma.organisation.update({ where: { id: organisationId }, data: { defaultPolicyId: policy.id } });
+  await prisma.organisation.update({
+    where: { id: organisationId },
+    data: { defaultPolicyId: policy.id },
+  });
   return { policyId: policy.id, versionId };
 }
 
 async function setDefaultBreakPolicy(organisationId: string) {
-  const policy = await prisma.breakPolicy.create({ data: { organisationId, name: "Standard breaks" } });
+  const policy = await prisma.breakPolicy.create({
+    data: { organisationId, name: "Standard breaks" },
+  });
   await prisma.organisation.update({
     where: { id: organisationId },
     data: { defaultBreakPolicyId: policy.id },
@@ -107,7 +120,11 @@ describe("GET /api/mobile/v1/me", () => {
     expect(after.policyVersion).toBe(versionId);
     expect(after.resolvedBreakPolicy?.id).toBe(breakPolicy.id);
 
-    const strict = await callRoute<ErrorBody>(meRoute, { path: "/api/mobile/v1/me", query: { foo: "1" }, headers });
+    const strict = await callRoute<ErrorBody>(meRoute, {
+      path: "/api/mobile/v1/me",
+      query: { foo: "1" },
+      headers,
+    });
     expect(strict.status).toBe(400);
     expect(strict.body.error.code).toBe("VALIDATION_ERROR");
 
@@ -122,9 +139,24 @@ describe("GET /api/mobile/v1/schedule", () => {
     const { device, employee } = await createTestDevice(org.organisation.id);
     const other = await createTestDevice(org.organisation.id);
     const now = Date.now();
-    const mine = await createShift(org.organisation.id, employee.id, new Date(now + DAY), new Date(now + DAY + 6 * HOUR));
-    await createShift(org.organisation.id, other.employee.id, new Date(now + DAY), new Date(now + DAY + 6 * HOUR));
-    await createShift(org.organisation.id, employee.id, new Date(now + 30 * DAY), new Date(now + 30 * DAY + HOUR));
+    const mine = await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now + DAY),
+      new Date(now + DAY + 6 * HOUR),
+    );
+    await createShift(
+      org.organisation.id,
+      other.employee.id,
+      new Date(now + DAY),
+      new Date(now + DAY + 6 * HOUR),
+    );
+    await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now + 30 * DAY),
+      new Date(now + 30 * DAY + HOUR),
+    );
     const headers = await bearer(device);
 
     const res = await callRoute(scheduleRoute, { path: "/api/mobile/v1/schedule", headers });
@@ -154,7 +186,12 @@ describe("GET /api/mobile/v1/sync", () => {
     const { versionId } = await publishDefaultPolicy(org.organisation.id);
     const breakPolicy = await setDefaultBreakPolicy(org.organisation.id);
     const now = Date.now();
-    const shift = await createShift(org.organisation.id, employee.id, new Date(now - HOUR), new Date(now + 5 * HOUR));
+    const shift = await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now - HOUR),
+      new Date(now + 5 * HOUR),
+    );
     await prisma.device.update({
       where: { id: device.id },
       data: { permissionState: "APPROVED", selectionState: "CONFIGURED" },
@@ -183,13 +220,17 @@ describe("GET /api/mobile/v1/sync", () => {
     expect(stamped.lastPolicySyncAt).not.toBeNull();
     expect(stamped.lastScheduleSyncAt).not.toBeNull();
 
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.expectedState).toBe("WORKING");
     expect(workState.activeShiftId).toBe(shift.id);
     expect(workState.source).toBe("SERVER_COMPUTED");
 
     const countEvents = (type: "POLICY_SYNCED" | "SCHEDULE_SYNCED") =>
-      prisma.activityEvent.count({ where: { organisationId: org.organisation.id, employeeId: employee.id, type } });
+      prisma.activityEvent.count({
+        where: { organisationId: org.organisation.id, employeeId: employee.id, type },
+      });
     expect(await countEvents("POLICY_SYNCED")).toBe(1);
     expect(await countEvents("SCHEDULE_SYNCED")).toBe(1);
 
@@ -199,9 +240,15 @@ describe("GET /api/mobile/v1/sync", () => {
     expect(await countEvents("SCHEDULE_SYNCED")).toBe(1);
 
     // A schedule change → one more SCHEDULE_SYNCED, policy untouched.
-    await createShift(org.organisation.id, employee.id, new Date(now + 2 * DAY), new Date(now + 2 * DAY + HOUR));
+    await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now + 2 * DAY),
+      new Date(now + 2 * DAY + HOUR),
+    );
     const third = mobileSyncResponseSchema.parse(
-      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: await bearer(stamped) })).body,
+      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: await bearer(stamped) }))
+        .body,
     );
     expect(third.shifts).toHaveLength(2);
     expect(third.scheduleVersion).not.toBe(bundle.scheduleVersion);
@@ -214,9 +261,18 @@ describe("GET /api/mobile/v1/sync", () => {
     const { device, employee } = await createTestDevice(org.organisation.id);
     const other = await createTestDevice(org.organisation.id);
     const now = Date.now();
-    const base = { organisationId: org.organisation.id, reason: "test override", startsAt: new Date(now - HOUR) };
+    const base = {
+      organisationId: org.organisation.id,
+      reason: "test override",
+      startsAt: new Date(now - HOUR),
+    };
     const mine = await prisma.managerOverride.create({
-      data: { ...base, employeeId: employee.id, type: "EXEMPT_TEMPORARILY", expiresAt: new Date(now + HOUR) },
+      data: {
+        ...base,
+        employeeId: employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        expiresAt: new Date(now + HOUR),
+      },
     });
     const orgWide = await prisma.managerOverride.create({
       data: {
@@ -227,10 +283,20 @@ describe("GET /api/mobile/v1/sync", () => {
       },
     });
     await prisma.managerOverride.create({
-      data: { ...base, employeeId: other.employee.id, type: "EXEMPT_TEMPORARILY", expiresAt: new Date(now + HOUR) },
+      data: {
+        ...base,
+        employeeId: other.employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        expiresAt: new Date(now + HOUR),
+      },
     });
     await prisma.managerOverride.create({
-      data: { ...base, employeeId: employee.id, type: "EXEMPT_TEMPORARILY", expiresAt: new Date(now - 1000) },
+      data: {
+        ...base,
+        employeeId: employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        expiresAt: new Date(now - 1000),
+      },
     });
     await prisma.managerOverride.create({
       data: {
@@ -243,7 +309,8 @@ describe("GET /api/mobile/v1/sync", () => {
     });
 
     const bundle = mobileSyncResponseSchema.parse(
-      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: await bearer(device) })).body,
+      (await callRoute(syncRoute, { path: "/api/mobile/v1/sync", headers: await bearer(device) }))
+        .body,
     );
     expect(bundle.activeOverrides.map((o) => o.id).sort()).toEqual([mine.id, orgWide.id].sort());
     expect(bundle.activeOverrides.every((o) => o.breakBehaviour === null)).toBe(true);
@@ -257,7 +324,11 @@ describe("POST /api/mobile/v1/device/state", () => {
     const headers = await bearer(device);
     const events = (type: string) =>
       prisma.activityEvent.count({
-        where: { organisationId: org.organisation.id, employeeId: employee.id, type: type as never },
+        where: {
+          organisationId: org.organisation.id,
+          employeeId: employee.id,
+          type: type as never,
+        },
       });
 
     const first = await callRoute(deviceStateRoute, {
@@ -281,8 +352,12 @@ describe("POST /api/mobile/v1/device/state", () => {
     expect(stored.selectionAppCount).toBe(5);
     expect(stored.appVersion).toBe("1.0.0");
     expect(stored.lastDeviceSyncAt).not.toBeNull();
-    expect((await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus).toBe("CONNECTED");
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    expect(
+      (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus,
+    ).toBe("CONNECTED");
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.reportedState).toBe("OFF_SHIFT");
     expect(workState.source).toBe("DEVICE_REPORT");
 
@@ -312,9 +387,9 @@ describe("POST /api/mobile/v1/device/state", () => {
     expect(await events("PERMISSION_NEEDS_ATTENTION")).toBe(1);
     const afterSkew = await prisma.device.findUniqueOrThrow({ where: { id: device.id } });
     expect(afterSkew.lastClockSkewSeconds).toBeGreaterThanOrEqual(598);
-    expect((await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus).toBe(
-      "SETUP_INCOMPLETE",
-    );
+    expect(
+      (await prisma.employee.findUniqueOrThrow({ where: { id: employee.id } })).inviteStatus,
+    ).toBe("SETUP_INCOMPLETE");
 
     const unknownField = await callRoute<ErrorBody>(deviceStateRoute, {
       method: "POST",
@@ -334,8 +409,18 @@ describe("POST /api/mobile/v1/events", () => {
     const other = await createTestDevice(org.organisation.id);
     const headers = await bearer(device);
     const now = Date.now();
-    const shift = await createShift(org.organisation.id, employee.id, new Date(now - HOUR), new Date(now + 5 * HOUR));
-    const foreign = await createShift(org.organisation.id, other.employee.id, new Date(now - HOUR), new Date(now + HOUR));
+    const shift = await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now - HOUR),
+      new Date(now + 5 * HOUR),
+    );
+    const foreign = await createShift(
+      org.organisation.id,
+      other.employee.id,
+      new Date(now - HOUR),
+      new Date(now + HOUR),
+    );
 
     const started = randomUUID();
     const ended = randomUUID();
@@ -347,20 +432,46 @@ describe("POST /api/mobile/v1/events", () => {
           occurredAt: new Date(now - 30 * 60_000).toISOString(),
           metadata: { shiftId: shift.id, policyVersion: randomUUID() },
         },
-        { clientEventId: ended, type: "SETUP_COMPLETED", occurredAt: new Date(now - 40 * 60_000).toISOString() },
+        {
+          clientEventId: ended,
+          type: "SETUP_COMPLETED",
+          occurredAt: new Date(now - 40 * 60_000).toISOString(),
+        },
       ],
     };
-    const first = await callRoute(eventsRoute, { method: "POST", path: "/api/mobile/v1/events", headers, body: batch });
+    const first = await callRoute(eventsRoute, {
+      method: "POST",
+      path: "/api/mobile/v1/events",
+      headers,
+      body: batch,
+    });
     expect(first.status).toBe(200);
-    expect(deviceEventsResponseSchema.parse(first.body)).toEqual({ accepted: 2, duplicates: 0, rejected: [] });
+    expect(deviceEventsResponseSchema.parse(first.body)).toEqual({
+      accepted: 2,
+      duplicates: 0,
+      rejected: [],
+    });
 
-    const replay = await callRoute(eventsRoute, { method: "POST", path: "/api/mobile/v1/events", headers, body: batch });
-    expect(deviceEventsResponseSchema.parse(replay.body)).toEqual({ accepted: 0, duplicates: 2, rejected: [] });
+    const replay = await callRoute(eventsRoute, {
+      method: "POST",
+      path: "/api/mobile/v1/events",
+      headers,
+      body: batch,
+    });
+    expect(deviceEventsResponseSchema.parse(replay.body)).toEqual({
+      accepted: 0,
+      duplicates: 2,
+      rejected: [],
+    });
     expect(
-      await prisma.activityEvent.count({ where: { deviceId: device.id, clientEventId: { in: [started, ended] } } }),
+      await prisma.activityEvent.count({
+        where: { deviceId: device.id, clientEventId: { in: [started, ended] } },
+      }),
     ).toBe(2);
 
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.reportedState).toBe("WORKING");
     expect(workState.reportedAt?.toISOString()).toBe(new Date(now - 30 * 60_000).toISOString());
 
@@ -373,8 +484,16 @@ describe("POST /api/mobile/v1/events", () => {
       headers,
       body: {
         events: [
-          { clientEventId: tooOld, type: "SCHEDULE_SYNCED", occurredAt: new Date(now - 40 * DAY).toISOString() },
-          { clientEventId: future, type: "SCHEDULE_SYNCED", occurredAt: new Date(now + HOUR).toISOString() },
+          {
+            clientEventId: tooOld,
+            type: "SCHEDULE_SYNCED",
+            occurredAt: new Date(now - 40 * DAY).toISOString(),
+          },
+          {
+            clientEventId: future,
+            type: "SCHEDULE_SYNCED",
+            occurredAt: new Date(now + HOUR).toISOString(),
+          },
           {
             clientEventId: foreignShift,
             type: "WORK_MODE_ENDED",
@@ -398,7 +517,15 @@ describe("POST /api/mobile/v1/events", () => {
       method: "POST",
       path: "/api/mobile/v1/events",
       headers,
-      body: { events: [{ clientEventId: randomUUID(), type: "APP_OPENED", occurredAt: new Date(now).toISOString() }] },
+      body: {
+        events: [
+          {
+            clientEventId: randomUUID(),
+            type: "APP_OPENED",
+            occurredAt: new Date(now).toISOString(),
+          },
+        ],
+      },
     });
     expect(unknownType.status).toBe(400);
     expect(unknownType.body.error.code).toBe("VALIDATION_ERROR");
@@ -408,9 +535,78 @@ describe("POST /api/mobile/v1/events", () => {
       method: "POST",
       path: "/api/mobile/v1/events",
       headers: await bearer(other.device),
-      body: { events: [{ clientEventId: ended, type: "SETUP_COMPLETED", occurredAt: new Date(now).toISOString() }] },
+      body: {
+        events: [
+          {
+            clientEventId: ended,
+            type: "SETUP_COMPLETED",
+            occurredAt: new Date(now).toISOString(),
+          },
+        ],
+      },
     });
     expect(deviceEventsResponseSchema.parse(otherDevice.body).accepted).toBe(1);
+  });
+});
+
+describe("POST /api/mobile/v1/events (break events the server already holds)", () => {
+  it("counts a device BREAK_STARTED for a server-recorded session as a duplicate but still applies its reported state", async () => {
+    const org = await createTestOrg();
+    const { device, employee } = await createTestDevice(org.organisation.id);
+    await setDefaultBreakPolicy(org.organisation.id);
+    const now = Date.now();
+    const shift = await createShift(
+      org.organisation.id,
+      employee.id,
+      new Date(now - 2 * HOUR),
+      new Date(now + 4 * HOUR),
+    );
+    const headers = await bearer(device);
+
+    const started = await callRoute<{ breakSession: { id: string } }>(startBreakRoute, {
+      method: "POST",
+      path: "/api/mobile/v1/breaks/start",
+      headers,
+      body: {
+        clientBreakId: randomUUID(),
+        shiftId: shift.id,
+        requestedAt: new Date(now).toISOString(),
+      },
+    });
+    expect(started.status, JSON.stringify(started.body)).toBe(201);
+    const sessionId = started.body.breakSession.id;
+    const breakStartedEvents = () =>
+      prisma.activityEvent.count({ where: { employeeId: employee.id, type: "BREAK_STARTED" } });
+    expect(await breakStartedEvents()).toBe(1);
+
+    // The phone's own outbox reports the same break: no second feed entry, but the engine state is new information.
+    const res = await callRoute(eventsRoute, {
+      method: "POST",
+      path: "/api/mobile/v1/events",
+      headers,
+      body: {
+        events: [
+          {
+            clientEventId: randomUUID(),
+            type: "BREAK_STARTED",
+            occurredAt: new Date(now + 1000).toISOString(),
+            metadata: { shiftId: shift.id, breakSessionId: sessionId },
+          },
+        ],
+      },
+    });
+    expect(deviceEventsResponseSchema.parse(res.body)).toEqual({
+      accepted: 0,
+      duplicates: 1,
+      rejected: [],
+    });
+    expect(await breakStartedEvents()).toBe(1);
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
+    expect(workState.reportedState).toBe("ON_BREAK");
+    expect(workState.source).toBe("DEVICE_REPORT");
+    expect(workState.state).toBe("ON_BREAK");
   });
 });
 
@@ -430,7 +626,9 @@ describe("POST /api/mobile/v1/device/push-token", () => {
     expect(res.body).toEqual({ ok: true });
     const stored = await prisma.device.findUniqueOrThrow({ where: { id: device.id } });
     expect(stored.pushTokenEncrypted).not.toBeNull();
-    expect(Buffer.from(stored.pushTokenEncrypted!).toString("utf8")).not.toContain(token.toLowerCase());
+    expect(Buffer.from(stored.pushTokenEncrypted!).toString("utf8")).not.toContain(
+      token.toLowerCase(),
+    );
     expect(decryptPushToken(stored.pushTokenEncrypted)).toBe(token.toLowerCase());
 
     const bad = await callRoute<ErrorBody>(pushTokenRoute, {

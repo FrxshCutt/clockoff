@@ -98,13 +98,15 @@ export function affectedEmployeeIds(event: RealtimeEvent): string[] | null | und
     case "BREAK_POLICY_CHANGED":
       return stringArray(payload.affectedEmployeeIds);
     case "SCHEDULE_CHANGED": {
-      const id = event.employeeId ?? (typeof payload.employeeId === "string" ? payload.employeeId : null);
+      const id =
+        event.employeeId ?? (typeof payload.employeeId === "string" ? payload.employeeId : null);
       return id ? [id] : null;
     }
     case "OVERRIDE_CREATED":
     case "OVERRIDE_REVOKED":
     case "OVERRIDE_EXPIRED": {
-      const id = typeof payload.employeeId === "string" ? payload.employeeId : (event.employeeId ?? null);
+      const id =
+        typeof payload.employeeId === "string" ? payload.employeeId : (event.employeeId ?? null);
       return id ? [id] : null;
     }
     default: {
@@ -148,7 +150,10 @@ async function deliver(deviceId: string, pending: PendingPush): Promise<void> {
         data: { pushTokenEncrypted: null },
       });
     }
-    log.debug({ deviceId, reasons: reasons.join(","), sent: report.sent, failed: report.failed }, "silent push");
+    log.debug(
+      { deviceId, reasons: reasons.join(","), sent: report.sent, failed: report.failed },
+      "silent push",
+    );
   } catch (err) {
     log.error({ error: errorSummary(err), deviceId }, "silent push failed");
   }
@@ -194,14 +199,20 @@ function handleEvent(event: RealtimeEvent): void {
   const s = state();
   const reason = PUSH_REASON[event.type as PushBridgeEventType];
   const task = schedulePushes(event.organisationId, employeeIds, reason).catch((err: unknown) => {
-    log.error({ error: errorSummary(err), eventType: event.type }, "push bridge: device lookup failed");
+    log.error(
+      { error: errorSummary(err), eventType: event.type },
+      "push bridge: device lookup failed",
+    );
   });
   s.inFlight.add(task);
   void task.finally(() => s.inFlight.delete(task));
 }
 
 /** Subscribe the bridge to `organisationId` on the current bus (idempotent per bus instance). */
-export function ensureOrganisationBridged(organisationId: string, bus: EventBus = getEventBus()): void {
+export function ensureOrganisationBridged(
+  organisationId: string,
+  bus: EventBus = getEventBus(),
+): void {
   const s = state();
   let map = s.bridged.get(bus);
   if (!map) {
@@ -212,7 +223,10 @@ export function ensureOrganisationBridged(organisationId: string, bus: EventBus 
   map.set(organisationId, bus.subscribe(organisationId, handleEvent));
 }
 
-export function isOrganisationBridged(organisationId: string, bus: EventBus = getEventBus()): boolean {
+export function isOrganisationBridged(
+  organisationId: string,
+  bus: EventBus = getEventBus(),
+): boolean {
   return state().bridged.get(bus)?.has(organisationId) ?? false;
 }
 

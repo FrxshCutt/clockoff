@@ -21,7 +21,10 @@ export function AuditLogsPage() {
 
   return (
     <>
-      <PageHeader title="Audit Log" description="A record of changes made by managers in this organisation." />
+      <PageHeader
+        title="Audit Log"
+        description="A record of changes made by managers in this organisation."
+      />
       {isPending ? (
         <div role="status" aria-live="polite" aria-busy="true">
           <span className="sr-only">Loading…</span>

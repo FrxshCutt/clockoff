@@ -8,10 +8,7 @@ export {
   updateLocation,
 } from "./locations.service";
 export type { ListLocationsOptions } from "./locations.service";
-export {
-  endAssignmentsForScope,
-  getActiveAssignmentsForScope,
-} from "./scopeAssignments";
+export { endAssignmentsForScope, getActiveAssignmentsForScope } from "./scopeAssignments";
 export type {
   EndedScopeAssignments,
   GetActiveAssignmentsOptions,

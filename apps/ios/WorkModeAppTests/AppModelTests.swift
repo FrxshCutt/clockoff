@@ -2,6 +2,8 @@ import XCTest
 @testable import WorkModeApp
 import WorkModeCore
 
+/// `AppModel` with the `WorkModeController` mounted: routing, Home state from the controller, breaks, setup repair,
+/// leave/sign-out and connectivity-driven syncs.
 @MainActor
 final class AppModelTests: XCTestCase {
     private var env: TestEnvironment!
@@ -10,67 +12,122 @@ final class AppModelTests: XCTestCase {
         env = try TestEnvironment(testCase: self, now: iso("2026-10-06T07:00:00Z"))
     }
 
-    /// A phone that finished setup, with today's 08:00–16:00 shift and a policy cached.
-    private func setUpCompletedPhone() async throws {
-        try env.join()
-        try await env.authoriseAndSelect()
-        try env.cache.update { state in
-            state.policy = Fixtures.policy
-            state.breakPolicy = Fixtures.breakPolicy
-            state.shifts = [Fixtures.shift]
-            state.policyVersion = Fixtures.policy.policyVersionId
-            state.scheduleVersion = 1
-            state.lastSyncAt = iso("2026-10-06T06:55:00Z")
-            state.setupCompletedAt = iso("2026-10-05T12:00:00Z")
-            state.lastPermissionState = .approved
-        }
-        try env.plans.write(PlansFile(generatedAt: env.clock.now, organisationName: "Org", entries: [:]))
-    }
-
     func testRouteFollowsJoinAndSetupState() async throws {
-        let fresh = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        let fresh = env.makeAppModel()
         fresh.loadRoute()
         XCTAssertEqual(fresh.route, .onboarding)
         XCTAssertEqual(fresh.onboarding?.step, .welcome)
 
         try env.join()
-        let joined = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        let joined = env.makeAppModel()
         joined.loadRoute()
         XCTAssertEqual(joined.onboarding?.step, .screenTimeExplained, "joined but not set up resumes at screen 5")
 
-        try await setUpCompletedPhone()
-        let ready = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        // Progress persisted past screen 6 is clamped to what Screen Time allows.
+        env.onboardingProgress.step = .chooseApps
+        let resumed = env.makeAppModel()
+        resumed.loadRoute()
+        XCTAssertEqual(resumed.onboarding?.step, .authorise, "not authorised yet: cannot skip past screen 6")
+
+        try await env.setUpCompletedPhone()
+        let ready = env.makeAppModel()
         ready.loadRoute()
         XCTAssertEqual(ready.route, .main)
-        XCTAssertEqual(ready.expectedState?.state, .offShift, "the cached schedule is evaluated before any sync")
+        XCTAssertNil(ready.onboarding)
+        ready.controller.reconcile()
+        XCTAssertEqual(ready.controller.expectedState?.state, .offShift, "the cached schedule is evaluated before any sync")
         XCTAssertEqual(ready.homeCard.kind, .offShift)
     }
 
-    func testTickEnforcesWhenTheSavedScheduleSaysTheShiftStarted() async throws {
-        try await setUpCompletedPhone()
-        let model = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+    func testControllerDrivesHomeWhenTheShiftStartsWhileTheAppIsOpen() async throws {
+        try await env.setUpCompletedPhone()
+        let model = env.makeAppModel()
         model.loadRoute()
-        XCTAssertEqual(model.expectedState?.state, .offShift)
+        model.controller.reconcile()
+        XCTAssertEqual(model.homeCard.kind, .offShift)
 
         env.clock.now = iso("2026-10-06T08:00:00Z")
-        await model.tick()
-        XCTAssertEqual(model.expectedState?.state, .working)
+        model.controller.reconcile(reason: WorkModeController.reasonTimer)
+        XCTAssertEqual(model.homeCard.kind, .working)
+        XCTAssertEqual(model.homeCard.title, "WORK MODE ACTIVE")
         XCTAssertEqual(env.provider.appliedWorkPlans.count, 1)
-        XCTAssertEqual(model.homeCard.kind, .workModeActive)
         XCTAssertEqual(env.outbox.pending().map(\.type), [.workModeStarted])
+        XCTAssertTrue(env.api.calls.isEmpty, "reconciling never touches the network")
 
-        env.clock.now = iso("2026-10-06T08:00:30Z")
-        await model.tick()
+        model.controller.reconcile(reason: WorkModeController.reasonForeground)
         XCTAssertEqual(env.provider.appliedWorkPlans.count, 1, "nothing changed: nothing re-applied")
-        XCTAssertTrue(env.api.calls.isEmpty, "ticks never touch the network")
+    }
+
+    func testStartAndEndBreakGoThroughTheControllerAndReplanNotifications() async throws {
+        try await env.setUpCompletedPhone()
+        env.api.acceptBreaks()
+        env.clock.now = iso("2026-10-06T10:00:00Z")
+        let model = env.makeAppModel()
+        model.loadRoute()
+        model.controller.reconcile()
+        XCTAssertEqual(model.homeCard.action, .startBreak)
+
+        let session = try await model.startBreak()
+        XCTAssertEqual(env.api.startBreakRequests.count, 1)
+        XCTAssertEqual(model.homeCard.kind, .onBreak)
+        XCTAssertEqual(model.homeCard.action, .endBreak)
+        XCTAssertEqual(model.cachedState.activeBreakSession?.id, session.id)
+        let planned = env.notifications.lastPlanned.map(\.id)
+        XCTAssertTrue(planned.contains(NotificationPlanner.breakEnding(clientBreakId: session.clientBreakId)))
+        XCTAssertTrue(planned.contains(NotificationPlanner.breakEnded(clientBreakId: session.clientBreakId)))
+
+        env.clock.now = iso("2026-10-06T10:05:00Z")
+        try await model.endBreakEarly()
+        XCTAssertEqual(env.api.endBreakRequests.count, 1)
+        XCTAssertEqual(env.api.endBreakRequests.first?.id, session.id)
+        XCTAssertEqual(model.homeCard.kind, .working)
+        XCTAssertFalse(env.notifications.lastPlanned.map(\.id).contains(NotificationPlanner.breakEnded(clientBreakId: session.clientBreakId)))
+    }
+
+    func testSetupRepairRestoresASelectionThatRegressed() async throws {
+        try await env.setUpCompletedPhone()
+        env.provider.clearSelection()
+        let model = env.makeAppModel()
+        model.loadRoute()
+        model.controller.reconcile()
+        XCTAssertEqual(model.route, .main, "a regression after setup never sends the employee back to onboarding")
+        XCTAssertTrue(model.setupNeedsRepair)
+        XCTAssertEqual(model.homeCard.kind, .actionRequired)
+        XCTAssertEqual(model.homeCard.action, .openSetup)
+
+        model.openSetupRepair()
+        let repair = try XCTUnwrap(model.repair)
+        XCTAssertEqual(repair.mode, .repair)
+        XCTAssertEqual(repair.step, .chooseApps)
+        repair.chooseApps()
+        await repair.continueFromChooseApps()
+        XCTAssertNil(model.repair, "finishing the repair dismisses it")
+        XCTAssertFalse(model.setupNeedsRepair)
+        XCTAssertEqual(env.api.deviceStateReports.last?.selectionState, .configured)
+        XCTAssertEqual(model.homeCard.kind, .offShift)
+    }
+
+    func testSetupRepairStartsAtAuthorisationWhenAccessWasRevoked() async throws {
+        try await env.setUpCompletedPhone()
+        env.provider.simulateRevocation()
+        let model = env.makeAppModel()
+        model.loadRoute()
+        model.controller.reconcile()
+        XCTAssertEqual(model.permissionState, .revoked)
+        XCTAssertEqual(model.homeCard.kind, .actionRequired)
+        model.openSetupRepair()
+        XCTAssertEqual(model.repair?.step, .authorise)
     }
 
     func testLeaveWorkplaceLiftsRestrictionsWipesAndUnlinks() async throws {
-        try await setUpCompletedPhone()
+        try await env.setUpCompletedPhone()
         let container = env.makeContainer()
         try container.tokenStore.saveTokens(Fixtures.confirmResponse.tokens)
-        let model = AppModel(container: container, now: { [clock = env.clock] in clock.now })
+        env.onboardingProgress.step = .confirmPolicy
+        env.syncMetadata.lastServerContactAt = env.clock.now
+        let model = env.makeAppModel(container: container)
         model.loadRoute()
+        model.controller.start()
 
         try await model.leaveWorkplace()
         XCTAssertEqual(env.api.calls, ["leaveWorkplace"])
@@ -80,14 +137,18 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(env.plans.read())
         XCTAssertNil(try container.tokenStore.loadTokens())
         XCTAssertFalse(env.provider.hasSelection(), "the simulated selection is forgotten too")
+        XCTAssertEqual(env.notifications.cancelAllCount, 1)
+        XCTAssertNil(env.onboardingProgress.step)
+        XCTAssertNil(env.syncMetadata.lastServerContactAt)
         XCTAssertEqual(model.route, .onboarding)
         XCTAssertEqual(model.onboarding?.step, .welcome)
+        XCTAssertEqual(model.controller.state, .unknown)
     }
 
     func testLeaveWorkplaceStillLeavesLocallyWhenTheServerIsUnreachable() async throws {
-        try await setUpCompletedPhone()
+        try await env.setUpCompletedPhone()
         env.api.leaveHandler = { throw APIError.network(URLError(.notConnectedToInternet)) }
-        let model = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        let model = env.makeAppModel()
         model.loadRoute()
         do {
             try await model.leaveWorkplace()
@@ -101,9 +162,9 @@ final class AppModelTests: XCTestCase {
     }
 
     func testUnreadableCredentialsDoNotEndTheSession() async throws {
-        try await setUpCompletedPhone()
+        try await env.setUpCompletedPhone()
         env.api.syncHandler = { throw APIError.credentialsUnavailable() }
-        let model = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        let model = env.makeAppModel()
         model.loadRoute()
         await model.refresh(reason: .foreground)
         try await Task.sleep(nanoseconds: 50_000_000)
@@ -114,12 +175,12 @@ final class AppModelTests: XCTestCase {
     }
 
     func testDeactivatedDeviceEndsTheSessionAndLiftsRestrictions() async throws {
-        try await setUpCompletedPhone()
+        try await env.setUpCompletedPhone()
         env.clock.now = iso("2026-10-06T09:00:00Z")
         _ = await env.syncCoordinator.enforceFromCache()
         XCTAssertNotEqual(env.provider.activeRestriction, .none, "shields are up during the shift")
         env.api.syncHandler = { throw APIError(code: .deviceInactive, message: "This device has been deactivated", status: 401) }
-        let model = AppModel(container: env.makeContainer(), now: { [clock = env.clock] in clock.now })
+        let model = env.makeAppModel()
         model.loadRoute()
         await model.refresh(reason: .foreground)
         for _ in 0..<50 where model.route != .onboarding {
@@ -132,12 +193,55 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(env.provider.activeRestriction, .none)
     }
 
-    func testHasChangedIgnoresTimestampsOnly() {
-        let engine = WorkModeEngine()
-        let a = engine.computeExpectedState(now: iso("2026-10-06T09:00:00Z"), shifts: [Fixtures.shift], breakSessions: [], overrides: [], permissionState: .approved)
-        let b = engine.computeExpectedState(now: iso("2026-10-06T09:01:00Z"), shifts: [Fixtures.shift], breakSessions: [], overrides: [], permissionState: .approved)
-        let c = engine.computeExpectedState(now: iso("2026-10-06T15:56:00Z"), shifts: [Fixtures.shift], breakSessions: [], overrides: [], permissionState: .approved)
-        XCTAssertFalse(AppModel.hasChanged(from: a, to: b))
-        XCTAssertTrue(AppModel.hasChanged(from: a, to: c), "WORKING → SHIFT_ENDING")
+    func testStaleBannerAfterAnHourWithoutASync() async throws {
+        try await env.setUpCompletedPhone(lastSyncAt: iso("2026-10-06T04:00:00Z"))
+        let model = env.makeAppModel()
+        model.loadRoute()
+        XCTAssertEqual(model.staleBanner, "Last synced 3h ago · changes will apply when online")
+        try env.cache.update { $0.lastSyncAt = iso("2026-10-06T06:30:00Z") }
+        model.loadRoute()
+        XCTAssertNil(model.staleBanner)
+    }
+
+    func testConnectivityRestoredTriggersASyncThatReconcilesTheController() async throws {
+        try await env.setUpCompletedPhone()
+        env.api.syncHandler = { Fixtures.bundle() }
+        env.api.meHandler = { Fixtures.me }
+        let model = env.makeAppModel()
+        model.start()
+        for _ in 0..<200 where env.api.calls.filter({ $0 == "sync" }).count < 1 || model.isSyncing {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertFalse(model.isSyncing)
+        XCTAssertEqual(env.connectivity.startCount, 1)
+        XCTAssertEqual(env.api.calls.filter { $0 == "sync" }.count, 1, "launch sync")
+
+        env.connectivity.simulate(online: false)
+        env.connectivity.simulate(online: true)
+        for _ in 0..<100 where env.api.calls.filter({ $0 == "sync" }).count < 2 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(env.api.calls.filter { $0 == "sync" }.count, 2, "reconnecting syncs again")
+        XCTAssertTrue(model.isOnline)
+    }
+
+    func testRefusedOfflineBreakIsReportedToTheEmployeeAfterTheSync() async throws {
+        try await env.setUpCompletedPhone()
+        env.clock.now = iso("2026-10-06T10:05:00Z")
+        let requestedAt = iso("2026-10-06T10:00:00Z")
+        try env.cache.update { state in
+            state.activeBreakSession = BreakSession(id: "c-1", clientBreakId: "c-1", shiftId: Fixtures.shift.id, startedAt: requestedAt,
+                                                    plannedEndsAt: iso("2026-10-06T10:15:00Z"), restrictionBehaviour: .relaxAll)
+            state.queuedBreaks = [QueuedBreakRecord(clientBreakId: "c-1", shiftId: Fixtures.shift.id, requestedAt: requestedAt,
+                                                    requestedDurationMinutes: 15, plannedEndsAt: iso("2026-10-06T10:15:00Z"), createdAt: requestedAt)]
+        }
+        env.api.startBreakHandler = { _ in throw APIError(code: .breakTooSoon, message: "Breaks can start at 11:00.", status: 409) }
+        env.api.syncHandler = { Fixtures.bundle() }
+        let model = env.makeAppModel()
+        model.loadRoute()
+        await model.refresh(reason: .connectivity)
+        XCTAssertEqual(model.notice, "Your break taken offline wasn't accepted by your workplace: Breaks can start at 11:00.")
+        XCTAssertEqual(model.homeCard.kind, .working, "the relaxation is withdrawn")
+        XCTAssertTrue(model.cachedState.queuedBreaks.isEmpty)
     }
 }

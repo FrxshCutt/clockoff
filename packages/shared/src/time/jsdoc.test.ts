@@ -18,7 +18,10 @@ function hasJsDoc(text: string, node: ts.Node): boolean {
 }
 
 function isExported(node: ts.Node): boolean {
-  return ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+  return (
+    ts.canHaveModifiers(node) &&
+    (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+  );
 }
 
 function declarationName(node: ts.Statement): string {
@@ -40,7 +43,8 @@ function undocumented(file: string): string[] {
     if (!hasJsDoc(text, statement)) missing.push(`${file}: ${name}`);
     if (ts.isInterfaceDeclaration(statement)) {
       for (const member of statement.members) {
-        if (!hasJsDoc(text, member)) missing.push(`${file}: ${name}.${member.name?.getText(sf) ?? "?"}`);
+        if (!hasJsDoc(text, member))
+          missing.push(`${file}: ${name}.${member.name?.getText(sf) ?? "?"}`);
       }
     }
   }
@@ -50,7 +54,15 @@ function undocumented(file: string): string[] {
 describe("time module JSDoc coverage", () => {
   it("finds the module's source files", () => {
     expect(sources).toEqual(
-      expect.arrayContaining(["clock.ts", "intervals.ts", "parse.ts", "recurrence.ts", "shift.ts", "time.ts", "zone.ts"]),
+      expect.arrayContaining([
+        "clock.ts",
+        "intervals.ts",
+        "parse.ts",
+        "recurrence.ts",
+        "shift.ts",
+        "time.ts",
+        "zone.ts",
+      ]),
     );
   });
 

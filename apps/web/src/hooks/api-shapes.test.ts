@@ -35,7 +35,10 @@ function expectInvalidResponse(fn: () => unknown, endpoint: string) {
 describe("parseResponse", () => {
   it("returns parsed data or throws INVALID_RESPONSE naming the endpoint", () => {
     expect(parseResponse(z.object({ a: z.number() }), { a: 1 }, "GET /x")).toEqual({ a: 1 });
-    expectInvalidResponse(() => parseResponse(z.object({ a: z.number() }), { a: "1" }, "GET /x"), "GET /x");
+    expectInvalidResponse(
+      () => parseResponse(z.object({ a: z.number() }), { a: "1" }, "GET /x"),
+      "GET /x",
+    );
   });
 });
 
@@ -60,13 +63,24 @@ describe("normalizeCurrentOrganisation", () => {
     expect(result.role).toBe("ADMIN");
     expect(result.membershipId).toBe(MEMBERSHIP_ID);
     expect(result.joinCode).toBe("HARB-42");
-    expect(result.organisation.settings).toEqual({ weekStartsOn: "SUNDAY", timeFormat: "H12", requireInviteCodeToJoin: true });
+    expect(result.organisation.settings).toEqual({
+      weekStartsOn: "SUNDAY",
+      timeFormat: "H12",
+      requireInviteCodeToJoin: true,
+    });
     expect(result.organisation.plan).toBe("BUSINESS");
   });
 
   it("tolerates the minimal contract shape and fills defaults", () => {
     const result = normalizeCurrentOrganisation({
-      organisation: { id: ORG_ID, name: "Harbour", timezone: "UTC", dateFormat: "XYZ", plan: "GOLD", billingStatus: "TRIAL" },
+      organisation: {
+        id: ORG_ID,
+        name: "Harbour",
+        timezone: "UTC",
+        dateFormat: "XYZ",
+        plan: "GOLD",
+        billingStatus: "TRIAL",
+      },
       membership: { role: "OWNER" },
       joinCode: null,
     });
@@ -79,7 +93,10 @@ describe("normalizeCurrentOrganisation", () => {
   });
 
   it("rejects a body without an organisation", () => {
-    expectInvalidResponse(() => normalizeCurrentOrganisation({ ok: true }), "/api/organisations/current");
+    expectInvalidResponse(
+      () => normalizeCurrentOrganisation({ ok: true }),
+      "/api/organisations/current",
+    );
   });
 });
 
@@ -137,14 +154,26 @@ describe("normalizeMembers", () => {
   });
 
   it("ignores invites in a state it doesn't know instead of failing the whole list", () => {
-    const result = normalizeMembers({ members: [member], invites: [invite("PENDING"), invite("ON_HOLD")] });
+    const result = normalizeMembers({
+      members: [member],
+      invites: [invite("PENDING"), invite("ON_HOLD")],
+    });
     expect(result.members).toHaveLength(1);
     expect(result.pendingInvites.map((i) => i.status)).toEqual(["PENDING"]);
   });
 
   it("reads the `{ items }` contract shape with createdAt", () => {
     const result = normalizeMembers({
-      items: [{ id: MEMBERSHIP_ID, userId: USER_ID, name: "Ada", email: "ada@example.com", role: "MANAGER", createdAt: "2026-10-01T09:00:00Z" }],
+      items: [
+        {
+          id: MEMBERSHIP_ID,
+          userId: USER_ID,
+          name: "Ada",
+          email: "ada@example.com",
+          role: "MANAGER",
+          createdAt: "2026-10-01T09:00:00Z",
+        },
+      ],
     });
     expect(result.members[0]?.joinedAt).toBe("2026-10-01T09:00:00Z");
     expect(result.members[0]?.isCurrentUser).toBeNull();
@@ -152,14 +181,29 @@ describe("normalizeMembers", () => {
   });
 
   it("rejects unknown roles", () => {
-    expectInvalidResponse(() => normalizeMembers({ members: [{ ...member, role: "SUPERUSER" }] }), "members");
+    expectInvalidResponse(
+      () => normalizeMembers({ members: [{ ...member, role: "SUPERUSER" }] }),
+      "members",
+    );
   });
 });
 
 describe("normalizeInvitePreview / normalizeAcceptInvite", () => {
   it("reads both preview shapes", () => {
-    const common = { email: "new@example.com", role: "ADMIN", expiresAt: "2026-10-08T09:00:00Z", requiresAccount: true };
-    expect(normalizeInvitePreview({ ...common, organisation: { name: "Harbour" }, invitedByName: "Ada", status: "PENDING" })).toEqual({
+    const common = {
+      email: "new@example.com",
+      role: "ADMIN",
+      expiresAt: "2026-10-08T09:00:00Z",
+      requiresAccount: true,
+    };
+    expect(
+      normalizeInvitePreview({
+        ...common,
+        organisation: { name: "Harbour" },
+        invitedByName: "Ada",
+        status: "PENDING",
+      }),
+    ).toEqual({
       ...common,
       organisationName: "Harbour",
       invitedByName: "Ada",
@@ -174,7 +218,13 @@ describe("normalizeInvitePreview / normalizeAcceptInvite", () => {
   });
 
   it("types the invite state, leaving states this UI doesn't know to the API", () => {
-    const base = { email: "new@example.com", role: "ADMIN", expiresAt: "2026-10-08T09:00:00Z", requiresAccount: false, organisation: { name: "H" } };
+    const base = {
+      email: "new@example.com",
+      role: "ADMIN",
+      expiresAt: "2026-10-08T09:00:00Z",
+      requiresAccount: false,
+      organisation: { name: "H" },
+    };
     for (const status of ["PENDING", "ACCEPTED", "EXPIRED", "REVOKED"] as const) {
       expect(normalizeInvitePreview({ ...base, status }).status).toBe(status);
     }
@@ -182,10 +232,19 @@ describe("normalizeInvitePreview / normalizeAcceptInvite", () => {
   });
 
   it("finds the organisation joined in any accept response", () => {
-    expect(normalizeAcceptInvite({ organisation: { id: ORG_ID, name: "Harbour" }, role: "ADMIN", createdAccount: true, csrfToken: "t" })).toEqual({
+    expect(
+      normalizeAcceptInvite({
+        organisation: { id: ORG_ID, name: "Harbour" },
+        role: "ADMIN",
+        createdAccount: true,
+        csrfToken: "t",
+      }),
+    ).toEqual({
       organisationId: ORG_ID,
     });
-    expect(normalizeAcceptInvite({ ok: true, organisationId: ORG_ID })).toEqual({ organisationId: ORG_ID });
+    expect(normalizeAcceptInvite({ ok: true, organisationId: ORG_ID })).toEqual({
+      organisationId: ORG_ID,
+    });
     expect(normalizeAcceptInvite({ ok: true })).toEqual({ organisationId: null });
   });
 });
@@ -198,15 +257,32 @@ describe("normalizeOnboarding", () => {
 
   it("never renders a link from the API that leaves the dashboard", () => {
     const hostile = [
-      { key: "createPolicy", label: "Create a Work Policy", done: false, href: "https://evil.example/" },
+      {
+        key: "createPolicy",
+        label: "Create a Work Policy",
+        done: false,
+        href: "https://evil.example/",
+      },
       { key: "addEmployees", label: "Add employees", done: false, href: "//evil.example" },
       { key: "goLive", label: "Go live", done: false, href: "/dashboard" },
     ];
-    expect(normalizeOnboarding({ items: hostile }).items.map((i) => i.href)).toEqual(["/overview", "/overview", "/dashboard"]);
+    expect(normalizeOnboarding({ items: hostile }).items.map((i) => i.href)).toEqual([
+      "/overview",
+      "/overview",
+      "/dashboard",
+    ]);
   });
 
   it("reads the API shape (allDone) and counts progress", () => {
-    expect(normalizeOnboarding({ items, completedCount: 1, totalCount: 2, allDone: false, dismissedAt: null })).toEqual({
+    expect(
+      normalizeOnboarding({
+        items,
+        completedCount: 1,
+        totalCount: 2,
+        allDone: false,
+        dismissedAt: null,
+      }),
+    ).toEqual({
       items,
       completedCount: 1,
       totalCount: 2,
@@ -216,8 +292,12 @@ describe("normalizeOnboarding", () => {
   });
 
   it("reads the contract shape (complete) and derives completion when absent", () => {
-    expect(normalizeOnboarding({ items, complete: true, dismissedAt: "2026-10-02T00:00:00Z" }).complete).toBe(true);
-    expect(normalizeOnboarding({ items: items.map((i) => ({ ...i, done: true })) }).complete).toBe(true);
+    expect(
+      normalizeOnboarding({ items, complete: true, dismissedAt: "2026-10-02T00:00:00Z" }).complete,
+    ).toBe(true);
+    expect(normalizeOnboarding({ items: items.map((i) => ({ ...i, done: true })) }).complete).toBe(
+      true,
+    );
   });
 });
 
@@ -225,8 +305,21 @@ describe("normalizeNotifications", () => {
   it("defaults readAt to null and derives unreadCount when absent", () => {
     const feed = normalizeNotifications({
       items: [
-        { id: "1", type: "EMPLOYEE_JOINED", title: "Joined", body: "Sam joined", createdAt: "2026-10-01T09:00:00Z" },
-        { id: "2", type: "EMPLOYEE_JOINED", title: "Joined", body: "Kim joined", readAt: "2026-10-01T10:00:00Z", createdAt: "2026-10-01T09:00:00Z" },
+        {
+          id: "1",
+          type: "EMPLOYEE_JOINED",
+          title: "Joined",
+          body: "Sam joined",
+          createdAt: "2026-10-01T09:00:00Z",
+        },
+        {
+          id: "2",
+          type: "EMPLOYEE_JOINED",
+          title: "Joined",
+          body: "Kim joined",
+          readAt: "2026-10-01T10:00:00Z",
+          createdAt: "2026-10-01T09:00:00Z",
+        },
       ],
     });
     expect(feed.items[0]?.readAt).toBeNull();
@@ -237,7 +330,9 @@ describe("normalizeNotifications", () => {
 
 describe("normalizeNotificationPreferences", () => {
   it("merges stored preferences over the defaults", () => {
-    const prefs = normalizeNotificationPreferences({ notificationPreferences: { EMPLOYEE_JOINED: { email: true } } });
+    const prefs = normalizeNotificationPreferences({
+      notificationPreferences: { EMPLOYEE_JOINED: { email: true } },
+    });
     expect(prefs.EMPLOYEE_JOINED).toEqual({ inApp: true, email: true });
     expect(prefs.INTEGRATION_ERROR).toEqual(NOTIFICATION_PREFERENCE_DEFAULTS.INTEGRATION_ERROR);
   });
@@ -253,9 +348,9 @@ describe("normalizeBilling", () => {
   };
 
   it("keeps only http(s) management URLs", () => {
-    expect(normalizeBilling({ ...base, manageUrl: "https://billing.example.com/portal" }).manageUrl).toBe(
-      "https://billing.example.com/portal",
-    );
+    expect(
+      normalizeBilling({ ...base, manageUrl: "https://billing.example.com/portal" }).manageUrl,
+    ).toBe("https://billing.example.com/portal");
     expect(normalizeBilling({ ...base, manageUrl: "javascript:alert(1)" }).manageUrl).toBeNull();
     expect(normalizeBilling({ ...base, manageUrl: "not a url" }).manageUrl).toBeNull();
     expect(normalizeBilling(base)).toMatchObject({ manageUrl: null, trialEndsAt: null });

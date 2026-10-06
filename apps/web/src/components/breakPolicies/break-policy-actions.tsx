@@ -3,11 +3,13 @@
 import type { BreakPolicy } from "@workmode/validation/breakPolicies";
 import { Eye, MoreHorizontal, Pencil, Star, StarOff, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useNow } from "@/components/employees/use-now";
 import { InlineAlert } from "@/components/inline-alert";
 import { AssignmentList } from "@/components/policies/assignments-panel";
+import { openAssignments } from "@/components/policies/policy-view-model";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,26 +37,27 @@ import {
   useSetDefaultBreakPolicy,
 } from "./use-break-policies";
 
-/** Set / clear the organisation default Break Rules with toasts. */
+/** Set / clear the organisation default Break Rules with toasts. `toggle` is referentially stable (safe in memo deps). */
 export function useToggleDefaultBreakPolicy() {
-  const setDefault = useSetDefaultBreakPolicy();
+  const { mutateAsync, isPending } = useSetDefaultBreakPolicy();
   const toastError = useApiErrorToast();
-  return {
-    isPending: setDefault.isPending,
-    toggle: async (policy: BreakPolicy) => {
+  const toggle = useCallback(
+    async (policy: BreakPolicy) => {
       try {
         if (policy.isDefault) {
-          await setDefault.mutateAsync({ breakPolicyId: null });
+          await mutateAsync({ breakPolicyId: null });
           toast.success(`${policy.name} are no longer the organisation default`);
         } else {
-          await setDefault.mutateAsync({ breakPolicyId: policy.id });
+          await mutateAsync({ breakPolicyId: policy.id });
           toast.success(`${policy.name} are now the organisation default Break Rules`);
         }
       } catch (err) {
         toastError(err, { title: "Couldn't change the default Break Rules" });
       }
     },
-  };
+    [mutateAsync, toastError],
+  );
+  return { isPending, toggle };
 }
 
 export interface BreakPolicyMenuProps {
@@ -85,7 +88,12 @@ export function BreakPolicyMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${policy.name}`}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Actions for ${policy.name}`}
+        >
           <MoreHorizontal aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
@@ -118,7 +126,9 @@ export function BreakPolicyMenu({
                 <Star aria-hidden="true" />
                 <span className="flex min-w-0 flex-col">
                   <span>Set as organisation default</span>
-                  {defaultGuard.ok ? null : <span className="text-muted-foreground text-xs">{defaultGuard.reason}</span>}
+                  {defaultGuard.ok ? null : (
+                    <span className="text-muted-foreground text-xs">{defaultGuard.reason}</span>
+                  )}
                 </span>
               </DropdownMenuItem>
             )}
@@ -144,15 +154,30 @@ export interface DeleteBreakPolicyDialogProps {
  * Delete guard: Break Rules that are the default or still assigned can't be deleted (`POLICY_ASSIGNED`), so
  * the dialog explains why and lists the assignments to remove; otherwise it is a plain confirmation.
  */
-export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBreakPolicyDialogProps) {
+export function DeleteBreakPolicyDialog({
+  policy,
+  onClose,
+  onDeleted,
+}: DeleteBreakPolicyDialogProps) {
   const remove = useDeleteBreakPolicy();
   const removeAssignment = useRemoveBreakPolicyAssignment();
   const toastError = useApiErrorToast();
-  const guard = policy ? breakPolicyDeleteGuard(policy) : { blocked: false as const };
-  const assignments = useBreakPolicyAssignments(policy?.id ?? null, { enabled: policy !== null && guard.blocked });
+  // `policy` is the snapshot the menu was opened with; once the assignments are loaded the guard follows them
+  // live, so removing the last one here turns this straight into the delete confirmation.
+  const snapshotGuard = policy ? breakPolicyDeleteGuard(policy) : { blocked: false as const };
+  const assignments = useBreakPolicyAssignments(policy?.id ?? null, {
+    enabled: policy !== null && snapshotGuard.blocked,
+  });
+  const now = useNow();
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   if (!policy) return null;
+
+  const openCount =
+    assignments.data && now !== null
+      ? openAssignments(assignments.data, now).length
+      : policy.assignmentCount;
+  const guard = breakPolicyDeleteGuard({ isDefault: policy.isDefault, assignmentCount: openCount });
 
   if (!guard.blocked) {
     return (
@@ -162,7 +187,7 @@ export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBr
           if (!open) onClose();
         }}
         title={`Delete ${policy.name}?`}
-        description="This removes the Break Rules for good. Nothing is assigned to them, so no employee's breaks change."
+        description="Removes these Break Rules from your organisation; this can't be undone. Nothing is assigned to them, so no employee's breaks change."
         confirmLabel="Delete Break Rules"
         destructive
         onConfirm={async () => {
@@ -190,8 +215,9 @@ export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBr
         <DialogHeader>
           <DialogTitle>Reassign before deleting</DialogTitle>
           <DialogDescription>
-            Deleting <span className="font-medium">{policy.name}</span> would silently move the people below to the next Break Rules in
-            the hierarchy. Point them at other Break Rules first.
+            Deleting <span className="font-medium">{policy.name}</span> would silently move the
+            people below to the next Break Rules in the hierarchy. Point them at other Break Rules
+            first.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -200,7 +226,7 @@ export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBr
               <li key={reason}>{reason}</li>
             ))}
           </ul>
-          {policy.assignmentCount > 0 ? (
+          {openCount > 0 ? (
             <div className="space-y-2">
               <p className="text-sm font-medium">Current assignments</p>
               {assignments.isError ? (
@@ -216,7 +242,8 @@ export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBr
                       { assignmentId: assignment.id, breakPolicyId: policy.id },
                       {
                         onSuccess: () => toast.success("Assignment removed"),
-                        onError: (err) => toastError(err, { title: "Couldn't remove the assignment" }),
+                        onError: (err) =>
+                          toastError(err, { title: "Couldn't remove the assignment" }),
                         onSettled: () => setRemovingId(null),
                       },
                     );
@@ -228,7 +255,7 @@ export function DeleteBreakPolicyDialog({ policy, onClose, onDeleted }: DeleteBr
           <InlineAlert variant="info">
             {policy.isDefault
               ? "Choose other Break Rules as the organisation default from their menu, then come back to delete these."
-              : "Once nothing points at these Break Rules, Delete becomes available from their menu."}
+              : "Remove the assignments above, or assign other Break Rules to those scopes. Once nothing points at these Break Rules you can delete them right here."}
           </InlineAlert>
         </div>
         <DialogFooter>

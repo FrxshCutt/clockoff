@@ -98,7 +98,11 @@ export async function assertAssignablePolicy(
   const policy = await findPolicyInOrganisation(organisationId, policyId, db);
   if (!policy) {
     throw new AppError("VALIDATION_ERROR", "Unknown Work Policy", {
-      details: { source: "body", formErrors: [], fieldErrors: { policyId: ["Unknown Work Policy"] } },
+      details: {
+        source: "body",
+        formErrors: [],
+        fieldErrors: { policyId: ["Unknown Work Policy"] },
+      },
     });
   }
   if (policy.deletedAt || policy.status === "ARCHIVED") {

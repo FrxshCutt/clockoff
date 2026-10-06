@@ -54,7 +54,12 @@ const PRESET_OPTIONS = [
     description: preset.description,
     summary: summariseBreakPolicy(preset.rules) as string | null,
   })),
-  { id: CUSTOM_PRESET_ID, name: "Custom", description: "Start from the defaults and set every rule yourself.", summary: null },
+  {
+    id: CUSTOM_PRESET_ID,
+    name: "Custom",
+    description: "Start from the defaults and set every rule yourself.",
+    summary: null,
+  },
 ];
 
 const NUMERIC_FIELDS = [
@@ -73,7 +78,9 @@ const NUMERIC_FIELDS = [
 export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPolicyFormProps) {
   const initialPreset = policy ? null : (BREAK_POLICY_PRESETS[0] ?? null);
   const [presetId, setPresetId] = useState<string>(initialPreset?.id ?? CUSTOM_PRESET_ID);
-  const form = useZodForm(breakPolicyFormSchema, { defaultValues: toBreakPolicyFormValues(policy, initialPreset) });
+  const form = useZodForm(breakPolicyFormSchema, {
+    defaultValues: toBreakPolicyFormValues(policy, initialPreset),
+  });
   const create = useCreateBreakPolicy();
   const update = useUpdateBreakPolicy();
   const presetLegendId = useId();
@@ -90,7 +97,8 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
     const next = toBreakPolicyFormValues(null, preset);
     // Keep a name the manager typed themselves; presets only fill in the rules.
     const typedName = form.getValues("name").trim();
-    const keepName = typedName !== "" && !BREAK_POLICY_PRESETS.some((candidate) => candidate.name === typedName);
+    const keepName =
+      typedName !== "" && !BREAK_POLICY_PRESETS.some((candidate) => candidate.name === typedName);
     form.reset(keepName ? { ...next, name: typedName } : next);
   };
 
@@ -102,7 +110,10 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
           onCancel?.();
           return;
         }
-        const saved = await update.mutateAsync({ id: policy.id, input: toUpdateBreakPolicyInput(values) });
+        const saved = await update.mutateAsync({
+          id: policy.id,
+          input: toUpdateBreakPolicyInput(values),
+        });
         toast.success(`${saved.name} updated`, {
           description: "Breaks already in progress keep the rules they started with.",
         });
@@ -110,7 +121,8 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
       } else {
         const saved = await create.mutateAsync(toCreateBreakPolicyInput(values));
         toast.success(`${saved.name} created`, {
-          description: "Assign them to locations, teams or employees, or make them the organisation default.",
+          description:
+            "Assign them to locations, teams or employees, or make them the organisation default.",
         });
         onSaved?.(saved, "create");
       }
@@ -126,7 +138,12 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
           <legend id={presetLegendId} className="text-sm font-medium">
             Start from
           </legend>
-          <RadioGroup value={presetId} onValueChange={applyPreset} aria-labelledby={presetLegendId} className="gap-2 sm:grid-cols-2">
+          <RadioGroup
+            value={presetId}
+            onValueChange={applyPreset}
+            aria-labelledby={presetLegendId}
+            className="gap-2 sm:grid-cols-2"
+          >
             {PRESET_OPTIONS.map((option) => {
               const id = `${presetLegendId}-${option.id}`;
               const checked = presetId === option.id;
@@ -143,9 +160,13 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
                   <span className="min-w-0 space-y-0.5">
                     <span className="block text-sm leading-5 font-medium">{option.name}</span>
                     {option.summary ? (
-                      <span className="text-muted-foreground block text-xs leading-4 tabular-nums">{option.summary}</span>
+                      <span className="text-muted-foreground block text-xs leading-4 tabular-nums">
+                        {option.summary}
+                      </span>
                     ) : null}
-                    <span className="text-muted-foreground block text-xs leading-4">{option.description}</span>
+                    <span className="text-muted-foreground block text-xs leading-4">
+                      {option.description}
+                    </span>
                   </span>
                 </label>
               );
@@ -154,7 +175,14 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
         </fieldset>
       )}
 
-      <TextField control={form.control} name="name" label="Name" placeholder="e.g. Standard Break" maxLength={120} autoComplete="off" />
+      <TextField
+        control={form.control}
+        name="name"
+        label="Name"
+        placeholder="e.g. Standard Break"
+        maxLength={120}
+        autoComplete="off"
+      />
       <TextareaField
         control={form.control}
         name="description"
@@ -172,7 +200,9 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
         <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
           <div className="space-y-1">
             <p className="text-sm font-medium">Status</p>
-            <p className="text-muted-foreground text-sm">Break Rules apply as soon as they’re saved; there is no publish step.</p>
+            <p className="text-muted-foreground text-sm">
+              Break Rules apply as soon as they’re saved; there is no publish step.
+            </p>
           </div>
           <StatusBadge kind="policyStatus" value={policy.status} />
         </div>
@@ -233,7 +263,10 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
         </div>
       </div>
 
-      <FormErrorAlert error={mutationError} title={policy ? "Couldn't save the Break Rules" : "Couldn't create the Break Rules"} />
+      <FormErrorAlert
+        error={mutationError}
+        title={policy ? "Couldn't save the Break Rules" : "Couldn't create the Break Rules"}
+      />
     </div>
   );
 
@@ -256,13 +289,20 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
   if (variant === "sheet") {
     return (
       <Form {...form}>
-        <form onSubmit={onSubmit} noValidate className="flex h-full min-h-0 flex-col" aria-busy={isPending || undefined}>
+        <form
+          onSubmit={onSubmit}
+          noValidate
+          className="flex h-full min-h-0 flex-col"
+          aria-busy={isPending || undefined}
+        >
           <SheetHeader className="border-b px-6 py-5">
             <SheetTitle>{policy ? `Edit ${policy.name}` : "New Break Rules"}</SheetTitle>
             <SheetDescription>{description}</SheetDescription>
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{fields}</div>
-          <SheetFooter className="flex-row justify-end gap-2 border-t px-6 py-4">{actions}</SheetFooter>
+          <SheetFooter className="flex-row justify-end gap-2 border-t px-6 py-4">
+            {actions}
+          </SheetFooter>
         </form>
       </Form>
     );

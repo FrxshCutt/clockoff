@@ -10,16 +10,27 @@ export function PrivacyAllowedFields() {
   return (
     <div className="overflow-x-auto rounded-xl border">
       <table className="w-full text-sm">
-        <caption className="sr-only">Fields the Work Mode app may send to the server, by group</caption>
+        <caption className="sr-only">
+          Fields the Work Mode app may send to the server, by group
+        </caption>
         <thead className="bg-muted/50 border-b">
           <tr>
-            <th scope="col" className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase">
+            <th
+              scope="col"
+              className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
+            >
               What
             </th>
-            <th scope="col" className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase">
+            <th
+              scope="col"
+              className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
+            >
               Fields
             </th>
-            <th scope="col" className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase">
+            <th
+              scope="col"
+              className="text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wide uppercase"
+            >
               Why
             </th>
           </tr>
@@ -34,12 +45,16 @@ export function PrivacyAllowedFields() {
                 <ul className="flex flex-wrap gap-1.5">
                   {group.fields.map((field) => (
                     <li key={field}>
-                      <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">{field}</code>
+                      <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
+                        {field}
+                      </code>
                     </li>
                   ))}
                 </ul>
               </td>
-              <td className="text-muted-foreground min-w-64 px-4 py-3 leading-relaxed">{group.detail}</td>
+              <td className="text-muted-foreground min-w-64 px-4 py-3 leading-relaxed">
+                {group.detail}
+              </td>
             </tr>
           ))}
         </tbody>

@@ -45,9 +45,24 @@ export interface ScheduleToolbarProps {
  * View switcher, date navigation, filters and primary actions. Everything here is keyboard reachable:
  * the view control is a radio-style toggle group, the date picker is a popover calendar.
  */
-export function ScheduleToolbar({ params, range, today, timezone, weekStartsOn, canEdit, canImport, selectedEmployee, onChange, onNavigate, onAddShift }: ScheduleToolbarProps) {
+export function ScheduleToolbar({
+  params,
+  range,
+  today,
+  timezone,
+  weekStartsOn,
+  canEdit,
+  canImport,
+  selectedEmployee,
+  onChange,
+  onNavigate,
+  onAddShift,
+}: ScheduleToolbarProps) {
   const [dateOpen, setDateOpen] = useState(false);
-  const isToday = params.view === "day" ? params.date === today : today >= range.startDate && today <= range.endDate;
+  const isToday =
+    params.view === "day"
+      ? params.date === today
+      : today >= range.startDate && today <= range.endDate;
 
   return (
     <div className="space-y-3">
@@ -63,27 +78,55 @@ export function ScheduleToolbar({ params, range, today, timezone, weekStartsOn, 
             aria-label="Schedule view"
           >
             {SCHEDULE_VIEWS.map((view) => (
-              <ToggleGroupItem key={view} value={view} aria-label={`${SCHEDULE_VIEW_LABELS[view]} view`} className="px-3">
+              <ToggleGroupItem
+                key={view}
+                value={view}
+                aria-label={`${SCHEDULE_VIEW_LABELS[view]} view`}
+                className="px-3"
+              >
                 {SCHEDULE_VIEW_LABELS[view]}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
 
           <div className="flex items-center gap-1" role="group" aria-label="Date navigation">
-            <Button type="button" variant="outline" size="icon" onClick={() => onNavigate(-1)} aria-label={params.view === "day" ? "Previous day" : "Previous week"}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => onNavigate(-1)}
+              aria-label={params.view === "day" ? "Previous day" : "Previous week"}
+            >
               <ChevronLeft aria-hidden="true" />
             </Button>
-            <Button type="button" variant="outline" onClick={() => onChange({ date: today })} disabled={isToday} className="px-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onChange({ date: today })}
+              disabled={isToday}
+              className="px-3"
+            >
               Today
             </Button>
-            <Button type="button" variant="outline" size="icon" onClick={() => onNavigate(1)} aria-label={params.view === "day" ? "Next day" : "Next week"}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => onNavigate(1)}
+              aria-label={params.view === "day" ? "Next day" : "Next week"}
+            >
               <ChevronRight aria-hidden="true" />
             </Button>
           </div>
 
           <Popover open={dateOpen} onOpenChange={setDateOpen}>
             <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" className="px-2 text-base font-semibold tracking-tight" aria-label={`Choose date, currently ${formatRangeHeading(range)}`}>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2 text-base font-semibold tracking-tight"
+                aria-label={`Choose date, currently ${formatRangeHeading(range)}`}
+              >
                 <CalendarDays className="text-muted-foreground" aria-hidden="true" />
                 {formatRangeHeading(range)}
               </Button>
@@ -125,7 +168,13 @@ export function ScheduleToolbar({ params, range, today, timezone, weekStartsOn, 
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <LocationSelect value={params.locationId} onChange={(locationId) => onChange({ locationId })} size="sm" aria-label="Filter by location" className="h-8" />
+          <LocationSelect
+            value={params.locationId}
+            onChange={(locationId) => onChange({ locationId })}
+            size="sm"
+            aria-label="Filter by location"
+            className="h-8"
+          />
           <EmployeePicker
             value={params.employeeId}
             selected={selectedEmployee}
@@ -154,7 +203,9 @@ export function ScheduleToolbar({ params, range, today, timezone, weekStartsOn, 
               Times in {timezone}
             </p>
           </TooltipTrigger>
-          <TooltipContent>All times are shown in your organisation&apos;s zone, {formatTimeZoneLabel(timezone)}.</TooltipContent>
+          <TooltipContent>
+            All times are shown in your organisation&apos;s zone, {formatTimeZoneLabel(timezone)}.
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

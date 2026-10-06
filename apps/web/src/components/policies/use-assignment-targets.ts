@@ -36,7 +36,11 @@ export function useEmployeeSearch(search: string, options: { enabled?: boolean }
     queryFn: ({ signal }) =>
       api.get<ListEmployeesResponse>(
         "/api/employees",
-        { search: trimmed === "" ? undefined : trimmed, pageSize: EMPLOYEE_SEARCH_PAGE_SIZE, sort: "lastName" },
+        {
+          search: trimmed === "" ? undefined : trimmed,
+          pageSize: EMPLOYEE_SEARCH_PAGE_SIZE,
+          sort: "lastName",
+        },
         signal,
       ),
     select: (data) => ({ items: data.items, total: data.total }),

@@ -15,9 +15,22 @@ import {
 import type { z } from "zod";
 import { InlineAlert } from "@/components/inline-alert";
 import { Button } from "@/components/ui/button";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { getErrorMessage, getFieldErrors } from "@/lib/errorMessages";
@@ -58,7 +71,11 @@ export function applyApiFieldErrors<TFieldValues extends FieldValues>(
   let applied = false;
   for (const [field, message] of Object.entries(fieldErrors)) {
     if (known && Object.prototype.hasOwnProperty.call(known, field)) {
-      form.setError(field as FieldPath<TFieldValues>, { type: "server", message }, { shouldFocus: !applied });
+      form.setError(
+        field as FieldPath<TFieldValues>,
+        { type: "server", message },
+        { shouldFocus: !applied },
+      );
       applied = true;
     }
   }
@@ -74,9 +91,16 @@ interface BaseFieldProps<TFieldValues extends FieldValues, TName extends FieldPa
   className?: string;
 }
 
-export interface TextFieldProps<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>
-  extends BaseFieldProps<TFieldValues, TName>,
-    Omit<ComponentProps<typeof Input>, "name" | "defaultValue" | "value" | "onChange" | "onBlur" | "className"> {
+export interface TextFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>
+  extends
+    BaseFieldProps<TFieldValues, TName>,
+    Omit<
+      ComponentProps<typeof Input>,
+      "name" | "defaultValue" | "value" | "onChange" | "onBlur" | "className"
+    > {
   /** Content rendered inside the label row on the right (e.g. "Forgot password?" link). */
   labelAside?: ReactNode;
 }
@@ -101,7 +125,11 @@ export function TextField<TFieldValues extends FieldValues, TName extends FieldP
             {labelAside}
           </div>
           <FormControl>
-            <Input {...inputProps} {...field} value={(field.value as string | number | undefined) ?? ""} />
+            <Input
+              {...inputProps}
+              {...field}
+              value={(field.value as string | number | undefined) ?? ""}
+            />
           </FormControl>
           {description ? <FormDescription>{description}</FormDescription> : null}
           <FormMessage />
@@ -111,7 +139,10 @@ export function TextField<TFieldValues extends FieldValues, TName extends FieldP
   );
 }
 
-export function PasswordField<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function PasswordField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   control,
   name,
   label,
@@ -163,11 +194,21 @@ export function PasswordField<TFieldValues extends FieldValues, TName extends Fi
   );
 }
 
-export interface TextareaFieldProps<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>
-  extends BaseFieldProps<TFieldValues, TName>,
-    Omit<ComponentProps<typeof Textarea>, "name" | "defaultValue" | "value" | "onChange" | "onBlur" | "className"> {}
+export interface TextareaFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>
+  extends
+    BaseFieldProps<TFieldValues, TName>,
+    Omit<
+      ComponentProps<typeof Textarea>,
+      "name" | "defaultValue" | "value" | "onChange" | "onBlur" | "className"
+    > {}
 
-export function TextareaField<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function TextareaField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   control,
   name,
   label,
@@ -183,7 +224,11 @@ export function TextareaField<TFieldValues extends FieldValues, TName extends Fi
         <FormItem className={className}>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Textarea {...textareaProps} {...field} value={(field.value as string | undefined) ?? ""} />
+            <Textarea
+              {...textareaProps}
+              {...field}
+              value={(field.value as string | undefined) ?? ""}
+            />
           </FormControl>
           {description ? <FormDescription>{description}</FormDescription> : null}
           <FormMessage />
@@ -201,14 +246,19 @@ export interface SelectOption {
   hint?: ReactNode;
 }
 
-export interface SelectFieldProps<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>
-  extends BaseFieldProps<TFieldValues, TName> {
+export interface SelectFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+> extends BaseFieldProps<TFieldValues, TName> {
   options: readonly SelectOption[];
   placeholder?: string;
   disabled?: boolean;
 }
 
-export function SelectField<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function SelectField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   control,
   name,
   label,
@@ -259,7 +309,10 @@ export function SelectField<TFieldValues extends FieldValues, TName extends Fiel
   );
 }
 
-export function SwitchField<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function SwitchField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   control,
   name,
   label,
@@ -272,7 +325,9 @@ export function SwitchField<TFieldValues extends FieldValues, TName extends Fiel
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className={cn("flex items-start justify-between gap-4 rounded-lg border p-4", className)}>
+        <FormItem
+          className={cn("flex items-start justify-between gap-4 rounded-lg border p-4", className)}
+        >
           <div className="space-y-1">
             <FormLabel>{label}</FormLabel>
             {description ? <FormDescription>{description}</FormDescription> : null}
@@ -293,7 +348,15 @@ export function SwitchField<TFieldValues extends FieldValues, TName extends Fiel
 }
 
 /** Form-level error (anything that isn't a field error), with human copy. */
-export function FormErrorAlert({ error, title, className }: { error: unknown; title?: string; className?: string }) {
+export function FormErrorAlert({
+  error,
+  title,
+  className,
+}: {
+  error: unknown;
+  title?: string;
+  className?: string;
+}) {
   if (!error) return null;
   return (
     <InlineAlert variant="danger" title={title} className={className}>
@@ -308,9 +371,20 @@ export interface SubmitButtonProps extends Omit<ComponentProps<typeof Button>, "
   pendingLabel?: ReactNode;
 }
 
-export function SubmitButton({ isPending = false, pendingLabel, children, disabled, ...props }: SubmitButtonProps) {
+export function SubmitButton({
+  isPending = false,
+  pendingLabel,
+  children,
+  disabled,
+  ...props
+}: SubmitButtonProps) {
   return (
-    <Button type="submit" disabled={disabled || isPending} aria-busy={isPending || undefined} {...props}>
+    <Button
+      type="submit"
+      disabled={disabled || isPending}
+      aria-busy={isPending || undefined}
+      {...props}
+    >
       {isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
       {isPending && pendingLabel ? pendingLabel : children}
     </Button>

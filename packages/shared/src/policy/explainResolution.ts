@@ -10,7 +10,8 @@ export const SCOPE_TYPE_LABELS: Record<AssignmentScopeType, string> = {
 };
 
 /** Either a prebuilt `id → name` map or a function; both may simply not know an id. */
-export type NameLookup = Readonly<Record<string, string>> | ((id: string) => string | null | undefined);
+export type NameLookup =
+  Readonly<Record<string, string>> | ((id: string) => string | null | undefined);
 
 /** Optional name lookups per scope type, e.g. `{ TEAM: teamNamesById, LOCATION: (id) => locations.get(id)?.name }`. */
 export type ScopeNameLookups = Partial<Record<AssignmentScopeType, NameLookup>>;
@@ -29,7 +30,10 @@ function assertNever(value: never): never {
  * One-line, manager-facing explanation of a resolution, e.g. `Resolved from Team: Front of House`,
  * `Resolved from Organisation default: Acme Coffee`, or `No policy resolved`.
  */
-export function explainResolution(result: { resolvedFrom: ResolvedFrom | null }, names?: ScopeNameLookups): string {
+export function explainResolution(
+  result: { resolvedFrom: ResolvedFrom | null },
+  names?: ScopeNameLookups,
+): string {
   const from = result.resolvedFrom;
   if (from === null) return "No policy resolved";
 

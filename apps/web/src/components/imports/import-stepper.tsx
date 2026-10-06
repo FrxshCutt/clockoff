@@ -3,7 +3,13 @@
 import type { ShiftImportStatus } from "@workmode/shared/enums";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { IMPORT_STEPS, IMPORT_STEP_META, isStepReachable, stepState, type ImportStep } from "./import-wizard-model";
+import {
+  IMPORT_STEPS,
+  IMPORT_STEP_META,
+  isStepReachable,
+  stepState,
+  type ImportStep,
+} from "./import-wizard-model";
 
 export interface ImportStepperProps {
   current: ImportStep;
@@ -32,11 +38,17 @@ export function ImportStepper({ current, status, onSelect }: ImportStepperProps)
               >
                 {state === "complete" ? <Check className="size-3.5" /> : index + 1}
               </span>
-              <span className={cn("font-medium", state === "upcoming" && "text-muted-foreground")}>{IMPORT_STEP_META[step].label}</span>
+              <span className={cn("font-medium", state === "upcoming" && "text-muted-foreground")}>
+                {IMPORT_STEP_META[step].label}
+              </span>
             </>
           );
           return (
-            <li key={step} className="flex items-center gap-2" aria-current={state === "current" ? "step" : undefined}>
+            <li
+              key={step}
+              className="flex items-center gap-2"
+              aria-current={state === "current" ? "step" : undefined}
+            >
               {reachable ? (
                 <button
                   type="button"
@@ -48,7 +60,9 @@ export function ImportStepper({ current, status, onSelect }: ImportStepperProps)
               ) : (
                 <span className="flex items-center gap-2 px-1.5 py-1">{content}</span>
               )}
-              {index < IMPORT_STEPS.length - 1 ? <span className="bg-border hidden h-px w-6 sm:block" aria-hidden="true" /> : null}
+              {index < IMPORT_STEPS.length - 1 ? (
+                <span className="bg-border hidden h-px w-6 sm:block" aria-hidden="true" />
+              ) : null}
             </li>
           );
         })}

@@ -152,7 +152,10 @@ interface BreakRules {
 
 interface PolicyVersionDef {
   config: RestrictionConfig;
-  breakBehaviourDefault: { restrictionBehaviour: BreakRestrictionBehaviour; relaxedCategories: RestrictionCategory[] };
+  breakBehaviourDefault: {
+    restrictionBehaviour: BreakRestrictionBehaviour;
+    relaxedCategories: RestrictionCategory[];
+  };
   createdAt: Date;
   publishedAt: Date | null;
   changeNote: string | null;
@@ -219,7 +222,9 @@ function restrictionConfig(input: {
     "restriction categories must be unique and non-empty",
   );
   invariant(
-    config.shieldMessage !== undefined && config.shieldMessage.length >= 1 && config.shieldMessage.length <= 120,
+    config.shieldMessage !== undefined &&
+      config.shieldMessage.length >= 1 &&
+      config.shieldMessage.length <= 120,
     "shield message must be 1–120 characters",
   );
   invariant(
@@ -261,7 +266,10 @@ function breakRules(overrides: Partial<BreakRules>): BreakRules {
 
 const RELAX_ALL_DEFAULT = { restrictionBehaviour: "RELAX_ALL" as const, relaxedCategories: [] };
 
-export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => string): HarpendenSeed {
+export function buildHarpenden(
+  clock: SeedClock,
+  hashFor: (email: string) => string,
+): HarpendenSeed {
   const org = HARPENDEN;
   const organisationId = organisationIdFor(org.key);
   const b = new OrgBuilder(clock, org.key, organisationId, org.timezone);
@@ -284,7 +292,11 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
   const actors: Record<ManagerKey, ActorMeta> = {
     owner: { userId: userIdFor(org.managers.owner.email), ip: "203.0.113.10", userAgent: UA_MAC },
     admin: { userId: userIdFor(org.managers.admin.email), ip: "203.0.113.24", userAgent: UA_WIN },
-    manager: { userId: userIdFor(org.managers.manager.email), ip: "198.51.100.7", userAgent: UA_IPAD },
+    manager: {
+      userId: userIdFor(org.managers.manager.email),
+      ip: "198.51.100.7",
+      userAgent: UA_IPAD,
+    },
   };
   for (const key of Object.keys(org.managers) as ManagerKey[]) {
     const manager = org.managers[key];
@@ -307,9 +319,20 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     });
     if (key !== "owner") {
       const invitedAt = addMinutes(managerCreatedAt[key], -90);
-      b.audit(actors.owner, "member.invited", "ManagerInvite", b.id(`manager-invite:${key}`), invitedAt, {
-        after: { email: manager.email, role: manager.role, expiresAt: addMinutes(invitedAt, 7 * DAY) },
-      });
+      b.audit(
+        actors.owner,
+        "member.invited",
+        "ManagerInvite",
+        b.id(`manager-invite:${key}`),
+        invitedAt,
+        {
+          after: {
+            email: manager.email,
+            role: manager.role,
+            expiresAt: addMinutes(invitedAt, 7 * DAY),
+          },
+        },
+      );
       b.audit(
         { ...actors[key] },
         "member.joined",
@@ -339,12 +362,24 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     after: { name: org.name, slug: org.slug, timezone: tz },
   });
   b.audit(actors.owner, "organisation.updated", "Organisation", organisationId, clock.daysAgo(27), {
-    before: { settings: { requireInviteCodeToJoin: false, weekStartsOn: "MONDAY", timeFormat: "H24" } },
-    after: { dateFormat: "DMY", settings: { requireInviteCodeToJoin: false, weekStartsOn: "MONDAY", timeFormat: "H24" } },
+    before: {
+      settings: { requireInviteCodeToJoin: false, weekStartsOn: "MONDAY", timeFormat: "H24" },
+    },
+    after: {
+      dateFormat: "DMY",
+      settings: { requireInviteCodeToJoin: false, weekStartsOn: "MONDAY", timeFormat: "H24" },
+    },
   });
-  b.audit(actors.owner, "organisation.onboarding_dismissed", "Organisation", organisationId, clock.daysAgo(20), {
-    after: { dismissedAt: clock.daysAgo(20) },
-  });
+  b.audit(
+    actors.owner,
+    "organisation.onboarding_dismissed",
+    "Organisation",
+    organisationId,
+    clock.daysAgo(20),
+    {
+      after: { dismissedAt: clock.daysAgo(20) },
+    },
+  );
 
   const revokedJoinCodeId = b.id("join-code:revoked");
   const activeJoinCodeId = b.id("join-code:active");
@@ -367,10 +402,17 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       createdAt: clock.daysAgo(12),
     },
   );
-  b.audit(actors.owner, "join_code.regenerated", "CompanyJoinCode", activeJoinCodeId, clock.daysAgo(12), {
-    before: { id: revokedJoinCodeId, code: org.revokedJoinCode, status: "REVOKED" },
-    after: { id: activeJoinCodeId, code: org.joinCode, status: "ACTIVE" },
-  });
+  b.audit(
+    actors.owner,
+    "join_code.regenerated",
+    "CompanyJoinCode",
+    activeJoinCodeId,
+    clock.daysAgo(12),
+    {
+      before: { id: revokedJoinCodeId, code: org.revokedJoinCode, status: "REVOKED" },
+      after: { id: activeJoinCodeId, code: org.joinCode, status: "ACTIVE" },
+    },
+  );
 
   // ── Locations, departments, teams ──────────────────────────────────────────
   const LOCATIONS: Record<LocationKey, { name: string; address: string }> = {
@@ -420,9 +462,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         locationId: locationId(location),
         createdAt: structureCreatedAt,
       });
-      b.audit(actors.owner, "team.created", "Team", teamId(location, department), structureCreatedAt, {
-        after: { name, locationId: locationId(location) },
-      });
+      b.audit(
+        actors.owner,
+        "team.created",
+        "Team",
+        teamId(location, department),
+        structureCreatedAt,
+        {
+          after: { name, locationId: locationId(location) },
+        },
+      );
     }
   }
 
@@ -438,7 +487,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "standard",
       name: "Standard Staff",
-      description: "Organisation default: social media, games and entertainment are shielded during shifts.",
+      description:
+        "Organisation default: social media, games and entertainment are shielded during shifts.",
       status: "ACTIVE",
       versions: [
         {
@@ -457,7 +507,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "foh",
       name: "Front of House",
-      description: "Counter and floor staff: also shields video and streaming apps while serving customers.",
+      description:
+        "Counter and floor staff: also shields video and streaming apps while serving customers.",
       status: "ACTIVE",
       versions: [
         {
@@ -476,7 +527,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "kitchen",
       name: "Kitchen",
-      description: "Kitchen and prep teams: shopping apps are shielded too; breaks keep restrictions by default.",
+      description:
+        "Kitchen and prep teams: shopping apps are shielded too; breaks keep restrictions by default.",
       status: "ACTIVE",
       versions: [
         {
@@ -486,7 +538,10 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
             preShiftWarningMinutes: 10,
             alwaysAllowedNote: [...ALWAYS_ALLOWED, "Timer and Calculator"],
           }),
-          breakBehaviourDefault: { restrictionBehaviour: "KEEP_RESTRICTIONS", relaxedCategories: [] },
+          breakBehaviourDefault: {
+            restrictionBehaviour: "KEEP_RESTRICTIONS",
+            relaxedCategories: [],
+          },
           createdAt: addMinutes(standardCreatedAt, 70),
           publishedAt: published(standardCreatedAt, 95),
           changeNote: "Initial version",
@@ -516,13 +571,15 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "social",
       name: "Social Media Team",
-      description: "Marketing staff who post on behalf of the brand: social apps stay available; games, entertainment and streaming do not.",
+      description:
+        "Marketing staff who post on behalf of the brand: social apps stay available; games, entertainment and streaming do not.",
       status: "ACTIVE",
       versions: [
         {
           config: restrictionConfig({
             categories: ["GAMES", "ENTERTAINMENT", "STREAMING"],
-            shieldMessage: "Work Mode is on. Social apps stay open for posting; this one waits until later.",
+            shieldMessage:
+              "Work Mode is on. Social apps stay open for posting; this one waits until later.",
             preShiftWarningMinutes: 10,
             alwaysAllowedNote: [...ALWAYS_ALLOWED, "Instagram, TikTok and X for brand posting"],
           }),
@@ -536,7 +593,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "warehouse",
       name: "Warehouse Staff",
-      description: "Draft for the planned roastery warehouse. Not published and not assigned to anyone yet.",
+      description:
+        "Draft for the planned roastery warehouse. Not published and not assigned to anyone yet.",
       status: "DRAFT",
       versions: [
         {
@@ -627,7 +685,13 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         current = { id: vid, config: version.config };
         rows.policyCurrentVersions.push({ policyId: pid, versionId: vid });
         b.audit(actors.owner, "policy.published", "Policy", pid, version.publishedAt, {
-          before: { name: def.name, description: def.description, status: "DRAFT", currentVersionId: null, draftVersionId: vid },
+          before: {
+            name: def.name,
+            description: def.description,
+            status: "DRAFT",
+            currentVersionId: null,
+            draftVersionId: vid,
+          },
           after: {
             status: "ACTIVE",
             currentVersionId: vid,
@@ -658,14 +722,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "standardBreak",
       name: "Standard Break 2×15",
-      description: "Two 15-minute breaks per shift, at least an hour in and an hour apart. Restrictions relax during breaks.",
+      description:
+        "Two 15-minute breaks per shift, at least an hour in and an hour apart. Restrictions relax during breaks.",
       rules: breakRules({}),
       createdAt: addMinutes(standardCreatedAt, 120),
     },
     {
       key: "lunch",
       name: "Lunch Shift 1×30",
-      description: "One 30-minute lunch break after at least three hours on shift (Luton, longer day shifts).",
+      description:
+        "One 30-minute lunch break after at least three hours on shift (Luton, longer day shifts).",
       rules: breakRules({
         maxBreaksPerShift: 1,
         maxBreakDurationMinutes: 30,
@@ -677,7 +743,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     {
       key: "noPhone",
       name: "No Phone Break Unlock",
-      description: "Kitchen teams: breaks are recorded but Work Mode restrictions stay on throughout the shift.",
+      description:
+        "Kitchen teams: breaks are recorded but Work Mode restrictions stay on throughout the shift.",
       rules: breakRules({ restrictionBehaviour: "KEEP_RESTRICTIONS" }),
       createdAt: addMinutes(standardCreatedAt, 160),
     },
@@ -693,9 +760,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       status: "ACTIVE",
       createdAt: def.createdAt,
     });
-    b.audit(actors.owner, "break_policy.created", "BreakPolicy", breakPolicyId(def.key), def.createdAt, {
-      after: { name: def.name, description: def.description, ...def.rules },
-    });
+    b.audit(
+      actors.owner,
+      "break_policy.created",
+      "BreakPolicy",
+      breakPolicyId(def.key),
+      def.createdAt,
+      {
+        after: { name: def.name, description: def.description, ...def.rules },
+      },
+    );
   }
 
   // ── Assignments & defaults ─────────────────────────────────────────────────
@@ -719,9 +793,24 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       createdById: actors.owner.userId,
       createdAt: at,
     });
-    workAssignments.push({ id, scopeType, scopeId, policyId: policyId(policy), effectiveFrom: null, effectiveTo: null, createdAt: at });
+    workAssignments.push({
+      id,
+      scopeType,
+      scopeId,
+      policyId: policyId(policy),
+      effectiveFrom: null,
+      effectiveTo: null,
+      createdAt: at,
+    });
     b.audit(actors.owner, "policy_assignment.created", "PolicyAssignment", id, at, {
-      after: { scopeType, scopeId, effectiveFrom: null, effectiveTo: null, policyId: policyId(policy), replacedAssignmentIds: [] },
+      after: {
+        scopeType,
+        scopeId,
+        effectiveFrom: null,
+        effectiveTo: null,
+        policyId: policyId(policy),
+        replacedAssignmentIds: [],
+      },
     });
   };
   const assignBreak = (
@@ -742,41 +831,112 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       createdAt: at,
     });
     breakAssignments.push(
-      fromBreakPolicyAssignment({ id, scopeType, scopeId, breakPolicyId: breakPolicyId(policy), effectiveFrom: null, effectiveTo: null, createdAt: at }),
+      fromBreakPolicyAssignment({
+        id,
+        scopeType,
+        scopeId,
+        breakPolicyId: breakPolicyId(policy),
+        effectiveFrom: null,
+        effectiveTo: null,
+        createdAt: at,
+      }),
     );
     b.audit(actors.owner, "break_policy_assignment.created", "BreakPolicyAssignment", id, at, {
-      after: { scopeType, scopeId, effectiveFrom: null, effectiveTo: null, breakPolicyId: breakPolicyId(policy), replacedAssignmentIds: [] },
+      after: {
+        scopeType,
+        scopeId,
+        effectiveFrom: null,
+        effectiveTo: null,
+        breakPolicyId: breakPolicyId(policy),
+        replacedAssignmentIds: [],
+      },
     });
   };
 
   const assignmentsAt = addMinutes(standardCreatedAt, 200);
   for (const location of Object.keys(LOCATIONS) as LocationKey[]) {
     assignWork("foh", "TEAM", teamId(location, "foh"), `team:${location}:foh`, assignmentsAt);
-    assignWork("kitchen", "TEAM", teamId(location, "kitchen"), `team:${location}:kitchen`, addMinutes(assignmentsAt, 5));
-    assignBreak("noPhone", "TEAM", teamId(location, "kitchen"), `team:${location}:kitchen`, addMinutes(assignmentsAt, 10));
+    assignWork(
+      "kitchen",
+      "TEAM",
+      teamId(location, "kitchen"),
+      `team:${location}:kitchen`,
+      addMinutes(assignmentsAt, 5),
+    );
+    assignBreak(
+      "noPhone",
+      "TEAM",
+      teamId(location, "kitchen"),
+      `team:${location}:kitchen`,
+      addMinutes(assignmentsAt, 10),
+    );
   }
-  assignBreak("lunch", "LOCATION", locationId("luton"), "location:luton", addMinutes(assignmentsAt, 15));
-  assignWork("management", "EMPLOYEE", employeeId("charlotte"), "employee:charlotte", published(managementCreatedAt, 40));
-  assignWork("management", "EMPLOYEE", employeeId("james"), "employee:james", published(managementCreatedAt, 42));
-  assignWork("social", "EMPLOYEE", employeeId("grace"), "employee:grace", published(socialCreatedAt, 45));
+  assignBreak(
+    "lunch",
+    "LOCATION",
+    locationId("luton"),
+    "location:luton",
+    addMinutes(assignmentsAt, 15),
+  );
+  assignWork(
+    "management",
+    "EMPLOYEE",
+    employeeId("charlotte"),
+    "employee:charlotte",
+    published(managementCreatedAt, 40),
+  );
+  assignWork(
+    "management",
+    "EMPLOYEE",
+    employeeId("james"),
+    "employee:james",
+    published(managementCreatedAt, 42),
+  );
+  assignWork(
+    "social",
+    "EMPLOYEE",
+    employeeId("grace"),
+    "employee:grace",
+    published(socialCreatedAt, 45),
+  );
 
   rows.organisationDefaults.push({
     organisationId,
     defaultPolicyId: policyId("standard"),
     defaultBreakPolicyId: breakPolicyId("standardBreak"),
   });
-  b.audit(actors.owner, "organisation.default_policy_changed", "Organisation", organisationId, addMinutes(standardCreatedAt, 25), {
-    before: { defaultPolicyId: null },
-    after: { defaultPolicyId: policyId("standard") },
-  });
-  b.audit(actors.owner, "organisation.default_break_policy_changed", "Organisation", organisationId, addMinutes(standardCreatedAt, 125), {
-    before: { defaultBreakPolicyId: null },
-    after: { defaultBreakPolicyId: breakPolicyId("standardBreak") },
-  });
+  b.audit(
+    actors.owner,
+    "organisation.default_policy_changed",
+    "Organisation",
+    organisationId,
+    addMinutes(standardCreatedAt, 25),
+    {
+      before: { defaultPolicyId: null },
+      after: { defaultPolicyId: policyId("standard") },
+    },
+  );
+  b.audit(
+    actors.owner,
+    "organisation.default_break_policy_changed",
+    "Organisation",
+    organisationId,
+    addMinutes(standardCreatedAt, 125),
+    {
+      before: { defaultBreakPolicyId: null },
+      after: { defaultBreakPolicyId: breakPolicyId("standardBreak") },
+    },
+  );
 
   // ── Policy resolution (the same shared function the API uses) ─────────────
   const workPoliciesById = indexPoliciesById(
-    policyDefs.map((d) => ({ id: policyId(d.key), status: d.status, deletedAt: null, organisationId, key: d.key })),
+    policyDefs.map((d) => ({
+      id: policyId(d.key),
+      status: d.status,
+      deletedAt: null,
+      organisationId,
+      key: d.key,
+    })),
   );
   const breakPoliciesById = indexPoliciesById(
     breakPolicyDefs.map((d) => ({
@@ -808,14 +968,21 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       organisationDefaultPolicyId: breakPolicyId("standardBreak"),
       now,
     });
-    invariant(work.warnings.length === 0 && breaks.warnings.length === 0, `policy resolution warnings for ${employee.id}`);
-    invariant(work.policy && breaks.policy, `every employee resolves a work and a break policy (${employee.id})`);
+    invariant(
+      work.warnings.length === 0 && breaks.warnings.length === 0,
+      `policy resolution warnings for ${employee.id}`,
+    );
+    invariant(
+      work.policy && breaks.policy,
+      `every employee resolves a work and a break policy (${employee.id})`,
+    );
     return { work: work.policy.key, breaks: breaks.policy.key };
   };
 
   // ── Employees ──────────────────────────────────────────────────────────────
   const connectedDevice = (
-    overrides: Partial<DeviceSpec> & Pick<DeviceSpec, "linkedMinutesAgo" | "lastSyncMinutesAgo" | "counts" | "model" | "os">,
+    overrides: Partial<DeviceSpec> &
+      Pick<DeviceSpec, "linkedMinutesAgo" | "lastSyncMinutesAgo" | "counts" | "model" | "os">,
   ): DeviceSpec => ({
     permission: "APPROVED",
     selection: "CONFIGURED",
@@ -838,12 +1005,27 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       jobTitle: "Barista",
       department: "foh",
       location: "harpenden",
-      inTeam: true,
+      // Deliberately not on the Harpenden Front of House team: he is the one employee who resolves the
+      // organisation default (Standard Staff), so that path of the hierarchy is exercised by the demo.
+      inTeam: false,
       createdMinutesAgo: 27 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 24 * DAY, lastSyncMinutesAgo: 3, counts: { categories: 3, applications: 0, webDomains: 0 }, model: "iPhone 15", os: "18.6", scheduleVersion: 8 }),
-      invite: { channel: "LINK", status: "ACCEPTED", createdMinutesAgo: 24 * DAY + 60, acceptedMinutesAgo: 24 * DAY },
-      scenario: "CONNECTED and working right now: shift today 09:00–15:00 with a scheduled break at +180 min, one expired break earlier, device synced 3 minutes ago.",
+      device: connectedDevice({
+        linkedMinutesAgo: 24 * DAY,
+        lastSyncMinutesAgo: 3,
+        counts: { categories: 3, applications: 0, webDomains: 0 },
+        model: "iPhone 15",
+        os: "18.6",
+        scheduleVersion: 8,
+      }),
+      invite: {
+        channel: "LINK",
+        status: "ACCEPTED",
+        createdMinutesAgo: 24 * DAY + 60,
+        acceptedMinutesAgo: 24 * DAY,
+      },
+      scenario:
+        "CONNECTED and WORKING right now: today's shift started 2 hours ago and ends in 4 (scheduled break at +180 min), one break EXPIRED 30 minutes ago, device synced 3 minutes ago; Standard Staff via the organisation default.",
     },
     {
       key: "jack",
@@ -857,8 +1039,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 27 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 22 * DAY, lastSyncMinutesAgo: 25, counts: { categories: 2, applications: 4, webDomains: 0 }, model: "iPhone 14", os: "18.5", skewSeconds: -4 }),
-      scenario: "CONNECTED, off shift: next shift tomorrow 10:00–18:00; had an EXEMPT_TEMPORARILY override yesterday that has expired.",
+      device: connectedDevice({
+        linkedMinutesAgo: 22 * DAY,
+        lastSyncMinutesAgo: 25,
+        counts: { categories: 2, applications: 4, webDomains: 0 },
+        model: "iPhone 14",
+        os: "18.5",
+        skewSeconds: -4,
+      }),
+      scenario:
+        "CONNECTED, off shift: next shift tomorrow 10:00–18:00; had an EXEMPT_TEMPORARILY override yesterday that has expired.",
     },
     {
       key: "sarah",
@@ -884,7 +1074,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         permissionDeniedMinutesAgo: 2 * DAY - 10,
         skewSeconds: 1,
       },
-      scenario: "Joined but denied Screen Time: PERMISSIONS_MISSING badge, PERMISSION_NEEDS_ATTENTION activity, shift today 12:00–20:00 that cannot be enforced (lifecycle derives SETUP_INCOMPLETE).",
+      scenario:
+        "Joined but denied Screen Time: PERMISSIONS_MISSING badge, PERMISSION_NEEDS_ATTENTION activity, shift today 12:00–20:00 that cannot be enforced (lifecycle derives SETUP_INCOMPLETE).",
     },
     {
       key: "tom",
@@ -898,7 +1089,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       createdMinutesAgo: 3 * DAY,
       employmentStatus: "ACTIVE",
       invite: { channel: "LINK", status: "SENT", code: "TBRWN7", createdMinutesAgo: 2 * DAY },
-      scenario: "INVITED two days ago (invite link sent, code TBRWN7), has not joined; first shifts next week.",
+      scenario:
+        "INVITED two days ago (invite link sent, code TBRWN7), has not joined; first shifts next week.",
     },
     {
       key: "amelia",
@@ -914,9 +1106,21 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       secondaryLocations: ["stalbans"],
       createdMinutesAgo: 27 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 21 * DAY, lastSyncMinutesAgo: 2, counts: { categories: 4, applications: 2, webDomains: 1 }, model: "iPhone 15 Pro", os: "26.0" }),
-      invite: { channel: "LINK", status: "ACCEPTED", createdMinutesAgo: 21 * DAY + 60, acceptedMinutesAgo: 21 * DAY },
-      scenario: "CONNECTED and ON_BREAK right now: shift from 3 hours ago until 3 hours from now, break started 5 minutes ago (ends in 10).",
+      device: connectedDevice({
+        linkedMinutesAgo: 21 * DAY,
+        lastSyncMinutesAgo: 2,
+        counts: { categories: 4, applications: 2, webDomains: 1 },
+        model: "iPhone 15 Pro",
+        os: "26.0",
+      }),
+      invite: {
+        channel: "LINK",
+        status: "ACCEPTED",
+        createdMinutesAgo: 21 * DAY + 60,
+        acceptedMinutesAgo: 21 * DAY,
+      },
+      scenario:
+        "CONNECTED and ON_BREAK right now: shift from 3 hours ago until 3 hours from now, break started 5 minutes ago (ends in 10).",
     },
     {
       key: "oliver",
@@ -930,8 +1134,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 26 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 19 * DAY, lastSyncMinutesAgo: 55, counts: { categories: 3, applications: 1, webDomains: 0 }, model: "iPhone 12", os: "18.4", appVersion: "1.3.2" }),
-      scenario: "CONNECTED night baker at Luton: overnight shift tonight 22:00→06:00 (Kitchen policy, breaks keep restrictions).",
+      device: connectedDevice({
+        linkedMinutesAgo: 19 * DAY,
+        lastSyncMinutesAgo: 55,
+        counts: { categories: 3, applications: 1, webDomains: 0 },
+        model: "iPhone 12",
+        os: "18.4",
+        appVersion: "1.3.2",
+      }),
+      scenario:
+        "CONNECTED night baker at Luton: overnight shift tonight 22:00→06:00 (Kitchen policy, breaks keep restrictions).",
     },
     {
       key: "mia",
@@ -957,7 +1169,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         permissionGrantedMinutesAgo: 6 * 60 - 5,
         skewSeconds: 0,
       },
-      scenario: "SETUP_INCOMPLETE: joined 6 hours ago and approved Screen Time but has not selected any apps yet; the device has never reported an engine state.",
+      scenario:
+        "SETUP_INCOMPLETE: joined 6 hours ago and approved Screen Time but has not selected any apps yet; the device has never reported an engine state.",
     },
     {
       key: "noah",
@@ -971,8 +1184,16 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 26 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 18 * DAY, lastSyncMinutesAgo: 30 * 60, counts: { categories: 3, applications: 0, webDomains: 0 }, model: "iPhone 13", os: "18.3", appVersion: "1.3.2" }),
-      scenario: "CONNECTED but the phone last synced 30 hours ago: SYNC_DELAYED badge, DEVICE_SYNC_DELAYED activity and an unread notification for the owner.",
+      device: connectedDevice({
+        linkedMinutesAgo: 18 * DAY,
+        lastSyncMinutesAgo: 30 * 60,
+        counts: { categories: 3, applications: 0, webDomains: 0 },
+        model: "iPhone 13",
+        os: "18.3",
+        appVersion: "1.3.2",
+      }),
+      scenario:
+        "CONNECTED but the phone last synced 30 hours ago: SYNC_DELAYED badge, DEVICE_SYNC_DELAYED activity and an unread notification for the owner.",
     },
     {
       key: "isla",
@@ -986,7 +1207,8 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 20 * DAY,
       employmentStatus: "ACTIVE",
-      scenario: "NOT_INVITED: on the rota (two of her shifts came from the CSV import) but never invited.",
+      scenario:
+        "NOT_INVITED: on the rota (two of her shifts came from the CSV import) but never invited.",
     },
     {
       key: "leo",
@@ -1001,8 +1223,17 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       createdMinutesAgo: 28 * DAY,
       employmentStatus: "INACTIVE",
       deactivatedMinutesAgo: 4 * DAY,
-      device: connectedDevice({ linkedMinutesAgo: 26 * DAY, lastSyncMinutesAgo: 4 * DAY + 30, counts: { categories: 2, applications: 0, webDomains: 0 }, model: "iPhone 11", os: "17.6", appVersion: "1.2.0", deactivatedMinutesAgo: 4 * DAY }),
-      scenario: "DEACTIVATED: left four days ago; employment INACTIVE, device deactivated, past shifts kept for history.",
+      device: connectedDevice({
+        linkedMinutesAgo: 26 * DAY,
+        lastSyncMinutesAgo: 4 * DAY + 30,
+        counts: { categories: 2, applications: 0, webDomains: 0 },
+        model: "iPhone 11",
+        os: "17.6",
+        appVersion: "1.2.0",
+        deactivatedMinutesAgo: 4 * DAY,
+      }),
+      scenario:
+        "DEACTIVATED: left four days ago; employment INACTIVE, device deactivated, past shifts kept for history.",
     },
     {
       key: "grace",
@@ -1016,8 +1247,15 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: false,
       createdMinutesAgo: 26 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 20 * DAY, lastSyncMinutesAgo: 12, counts: { categories: 2, applications: 3, webDomains: 0 }, model: "iPhone 16", os: "26.0" }),
-      scenario: "CONNECTED, Management department on the Social Media Team policy (EMPLOYEE assignment); her shifts are a weekly Mon/Wed/Fri recurrence.",
+      device: connectedDevice({
+        linkedMinutesAgo: 20 * DAY,
+        lastSyncMinutesAgo: 12,
+        counts: { categories: 2, applications: 3, webDomains: 0 },
+        model: "iPhone 16",
+        os: "26.0",
+      }),
+      scenario:
+        "CONNECTED, Management department on the Social Media Team policy (EMPLOYEE assignment); her shifts are a weekly Mon/Wed/Fri recurrence.",
     },
     {
       key: "harry",
@@ -1032,9 +1270,21 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 27 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 23 * DAY, lastSyncMinutesAgo: 8, counts: { categories: 5, applications: 0, webDomains: 0 }, model: "iPhone 15", os: "18.6" }),
-      invite: { channel: "LINK", status: "ACCEPTED", createdMinutesAgo: 23 * DAY + 60, acceptedMinutesAgo: 23 * DAY },
-      scenario: "CONNECTED Kitchen at St Albans: Kitchen policy + No Phone Break Unlock; early shifts 06:30–14:30 including today.",
+      device: connectedDevice({
+        linkedMinutesAgo: 23 * DAY,
+        lastSyncMinutesAgo: 8,
+        counts: { categories: 5, applications: 0, webDomains: 0 },
+        model: "iPhone 15",
+        os: "18.6",
+      }),
+      invite: {
+        channel: "LINK",
+        status: "ACCEPTED",
+        createdMinutesAgo: 23 * DAY + 60,
+        acceptedMinutesAgo: 23 * DAY,
+      },
+      scenario:
+        "CONNECTED Kitchen at St Albans: Kitchen policy + No Phone Break Unlock; early shifts 06:30–14:30 including today.",
     },
     {
       key: "charlotte",
@@ -1048,7 +1298,13 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: false,
       createdMinutesAgo: 29 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 25 * DAY, lastSyncMinutesAgo: 18, counts: { categories: 1, applications: 2, webDomains: 0 }, model: "iPhone 16 Pro", os: "26.0" }),
+      device: connectedDevice({
+        linkedMinutesAgo: 25 * DAY,
+        lastSyncMinutesAgo: 18,
+        counts: { categories: 1, applications: 2, webDomains: 0 },
+        model: "iPhone 16 Pro",
+        os: "26.0",
+      }),
       scenario: "CONNECTED store manager on the light Management policy (EMPLOYEE assignment).",
     },
     {
@@ -1104,8 +1360,15 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inTeam: true,
       createdMinutesAgo: 12 * DAY,
       employmentStatus: "ACTIVE",
-      device: connectedDevice({ linkedMinutesAgo: 5 * DAY, lastSyncMinutesAgo: 35, counts: { categories: 3, applications: 0, webDomains: 2 }, model: "iPhone 14", os: "18.6" }),
-      scenario: "CONNECTED at Luton five days ago (recent EMPLOYEE_JOINED / SETUP_COMPLETED); Lunch Shift break policy via the location; three shifts came from the CSV import.",
+      device: connectedDevice({
+        linkedMinutesAgo: 5 * DAY,
+        lastSyncMinutesAgo: 35,
+        counts: { categories: 3, applications: 0, webDomains: 2 },
+        model: "iPhone 14",
+        os: "18.6",
+      }),
+      scenario:
+        "CONNECTED at Luton five days ago (recent EMPLOYEE_JOINED / SETUP_COMPLETED); Lunch Shift break policy via the location; three shifts came from the CSV import.",
     },
   ];
 
@@ -1120,7 +1383,10 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     specOf.set(spec.key, spec);
     const id = employeeId(spec.key);
     const createdAt = clock.minutesAgo(spec.createdMinutesAgo);
-    const teamIds = spec.inTeam && spec.department !== "management" ? [teamId(spec.location, spec.department)] : [];
+    const teamIds =
+      spec.inTeam && spec.department !== "management"
+        ? [teamId(spec.location, spec.department)]
+        : [];
     const primaryLocationId = locationId(spec.location);
     const resolution = resolveFor({ id, teamIds, primaryLocationId });
     workPolicyOf.set(spec.key, resolution.work);
@@ -1135,7 +1401,9 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       const inviteExpiresAt = addMinutes(inviteCreatedAt, 14 * DAY);
       const sent = spec.invite.status === "SENT" || spec.invite.status === "ACCEPTED";
       const acceptedAt =
-        spec.invite.acceptedMinutesAgo !== undefined ? clock.minutesAgo(spec.invite.acceptedMinutesAgo) : null;
+        spec.invite.acceptedMinutesAgo !== undefined
+          ? clock.minutesAgo(spec.invite.acceptedMinutesAgo)
+          : null;
       rows.employeeInvites.push({
         id: inviteId,
         organisationId,
@@ -1150,10 +1418,23 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         createdAt: inviteCreatedAt,
       });
       inviteLive =
-        (spec.invite.status === "PENDING" || spec.invite.status === "SENT") && inviteExpiresAt.getTime() > now.getTime();
-      b.audit(actors.admin, "employee.invite_created", "EmployeeInvite", inviteId, inviteCreatedAt, {
-        after: { employeeId: id, channel: spec.invite.channel, status: sent ? "SENT" : "PENDING", expiresAt: inviteExpiresAt },
-      });
+        (spec.invite.status === "PENDING" || spec.invite.status === "SENT") &&
+        inviteExpiresAt.getTime() > now.getTime();
+      b.audit(
+        actors.admin,
+        "employee.invite_created",
+        "EmployeeInvite",
+        inviteId,
+        inviteCreatedAt,
+        {
+          after: {
+            employeeId: id,
+            channel: spec.invite.channel,
+            status: sent ? "SENT" : "PENDING",
+            expiresAt: inviteExpiresAt,
+          },
+        },
+      );
     }
 
     const deviceSpec = spec.device;
@@ -1199,9 +1480,11 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       inviteStatus,
       createdAt,
     });
-    for (const team of teamIds) rows.employeeTeams.push({ employeeId: id, teamId: team, createdAt });
+    for (const team of teamIds)
+      rows.employeeTeams.push({ employeeId: id, teamId: team, createdAt });
     const locationIds = [spec.location, ...(spec.secondaryLocations ?? [])].map(locationId);
-    for (const location of locationIds) rows.employeeLocations.push({ employeeId: id, locationId: location, createdAt });
+    for (const location of locationIds)
+      rows.employeeLocations.push({ employeeId: id, locationId: location, createdAt });
     b.audit(actors.admin, "employee.created", "Employee", id, createdAt, {
       after: {
         firstName: spec.firstName,
@@ -1234,10 +1517,19 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         mobileUserId: b.id(`mobile-user:${spec.key}`),
         employee,
         linkedAt: clock.minutesAgo(deviceSpec.linkedMinutesAgo),
-        lastDeviceSyncAt: deviceSpec.lastSyncMinutesAgo === null ? null : clock.minutesAgo(deviceSpec.lastSyncMinutesAgo),
-        lastSeenAt: deviceSpec.lastSeenMinutesAgo !== undefined ? clock.minutesAgo(deviceSpec.lastSeenMinutesAgo) : null,
+        lastDeviceSyncAt:
+          deviceSpec.lastSyncMinutesAgo === null
+            ? null
+            : clock.minutesAgo(deviceSpec.lastSyncMinutesAgo),
+        lastSeenAt:
+          deviceSpec.lastSeenMinutesAgo !== undefined
+            ? clock.minutesAgo(deviceSpec.lastSeenMinutesAgo)
+            : null,
         isActive: deviceSpec.deactivatedMinutesAgo === undefined,
-        deactivatedAt: deviceSpec.deactivatedMinutesAgo !== undefined ? clock.minutesAgo(deviceSpec.deactivatedMinutesAgo) : null,
+        deactivatedAt:
+          deviceSpec.deactivatedMinutesAgo !== undefined
+            ? clock.minutesAgo(deviceSpec.deactivatedMinutesAgo)
+            : null,
         permissionState: deviceSpec.permission,
         selectionState: deviceSpec.selection,
         counts: deviceSpec.counts,
@@ -1248,7 +1540,10 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         skewSeconds: deviceSpec.skewSeconds ?? null,
         scheduleVersion: deviceSpec.scheduleVersion ?? 7,
       };
-      invariant(device.linkedAt.getTime() >= createdAt.getTime(), `${spec.key}: device linked after the employee was created`);
+      invariant(
+        device.linkedAt.getTime() >= createdAt.getTime(),
+        `${spec.key}: device linked after the employee was created`,
+      );
       devicesByEmployee.set(spec.key, device);
       b.addDevice(device);
     }
@@ -1265,19 +1560,56 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
   const recentlyCreatedAt = clock.at(-1, "17:30");
   const shiftByKey = new Map<string, BuiltShift>();
   const patterns: ShiftPattern[] = [
-    { emp: "zach", days: [-7, -6, -5, -2, -1, 0], start: "09:00", end: "15:00", breaks: [[180, 15]] },
-    { emp: "zach", days: [1, 3, 4, 6, 7], start: "09:00", end: "15:00", breaks: [[180, 15]], recent: true },
-    { emp: "jack", days: [-6, -5, -2, -1, 1, 3, 4, 6], start: "10:00", end: "18:00", breaks: [[240, 15]] },
+    { emp: "zach", days: [-7, -6, -5, -2, -1], start: "09:00", end: "15:00", breaks: [[180, 15]] },
+    {
+      emp: "zach",
+      days: [1, 3, 4, 6, 7],
+      start: "09:00",
+      end: "15:00",
+      breaks: [[180, 15]],
+      recent: true,
+    },
+    {
+      emp: "jack",
+      days: [-6, -5, -2, -1, 1, 3, 4, 6],
+      start: "10:00",
+      end: "18:00",
+      breaks: [[240, 15]],
+    },
     { emp: "sarah", days: [-7, -5, -3, -1, 0, 2, 4, 6], start: "12:00", end: "20:00" },
     { emp: "tom", days: [1, 3, 5], start: "07:00", end: "15:00", recent: true },
-    { emp: "amelia", days: [-7, -6, -4, -2, 1, 3, 5, 7], start: "08:00", end: "16:00", breaks: [[180, 15]] },
+    {
+      emp: "amelia",
+      days: [-7, -6, -4, -2, 1, 3, 5, 7],
+      start: "08:00",
+      end: "16:00",
+      breaks: [[180, 15]],
+    },
     { emp: "oliver", days: [-7, -5, -3, -1, 0, 2, 4, 6], start: "22:00", end: "06:00" },
     { emp: "mia", days: [-6, -4, -2, 1, 2, 5], start: "12:00", end: "18:00" },
-    { emp: "noah", days: [-7, -6, -5, -3, -2, 1, 2, 4, 6], start: "07:00", end: "15:00", breaks: [[240, 15]] },
+    {
+      emp: "noah",
+      days: [-7, -6, -5, -3, -2, 1, 2, 4, 6],
+      start: "07:00",
+      end: "15:00",
+      breaks: [[240, 15]],
+    },
     { emp: "isla", days: [-6, -4], start: "09:00", end: "17:00" },
     { emp: "leo", days: [-7, -6], start: "07:00", end: "15:00" },
-    { emp: "harry", days: [-7, -5, -4, -2, -1, 0, 1, 3, 4, 6], start: "06:30", end: "14:30", breaks: [[240, 15]] },
-    { emp: "charlotte", days: [-6, -5, -3, -2, 1, 2, 4, 5], start: "08:30", end: "17:30", breaks: [[270, 15]] },
+    {
+      emp: "harry",
+      days: [-7, -5, -4, -2, -1, 0, 1, 3, 4, 6],
+      start: "06:30",
+      end: "14:30",
+      breaks: [[240, 15]],
+    },
+    {
+      emp: "charlotte",
+      days: [-6, -5, -3, -2, 1, 2, 4, 5],
+      start: "08:30",
+      end: "17:30",
+      breaks: [[270, 15]],
+    },
     { emp: "james", days: [1, 3, 5], start: "09:00", end: "17:00", recent: true },
     { emp: "ethan", days: [2, 3], start: "11:00", end: "19:00", recent: true },
     { emp: "sophie", days: [-3, -1], start: "09:00", end: "17:00", breaks: [[240, 30]] },
@@ -1302,6 +1634,20 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       shiftByKey.set(key, shift);
     }
   }
+
+  // Zach: today's shift is anchored on now (2 h in, 4 h to go — his usual six hours) so he is WORKING whenever
+  // the seed runs; the other days keep the 09:00–15:00 pattern above.
+  const zachToday = b.addShift({
+    key: "zach:0",
+    employee: employee("zach"),
+    startsAt: addMinutes(now, -120),
+    endsAt: addMinutes(now, 240),
+    locationId: locationId("harpenden"),
+    breaks: [[180, 15]],
+    createdAt: rotaPublishedAt,
+    createdBy: actors.owner,
+  });
+  shiftByKey.set("zach:0", zachToday);
 
   // Amelia: a shift centred on now so she is mid-shift (and on a break) whenever the seed runs.
   const ameliaToday = b.addShift({
@@ -1377,7 +1723,15 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
   const importedAt = clock.at(-3, "14:20");
   const uploadedAt = addMinutes(importedAt, -12);
   const importFilename = "luton-rota-week.csv";
-  const importHeaders = ["Employee", "Employee ID", "Date", "Start", "End", "Location", "Break (mins)"];
+  const importHeaders = [
+    "Employee",
+    "Employee ID",
+    "Date",
+    "Start",
+    "End",
+    "Location",
+    "Break (mins)",
+  ];
   const importMapping = {
     Employee: "employee_name",
     "Employee ID": "employee_id",
@@ -1400,11 +1754,66 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     problems: Array<Record<string, unknown>>;
   }
   const importRowSpecs: ImportRowSpec[] = [
-    { rowNumber: 2, employee: "sophie", name: "Sophie Martin", externalId: "E1077", day: 1, start: "09:00", end: "17:00", breakMinutes: 30, status: "IMPORTED", problems: [] },
-    { rowNumber: 3, employee: "sophie", name: "Sophie Martin", externalId: "E1077", day: 4, start: "09:00", end: "17:00", breakMinutes: 30, status: "IMPORTED", problems: [] },
-    { rowNumber: 4, employee: "sophie", name: "Sophie Martin", externalId: "E1077", day: 6, start: "09:00", end: "17:00", breakMinutes: 30, status: "IMPORTED", problems: [] },
-    { rowNumber: 5, employee: "isla", name: "Isla Murphy", externalId: "E1045", day: 1, start: "09:00", end: "17:00", breakMinutes: 0, status: "IMPORTED", problems: [] },
-    { rowNumber: 6, employee: "isla", name: "Isla Murphy", externalId: "E1045", day: 3, start: "09:00", end: "17:00", breakMinutes: 0, status: "IMPORTED", problems: [] },
+    {
+      rowNumber: 2,
+      employee: "sophie",
+      name: "Sophie Martin",
+      externalId: "E1077",
+      day: 1,
+      start: "09:00",
+      end: "17:00",
+      breakMinutes: 30,
+      status: "IMPORTED",
+      problems: [],
+    },
+    {
+      rowNumber: 3,
+      employee: "sophie",
+      name: "Sophie Martin",
+      externalId: "E1077",
+      day: 4,
+      start: "09:00",
+      end: "17:00",
+      breakMinutes: 30,
+      status: "IMPORTED",
+      problems: [],
+    },
+    {
+      rowNumber: 4,
+      employee: "sophie",
+      name: "Sophie Martin",
+      externalId: "E1077",
+      day: 6,
+      start: "09:00",
+      end: "17:00",
+      breakMinutes: 30,
+      status: "IMPORTED",
+      problems: [],
+    },
+    {
+      rowNumber: 5,
+      employee: "isla",
+      name: "Isla Murphy",
+      externalId: "E1045",
+      day: 1,
+      start: "09:00",
+      end: "17:00",
+      breakMinutes: 0,
+      status: "IMPORTED",
+      problems: [],
+    },
+    {
+      rowNumber: 6,
+      employee: "isla",
+      name: "Isla Murphy",
+      externalId: "E1045",
+      day: 3,
+      start: "09:00",
+      end: "17:00",
+      breakMinutes: 0,
+      status: "IMPORTED",
+      problems: [],
+    },
     {
       rowNumber: 7,
       employee: null,
@@ -1491,7 +1900,9 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       date: clock.day(row.day),
       ...(validTime ? { startTime: row.start } : {}),
       endTime: row.end,
-      ...(window ? { startsAt: window.startsAt.toISOString(), endsAt: window.endsAt.toISOString() } : {}),
+      ...(window
+        ? { startsAt: window.startsAt.toISOString(), endsAt: window.endsAt.toISOString() }
+        : {}),
       timezone: tz,
       overnight: false,
       locationName: "Luton",
@@ -1539,7 +1950,12 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     createdAt: uploadedAt,
   });
   b.audit(actors.admin, "import.uploaded", "ShiftImport", importId, uploadedAt, {
-    after: { filename: importFilename, fileSizeBytes: 1472, rowCount: importRowSpecs.length, headers: importHeaders },
+    after: {
+      filename: importFilename,
+      fileSizeBytes: 1472,
+      rowCount: importRowSpecs.length,
+      headers: importHeaders,
+    },
   });
   b.audit(actors.admin, "import.committed", "ShiftImport", importId, importedAt, {
     before: { status: "VALIDATED" },
@@ -1564,7 +1980,9 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       rowsSkipped: skippedCount,
       rowsWithErrors: errorCount,
       employeesCreated: 0,
-      employeeCount: new Set(importRowSpecs.filter((r) => r.status === "IMPORTED").map((r) => r.employee)).size,
+      employeeCount: new Set(
+        importRowSpecs.filter((r) => r.status === "IMPORTED").map((r) => r.employee),
+      ).size,
     },
   });
 
@@ -1604,7 +2022,10 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
           version: 1,
           recurrenceRule: null,
           parentRecurrenceId: null,
-          scheduledBreaks: shift.breaks.map(([offsetMinutesFromStart, durationMinutes]) => ({ offsetMinutesFromStart, durationMinutes })),
+          scheduledBreaks: shift.breaks.map(([offsetMinutesFromStart, durationMinutes]) => ({
+            offsetMinutesFromStart,
+            durationMinutes,
+          })),
         },
       });
     }
@@ -1644,13 +2065,48 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
       restrictionBehaviour: breakBehaviourOf(breakPolicy),
     });
   };
-  // Zach's 10:15–10:30 break is today's when it is already over, otherwise yesterday's (same shift pattern).
-  const zachBreakDay = clock.isPast(clock.at(0, "10:30")) ? 0 : -1;
-  session("zach:expired", shiftByKey.get(`zach:${zachBreakDay}`), clock.at(zachBreakDay, "10:15"), clock.at(zachBreakDay, "10:30"), clock.at(zachBreakDay, "10:30"), "EXPIRED");
-  session("harry:ended", shiftByKey.get("harry:-1"), clock.at(-1, "09:45"), clock.at(-1, "10:00"), clock.at(-1, "09:57"), "EMPLOYEE_ENDED");
-  session("amelia:expired", shiftByKey.get("amelia:-2"), clock.at(-2, "11:00"), clock.at(-2, "11:15"), clock.at(-2, "11:15"), "EXPIRED");
-  session("charlotte:expired", shiftByKey.get("charlotte:-3"), clock.at(-3, "13:00"), clock.at(-3, "13:15"), clock.at(-3, "13:15"), "EXPIRED");
-  session("sophie:ended", shiftByKey.get("sophie:-3"), clock.at(-3, "13:00"), clock.at(-3, "13:30"), clock.at(-3, "13:28"), "EMPLOYEE_ENDED");
+  // Zach: a 15-minute break 75 minutes into today's shift (≥ 60 min after start per Standard Break) that ran
+  // its full length and expired half an hour ago, so his device has since reported WORKING again.
+  session(
+    "zach:expired",
+    zachToday,
+    addMinutes(now, -45),
+    addMinutes(now, -30),
+    addMinutes(now, -30),
+    "EXPIRED",
+  );
+  session(
+    "harry:ended",
+    shiftByKey.get("harry:-1"),
+    clock.at(-1, "09:45"),
+    clock.at(-1, "10:00"),
+    clock.at(-1, "09:57"),
+    "EMPLOYEE_ENDED",
+  );
+  session(
+    "amelia:expired",
+    shiftByKey.get("amelia:-2"),
+    clock.at(-2, "11:00"),
+    clock.at(-2, "11:15"),
+    clock.at(-2, "11:15"),
+    "EXPIRED",
+  );
+  session(
+    "charlotte:expired",
+    shiftByKey.get("charlotte:-3"),
+    clock.at(-3, "13:00"),
+    clock.at(-3, "13:15"),
+    clock.at(-3, "13:15"),
+    "EXPIRED",
+  );
+  session(
+    "sophie:ended",
+    shiftByKey.get("sophie:-3"),
+    clock.at(-3, "13:00"),
+    clock.at(-3, "13:30"),
+    clock.at(-3, "13:28"),
+    "EMPLOYEE_ENDED",
+  );
   session("amelia:active", ameliaToday, clock.minutesAgo(5), clock.minutesFromNow(10), null, null);
 
   // ── Manager override (expired): Jack was exempted for two hours yesterday ───────────────────────────
@@ -1725,7 +2181,11 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     const spec = specOf.get(device.employee.key as EmployeeKey);
     invariant(spec?.device, `device spec for ${device.employee.key}`);
     const d = spec.device;
-    const base = { actor: "EMPLOYEE_DEVICE" as const, employeeId: device.employee.id, deviceId: device.id };
+    const base = {
+      actor: "EMPLOYEE_DEVICE" as const,
+      employeeId: device.employee.id,
+      deviceId: device.id,
+    };
     const inviteId = inviteIdOf.get(spec.key) ?? null;
     b.activity({
       ...base,
@@ -1744,7 +2204,13 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     });
     if (d.setupCompletedMinutesAgo !== undefined) {
       const completedAt = clock.minutesAgo(d.setupCompletedMinutesAgo);
-      b.activity({ ...base, type: "PERMISSION_GRANTED", at: addMinutes(completedAt, -2), clientEventId: "setup:permission", metadata: { permissionState: "APPROVED" } });
+      b.activity({
+        ...base,
+        type: "PERMISSION_GRANTED",
+        at: addMinutes(completedAt, -2),
+        clientEventId: "setup:permission",
+        metadata: { permissionState: "APPROVED" },
+      });
       b.activity({
         ...base,
         type: "SELECTION_CONFIGURED",
@@ -1757,11 +2223,21 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         type: "SETUP_COMPLETED",
         at: completedAt,
         clientEventId: "setup:completed",
-        metadata: { permissionState: "APPROVED", selectionState: "CONFIGURED", selectionCounts: device.counts },
+        metadata: {
+          permissionState: "APPROVED",
+          selectionState: "CONFIGURED",
+          selectionCounts: device.counts,
+        },
       });
     }
     if (d.permissionGrantedMinutesAgo !== undefined) {
-      b.activity({ ...base, type: "PERMISSION_GRANTED", at: clock.minutesAgo(d.permissionGrantedMinutesAgo), clientEventId: "setup:permission", metadata: { permissionState: "APPROVED" } });
+      b.activity({
+        ...base,
+        type: "PERMISSION_GRANTED",
+        at: clock.minutesAgo(d.permissionGrantedMinutesAgo),
+        clientEventId: "setup:permission",
+        metadata: { permissionState: "APPROVED" },
+      });
     }
     if (d.permissionDeniedMinutesAgo !== undefined) {
       b.activity({
@@ -1769,7 +2245,11 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
         type: "PERMISSION_NEEDS_ATTENTION",
         at: clock.minutesAgo(d.permissionDeniedMinutesAgo),
         clientEventId: "permission:denied",
-        metadata: { permissionState: "DENIED", previousPermissionState: "NOT_DETERMINED", engineState: "PERMISSION_ERROR" },
+        metadata: {
+          permissionState: "DENIED",
+          previousPermissionState: "NOT_DETERMINED",
+          engineState: "PERMISSION_ERROR",
+        },
       });
     }
     b.recordWorkModeEvents(device);
@@ -1807,7 +2287,10 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
   invariant(noahDevice?.lastDeviceSyncAt, "Noah's device has a last sync");
   const noahDelayedAt = addMinutes(noahDevice.lastDeviceSyncAt, 24 * 60);
   const noahEvaluation = evaluations.find((e) => e.device.id === noahDevice.id);
-  invariant(noahEvaluation?.badge?.badge === "SYNC_DELAYED", "Noah's device evaluates to SYNC_DELAYED");
+  invariant(
+    noahEvaluation?.badge?.badge === "SYNC_DELAYED",
+    "Noah's device evaluates to SYNC_DELAYED",
+  );
   // Same shape the work-state job records when a sync-delayed episode starts.
   b.activity({
     type: "DEVICE_SYNC_DELAYED",
@@ -1874,7 +2357,11 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     title: "Noah Wright's phone has not synced for 30 hours",
     body: "The last device sync was 30 hours ago. Work Mode may not activate for Noah's next shift until the app is opened.",
     href: `/employees/${noahDevice.employee.id}`,
-    metadata: { employeeId: noahDevice.employee.id, deviceId: noahDevice.id, lastDeviceSyncAt: noahDevice.lastDeviceSyncAt.toISOString() },
+    metadata: {
+      employeeId: noahDevice.employee.id,
+      deviceId: noahDevice.id,
+      lastDeviceSyncAt: noahDevice.lastDeviceSyncAt.toISOString(),
+    },
     at: noahDelayedAt,
     readAt: null,
   });
@@ -1890,13 +2377,22 @@ export function buildHarpenden(clock: SeedClock, hashFor: (email: string) => str
     notifyRequested: true,
     createdAt: clock.daysAgo(10),
   });
-  b.audit(actors.owner, "integration.notify_requested", "Integration", b.id("integration:planday"), clock.daysAgo(10), {
-    after: { provider: "PLANDAY", notifyRequested: true },
-  });
+  b.audit(
+    actors.owner,
+    "integration.notify_requested",
+    "Integration",
+    b.id("integration:planday"),
+    clock.daysAgo(10),
+    {
+      after: { provider: "PLANDAY", notifyRequested: true },
+    },
+  );
 
   // ── Summary ────────────────────────────────────────────────────────────────
-  const policyNameOf = (key: WorkPolicyKey): string => policyDefs.find((d) => d.key === key)?.name ?? key;
-  const breakPolicyNameOf = (key: BreakPolicyKey): string => breakPolicyDefs.find((d) => d.key === key)?.name ?? key;
+  const policyNameOf = (key: WorkPolicyKey): string =>
+    policyDefs.find((d) => d.key === key)?.name ?? key;
+  const breakPolicyNameOf = (key: BreakPolicyKey): string =>
+    breakPolicyDefs.find((d) => d.key === key)?.name ?? key;
   const summaries: EmployeeSummary[] = specs.map((spec) => {
     const built = employee(spec.key);
     const evaluation = evaluations.find((e) => e.device.employee.id === built.id);

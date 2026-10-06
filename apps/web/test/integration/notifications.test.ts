@@ -29,8 +29,15 @@ async function setup() {
   return { org, manager, ownerJar, managerJar };
 }
 
-async function list(jar: CookieJar, query: Record<string, string | number | boolean | undefined> = {}) {
-  const res = await callRoute<ListNotificationsResponse>(listRoute, { path: "/api/notifications", query, jar });
+async function list(
+  jar: CookieJar,
+  query: Record<string, string | number | boolean | undefined> = {},
+) {
+  const res = await callRoute<ListNotificationsResponse>(listRoute, {
+    path: "/api/notifications",
+    query,
+    jar,
+  });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body;
 }
@@ -59,7 +66,10 @@ describe("createManagerNotification", () => {
       metadata: { employeeId: "abc", href: "/employees/abc" },
     });
     expect(events.filter((e) => e.type === "notification.created")).toHaveLength(2);
-    expect(events[0]?.payload).toMatchObject({ type: "EMPLOYEE_JOINED", recipientId: expect.any(String) });
+    expect(events[0]?.payload).toMatchObject({
+      type: "EMPLOYEE_JOINED",
+      recipientId: expect.any(String),
+    });
     expect(await prisma.notification.count({ where: { recipientId: outsider.id } })).toBe(0);
   });
 
@@ -80,7 +90,13 @@ describe("createManagerNotification", () => {
 
     // Unknown (additive) kinds are never muted by preferences; `db` may be passed positionally.
     const digest = await createManagerNotification(
-      { organisationId: org.organisation.id, userId: manager.id, type: "COMPLIANCE_DIGEST", title: "t", body: "b" },
+      {
+        organisationId: org.organisation.id,
+        userId: manager.id,
+        type: "COMPLIANCE_DIGEST",
+        title: "t",
+        body: "b",
+      },
       prisma,
     );
     expect(digest).toHaveLength(1);
@@ -245,5 +261,54 @@ describe("marking notifications read", () => {
     expect(
       await prisma.notification.count({ where: { recipientId: org.owner.id, readAt: null } }),
     ).toBe(0);
+  });
+
+  it("keeps one feed per organisation: a manager of two organisations only sees and reads the current one", async () => {
+    const { org, ownerJar } = await setup();
+    const second = await createTestOrg({ owner: org.owner });
+    await createManagerNotification({
+      organisationId: org.organisation.id,
+      userId: org.owner.id,
+      type: "EMPLOYEE_JOINED",
+      title: "In first",
+      body: "b",
+    });
+    const [inSecond] = await createManagerNotification({
+      organisationId: second.organisation.id,
+      userId: org.owner.id,
+      type: "EMPLOYEE_JOINED",
+      title: "In second",
+      body: "b",
+    });
+
+    const first = await list(ownerJar);
+    expect(first.items.map((n) => n.title)).toEqual(["In first"]);
+    expect(first.unreadCount).toBe(1);
+
+    // Addressed to the same user, but in the other organisation: invisible from here (404, not 403).
+    const foreign = await callRoute<ErrorBody>(readRoute, {
+      method: "POST",
+      path: `/api/notifications/${inSecond!.id}/read`,
+      params: { id: inSecond!.id },
+      jar: ownerJar,
+      body: {},
+    });
+    expect(foreign.status).toBe(404);
+    const all = await callRoute<MarkAllNotificationsReadResponse>(readAllRoute, {
+      method: "POST",
+      path: "/api/notifications/read-all",
+      jar: ownerJar,
+      body: {},
+    });
+    expect(all.body.updated).toBe(1);
+    expect(
+      (await prisma.notification.findUniqueOrThrow({ where: { id: inSecond!.id } })).readAt,
+    ).toBeNull();
+
+    // Switching organisation switches the feed.
+    const secondJar = await loginAs(org.owner, { organisationId: second.organisation.id });
+    const other = await list(secondJar);
+    expect(other.items.map((n) => n.title)).toEqual(["In second"]);
+    expect(other.unreadCount).toBe(1);
   });
 });

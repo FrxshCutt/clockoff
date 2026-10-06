@@ -2,22 +2,44 @@
 
 import type { ColumnMapping, ImportField } from "@workmode/shared/csv/types";
 import type { ImportResponse, ShiftImport } from "@workmode/validation/imports";
-import { ArrowLeft, ArrowRight, Check, CircleAlert, CircleDashed, LoaderCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CircleAlert,
+  CircleDashed,
+  LoaderCircle,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { FormErrorAlert } from "@/components/forms/form-fields";
 import { InlineAlert } from "@/components/inline-alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { hasErrorCode } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { useLocations } from "@/components/schedule/schedule-queries";
 import { ImportOptionsFields } from "./import-options-fields";
 import { useSaveMapping } from "./import-queries";
 import {
   FIELD_OPTIONS,
   IGNORE_COLUMN,
   confidenceLabel,
+  effectiveImportTimezone,
   fieldOf,
   initialMapping,
   isImportField,
@@ -55,8 +77,18 @@ const CONFIDENCE_COPY = {
  * confirmation (generic headers such as "ID" or "Name") block "Continue" until confirmed or changed; each
  * field can be supplied by one column, so picking it elsewhere un-maps the previous column.
  */
-export function MappingStep({ record, suggestion, sampleRows, canImport, organisationTimezone, onSaved, onBack }: MappingStepProps) {
-  const [mapping, setMapping] = useState<ColumnMapping>(() => initialMapping(record.headers, record.columnMapping, suggestion?.mapping));
+export function MappingStep({
+  record,
+  suggestion,
+  sampleRows,
+  canImport,
+  organisationTimezone,
+  onSaved,
+  onBack,
+}: MappingStepProps) {
+  const [mapping, setMapping] = useState<ColumnMapping>(() =>
+    initialMapping(record.headers, record.columnMapping, suggestion?.mapping),
+  );
   const [confirmed, setConfirmed] = useState<ReadonlySet<string>>(() => new Set());
   const [options, setOptions] = useState<ImportOptionsInput>({
     dateFormat: record.options.dateFormat,
@@ -64,10 +96,14 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
     locationId: record.options.locationId,
   });
   const save = useSaveMapping(record.id);
+  const locations = useLocations();
 
   const status = useMemo(() => mappingStatus(mapping), [mapping]);
   const requirements = useMemo(() => mappingRequirements(mapping), [mapping]);
-  const unconfirmed = useMemo(() => unconfirmedHeaders(mapping, suggestion, confirmed), [mapping, suggestion, confirmed]);
+  const unconfirmed = useMemo(
+    () => unconfirmedHeaders(mapping, suggestion, confirmed),
+    [mapping, suggestion, confirmed],
+  );
   const duplicatedFields = new Set<ImportField>(status.check.duplicated);
 
   const setField = (header: string, value: string) => {
@@ -77,14 +113,22 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
   };
   const confirm = (header: string) => setConfirmed((current) => new Set([...current, header]));
 
-  const canContinue = canImport && status.canContinue && unconfirmed.length === 0 && !save.isPending;
+  const canContinue =
+    canImport && status.canContinue && unconfirmed.length === 0 && !save.isPending;
 
   const submit = async () => {
     if (!canContinue) return;
     try {
+      // The stored options always hold a resolved zone, and the API keeps it when none is sent — so "Use default"
+      // has to send the default (location zone, else organisation zone) explicitly to take effect.
+      const timezone =
+        options.timezone ??
+        (locations.data
+          ? effectiveImportTimezone(options, locations.data, organisationTimezone)
+          : undefined);
       const response = await save.mutateAsync({
         mapping,
-        options: { dateFormat: options.dateFormat, timezone: options.timezone ?? undefined, locationId: options.locationId },
+        options: { dateFormat: options.dateFormat, timezone, locationId: options.locationId },
       });
       onSaved(response);
     } catch {
@@ -92,7 +136,9 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
     }
   };
 
-  const incompleteDetails = hasErrorCode(save.error, "IMPORT_MAPPING_INCOMPLETE") ? readMappingCheckDetails(save.error.details) : [];
+  const incompleteDetails = hasErrorCode(save.error, "IMPORT_MAPPING_INCOMPLETE")
+    ? readMappingCheckDetails(save.error.details)
+    : [];
 
   return (
     <div className="space-y-6">
@@ -142,20 +188,38 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
                     </TableCell>
                     <TableCell className="px-4 py-3 align-top">
                       {samples.length > 0 ? (
-                        <ul className="flex flex-wrap gap-1" aria-label={`Sample values for ${header}`}>
+                        <ul
+                          className="flex flex-wrap gap-1"
+                          aria-label={`Sample values for ${header}`}
+                        >
                           {samples.map((sample) => (
-                            <li key={sample} className="bg-muted text-muted-foreground max-w-48 truncate rounded px-1.5 py-0.5 font-mono text-xs">
+                            <li
+                              key={sample}
+                              className="bg-muted text-muted-foreground max-w-48 truncate rounded px-1.5 py-0.5 font-mono text-xs"
+                            >
                               {sample}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <span className="text-muted-foreground text-xs">{sampleRows.length === 0 ? "Samples are only shown right after upload" : "No values in the first rows"}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {sampleRows.length === 0
+                            ? "Samples are only shown right after upload"
+                            : "No values in the first rows"}
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="px-4 py-3 align-top">
-                      <Select value={field ?? IGNORE_COLUMN} onValueChange={(value) => setField(header, value)} disabled={!canImport || save.isPending}>
-                        <SelectTrigger className="w-full" aria-label={`Field for column ${header}`} aria-invalid={duplicated || undefined}>
+                      <Select
+                        value={field ?? IGNORE_COLUMN}
+                        onValueChange={(value) => setField(header, value)}
+                        disabled={!canImport || save.isPending}
+                      >
+                        <SelectTrigger
+                          className="w-full"
+                          aria-label={`Field for column ${header}`}
+                          aria-invalid={duplicated || undefined}
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -186,14 +250,23 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
                             <CircleAlert className="size-3.5" aria-hidden="true" />
                             Please confirm
                           </span>
-                          <Button type="button" variant="outline" size="xs" onClick={() => confirm(header)} disabled={!canImport}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="xs"
+                            onClick={() => confirm(header)}
+                            disabled={!canImport}
+                          >
                             <Check aria-hidden="true" />
                             Confirm
                           </Button>
                         </div>
                       ) : field !== null ? (
                         <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                          <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                          <Check
+                            className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                            aria-hidden="true"
+                          />
                           Mapped
                         </span>
                       ) : (
@@ -214,13 +287,25 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
               {requirements.map((requirement) => (
                 <li key={requirement.key} className="flex items-start gap-2 text-sm">
                   {requirement.satisfied ? (
-                    <Check className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                    <Check
+                      className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <CircleDashed className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <CircleDashed
+                      className="text-muted-foreground mt-0.5 size-4 shrink-0"
+                      aria-hidden="true"
+                    />
                   )}
                   <div className="min-w-0">
-                    <p className={cn(!requirement.satisfied && "text-muted-foreground")}>{requirement.label}</p>
-                    {requirement.headers.length > 0 ? <p className="text-muted-foreground truncate text-xs">from {requirement.headers.join(", ")}</p> : null}
+                    <p className={cn(!requirement.satisfied && "text-muted-foreground")}>
+                      {requirement.label}
+                    </p>
+                    {requirement.headers.length > 0 ? (
+                      <p className="text-muted-foreground truncate text-xs">
+                        from {requirement.headers.join(", ")}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="sr-only">{requirement.satisfied ? "mapped" : "not mapped"}</span>
                 </li>
@@ -228,20 +313,35 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
             </ul>
             {unconfirmed.length > 0 ? (
               <p className="mt-3 text-xs text-amber-700 dark:text-amber-400">
-                {unconfirmed.length === 1 ? "1 suggested column needs confirming." : `${unconfirmed.length} suggested columns need confirming.`}
+                {unconfirmed.length === 1
+                  ? "1 suggested column needs confirming."
+                  : `${unconfirmed.length} suggested columns need confirming.`}
               </p>
             ) : null}
           </div>
-          <p className="text-muted-foreground text-xs">Unmapped columns are ignored but kept in the error report. Separate first/last name columns must be joined in the spreadsheet first.</p>
+          <p className="text-muted-foreground text-xs">
+            Unmapped columns are ignored but kept in the error report. Separate first/last name
+            columns must be joined in the spreadsheet first.
+          </p>
         </aside>
       </div>
 
       <section className="space-y-3" aria-label="Import options">
         <div>
           <h3 className="text-sm font-semibold">Import options</h3>
-          <p className="text-muted-foreground text-sm">Change these if dates or times come out wrong, then re-validate.</p>
+          <p className="text-muted-foreground text-sm">
+            Change these if dates or times come out wrong, then re-validate.
+          </p>
         </div>
-        <ImportOptionsFields value={options} onChange={(next) => { save.reset(); setOptions(next); }} organisationTimezone={organisationTimezone} disabled={!canImport || save.isPending} />
+        <ImportOptionsFields
+          value={options}
+          onChange={(next) => {
+            save.reset();
+            setOptions(next);
+          }}
+          organisationTimezone={organisationTimezone}
+          disabled={!canImport || save.isPending}
+        />
       </section>
 
       {save.error ? (
@@ -268,8 +368,18 @@ export function MappingStep({ record, suggestion, sampleRows, canImport, organis
           Back
         </Button>
         <div className="flex items-center gap-3">
-          {!status.canContinue ? <p className="text-muted-foreground text-sm">Still needed: {status.missing.concat(status.duplicated.map((d) => `${d} mapped once`)).join(", ")}</p> : null}
-          <Button type="button" onClick={() => void submit()} disabled={!canContinue} aria-busy={save.isPending || undefined}>
+          {!status.canContinue ? (
+            <p className="text-muted-foreground text-sm">
+              Still needed:{" "}
+              {status.missing.concat(status.duplicated.map((d) => `${d} mapped once`)).join(", ")}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            onClick={() => void submit()}
+            disabled={!canContinue}
+            aria-busy={save.isPending || undefined}
+          >
             {save.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
             {save.isPending ? "Saving…" : "Save mapping and validate"}
             {!save.isPending ? <ArrowRight aria-hidden="true" /> : null}

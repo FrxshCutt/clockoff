@@ -8,8 +8,8 @@ export const GET = createHandler(
   async ({ ctx, query }) => listTeams(ctx, query),
 );
 
-/** `POST /api/teams` (employees:write) → 201 `{ team }`. Unknown location / employees → 404. */
+/** `POST /api/teams` (org:manage) → 201 `{ team }`. Unknown location / employees → 404. */
 export const POST = createHandler(
-  { auth: "manager", permission: "employees:write", body: createTeamSchema },
+  { auth: "manager", permission: "org:manage", body: createTeamSchema },
   async ({ ctx, body }) => json({ team: await createTeam(ctx, body) }, 201),
 );

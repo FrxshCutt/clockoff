@@ -9,15 +9,15 @@ export const GET = createHandler(
   async ({ ctx, params }) => ({ team: await getTeam(ctx, params.id) }),
 );
 
-/** `PATCH /api/teams/:id` (employees:write) → `{ team }`. `locationId: null` detaches the team. */
+/** `PATCH /api/teams/:id` (org:manage) → `{ team }`. `locationId: null` detaches the team. */
 export const PATCH = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema, body: updateTeamSchema },
+  { auth: "manager", permission: "org:manage", params: idParamsSchema, body: updateTeamSchema },
   async ({ ctx, params, body }) => ({ team: await updateTeam(ctx, params.id, body) }),
 );
 
-/** `DELETE /api/teams/:id` (employees:write) → 204. */
+/** `DELETE /api/teams/:id` (org:manage) → 204. */
 export const DELETE = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema },
+  { auth: "manager", permission: "org:manage", params: idParamsSchema },
   async ({ ctx, params }) => {
     await deleteTeam(ctx, params.id);
   },

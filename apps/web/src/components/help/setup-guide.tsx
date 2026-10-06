@@ -10,7 +10,7 @@ export function SetupGuide() {
         {SETUP_STEPS.map((step, index) => (
           <li key={step.key} className="relative">
             <span
-              className="bg-primary text-primary-foreground absolute top-0 -left-[calc(2rem+1px)] flex size-8 -translate-x-1/2 items-center justify-center rounded-full text-sm font-semibold tabular-nums ring-4 ring-background"
+              className="bg-primary text-primary-foreground ring-background absolute top-0 -left-[calc(2rem+1px)] flex size-8 -translate-x-1/2 items-center justify-center rounded-full text-sm font-semibold tabular-nums ring-4"
               aria-hidden="true"
             >
               {index + 1}

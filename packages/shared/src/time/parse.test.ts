@@ -199,7 +199,9 @@ describe("calendar helpers", () => {
   });
 
   it("calendarToUtcMs keeps years 0–99 (Date.UTC would map them to 1900–1999) and rolls over like Date.UTC", () => {
-    expect(new Date(calendarToUtcMs(26, 10, 6, 9, 30)).toISOString()).toBe("0026-10-06T09:30:00.000Z");
+    expect(new Date(calendarToUtcMs(26, 10, 6, 9, 30)).toISOString()).toBe(
+      "0026-10-06T09:30:00.000Z",
+    );
     expect(new Date(calendarToUtcMs(0, 2, 29)).toISOString()).toBe("0000-02-29T00:00:00.000Z"); // year 0 is leap
     expect(new Date(calendarToUtcMs(99, 12, 32)).toISOString()).toBe("0100-01-01T00:00:00.000Z");
     expect(calendarToUtcMs(2026, 10, 6, 9, 30, 15)).toBe(Date.UTC(2026, 9, 6, 9, 30, 15));

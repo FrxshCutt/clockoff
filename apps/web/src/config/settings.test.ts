@@ -12,7 +12,13 @@ import {
 
 describe("settings tabs", () => {
   it("has the five tabs from the spec, organisation first", () => {
-    expect(SETTINGS_TABS).toEqual(["organisation", "join-code", "members", "notifications", "danger-zone"]);
+    expect(SETTINGS_TABS).toEqual([
+      "organisation",
+      "join-code",
+      "members",
+      "notifications",
+      "danger-zone",
+    ]);
     expect(DEFAULT_SETTINGS_TAB).toBe("organisation");
   });
 
@@ -36,7 +42,9 @@ describe("settings tabs", () => {
   });
 
   it("has copy for every manager notification type", () => {
-    expect(Object.keys(NOTIFICATION_TYPE_COPY).sort()).toEqual([...MANAGER_NOTIFICATION_TYPES].sort());
+    expect(Object.keys(NOTIFICATION_TYPE_COPY).sort()).toEqual(
+      [...MANAGER_NOTIFICATION_TYPES].sort(),
+    );
     for (const type of MANAGER_NOTIFICATION_TYPES) {
       expect(NOTIFICATION_TYPE_COPY[type].label, type).toBeTruthy();
       expect(NOTIFICATION_TYPE_COPY[type].description, type).toMatch(/\.$/);

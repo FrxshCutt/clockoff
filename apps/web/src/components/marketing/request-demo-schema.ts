@@ -17,18 +17,40 @@ export const TEAM_SIZE_OPTIONS = ["1-10", "11-50", "51-200", "201-1000", "1000+"
 export type TeamSizeOption = (typeof TEAM_SIZE_OPTIONS)[number];
 
 /** Mirrors the limits in `requestDemoSchema` so the form never accepts something the API rejects. */
-export const REQUEST_DEMO_LIMITS = { nameMaxLength: 120, emailMaxLength: 254, companyMaxLength: 160, messageMaxLength: 2000, sourceMaxLength: 100 } as const;
+export const REQUEST_DEMO_LIMITS = {
+  nameMaxLength: 120,
+  emailMaxLength: 254,
+  companyMaxLength: 160,
+  messageMaxLength: 2000,
+  sourceMaxLength: 100,
+} as const;
 
 export const requestDemoFormSchema = z.object({
-  name: z.string().trim().min(1, "Enter your name").max(REQUEST_DEMO_LIMITS.nameMaxLength, `Keep your name under ${REQUEST_DEMO_LIMITS.nameMaxLength} characters`),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Enter your name")
+    .max(
+      REQUEST_DEMO_LIMITS.nameMaxLength,
+      `Keep your name under ${REQUEST_DEMO_LIMITS.nameMaxLength} characters`,
+    ),
   email: z.email("Enter a work email address").max(REQUEST_DEMO_LIMITS.emailMaxLength),
   company: z
     .string()
     .trim()
     .min(1, "Enter your company name")
-    .max(REQUEST_DEMO_LIMITS.companyMaxLength, `Keep the company name under ${REQUEST_DEMO_LIMITS.companyMaxLength} characters`),
+    .max(
+      REQUEST_DEMO_LIMITS.companyMaxLength,
+      `Keep the company name under ${REQUEST_DEMO_LIMITS.companyMaxLength} characters`,
+    ),
   teamSize: z.enum(TEAM_SIZE_OPTIONS).or(z.literal("")),
-  message: z.string().trim().max(REQUEST_DEMO_LIMITS.messageMaxLength, `Keep your message under ${REQUEST_DEMO_LIMITS.messageMaxLength} characters`),
+  message: z
+    .string()
+    .trim()
+    .max(
+      REQUEST_DEMO_LIMITS.messageMaxLength,
+      `Keep your message under ${REQUEST_DEMO_LIMITS.messageMaxLength} characters`,
+    ),
   /** Honeypot. Must stay empty; see `isHoneypotTripped`. */
   website: z.string().max(200),
 });
@@ -57,7 +79,10 @@ export function normaliseDemoSource(value: string | null | undefined): string | 
 }
 
 /** Body for `POST /api/request-demo`: optional fields are omitted (never sent as empty strings). */
-export function toRequestDemoPayload(values: RequestDemoFormValues, source?: string): RequestDemoPayload {
+export function toRequestDemoPayload(
+  values: RequestDemoFormValues,
+  source?: string,
+): RequestDemoPayload {
   const payload: RequestDemoPayload = {
     name: values.name.trim(),
     email: values.email.trim().toLowerCase(),

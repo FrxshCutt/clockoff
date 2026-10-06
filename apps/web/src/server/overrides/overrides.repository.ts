@@ -26,7 +26,10 @@ export interface OverrideListFilter {
 }
 
 /** `OverrideStatus` → row predicate at `now` (see `deriveOverrideStatus`). */
-export function overrideStatusWhere(status: OverrideStatus, now: Date): Prisma.ManagerOverrideWhereInput {
+export function overrideStatusWhere(
+  status: OverrideStatus,
+  now: Date,
+): Prisma.ManagerOverrideWhereInput {
   switch (status) {
     case "REVOKED":
       return { revokedAt: { not: null } };
@@ -73,14 +76,22 @@ export async function findOverrides(
   });
 }
 
-export async function findActiveEmployee(organisationId: string, employeeId: string, db: Db = prisma) {
+export async function findActiveEmployee(
+  organisationId: string,
+  employeeId: string,
+  db: Db = prisma,
+) {
   return db.employee.findFirst({
     where: { id: employeeId, organisationId, deletedAt: null },
     select: { id: true, employmentStatus: true, firstName: true, lastName: true },
   });
 }
 
-export async function findBreakPolicyInOrganisation(organisationId: string, id: string, db: Db = prisma) {
+export async function findBreakPolicyInOrganisation(
+  organisationId: string,
+  id: string,
+  db: Db = prisma,
+) {
   return db.breakPolicy.findFirst({
     where: { id, organisationId, deletedAt: null },
     select: { id: true, restrictionBehaviour: true, relaxedCategories: true },

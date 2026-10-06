@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { PrivacyExplainer, PrivacyStatementList } from "./privacy-explainer";
 
 function escape(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/'/g, "&#x27;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/'/g, "&#x27;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 describe("PrivacyStatementList", () => {
@@ -19,7 +24,9 @@ describe("PrivacyStatementList", () => {
   });
 
   it("limits the list when asked", () => {
-    const html = renderToStaticMarkup(<PrivacyStatementList items={CANNOT_SEE} tone="cannot" limit={3} />);
+    const html = renderToStaticMarkup(
+      <PrivacyStatementList items={CANNOT_SEE} tone="cannot" limit={3} />,
+    );
     expect((html.match(/<li /g) ?? []).length).toBe(3);
     expect(html).toContain('data-tone="cannot"');
   });
@@ -36,7 +43,9 @@ describe("PrivacyExplainer", () => {
   });
 
   it("uses h2 headings and renders the footer on a bare page", () => {
-    const html = renderToStaticMarkup(<PrivacyExplainer headingLevel={2} footer={<a href="/privacy">Full statement</a>} />);
+    const html = renderToStaticMarkup(
+      <PrivacyExplainer headingLevel={2} footer={<a href="/privacy">Full statement</a>} />,
+    );
     expect(html).toMatch(/<h2[^>]*id="privacy-cannot-see"/);
     expect(html).toContain('href="/privacy"');
   });

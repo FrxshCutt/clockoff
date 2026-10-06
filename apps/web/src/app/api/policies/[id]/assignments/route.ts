@@ -1,10 +1,7 @@
 import { idParamsSchema } from "@workmode/validation/primitives";
 import { createPolicyAssignmentSchema } from "@workmode/validation/policies";
 import { createHandler, json } from "@/server/http/apiHandler";
-import {
-  createPolicyAssignment,
-  listPolicyAssignments,
-} from "@/server/policies/policies.service";
+import { createPolicyAssignment, listPolicyAssignments } from "@/server/policies/policies.service";
 
 /** `GET /api/policies/:id/assignments` (policies:read) → `{ assignments }`. */
 export const GET = createHandler(

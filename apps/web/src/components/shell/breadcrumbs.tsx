@@ -32,7 +32,9 @@ export function Breadcrumbs({ className }: { className?: string }) {
             <Fragment key={crumb.href}>
               {index > 0 ? (
                 // On mobile the first visible crumb is the second-to-last, so its leading separator hides too.
-                <BreadcrumbSeparator className={cn(index <= crumbs.length - 2 && "hidden md:block")} />
+                <BreadcrumbSeparator
+                  className={cn(index <= crumbs.length - 2 && "hidden md:block")}
+                />
               ) : null}
               <BreadcrumbItem className={cn("min-w-0", hiddenOnMobile && "hidden md:inline-flex")}>
                 {isLast ? (

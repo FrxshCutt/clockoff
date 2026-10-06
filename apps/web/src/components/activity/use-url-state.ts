@@ -15,7 +15,10 @@ export function useUrlState<T>(
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const state = useMemo(() => parse(new URLSearchParams(searchParams.toString())), [parse, searchParams]);
+  const state = useMemo(
+    () => parse(new URLSearchParams(searchParams.toString())),
+    [parse, searchParams],
+  );
 
   const setState = useCallback(
     (next: T | ((previous: T) => T)) => {

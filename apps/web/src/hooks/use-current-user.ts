@@ -29,14 +29,19 @@ export function useCurrentUser(options: { enabled?: boolean } = {}) {
     queryFn: ({ signal }) => fetchCurrentUser(signal),
     enabled: options.enabled ?? true,
     staleTime: 60_000,
-    retry: (failureCount, error) => !isUnauthenticatedError(error) && shouldRetryQuery(failureCount, error),
+    retry: (failureCount, error) =>
+      !isUnauthenticatedError(error) && shouldRetryQuery(failureCount, error),
   });
 }
 
 /** The membership for the organisation currently selected, or the first one when none is selected yet. */
-export function getCurrentMembership(me: CurrentUser | undefined | null): CurrentUserOrganisation | null {
+export function getCurrentMembership(
+  me: CurrentUser | undefined | null,
+): CurrentUserOrganisation | null {
   if (!me || me.organisations.length === 0) return null;
-  return me.organisations.find((o) => o.id === me.currentOrganisationId) ?? me.organisations[0] ?? null;
+  return (
+    me.organisations.find((o) => o.id === me.currentOrganisationId) ?? me.organisations[0] ?? null
+  );
 }
 
 export function useCurrentMembership(): CurrentUserOrganisation | null {

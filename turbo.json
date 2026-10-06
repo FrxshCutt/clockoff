@@ -11,7 +11,14 @@
     "build": {
       "dependsOn": ["^build", "^generate"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["DATABASE_URL", "SESSION_SECRET", "MOBILE_JWT_SECRET", "INTEGRATION_ENCRYPTION_KEY", "APP_URL", "NEXT_PUBLIC_APP_URL"]
+      "env": [
+        "DATABASE_URL",
+        "SESSION_SECRET",
+        "MOBILE_JWT_SECRET",
+        "INTEGRATION_ENCRYPTION_KEY",
+        "APP_URL",
+        "NEXT_PUBLIC_APP_URL"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^generate", "^typecheck"],

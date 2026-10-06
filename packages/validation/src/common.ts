@@ -3,7 +3,10 @@ import { isValidTimeZone } from "@workmode/shared/time/time";
 
 /** Reusable primitives shared by every API schema. */
 export const uuidSchema = z.uuid();
-export const emailSchema = z.email().max(254).transform((s) => s.trim().toLowerCase());
+export const emailSchema = z
+  .email()
+  .max(254)
+  .transform((s) => s.trim().toLowerCase());
 export const nonEmptyString = (max = 200) => z.string().trim().min(1).max(max);
 export const optionalString = (max = 200) =>
   z
@@ -18,7 +21,9 @@ export const optionalString = (max = 200) =>
 export const isoDateTimeSchema = z
   .string()
   .refine((s) => !Number.isNaN(Date.parse(s)), { message: "Invalid date-time" })
-  .refine((s) => /(Z|[+-]\d{2}:?\d{2})$/.test(s), { message: "Date-time must include a timezone offset" });
+  .refine((s) => /(Z|[+-]\d{2}:?\d{2})$/.test(s), {
+    message: "Date-time must include a timezone offset",
+  });
 
 /**
  * IANA timezone identifier. Delegates to the shared time helpers so the API never accepts a zone the

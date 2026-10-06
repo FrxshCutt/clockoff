@@ -1,41 +1,86 @@
-import { acceptManagerInviteSchema, createOrganisationSchema, resetPasswordSchema, verifyEmailSchema } from "@workmode/validation/auth";
+import {
+  acceptManagerInviteSchema,
+  createOrganisationSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from "@workmode/validation/auth";
 import { describe, expect, it } from "vitest";
-import { acceptInviteAccountFormSchema, createOrganisationFormSchema, parseLinkToken, resetPasswordFormSchema } from "./schemas";
+import {
+  acceptInviteAccountFormSchema,
+  createOrganisationFormSchema,
+  parseLinkToken,
+  resetPasswordFormSchema,
+} from "./schemas";
 
 describe("resetPasswordFormSchema", () => {
   it("requires matching passwords that satisfy the API policy", () => {
-    expect(resetPasswordFormSchema.safeParse({ password: "correct horse 1", confirmPassword: "correct horse 1" }).success).toBe(
-      true,
-    );
-    const mismatch = resetPasswordFormSchema.safeParse({ password: "correct horse 1", confirmPassword: "correct horse 2" });
+    expect(
+      resetPasswordFormSchema.safeParse({
+        password: "correct horse 1",
+        confirmPassword: "correct horse 1",
+      }).success,
+    ).toBe(true);
+    const mismatch = resetPasswordFormSchema.safeParse({
+      password: "correct horse 1",
+      confirmPassword: "correct horse 2",
+    });
     expect(mismatch.success).toBe(false);
     expect(mismatch.error?.issues[0]?.path).toEqual(["confirmPassword"]);
-    expect(resetPasswordFormSchema.safeParse({ password: "short1", confirmPassword: "short1" }).success).toBe(false);
-    expect(resetPasswordFormSchema.safeParse({ password: "nodigitshere", confirmPassword: "nodigitshere" }).success).toBe(false);
+    expect(
+      resetPasswordFormSchema.safeParse({ password: "short1", confirmPassword: "short1" }).success,
+    ).toBe(false);
+    expect(
+      resetPasswordFormSchema.safeParse({
+        password: "nodigitshere",
+        confirmPassword: "nodigitshere",
+      }).success,
+    ).toBe(false);
   });
 });
 
 describe("acceptInviteAccountFormSchema", () => {
   it("requires a name and a policy-compliant password", () => {
-    expect(acceptInviteAccountFormSchema.safeParse({ name: "Ada", password: "password1234" }).success).toBe(true);
-    expect(acceptInviteAccountFormSchema.safeParse({ name: "  ", password: "password1234" }).success).toBe(false);
-    expect(acceptInviteAccountFormSchema.safeParse({ name: "Ada", password: "password" }).success).toBe(false);
+    expect(
+      acceptInviteAccountFormSchema.safeParse({ name: "Ada", password: "password1234" }).success,
+    ).toBe(true);
+    expect(
+      acceptInviteAccountFormSchema.safeParse({ name: "  ", password: "password1234" }).success,
+    ).toBe(false);
+    expect(
+      acceptInviteAccountFormSchema.safeParse({ name: "Ada", password: "password" }).success,
+    ).toBe(false);
   });
 });
 
 describe("createOrganisationFormSchema", () => {
   it("drops a blank first location so the API body stays valid", () => {
-    const parsed = createOrganisationFormSchema.parse({ name: " Harbour Café ", timezone: "Europe/London", firstLocationName: "  " });
-    expect(parsed).toEqual({ name: "Harbour Café", timezone: "Europe/London", firstLocationName: undefined });
+    const parsed = createOrganisationFormSchema.parse({
+      name: " Harbour Café ",
+      timezone: "Europe/London",
+      firstLocationName: "  ",
+    });
+    expect(parsed).toEqual({
+      name: "Harbour Café",
+      timezone: "Europe/London",
+      firstLocationName: undefined,
+    });
     expect(createOrganisationSchema.safeParse(parsed).success).toBe(true);
   });
 
   it("keeps a provided location and rejects invalid zones", () => {
-    const parsed = createOrganisationFormSchema.parse({ name: "Harbour", timezone: "UTC", firstLocationName: " High Street " });
+    const parsed = createOrganisationFormSchema.parse({
+      name: "Harbour",
+      timezone: "UTC",
+      firstLocationName: " High Street ",
+    });
     expect(parsed.firstLocationName).toBe("High Street");
     expect(createOrganisationSchema.safeParse(parsed).success).toBe(true);
-    expect(createOrganisationFormSchema.safeParse({ name: "Harbour", timezone: "Not/AZone" }).success).toBe(false);
-    expect(createOrganisationFormSchema.safeParse({ name: "", timezone: "UTC" }).success).toBe(false);
+    expect(
+      createOrganisationFormSchema.safeParse({ name: "Harbour", timezone: "Not/AZone" }).success,
+    ).toBe(false);
+    expect(createOrganisationFormSchema.safeParse({ name: "", timezone: "UTC" }).success).toBe(
+      false,
+    );
   });
 });
 

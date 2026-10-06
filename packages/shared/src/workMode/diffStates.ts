@@ -129,7 +129,8 @@ export function diffStates(prev: WorkModeState | ExpectedState, next: ExpectedSt
     next.workingInterval !== null &&
     !sameWorkingInterval(prevSnap.workingInterval, next.workingInterval);
 
-  const endedShiftId = prevSnap === null ? null : (shiftInProgressBefore(prevSnap, atMs)?.id ?? null);
+  const endedShiftId =
+    prevSnap === null ? null : (shiftInProgressBefore(prevSnap, atMs)?.id ?? null);
 
   const transitions: Transition[] = [];
   const emit = (
@@ -162,7 +163,11 @@ export function diffStates(prev: WorkModeState | ExpectedState, next: ExpectedSt
   }
 
   // 4. Override expired (not revoked, not merely out of window).
-  if (prevOverride !== null && prevOverride.id !== nextOverride?.id && prevOverride.expiresAt.getTime() <= atMs) {
+  if (
+    prevOverride !== null &&
+    prevOverride.id !== nextOverride?.id &&
+    prevOverride.expiresAt.getTime() <= atMs
+  ) {
     emit("OVERRIDE_EXPIRED", { overrideId: prevOverride.id, shiftId: endedShiftId });
   }
 
@@ -176,7 +181,10 @@ export function diffStates(prev: WorkModeState | ExpectedState, next: ExpectedSt
     ? nextBreak !== null && nextBreak.id !== prevBreak?.id
     : to === "ON_BREAK" && from !== "ON_BREAK";
   if (breakStarted) {
-    emit("BREAK_STARTED", { breakSessionId: nextBreak?.id, shiftId: nextBreak?.shiftId ?? next.activeShift?.id });
+    emit("BREAK_STARTED", {
+      breakSessionId: nextBreak?.id,
+      shiftId: nextBreak?.shiftId ?? next.activeShift?.id,
+    });
   }
 
   if (transitions.length > 0) return transitions;

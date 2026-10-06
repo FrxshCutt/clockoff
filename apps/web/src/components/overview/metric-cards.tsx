@@ -47,7 +47,10 @@ export interface OverviewMetricsProps {
 /** The eight compliance metric cards; each links to the list of employees behind the number. */
 export function OverviewMetrics({ metrics, isLoading = false, className }: OverviewMetricsProps) {
   return (
-    <section aria-label="Compliance at a glance" className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-4", className)}>
+    <section
+      aria-label="Compliance at a glance"
+      className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-4", className)}
+    >
       {METRIC_CARDS.map((card) => {
         const value = metrics?.[card.key];
         const tone: StatusTone = value === undefined ? "neutral" : metricValueTone(card.key, value);

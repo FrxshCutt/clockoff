@@ -4,7 +4,14 @@ import { Building, CircleCheck, Link2Off, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FormErrorAlert, PasswordField, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  PasswordField,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { InlineAlert } from "@/components/inline-alert";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
@@ -70,12 +77,23 @@ export function AcceptInvitePanel({ token: rawToken }: { token: string | null })
   }
 
   if (preview.isPending) {
-    return <AuthCard icon={LoaderCircle} iconClassName="animate-spin" title="Checking your invitation…" />;
+    return (
+      <AuthCard
+        icon={LoaderCircle}
+        iconClassName="animate-spin"
+        title="Checking your invitation…"
+      />
+    );
   }
 
   if (preview.isError) {
     return (
-      <AuthCard icon={Link2Off} iconTone="danger" title="This invitation can't be used" description={getErrorMessage(preview.error)}>
+      <AuthCard
+        icon={Link2Off}
+        iconTone="danger"
+        title="This invitation can't be used"
+        description={getErrorMessage(preview.error)}
+      >
         <Button asChild variant="outline" className="w-full">
           <Link href={ROUTES.login}>Go to sign in</Link>
         </Button>
@@ -106,14 +124,19 @@ export function AcceptInvitePanel({ token: rawToken }: { token: string | null })
 function InviteSummary({ invite }: { invite: InvitePreview }) {
   return (
     <div className="bg-muted/40 flex items-start gap-3 rounded-xl border p-4">
-      <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg" aria-hidden="true">
+      <span
+        className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg"
+        aria-hidden="true"
+      >
         <Building className="size-5" />
       </span>
       <div className="min-w-0 space-y-1">
         <p className="truncate font-medium">{invite.organisationName}</p>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge kind="role" value={invite.role} size="sm" />
-          {invite.invitedByName ? <span className="text-muted-foreground text-xs">Invited by {invite.invitedByName}</span> : null}
+          {invite.invitedByName ? (
+            <span className="text-muted-foreground text-xs">Invited by {invite.invitedByName}</span>
+          ) : null}
         </div>
         <p className="text-muted-foreground text-xs">Expires {formatDateTime(invite.expiresAt)}</p>
       </div>
@@ -131,7 +154,9 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
   const signInToAcceptHref = `${ROUTES.login}?next=${encodeURIComponent(inviteHref)}`;
   // Signing out of the wrong account comes straight back here after signing in as the invitee.
   const logout = useLogout({ redirectTo: signInToAcceptHref });
-  const form = useZodForm(acceptInviteAccountFormSchema, { defaultValues: { name: "", password: "" } });
+  const form = useZodForm(acceptInviteAccountFormSchema, {
+    defaultValues: { name: "", password: "" },
+  });
 
   const finish = async (organisationId: string | null) => {
     const user = await refreshUser();
@@ -162,7 +187,11 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
 
   const onCreateAccount = form.handleSubmit(async (values) => {
     try {
-      const result = await accept.mutateAsync({ token, name: values.name, password: values.password });
+      const result = await accept.mutateAsync({
+        token,
+        name: values.name,
+        password: values.password,
+      });
       await finish(result.organisationId);
     } catch (error) {
       applyApiFieldErrors(form, error);
@@ -180,9 +209,21 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
             <FormErrorAlert error={accept.error} />
             <div className="space-y-2">
               <Label htmlFor="invite-email">Email</Label>
-              <Input id="invite-email" value={invite.email} readOnly disabled autoComplete="email" />
+              <Input
+                id="invite-email"
+                value={invite.email}
+                readOnly
+                disabled
+                autoComplete="email"
+              />
             </div>
-            <TextField control={form.control} name="name" label="Your name" autoComplete="name" autoFocus />
+            <TextField
+              control={form.control}
+              name="name"
+              label="Your name"
+              autoComplete="name"
+              autoFocus
+            />
             <PasswordField
               control={form.control}
               name="password"
@@ -190,7 +231,11 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
               autoComplete="new-password"
               description="At least 10 characters, including a letter and a number."
             />
-            <SubmitButton className="w-full" isPending={accept.isPending || accept.isSuccess} pendingLabel="Joining…">
+            <SubmitButton
+              className="w-full"
+              isPending={accept.isPending || accept.isSuccess}
+              pendingLabel="Joining…"
+            >
               Create account and join
             </SubmitButton>
           </form>
@@ -202,14 +247,16 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
   // Existing account: must be signed in as the invited email.
   const signedOut = me.isError && isUnauthenticatedError(me.error);
   const signedInAs = me.data?.user.email ?? null;
-  const wrongAccount = signedInAs !== null && signedInAs.toLowerCase() !== invite.email.toLowerCase();
+  const wrongAccount =
+    signedInAs !== null && signedInAs.toLowerCase() !== invite.email.toLowerCase();
 
   return (
     <AuthCard
       title={title}
       description={
         <>
-          This invitation is for <span className="text-foreground font-medium">{invite.email}</span>.
+          This invitation is for <span className="text-foreground font-medium">{invite.email}</span>
+          .
         </>
       }
     >
@@ -226,15 +273,29 @@ function AcceptInviteForm({ token, invite }: { token: string; invite: InvitePrev
       ) : wrongAccount ? (
         <div className="space-y-3">
           <InlineAlert variant="warning" title="You're signed in with a different account">
-            You&apos;re signed in as {signedInAs}. Sign out, then sign in as {invite.email} to accept.
+            You&apos;re signed in as {signedInAs}. Sign out, then sign in as {invite.email} to
+            accept.
           </InlineAlert>
-          <Button type="button" variant="outline" className="w-full" onClick={() => logout.mutate()} disabled={logout.isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => logout.mutate()}
+            disabled={logout.isPending}
+          >
             Sign out
           </Button>
         </div>
       ) : (
-        <Button type="button" className="w-full" onClick={acceptAsExistingUser} disabled={accept.isPending || accept.isSuccess}>
-          {accept.isPending || accept.isSuccess ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
+        <Button
+          type="button"
+          className="w-full"
+          onClick={acceptAsExistingUser}
+          disabled={accept.isPending || accept.isSuccess}
+        >
+          {accept.isPending || accept.isSuccess ? (
+            <LoaderCircle className="animate-spin" aria-hidden="true" />
+          ) : null}
           Accept invitation
         </Button>
       )}

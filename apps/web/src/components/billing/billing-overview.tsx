@@ -19,7 +19,14 @@ import { useBilling } from "@/hooks/use-settings";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { formatDate, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { PLAN_CHANGE_COMING_SOON, PLAN_CTA_LABELS, planCardCta, planHighlights, planLimitLines, salesMailto } from "./plan-cards";
+import {
+  PLAN_CHANGE_COMING_SOON,
+  PLAN_CTA_LABELS,
+  planCardCta,
+  planHighlights,
+  planLimitLines,
+  salesMailto,
+} from "./plan-cards";
 import { usagePercent } from "./usage";
 
 const USAGE_LABELS: Record<(typeof PLAN_LIMIT_METRICS)[number], string> = {
@@ -61,18 +68,22 @@ export function BillingOverview() {
   const { plan, billingStatus, dateFormat, timezone, name } = organisation.data.organisation;
   const definition = PLAN_CONFIG[plan];
   const summary: BillingSummary | null = billing.data?.available ? billing.data.data : null;
-  const contactSales = salesMailto(`Change plan for ${name}`, `Organisation: ${name}\nCurrent plan: ${definition.name}\n\nI'd like to talk about: `);
+  const contactSales = salesMailto(
+    `Change plan for ${name}`,
+    `Organisation: ${name}\nCurrent plan: ${definition.name}\n\nI'd like to talk about: `,
+  );
 
   return (
     <div className="space-y-6">
       {billingStatus === "PAST_DUE" ? (
         <InlineAlert variant="warning" title="Payment overdue">
-          The last payment didn&apos;t go through. Contact us to update your payment details and keep Work Mode running for your team.
+          The last payment didn&apos;t go through. Contact us to update your payment details and
+          keep Work Mode running for your team.
         </InlineAlert>
       ) : null}
       <InlineAlert variant="info" title="No card payments in the dashboard yet">
-        Work Mode doesn&apos;t process payments here. Plans are set up and changed with our team: contact sales and we&apos;ll
-        arrange it with your owner.
+        Work Mode doesn&apos;t process payments here. Plans are set up and changed with our team:
+        contact sales and we&apos;ll arrange it with your owner.
       </InlineAlert>
       <SectionCard
         title="Current plan"
@@ -107,7 +118,11 @@ export function BillingOverview() {
           </div>
           {summary?.trialEndsAt && billingStatus === "TRIAL" ? (
             <p className="text-sm">
-              Trial ends on <span className="font-medium">{formatDate(summary.trialEndsAt, { dateFormat, timeZone: timezone })}</span>.
+              Trial ends on{" "}
+              <span className="font-medium">
+                {formatDate(summary.trialEndsAt, { dateFormat, timeZone: timezone })}
+              </span>
+              .
             </p>
           ) : null}
           {summary ? (
@@ -119,7 +134,13 @@ export function BillingOverview() {
               variant="warning"
               title="Usage couldn't be loaded"
               action={
-                <Button type="button" variant="outline" size="sm" onClick={() => void billing.refetch()} disabled={billing.isFetching}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void billing.refetch()}
+                  disabled={billing.isFetching}
+                >
                   Try again
                 </Button>
               }
@@ -127,7 +148,9 @@ export function BillingOverview() {
               {getErrorMessage(billing.error)}
             </InlineAlert>
           ) : (
-            <p className="text-muted-foreground text-sm">Usage against your plan limits will appear here once billing is connected.</p>
+            <p className="text-muted-foreground text-sm">
+              Usage against your plan limits will appear here once billing is connected.
+            </p>
           )}
         </div>
       </SectionCard>
@@ -137,7 +160,12 @@ export function BillingOverview() {
       >
         <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {PLAN_ORDER.map((id) => (
-            <PlanCard key={id} plan={id} currentPlan={plan} contactHref={salesMailto(`${PLAN_CONFIG[id].name} plan for ${name}`)} />
+            <PlanCard
+              key={id}
+              plan={id}
+              currentPlan={plan}
+              contactHref={salesMailto(`${PLAN_CONFIG[id].name} plan for ${name}`)}
+            />
           ))}
         </ul>
       </SectionCard>
@@ -158,13 +186,19 @@ function UsageMeters({ summary }: { summary: BillingSummary }) {
             <dd className="space-y-2">
               <p className="text-lg font-semibold tabular-nums">
                 {formatNumber(used)}
-                <span className="text-muted-foreground text-sm font-normal"> / {formatLimit(limit)}</span>
+                <span className="text-muted-foreground text-sm font-normal">
+                  {" "}
+                  / {formatLimit(limit)}
+                </span>
               </p>
               {percent !== null ? (
                 <Progress
                   value={percent}
                   aria-label={`${USAGE_LABELS[metric]}: ${percent}% of plan limit used`}
-                  className={cn("h-1.5", percent >= 90 && "[&>[data-slot=progress-indicator]]:bg-amber-500")}
+                  className={cn(
+                    "h-1.5",
+                    percent >= 90 && "[&>[data-slot=progress-indicator]]:bg-amber-500",
+                  )}
                 />
               ) : null}
             </dd>
@@ -175,13 +209,24 @@ function UsageMeters({ summary }: { summary: BillingSummary }) {
   );
 }
 
-function PlanCard({ plan, currentPlan, contactHref }: { plan: Plan; currentPlan: Plan; contactHref: string }) {
+function PlanCard({
+  plan,
+  currentPlan,
+  contactHref,
+}: {
+  plan: Plan;
+  currentPlan: Plan;
+  contactHref: string;
+}) {
   const definition = PLAN_CONFIG[plan];
   const cta = planCardCta(plan, currentPlan);
   const current = cta === "current";
   return (
     <li
-      className={cn("flex flex-col gap-5 rounded-xl border p-5", current ? "border-primary/50 bg-primary/5 ring-primary/20 ring-1" : "bg-card")}
+      className={cn(
+        "flex flex-col gap-5 rounded-xl border p-5",
+        current ? "border-primary/50 bg-primary/5 ring-primary/20 ring-1" : "bg-card",
+      )}
       aria-current={current ? "true" : undefined}
     >
       <div className="space-y-1">
@@ -195,7 +240,14 @@ function PlanCard({ plan, currentPlan, contactHref }: { plan: Plan; currentPlan:
         {planLimitLines(plan).map((line) => (
           <div key={line.key} className="flex items-start justify-between gap-3">
             <dt className="text-muted-foreground">{line.label}</dt>
-            <dd className={cn("text-right font-medium", !line.included && "text-muted-foreground font-normal")}>{line.value}</dd>
+            <dd
+              className={cn(
+                "text-right font-medium",
+                !line.included && "text-muted-foreground font-normal",
+              )}
+            >
+              {line.value}
+            </dd>
           </div>
         ))}
       </dl>
@@ -212,7 +264,15 @@ function PlanCard({ plan, currentPlan, contactHref }: { plan: Plan; currentPlan:
   );
 }
 
-function PlanCardAction({ cta, planName, contactHref }: { cta: ReturnType<typeof planCardCta>; planName: string; contactHref: string }) {
+function PlanCardAction({
+  cta,
+  planName,
+  contactHref,
+}: {
+  cta: ReturnType<typeof planCardCta>;
+  planName: string;
+  contactHref: string;
+}) {
   if (cta === "current") {
     return (
       <p className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -237,12 +297,20 @@ function PlanCardAction({ cta, planName, contactHref }: { cta: ReturnType<typeof
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="block rounded-md outline-none focus-visible:ring-[3px]">
-            <Button type="button" variant={cta === "upgrade" ? "default" : "outline"} className="w-full" disabled aria-describedby={undefined}>
+            <Button
+              type="button"
+              variant={cta === "upgrade" ? "default" : "outline"}
+              className="w-full"
+              disabled
+              aria-describedby={undefined}
+            >
               {PLAN_CTA_LABELS[cta]} to {planName}
             </Button>
           </span>
         </TooltipTrigger>
-        <TooltipContent>{PLAN_CHANGE_COMING_SOON}: contact sales to change plan today.</TooltipContent>
+        <TooltipContent>
+          {PLAN_CHANGE_COMING_SOON}: contact sales to change plan today.
+        </TooltipContent>
       </Tooltip>
       <p className="text-muted-foreground text-center text-xs">
         {PLAN_CHANGE_COMING_SOON} ·{" "}

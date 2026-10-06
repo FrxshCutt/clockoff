@@ -42,7 +42,11 @@ export function useLocationsList(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: locationKeys.list,
     queryFn: async ({ signal }): Promise<ListLocationsResponse> =>
-      parseResponse(listLocationsResponseSchema, await api.get<unknown>("/api/locations", undefined, signal), "GET /api/locations"),
+      parseResponse(
+        listLocationsResponseSchema,
+        await api.get<unknown>("/api/locations", undefined, signal),
+        "GET /api/locations",
+      ),
     select: (data) => data.locations,
     enabled: options.enabled ?? true,
   });
@@ -66,7 +70,11 @@ export function useTeamsList(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: teamKeys.list,
     queryFn: async ({ signal }): Promise<ListTeamsResponse> =>
-      parseResponse(listTeamsResponseSchema, await api.get<unknown>("/api/teams", undefined, signal), "GET /api/teams"),
+      parseResponse(
+        listTeamsResponseSchema,
+        await api.get<unknown>("/api/teams", undefined, signal),
+        "GET /api/teams",
+      ),
     select: (data) => data.teams,
     enabled: options.enabled ?? true,
   });
@@ -95,8 +103,13 @@ export function useTeamMembers(teamId: string | null, options: { enabled?: boole
 // ── Invalidation ────────────────────────────────────────────────────────────
 
 /** Employees carry location/department/team refs and resolved policies, so they refresh with the structure. */
-async function invalidateStructure(queryClient: QueryClient, ...roots: readonly (readonly unknown[])[]): Promise<void> {
-  await Promise.all([...roots, EMPLOYEE_KEY_PREFIX].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+async function invalidateStructure(
+  queryClient: QueryClient,
+  ...roots: readonly (readonly unknown[])[]
+): Promise<void> {
+  await Promise.all(
+    [...roots, EMPLOYEE_KEY_PREFIX].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+  );
 }
 
 /** Deleting a scope orphans its assignments, so the policy pages must refetch too. */
@@ -108,7 +121,11 @@ export function useCreateLocation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateLocationBody): Promise<Location> =>
-      parseResponse(locationResponseSchema, await api.post<unknown>("/api/locations", input), "POST /api/locations").location,
+      parseResponse(
+        locationResponseSchema,
+        await api.post<unknown>("/api/locations", input),
+        "POST /api/locations",
+      ).location,
     onSuccess: () => invalidateStructure(queryClient, locationKeys.all),
   });
 }
@@ -116,7 +133,13 @@ export function useCreateLocation() {
 export function useUpdateLocation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: UpdateLocationBody }): Promise<Location> =>
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateLocationBody;
+    }): Promise<Location> =>
       parseResponse(
         locationResponseSchema,
         await api.patch<unknown>(`/api/locations/${encode(id)}`, input),
@@ -130,7 +153,8 @@ export function useDeleteLocation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete<void>(`/api/locations/${encode(id)}`),
-    onSuccess: () => invalidateStructure(queryClient, locationKeys.all, teamKeys.all, ...POLICY_ROOTS),
+    onSuccess: () =>
+      invalidateStructure(queryClient, locationKeys.all, teamKeys.all, ...POLICY_ROOTS),
   });
 }
 
@@ -140,8 +164,11 @@ export function useCreateDepartment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateDepartmentInput): Promise<Department> =>
-      parseResponse(departmentResponseSchema, await api.post<unknown>("/api/departments", input), "POST /api/departments")
-        .department,
+      parseResponse(
+        departmentResponseSchema,
+        await api.post<unknown>("/api/departments", input),
+        "POST /api/departments",
+      ).department,
     onSuccess: () => invalidateStructure(queryClient, departmentKeys.all),
   });
 }
@@ -149,7 +176,13 @@ export function useCreateDepartment() {
 export function useUpdateDepartment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: UpdateDepartmentInput }): Promise<Department> =>
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateDepartmentInput;
+    }): Promise<Department> =>
       parseResponse(
         departmentResponseSchema,
         await api.patch<unknown>(`/api/departments/${encode(id)}`, input),
@@ -173,7 +206,11 @@ export function useCreateTeam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateTeamInput): Promise<Team> =>
-      parseResponse(teamResponseSchema, await api.post<unknown>("/api/teams", input), "POST /api/teams").team,
+      parseResponse(
+        teamResponseSchema,
+        await api.post<unknown>("/api/teams", input),
+        "POST /api/teams",
+      ).team,
     onSuccess: () => invalidateStructure(queryClient, teamKeys.all, locationKeys.all),
   });
 }
@@ -182,7 +219,11 @@ export function useUpdateTeam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: UpdateTeamInput }): Promise<Team> =>
-      parseResponse(teamResponseSchema, await api.patch<unknown>(`/api/teams/${encode(id)}`, input), "PATCH /api/teams/:id").team,
+      parseResponse(
+        teamResponseSchema,
+        await api.patch<unknown>(`/api/teams/${encode(id)}`, input),
+        "PATCH /api/teams/:id",
+      ).team,
     onSuccess: () => invalidateStructure(queryClient, teamKeys.all, locationKeys.all),
   });
 }
@@ -191,7 +232,8 @@ export function useDeleteTeam() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete<void>(`/api/teams/${encode(id)}`),
-    onSuccess: () => invalidateStructure(queryClient, teamKeys.all, locationKeys.all, ...POLICY_ROOTS),
+    onSuccess: () =>
+      invalidateStructure(queryClient, teamKeys.all, locationKeys.all, ...POLICY_ROOTS),
   });
 }
 

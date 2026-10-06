@@ -18,8 +18,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { getErrorMessage } from "@/lib/errorMessages";
 import { cn } from "@/lib/utils";
-import { POLICY_KIND_NOUN, SCOPE_NOUN, summariseScopeAssignment, type AssignableScope, type PolicyKind, type PolicyOption } from "./locations-view-model";
-import { useAssignScopePolicy, useRemoveScopeAssignment, type PolicyOptionsState } from "./use-scope-assignments";
+import {
+  POLICY_KIND_NOUN,
+  SCOPE_NOUN,
+  summariseScopeAssignment,
+  type AssignableScope,
+  type PolicyKind,
+  type PolicyOption,
+} from "./locations-view-model";
+import {
+  useAssignScopePolicy,
+  useRemoveScopeAssignment,
+  type PolicyOptionsState,
+} from "./use-scope-assignments";
 
 export interface AssignScopePolicyPopoverProps {
   kind: PolicyKind;
@@ -37,7 +48,14 @@ export interface AssignScopePolicyPopoverProps {
  * and lets managers with `policies:write` pick another one (`POST /api/<kind>/:id/assignments` at LOCATION /
  * TEAM scope, which replaces the current one) or remove it (`DELETE /api/<kind>-assignments/:id`).
  */
-export function AssignScopePolicyPopover({ kind, scopeType, scope, assignment, choices, canEdit }: AssignScopePolicyPopoverProps) {
+export function AssignScopePolicyPopover({
+  kind,
+  scopeType,
+  scope,
+  assignment,
+  choices,
+  canEdit,
+}: AssignScopePolicyPopoverProps) {
   const [open, setOpen] = useState(false);
   const assign = useAssignScopePolicy(kind);
   const remove = useRemoveScopeAssignment(kind);
@@ -50,8 +68,15 @@ export function AssignScopePolicyPopover({ kind, scopeType, scope, assignment, c
 
   const label = (
     <span className="flex min-w-0 items-center gap-1.5">
-      {pending ? <LoaderCircle className="text-muted-foreground size-3.5 shrink-0 animate-spin" aria-hidden="true" /> : null}
-      <span className={cn("truncate", !summary.assigned && "text-muted-foreground")}>{summary.label}</span>
+      {pending ? (
+        <LoaderCircle
+          className="text-muted-foreground size-3.5 shrink-0 animate-spin"
+          aria-hidden="true"
+        />
+      ) : null}
+      <span className={cn("truncate", !summary.assigned && "text-muted-foreground")}>
+        {summary.label}
+      </span>
     </span>
   );
 
@@ -109,7 +134,10 @@ export function AssignScopePolicyPopover({ kind, scopeType, scope, assignment, c
           <CommandInput placeholder={`Search ${noun}…`} aria-label={`Search ${noun}`} />
           <CommandList className="max-h-64">
             {choices.isPending ? (
-              <div className="text-muted-foreground flex items-center gap-2 px-3 py-4 text-sm" aria-busy="true">
+              <div
+                className="text-muted-foreground flex items-center gap-2 px-3 py-4 text-sm"
+                aria-busy="true"
+              >
                 <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                 Loading {noun}…
               </div>
@@ -127,10 +155,17 @@ export function AssignScopePolicyPopover({ kind, scopeType, scope, assignment, c
                         onSelect={() => choosePolicy(option)}
                         aria-selected={selected}
                       >
-                        <Check className={cn("size-4 shrink-0", selected ? "opacity-100" : "opacity-0")} aria-hidden="true" />
+                        <Check
+                          className={cn("size-4 shrink-0", selected ? "opacity-100" : "opacity-0")}
+                          aria-hidden="true"
+                        />
                         <span className="min-w-0 flex-1">
                           <span className="block truncate">{option.name}</span>
-                          {option.hint ? <span className="text-muted-foreground block truncate text-xs">{option.hint}</span> : null}
+                          {option.hint ? (
+                            <span className="text-muted-foreground block truncate text-xs">
+                              {option.hint}
+                            </span>
+                          ) : null}
                         </span>
                       </CommandItem>
                     );
@@ -140,11 +175,17 @@ export function AssignScopePolicyPopover({ kind, scopeType, scope, assignment, c
             )}
             <CommandSeparator />
             <CommandGroup>
-              <CommandItem value="inherit-from-organisation" disabled={!summary.assigned} onSelect={inherit}>
+              <CommandItem
+                value="inherit-from-organisation"
+                disabled={!summary.assigned}
+                onSelect={inherit}
+              >
                 <Undo2 className="size-4 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="block">Inherit</span>
-                  <span className="text-muted-foreground block text-xs">Remove the {scopeNoun} assignment and use the next level up.</span>
+                  <span className="text-muted-foreground block text-xs">
+                    Remove the {scopeNoun} assignment and use the next level up.
+                  </span>
                 </span>
               </CommandItem>
             </CommandGroup>

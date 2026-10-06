@@ -33,12 +33,14 @@ export async function lockShiftForEmployee(
   return tx.shift.findUnique({ where: { id: params.shiftId }, include: { scheduledBreaks: true } });
 }
 
+/** This employee's session for a device idempotency key (another employee's row with the same key is invisible). */
 export async function findSessionByClientBreakId(
   organisationId: string,
+  employeeId: string,
   clientBreakId: string,
   db: Db = prisma,
 ): Promise<BreakSession | null> {
-  return db.breakSession.findFirst({ where: { organisationId, clientBreakId } });
+  return db.breakSession.findFirst({ where: { organisationId, employeeId, clientBreakId } });
 }
 
 export async function listSessionsForShift(

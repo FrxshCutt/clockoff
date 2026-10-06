@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { OverrideStatusBadge } from "@/components/overrides/overrides-table";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { EmployeeDetailSkeleton } from "./employee-detail-skeleton";
 import { DeviceStatusBadge, EmployeeStatusBadges } from "./employee-status-badges";
 
 /** Server-render smoke tests (node, no DOM) for the badge components other pages import. */
@@ -61,6 +62,16 @@ describe("EmployeeStatusBadges", () => {
     expect(renderToStaticMarkup(<DeviceStatusBadge status={null} fallback="n/a" />)).toContain(
       "n/a",
     );
+  });
+});
+
+describe("EmployeeDetailSkeleton", () => {
+  it("keeps exactly one h1 (the page title slot) and a back link while loading", () => {
+    const html = renderToStaticMarkup(<EmployeeDetailSkeleton />);
+    expect(html.match(/<h1/g)?.length).toBe(1);
+    expect(html).toContain("Loading employee…");
+    expect(html).toContain('href="/employees"');
+    expect(html).toContain('aria-busy="true"');
   });
 });
 

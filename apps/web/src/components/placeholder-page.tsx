@@ -6,7 +6,13 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { EMPTY_STATES, type EmptyStateCopy, type EmptyStateKey } from "@/config/emptyStates";
 
-function ActionButton({ action, variant }: { action: NonNullable<EmptyStateCopy["action"]>; variant: "default" | "outline" }) {
+function ActionButton({
+  action,
+  variant,
+}: {
+  action: NonNullable<EmptyStateCopy["action"]>;
+  variant: "default" | "outline";
+}) {
   if (action.href) {
     return (
       <Button asChild variant={variant}>
@@ -67,7 +73,10 @@ export function PlaceholderPage({
 }: PlaceholderPageProps) {
   const copy: EmptyStateCopy = EMPTY_STATES[emptyState];
   const pending =
-    inProgress ?? Boolean((copy.action && !copy.action.href) || (copy.secondaryAction && !copy.secondaryAction.href));
+    inProgress ??
+    Boolean(
+      (copy.action && !copy.action.href) || (copy.secondaryAction && !copy.secondaryAction.href),
+    );
   return (
     <>
       <PageHeader title={title} description={description} actions={actions} eyebrow={eyebrow} />
@@ -77,9 +86,15 @@ export function PlaceholderPage({
         title={copy.title}
         description={copy.description}
         action={copy.action ? <ActionButton action={copy.action} variant="default" /> : undefined}
-        secondaryAction={copy.secondaryAction ? <ActionButton action={copy.secondaryAction} variant="outline" /> : undefined}
+        secondaryAction={
+          copy.secondaryAction ? (
+            <ActionButton action={copy.secondaryAction} variant="outline" />
+          ) : undefined
+        }
       >
-        {pending ? <p className="text-muted-foreground text-xs">This section is being built.</p> : null}
+        {pending ? (
+          <p className="text-muted-foreground text-xs">This section is being built.</p>
+        ) : null}
       </EmptyState>
     </>
   );

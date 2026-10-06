@@ -40,9 +40,16 @@ export function UserMenu({ me }: { me: CurrentUser }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label={`Account menu for ${user.name}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            aria-label={`Account menu for ${user.name}`}
+          >
             <Avatar className="size-8">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{getInitials(user.name)}</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                {getInitials(user.name)}
+              </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
@@ -74,7 +81,11 @@ export function UserMenu({ me }: { me: CurrentUser }) {
           <DropdownMenuSeparator />
           <ThemeMenuItems />
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" disabled={logout.isPending} onSelect={() => logout.mutate()}>
+          <DropdownMenuItem
+            variant="destructive"
+            disabled={logout.isPending}
+            onSelect={() => logout.mutate()}
+          >
             <LogOut aria-hidden="true" />
             {logout.isPending ? "Signing out…" : "Sign out"}
           </DropdownMenuItem>
@@ -106,7 +117,11 @@ function MobileOrganisationSwitcher({ me }: { me: CurrentUser }) {
           }}
         >
           {me.organisations.map((org) => (
-            <DropdownMenuRadioItem key={org.id} value={org.id} disabled={switchOrganisation.isPending}>
+            <DropdownMenuRadioItem
+              key={org.id}
+              value={org.id}
+              disabled={switchOrganisation.isPending}
+            >
               <span className="truncate">{org.name}</span>
             </DropdownMenuRadioItem>
           ))}

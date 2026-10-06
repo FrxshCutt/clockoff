@@ -38,7 +38,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.managerOverride.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const row = await prisma.managerOverride.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.revokedAt).toBeNull();
   },
 });

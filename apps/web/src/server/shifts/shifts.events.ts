@@ -28,7 +28,10 @@ export interface ScheduleChangedPayload {
   reason: ScheduleChangeReason;
 }
 
-export function publishScheduleChanged(organisationId: string, payload: ScheduleChangedPayload): void {
+export function publishScheduleChanged(
+  organisationId: string,
+  payload: ScheduleChangedPayload,
+): void {
   if (payload.shiftIds.length === 0) return;
   const body = {
     employeeId: payload.employeeId,

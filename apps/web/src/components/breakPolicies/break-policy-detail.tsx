@@ -8,10 +8,11 @@ import { useState, type ReactNode } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
-import { FormSkeleton, PageHeaderSkeleton } from "@/components/loading-skeletons";
+import { FormSkeleton } from "@/components/loading-skeletons";
 import { PageHeader } from "@/components/page-header";
 import { BackLink } from "@/components/placeholder-page";
 import { AssignmentsPanel } from "@/components/policies/assignments-panel";
+import { DetailHeaderSkeleton } from "@/components/policies/detail-header-skeleton";
 import { formatAssignedSummary } from "@/components/policies/policy-view-model";
 import { SectionCard } from "@/components/section";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-store";
@@ -23,7 +24,11 @@ import { ROUTES } from "@/config/navigation";
 import { usePermission } from "@/hooks/use-current-user";
 import { hasErrorCode } from "@/lib/api-client";
 import { formatDurationMinutes } from "@/lib/format";
-import { BreakPolicyMenu, DeleteBreakPolicyDialog, useToggleDefaultBreakPolicy } from "./break-policy-actions";
+import {
+  BreakPolicyMenu,
+  DeleteBreakPolicyDialog,
+  useToggleDefaultBreakPolicy,
+} from "./break-policy-actions";
 import { BreakPolicyFormSheet } from "./break-policy-form-sheet";
 import {
   BREAK_RULE_FIELD_META,
@@ -82,7 +87,11 @@ export function BreakPolicyDetailView({ id }: { id: string }) {
   if (policy.isPending) {
     return (
       <>
-        <PageHeaderSkeleton />
+        <DetailHeaderSkeleton
+          backHref={ROUTES.breakRules}
+          backLabel="Break Rules"
+          loadingLabel="Loading Break Rules…"
+        />
         <div className={GRID} aria-busy="true" role="status" aria-label="Loading Break Rules">
           <FormSkeleton fields={4} />
           <FormSkeleton fields={3} />
@@ -151,7 +160,8 @@ export function BreakPolicyDetailView({ id }: { id: string }) {
 
       {archived ? (
         <InlineAlert variant="warning" title="These Break Rules are archived">
-          They are skipped when working out which Break Rules apply, and they can’t be edited or assigned.
+          They are skipped when working out which Break Rules apply, and they can’t be edited or
+          assigned.
         </InlineAlert>
       ) : null}
 
@@ -161,7 +171,11 @@ export function BreakPolicyDetailView({ id }: { id: string }) {
       </div>
 
       <BreakPolicyFormSheet open={editing} onOpenChange={setEditing} policy={current} />
-      <DeleteBreakPolicyDialog policy={deleting} onClose={() => setDeleting(null)} onDeleted={() => router.push(ROUTES.breakRules)} />
+      <DeleteBreakPolicyDialog
+        policy={deleting}
+        onClose={() => setDeleting(null)}
+        onDeleted={() => router.push(ROUTES.breakRules)}
+      />
     </>
   );
 }
@@ -176,9 +190,18 @@ function BreakRulesCard({ policy }: { policy: BreakPolicy }) {
     { label: "Breaks allowed", value: policy.breaksEnabled ? "Yes" : "No" },
     ...(policy.breaksEnabled
       ? [
-          { label: BREAK_RULE_FIELD_META.maxBreaksPerShift.label, value: formatBreakCount(policy.maxBreaksPerShift) },
-          { label: BREAK_RULE_FIELD_META.maxBreakDurationMinutes.label, value: formatDurationMinutes(policy.maxBreakDurationMinutes) },
-          { label: BREAK_RULE_FIELD_META.maxTotalBreakMinutes.label, value: formatDurationMinutes(policy.maxTotalBreakMinutes) },
+          {
+            label: BREAK_RULE_FIELD_META.maxBreaksPerShift.label,
+            value: formatBreakCount(policy.maxBreaksPerShift),
+          },
+          {
+            label: BREAK_RULE_FIELD_META.maxBreakDurationMinutes.label,
+            value: formatDurationMinutes(policy.maxBreakDurationMinutes),
+          },
+          {
+            label: BREAK_RULE_FIELD_META.maxTotalBreakMinutes.label,
+            value: formatDurationMinutes(policy.maxTotalBreakMinutes),
+          },
           {
             label: BREAK_RULE_FIELD_META.minGapBetweenBreaksMinutes.label,
             value: minutesOrLabel(policy.minGapBetweenBreaksMinutes, "No minimum gap"),
@@ -190,7 +213,10 @@ function BreakRulesCard({ policy }: { policy: BreakPolicy }) {
           { label: "Who can start a break", value: describeBreakStarters(policy) },
         ]
       : []),
-    { label: "During a break", value: describeBreakBehaviourLabel(policy.restrictionBehaviour, policy.relaxedCategories) },
+    {
+      label: "During a break",
+      value: describeBreakBehaviourLabel(policy.restrictionBehaviour, policy.relaxedCategories),
+    },
   ];
 
   return (
@@ -198,7 +224,9 @@ function BreakRulesCard({ policy }: { policy: BreakPolicy }) {
       <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
         {rows.map((row) => (
           <div key={row.label} className="space-y-0.5">
-            <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{row.label}</dt>
+            <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+              {row.label}
+            </dt>
             <dd className="text-sm">{row.value}</dd>
           </div>
         ))}
@@ -238,8 +266,12 @@ function BreakPolicyAssignments({ policy, canEdit }: { policy: BreakPolicy; canE
       isDefault={policy.isDefault}
       defaultDisabledReason={policy.isDefault || defaultGuard.ok ? undefined : defaultGuard.reason}
       onSetDefault={(next) => setDefault.mutateAsync({ breakPolicyId: next ? policy.id : null })}
-      onAssign={(scopeType, scopeId) => assign.mutateAsync({ id: policy.id, input: { scopeType, scopeId } })}
-      onRemove={(assignment) => remove.mutateAsync({ assignmentId: assignment.id, breakPolicyId: policy.id })}
+      onAssign={(scopeType, scopeId) =>
+        assign.mutateAsync({ id: policy.id, input: { scopeType, scopeId } })
+      }
+      onRemove={(assignment) =>
+        remove.mutateAsync({ assignmentId: assignment.id, breakPolicyId: policy.id })
+      }
     />
   );
 }

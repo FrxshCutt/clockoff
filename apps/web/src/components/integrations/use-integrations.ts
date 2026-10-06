@@ -24,7 +24,10 @@ export const integrationKeys = {
   list: ["org", "integrations", "list"] as const,
 } as const;
 
-function actionPath(provider: IntegrationProvider, action: "connect" | "disconnect" | "sync" | "notify-me"): string {
+function actionPath(
+  provider: IntegrationProvider,
+  action: "connect" | "disconnect" | "sync" | "notify-me",
+): string {
   return `/api/integrations/${providerPathSegment(provider)}/${action}`;
 }
 
@@ -32,17 +35,28 @@ export function useIntegrations(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: integrationKeys.list,
     queryFn: async ({ signal }): Promise<ListIntegrationsResponse> =>
-      parseResponse(listIntegrationsResponseSchema, await api.get<unknown>("/api/integrations", undefined, signal), "GET /api/integrations"),
+      parseResponse(
+        listIntegrationsResponseSchema,
+        await api.get<unknown>("/api/integrations", undefined, signal),
+        "GET /api/integrations",
+      ),
     select: (data) => data.integrations,
     enabled: options.enabled ?? true,
   });
 }
 
 /** Writes one provider's fresh row into the cached list, then refetches so counts elsewhere catch up. */
-async function settleIntegration(queryClient: QueryClient, integration: Integration): Promise<void> {
+async function settleIntegration(
+  queryClient: QueryClient,
+  integration: Integration,
+): Promise<void> {
   queryClient.setQueryData<ListIntegrationsResponse>(integrationKeys.list, (current) =>
     current
-      ? { integrations: current.integrations.map((item) => (item.provider === integration.provider ? integration : item)) }
+      ? {
+          integrations: current.integrations.map((item) =>
+            item.provider === integration.provider ? integration : item,
+          ),
+        }
       : current,
   );
   await queryClient.invalidateQueries({ queryKey: integrationKeys.all });
@@ -53,8 +67,11 @@ export function useNotifyMe() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (provider: IntegrationProvider): Promise<Integration> =>
-      parseResponse(integrationResponseSchema, await api.post<unknown>(actionPath(provider, "notify-me"), {}), "POST /api/integrations/:provider/notify-me")
-        .integration,
+      parseResponse(
+        integrationResponseSchema,
+        await api.post<unknown>(actionPath(provider, "notify-me"), {}),
+        "POST /api/integrations/:provider/notify-me",
+      ).integration,
     onSuccess: (integration) => settleIntegration(queryClient, integration),
   });
 }
@@ -66,7 +83,13 @@ export function useNotifyMe() {
 export function useConnectIntegration() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ provider, activationMode }: { provider: IntegrationProvider; activationMode?: ActivationMode }): Promise<ConnectIntegrationResponse> => {
+    mutationFn: async ({
+      provider,
+      activationMode,
+    }: {
+      provider: IntegrationProvider;
+      activationMode?: ActivationMode;
+    }): Promise<ConnectIntegrationResponse> => {
       const body: ConnectIntegrationInput = activationMode ? { activationMode } : {};
       return parseResponse(
         connectIntegrationResponseSchema,
@@ -82,8 +105,11 @@ export function useDisconnectIntegration() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (provider: IntegrationProvider): Promise<Integration> =>
-      parseResponse(integrationResponseSchema, await api.post<unknown>(actionPath(provider, "disconnect"), {}), "POST /api/integrations/:provider/disconnect")
-        .integration,
+      parseResponse(
+        integrationResponseSchema,
+        await api.post<unknown>(actionPath(provider, "disconnect"), {}),
+        "POST /api/integrations/:provider/disconnect",
+      ).integration,
     onSuccess: (integration) => settleIntegration(queryClient, integration),
   });
 }
@@ -92,7 +118,11 @@ export function useSyncIntegration() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (provider: IntegrationProvider): Promise<SyncIntegrationResponse> =>
-      parseResponse(syncIntegrationResponseSchema, await api.post<unknown>(actionPath(provider, "sync"), {}), "POST /api/integrations/:provider/sync"),
+      parseResponse(
+        syncIntegrationResponseSchema,
+        await api.post<unknown>(actionPath(provider, "sync"), {}),
+        "POST /api/integrations/:provider/sync",
+      ),
     onSuccess: async (result) => {
       await settleIntegration(queryClient, result.integration);
       // A sync writes employees, locations, teams and shifts.

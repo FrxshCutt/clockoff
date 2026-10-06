@@ -11,7 +11,12 @@ export const GET = createHandler(
 
 /** `PATCH /api/employees/:id` (`employees:write`) → `{ employee }`. Omitted = unchanged, `null` = clear. */
 export const PATCH = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema, body: updateEmployeeSchema },
+  {
+    auth: "manager",
+    permission: "employees:write",
+    params: idParamsSchema,
+    body: updateEmployeeSchema,
+  },
   async ({ ctx, params, body }) => ({ employee: await updateEmployee(ctx, params.id, body) }),
 );
 

@@ -2,6 +2,7 @@ export { RealtimeProvider, type RealtimeProviderProps } from "./realtime-provide
 export { RealtimeStatusIndicator } from "./realtime-status";
 export {
   REALTIME_ALL_KEYS,
+  REALTIME_CONNECTING_META,
   REALTIME_INVALIDATIONS,
   REALTIME_STATUS_META,
   REALTIME_STREAM_PATH,

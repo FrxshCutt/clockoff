@@ -51,18 +51,31 @@ describe("summary line", () => {
   it("renders the spec example for each preset", () => {
     expect(summariseBreakPolicy(STANDARD.rules)).toBe("2 breaks · 15 min each · relax all");
     expect(summariseBreakPolicy(LUNCH.rules)).toBe("1 break · 30 min each · relax all");
-    expect(summariseBreakPolicy(NO_UNLOCK.rules)).toBe("2 breaks · 15 min each · keep restrictions");
+    expect(summariseBreakPolicy(NO_UNLOCK.rules)).toBe(
+      "2 breaks · 15 min each · keep restrictions",
+    );
   });
 
   it("adds the total only when it caps the breaks, and handles disabled rules and partial relaxing", () => {
-    expect(summariseBreakPolicy({ ...STANDARD.rules, maxBreaksPerShift: 3, maxBreakDurationMinutes: 20, maxTotalBreakMinutes: 30 })).toBe(
-      "3 breaks · 20 min each · 30 min total · relax all",
-    );
+    expect(
+      summariseBreakPolicy({
+        ...STANDARD.rules,
+        maxBreaksPerShift: 3,
+        maxBreakDurationMinutes: 20,
+        maxTotalBreakMinutes: 30,
+      }),
+    ).toBe("3 breaks · 20 min each · 30 min total · relax all");
     expect(summariseBreakPolicy({ ...STANDARD.rules, breaksEnabled: false })).toBe("Breaks off");
     expect(
-      summariseBreakPolicy({ ...STANDARD.rules, restrictionBehaviour: "RELAX_CATEGORIES", relaxedCategories: ["GAMES"] }),
+      summariseBreakPolicy({
+        ...STANDARD.rules,
+        restrictionBehaviour: "RELAX_CATEGORIES",
+        relaxedCategories: ["GAMES"],
+      }),
     ).toBe("2 breaks · 15 min each · relax games");
-    expect(describeBreakBehaviour("RELAX_CATEGORIES", ["GAMES", "VIDEO"])).toBe("relax 2 categories");
+    expect(describeBreakBehaviour("RELAX_CATEGORIES", ["GAMES", "VIDEO"])).toBe(
+      "relax 2 categories",
+    );
     expect(describeBreakBehaviour("RELAX_CATEGORIES", [])).toBe("relax some");
     expect(formatBreakCount(1)).toBe("1 break");
     expect(formatBreakCount(0)).toBe("0 breaks");
@@ -84,24 +97,46 @@ describe("summary line", () => {
         minMinutesAfterShiftStart: 0,
       }),
     ).toBe("Only managers can start breaks.");
-    expect(describeBreakTriggers({ ...STANDARD.rules, breaksEnabled: false })).toBe("Employees cannot take breaks under these rules.");
+    expect(describeBreakTriggers({ ...STANDARD.rules, breaksEnabled: false })).toBe(
+      "Employees cannot take breaks under these rules.",
+    );
   });
 
   it("labels behaviour and starters for detail views", () => {
     expect(describeBreakBehaviourLabel("RELAX_ALL", [])).toBe("Relax everything");
-    expect(describeBreakBehaviourLabel("RELAX_CATEGORIES", ["GAMES", "VIDEO"])).toBe("Relax some categories (Games, Video)");
+    expect(describeBreakBehaviourLabel("RELAX_CATEGORIES", ["GAMES", "VIDEO"])).toBe(
+      "Relax some categories (Games, Video)",
+    );
     expect(describeBreakBehaviourLabel("KEEP_RESTRICTIONS", ["GAMES"])).toBe("Keep restrictions");
-    expect(describeBreakStarters(STANDARD.rules)).toBe("Employees from the app, and scheduled breaks");
-    expect(describeBreakStarters({ ...STANDARD.rules, scheduledBreaksAllowed: false })).toBe("Employees from the app");
-    expect(describeBreakStarters({ ...STANDARD.rules, employeeTriggeredAllowed: false })).toBe("Scheduled breaks only");
-    expect(describeBreakStarters({ ...STANDARD.rules, employeeTriggeredAllowed: false, scheduledBreaksAllowed: false })).toBe("Managers only");
-    expect(describeBreakStarters({ ...STANDARD.rules, breaksEnabled: false })).toBe("Nobody — breaks are off");
+    expect(describeBreakStarters(STANDARD.rules)).toBe(
+      "Employees from the app, and scheduled breaks",
+    );
+    expect(describeBreakStarters({ ...STANDARD.rules, scheduledBreaksAllowed: false })).toBe(
+      "Employees from the app",
+    );
+    expect(describeBreakStarters({ ...STANDARD.rules, employeeTriggeredAllowed: false })).toBe(
+      "Scheduled breaks only",
+    );
+    expect(
+      describeBreakStarters({
+        ...STANDARD.rules,
+        employeeTriggeredAllowed: false,
+        scheduledBreaksAllowed: false,
+      }),
+    ).toBe("Managers only");
+    expect(describeBreakStarters({ ...STANDARD.rules, breaksEnabled: false })).toBe(
+      "Nobody — breaks are off",
+    );
   });
 });
 
 describe("presets", () => {
   it("offers the three seeded starting points, each a valid rule set", () => {
-    expect(BREAK_POLICY_PRESETS.map((preset) => preset.name)).toEqual(["Standard Break", "Lunch Shift", "No Phone Break Unlock"]);
+    expect(BREAK_POLICY_PRESETS.map((preset) => preset.name)).toEqual([
+      "Standard Break",
+      "Lunch Shift",
+      "No Phone Break Unlock",
+    ]);
     for (const preset of BREAK_POLICY_PRESETS) {
       expect(breakPolicyRulesSchema.safeParse(preset.rules).success, preset.name).toBe(true);
     }
@@ -109,10 +144,19 @@ describe("presets", () => {
   });
 
   it("explains the three behaviours and the on-device note is honest about two selections", () => {
-    expect(BREAK_BEHAVIOUR_OPTIONS.map((option) => option.value)).toEqual(["RELAX_ALL", "RELAX_CATEGORIES", "KEEP_RESTRICTIONS"]);
+    expect(BREAK_BEHAVIOUR_OPTIONS.map((option) => option.value)).toEqual([
+      "RELAX_ALL",
+      "RELAX_CATEGORIES",
+      "KEEP_RESTRICTIONS",
+    ]);
     expect(BREAK_BEHAVIOUR_OPTIONS.every((option) => option.description.length > 20)).toBe(true);
     expect(RELAX_CATEGORIES_DEVICE_NOTE).toMatch(/two Screen Time selections/);
     expect(RELAX_CATEGORIES_DEVICE_NOTE).toMatch(/employer never sees/);
+    // Until the second selection exists the device falls back to KEEP_RESTRICTIONS (SCREEN_TIME_IMPLEMENTATION §6).
+    expect(RELAX_CATEGORIES_DEVICE_NOTE).toMatch(/keep every restriction/);
+    expect(
+      BREAK_BEHAVIOUR_OPTIONS.find((option) => option.value === "RELAX_CATEGORIES")?.description,
+    ).toMatch(/second Screen Time selection/);
   });
 });
 
@@ -128,7 +172,11 @@ describe("form default mapping", () => {
     expect(fromDefaults.description).toBe("");
     expect(fromDefaults.maxBreaksPerShift).toBe(BREAK_POLICY_DEFAULTS.maxBreaksPerShift);
 
-    const existing = breakPolicy({ description: null, restrictionBehaviour: "RELAX_CATEGORIES", relaxedCategories: ["GAMES"] });
+    const existing = breakPolicy({
+      description: null,
+      restrictionBehaviour: "RELAX_CATEGORIES",
+      relaxedCategories: ["GAMES"],
+    });
     const fromPolicy = toBreakPolicyFormValues(existing);
     expect(fromPolicy.name).toBe("Standard Break");
     expect(fromPolicy.description).toBe("");
@@ -137,14 +185,22 @@ describe("form default mapping", () => {
   });
 
   it("maps to valid create and update bodies, stripping stale relaxed categories", () => {
-    const values = { ...toBreakPolicyFormValues(null, STANDARD), name: "  Standard  ", description: "  ", relaxedCategories: ["GAMES" as const] };
+    const values = {
+      ...toBreakPolicyFormValues(null, STANDARD),
+      name: "  Standard  ",
+      description: "  ",
+      relaxedCategories: ["GAMES" as const],
+    };
     const created = toCreateBreakPolicyInput(values);
     expect(created.name).toBe("Standard");
     expect(created.description).toBeNull();
     expect(created.relaxedCategories).toEqual([]);
     expect(createBreakPolicySchema.safeParse(created).success).toBe(true);
 
-    const updated = toUpdateBreakPolicyInput({ ...values, restrictionBehaviour: "RELAX_CATEGORIES" });
+    const updated = toUpdateBreakPolicyInput({
+      ...values,
+      restrictionBehaviour: "RELAX_CATEGORIES",
+    });
     expect(updated.relaxedCategories).toEqual(["GAMES"]);
     expect(updateBreakPolicySchema.safeParse(updated).success).toBe(true);
     const { name: _name, description: _description, ...rules } = updated;
@@ -154,21 +210,52 @@ describe("form default mapping", () => {
   it("applies the API's cross-field rules on the client", () => {
     const base = toBreakPolicyFormValues(null, STANDARD);
     expect(breakPolicyFormSchema.safeParse({ ...base, name: "" }).success).toBe(false);
-    const tooLong = breakPolicyFormSchema.safeParse({ ...base, maxBreakDurationMinutes: 45, maxTotalBreakMinutes: 30 });
+    const tooLong = breakPolicyFormSchema.safeParse({
+      ...base,
+      maxBreakDurationMinutes: 45,
+      maxTotalBreakMinutes: 30,
+    });
     expect(tooLong.success).toBe(false);
-    expect(tooLong.success ? [] : tooLong.error.issues.map((i) => i.path.join("."))).toContain("maxBreakDurationMinutes");
-    expect(breakPolicyFormSchema.safeParse({ ...base, restrictionBehaviour: "RELAX_CATEGORIES", relaxedCategories: [] }).success).toBe(false);
+    expect(tooLong.success ? [] : tooLong.error.issues.map((i) => i.path.join("."))).toContain(
+      "maxBreakDurationMinutes",
+    );
+    expect(
+      breakPolicyFormSchema.safeParse({
+        ...base,
+        restrictionBehaviour: "RELAX_CATEGORIES",
+        relaxedCategories: [],
+      }).success,
+    ).toBe(false);
     expect(breakPolicyFormSchema.safeParse({ ...base, maxBreaksPerShift: 0 }).success).toBe(false);
-    expect(breakPolicyFormSchema.safeParse({ ...base, breaksEnabled: false, maxBreaksPerShift: 0 }).success).toBe(true);
+    expect(
+      breakPolicyFormSchema.safeParse({ ...base, breaksEnabled: false, maxBreaksPerShift: 0 })
+        .success,
+    ).toBe(true);
   });
 
   it("previews the summary only once the rules are complete", () => {
     expect(previewBreakSummary(STANDARD.rules)).toBe("2 breaks · 15 min each · relax all");
     expect(previewBreakSummary({ maxBreaksPerShift: Number.NaN })).toBeNull();
-    expect(previewBreakSummary({ maxBreaksPerShift: 1, maxBreakDurationMinutes: 30, maxTotalBreakMinutes: 30 })).toBe(
-      "1 break · 30 min each · relax all",
+    expect(
+      previewBreakSummary({
+        maxBreaksPerShift: 1,
+        maxBreakDurationMinutes: 30,
+        maxTotalBreakMinutes: 30,
+      }),
+    ).toBe("1 break · 30 min each · relax all");
+    expect(previewBreakSummary({ maxBreaksPerShift: undefined })).toBe(
+      "2 breaks · 15 min each · relax all",
     );
-    expect(previewBreakSummary({ maxBreaksPerShift: undefined })).toBe("2 breaks · 15 min each · relax all");
+  });
+
+  it("accepts the whole form value object (name and description included) without tripping the strict schema", () => {
+    const formValues = {
+      ...toBreakPolicyFormValues(null, LUNCH),
+      name: "Lunch",
+      description: "One long break",
+    };
+    expect(previewBreakSummary(formValues)).toBe("1 break · 30 min each · relax all");
+    expect(previewBreakSummary({ ...formValues, maxBreakDurationMinutes: Number.NaN })).toBeNull();
   });
 });
 

@@ -50,9 +50,14 @@ export async function updateSettings(
     organisation = await updateCurrentOrganisation(ctx, input.organisation);
   }
 
-  let notificationPreferences = mergeNotificationPreferences(ctx.membership.notificationPreferences);
+  let notificationPreferences = mergeNotificationPreferences(
+    ctx.membership.notificationPreferences,
+  );
   if (input.notificationPreferences !== undefined) {
-    notificationPreferences = await updateOwnNotificationPreferences(ctx, input.notificationPreferences);
+    notificationPreferences = await updateOwnNotificationPreferences(
+      ctx,
+      input.notificationPreferences,
+    );
   }
   return { organisation, role: ctx.membership.role, notificationPreferences };
 }
@@ -63,7 +68,11 @@ export async function updateOwnNotificationPreferences(
   patch: UpdateNotificationPreferencesInput,
 ): Promise<NotificationPreferences> {
   return prisma.$transaction(async (tx) => {
-    const membership = await findMembershipInOrganisation(ctx.organisation.id, ctx.membership.id, tx);
+    const membership = await findMembershipInOrganisation(
+      ctx.organisation.id,
+      ctx.membership.id,
+      tx,
+    );
     if (!membership) throw new AppError("NOT_FOUND", "Membership not found");
     const before = mergeNotificationPreferences(membership.notificationPreferences);
     const after = mergeNotificationPreferences(membership.notificationPreferences, patch);

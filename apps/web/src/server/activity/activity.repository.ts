@@ -17,7 +17,9 @@ export const activityEmployeeSelect = {
 export const activityEventInclude = {
   employee: { select: activityEmployeeSelect },
 } satisfies Prisma.ActivityEventInclude;
-export type ActivityEventRow = Prisma.ActivityEventGetPayload<{ include: typeof activityEventInclude }>;
+export type ActivityEventRow = Prisma.ActivityEventGetPayload<{
+  include: typeof activityEventInclude;
+}>;
 
 export interface ActivityFeedFilter {
   employeeId?: string;

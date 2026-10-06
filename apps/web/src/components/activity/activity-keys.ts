@@ -9,5 +9,6 @@ export const activityKeys = {
 
 export const auditLogKeys = {
   all: ["org", "audit-logs"] as const,
-  list: (params: Readonly<Record<string, unknown>>) => ["org", "audit-logs", "list", params] as const,
+  list: (params: Readonly<Record<string, unknown>>) =>
+    ["org", "audit-logs", "list", params] as const,
 } as const;

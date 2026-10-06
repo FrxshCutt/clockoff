@@ -16,18 +16,33 @@ export interface PrecedenceExplainerProps {
 }
 
 /** "Employee > Team > Location > Organisation" with a one-line explanation per level, collapsed by default. */
-export function PrecedenceExplainer({ noun = "policy", title, defaultOpen = false, className }: PrecedenceExplainerProps) {
+export function PrecedenceExplainer({
+  noun = "policy",
+  title,
+  defaultOpen = false,
+  className,
+}: PrecedenceExplainerProps) {
   const [open, setOpen] = useState(defaultOpen);
   const heading = title ?? `Which ${noun} applies?`;
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className={cn("bg-muted/40 rounded-lg border", className)}>
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className={cn("bg-muted/40 rounded-lg border", className)}
+    >
       <CollapsibleTrigger className="focus-visible:ring-ring/50 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm outline-none focus-visible:ring-[3px]">
         <Layers className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <span className="block font-medium">{heading}</span>
           <span className="text-muted-foreground block text-xs">{PRECEDENCE_SUMMARY}</span>
         </span>
-        <ChevronDown className={cn("text-muted-foreground size-4 shrink-0 transition-transform", open && "rotate-180")} aria-hidden="true" />
+        <ChevronDown
+          className={cn(
+            "text-muted-foreground size-4 shrink-0 transition-transform",
+            open && "rotate-180",
+          )}
+          aria-hidden="true"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ol className="space-y-2 border-t px-4 py-3">

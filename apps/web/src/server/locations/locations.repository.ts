@@ -13,7 +13,10 @@ export const locationInclude = {
 } satisfies Prisma.LocationInclude;
 export type LocationRow = Prisma.LocationGetPayload<{ include: typeof locationInclude }>;
 
-export async function findLocations(organisationId: string, db: Db = prisma): Promise<LocationRow[]> {
+export async function findLocations(
+  organisationId: string,
+  db: Db = prisma,
+): Promise<LocationRow[]> {
   return db.location.findMany({
     where: { organisationId, deletedAt: null },
     include: locationInclude,

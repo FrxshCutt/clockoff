@@ -7,7 +7,13 @@ import { useBreakPolicies, usePolicies } from "@/components/employees/employee-a
 import { breakPolicyQueryKeys, policyQueryKeys } from "@/components/policies/policy-query-keys";
 import { api } from "@/lib/api-client";
 import { locationKeys, teamKeys } from "./location-keys";
-import { assignableBreakPolicies, assignableWorkPolicies, type AssignableScope, type PolicyKind, type PolicyOption } from "./locations-view-model";
+import {
+  assignableBreakPolicies,
+  assignableWorkPolicies,
+  type AssignableScope,
+  type PolicyKind,
+  type PolicyOption,
+} from "./locations-view-model";
 
 /**
  * The inline "Assign…" controls on Locations & Teams. What is assigned at each scope comes embedded on the
@@ -28,12 +34,21 @@ export interface PolicyOptionsState {
 }
 
 /** Work Policies and Break Rules a manager can assign (`GET /api/policies`, `GET /api/break-policies`). */
-export function usePolicyOptions(options: { enabled?: boolean } = {}): { workPolicies: PolicyOptionsState; breakPolicies: PolicyOptionsState } {
+export function usePolicyOptions(options: { enabled?: boolean } = {}): {
+  workPolicies: PolicyOptionsState;
+  breakPolicies: PolicyOptionsState;
+} {
   const enabled = options.enabled ?? true;
   const policies = usePolicies({ enabled });
   const breakPolicies = useBreakPolicies({ enabled });
-  const workOptions = useMemo(() => (policies.data ? assignableWorkPolicies(policies.data) : undefined), [policies.data]);
-  const breakOptions = useMemo(() => (breakPolicies.data ? assignableBreakPolicies(breakPolicies.data) : undefined), [breakPolicies.data]);
+  const workOptions = useMemo(
+    () => (policies.data ? assignableWorkPolicies(policies.data) : undefined),
+    [policies.data],
+  );
+  const breakOptions = useMemo(
+    () => (breakPolicies.data ? assignableBreakPolicies(breakPolicies.data) : undefined),
+    [breakPolicies.data],
+  );
   return {
     workPolicies: {
       options: workOptions,
@@ -53,16 +68,28 @@ export function usePolicyOptions(options: { enabled?: boolean } = {}): { workPol
 }
 
 function assignmentsPath(kind: PolicyKind, policyId: string): string {
-  return kind === "policy" ? `/api/policies/${encode(policyId)}/assignments` : `/api/break-policies/${encode(policyId)}/assignments`;
+  return kind === "policy"
+    ? `/api/policies/${encode(policyId)}/assignments`
+    : `/api/break-policies/${encode(policyId)}/assignments`;
 }
 
 function assignmentPath(kind: PolicyKind, assignmentId: string): string {
-  return kind === "policy" ? `/api/policy-assignments/${encode(assignmentId)}` : `/api/break-policy-assignments/${encode(assignmentId)}`;
+  return kind === "policy"
+    ? `/api/policy-assignments/${encode(assignmentId)}`
+    : `/api/break-policy-assignments/${encode(assignmentId)}`;
 }
 
 /** Rows embed their assignment, resolved policies on employees change, and the policy pages count assignments. */
-async function invalidateAfterAssignment(queryClient: QueryClient, kind: PolicyKind): Promise<void> {
-  const keys = [locationKeys.all, teamKeys.all, kind === "policy" ? policyQueryKeys.all : breakPolicyQueryKeys.all, ["org", "employees"] as const];
+async function invalidateAfterAssignment(
+  queryClient: QueryClient,
+  kind: PolicyKind,
+): Promise<void> {
+  const keys = [
+    locationKeys.all,
+    teamKeys.all,
+    kind === "policy" ? policyQueryKeys.all : breakPolicyQueryKeys.all,
+    ["org", "employees"] as const,
+  ];
   await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
 }
 
@@ -80,7 +107,10 @@ export function useAssignScopePolicy(kind: PolicyKind) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: AssignScopePolicyVariables): Promise<void> => {
-      const body: CreateAssignmentInput = { scopeType: variables.scopeType, scopeId: variables.scopeId };
+      const body: CreateAssignmentInput = {
+        scopeType: variables.scopeType,
+        scopeId: variables.scopeId,
+      };
       await api.post<unknown>(assignmentsPath(kind, variables.policyId), body);
     },
     onSettled: () => invalidateAfterAssignment(queryClient, kind),

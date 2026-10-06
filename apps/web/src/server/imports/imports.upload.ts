@@ -81,7 +81,10 @@ export async function readImportUpload(
 ): Promise<ImportUpload> {
   const contentType = req.headers.get("content-type") ?? "";
   if (!/^multipart\/form-data\b/i.test(contentType)) {
-    throw new AppError("UNSUPPORTED_MEDIA_TYPE", "Expected multipart/form-data with a `file` field");
+    throw new AppError(
+      "UNSUPPORTED_MEDIA_TYPE",
+      "Expected multipart/form-data with a `file` field",
+    );
   }
   const bytes = await readBodyWithLimit(req, maxBodyBytes);
 

@@ -54,7 +54,10 @@ export function resolvePolicyVersion(policy: VersionedPolicyLike | null): Resolv
 
   const version = policy.currentVersion ?? null;
   const expectedVersionId = policy.currentVersionId;
-  if (typeof expectedVersionId === "string" && (version === null || version.id !== expectedVersionId)) {
+  if (
+    typeof expectedVersionId === "string" &&
+    (version === null || version.id !== expectedVersionId)
+  ) {
     const suppliedVersionId = version?.id ?? null;
     return {
       ...EMPTY_VERSION,

@@ -12,8 +12,11 @@ import { StatusBadge } from "@/components/status/status-badge";
 import { routeFor } from "@/config/navigation";
 import { describeAttention, stateAgreement } from "./compliance-model";
 
-/** Column definitions for the Compliance tab; server-sorted/paginated, so no column sorting. */
-export function complianceColumns(): ColumnDef<ComplianceEmployeeRow>[] {
+/**
+ * Column definitions for the Compliance tab; server-sorted/paginated, so no column sorting. `timeZone` (the
+ * organisation's) is used for the absolute time in the last-sync tooltip.
+ */
+export function complianceColumns(timeZone?: string): ColumnDef<ComplianceEmployeeRow>[] {
   return [
     {
       id: "employee",
@@ -31,7 +34,8 @@ export function complianceColumns(): ColumnDef<ComplianceEmployeeRow>[] {
               {name}
             </Link>
             <p className="text-muted-foreground truncate text-xs">
-              {[employee.jobTitle, employee.primaryLocation?.name].filter(Boolean).join(" · ") || "—"}
+              {[employee.jobTitle, employee.primaryLocation?.name].filter(Boolean).join(" · ") ||
+                "—"}
             </p>
           </div>
         );
@@ -57,11 +61,20 @@ export function complianceColumns(): ColumnDef<ComplianceEmployeeRow>[] {
         const agreement = stateAgreement(row.original);
         return (
           <div className="flex flex-wrap items-center gap-1.5" data-agreement={agreement}>
-            {expectedState ? <StatusBadge kind="workModeState" value={expectedState} size="sm" /> : <span className="text-muted-foreground text-xs">No shift</span>}
+            {expectedState ? (
+              <StatusBadge kind="workModeState" value={expectedState} size="sm" />
+            ) : (
+              <span className="text-muted-foreground text-xs">No shift</span>
+            )}
             <ArrowRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
             <span className="sr-only">then</span>
             {reportedState ? (
-              <StatusBadge kind="workModeState" value={reportedState} size="sm" className={agreement === "diverged" ? "ring-2 ring-amber-400/60" : undefined} />
+              <StatusBadge
+                kind="workModeState"
+                value={reportedState}
+                size="sm"
+                className={agreement === "diverged" ? "ring-2 ring-amber-400/60" : undefined}
+              />
             ) : (
               <span className="text-muted-foreground text-xs">Not reported</span>
             )}
@@ -73,7 +86,14 @@ export function complianceColumns(): ColumnDef<ComplianceEmployeeRow>[] {
       id: "lastSync",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Last sync" />,
       enableSorting: false,
-      cell: ({ row }) => <RelativeTime value={row.original.lastSyncAt} fallback="Never" className="text-sm" />,
+      cell: ({ row }) => (
+        <RelativeTime
+          value={row.original.lastSyncAt}
+          fallback="Never"
+          timeZone={timeZone}
+          className="text-sm"
+        />
+      ),
     },
     {
       id: "permission",
@@ -97,7 +117,9 @@ export function complianceColumns(): ColumnDef<ComplianceEmployeeRow>[] {
       cell: ({ row }) => {
         const reason = describeAttention(row.original);
         return reason ? (
-          <p className="max-w-xs text-sm text-pretty text-amber-800 dark:text-amber-300">{reason}</p>
+          <p className="max-w-xs text-sm text-pretty text-amber-800 dark:text-amber-300">
+            {reason}
+          </p>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>
         );

@@ -102,11 +102,21 @@ describe("policy module exports", () => {
     expectTypeOf(policyEntry.resolveWorkPolicy<PrismaPolicyWithVersion>).returns.toEqualTypeOf<
       ResolvedWorkPolicy<PrismaPolicyWithVersion>
     >();
-    expectTypeOf<ResolvedWorkPolicy<PrismaPolicyWithVersion>["policy"]>().toEqualTypeOf<PrismaPolicyWithVersion | null>();
-    expectTypeOf<ResolvedWorkPolicy<PrismaPolicyWithVersion>["version"]>().toEqualTypeOf<PolicyVersionSnapshot>();
-    expectTypeOf<PolicyVersionSnapshot["restrictionConfig"]>().toEqualTypeOf<RestrictionConfig | null>();
-    expectTypeOf<ResolveResult<PrismaBreakPolicyRow>["policy"]>().toEqualTypeOf<PrismaBreakPolicyRow | null>();
-    expectTypeOf<ResolveInput<PrismaBreakPolicyRow>["employee"]>().toEqualTypeOf<EmployeeContextLike>();
+    expectTypeOf<
+      ResolvedWorkPolicy<PrismaPolicyWithVersion>["policy"]
+    >().toEqualTypeOf<PrismaPolicyWithVersion | null>();
+    expectTypeOf<
+      ResolvedWorkPolicy<PrismaPolicyWithVersion>["version"]
+    >().toEqualTypeOf<PolicyVersionSnapshot>();
+    expectTypeOf<
+      PolicyVersionSnapshot["restrictionConfig"]
+    >().toEqualTypeOf<RestrictionConfig | null>();
+    expectTypeOf<
+      ResolveResult<PrismaBreakPolicyRow>["policy"]
+    >().toEqualTypeOf<PrismaBreakPolicyRow | null>();
+    expectTypeOf<
+      ResolveInput<PrismaBreakPolicyRow>["employee"]
+    >().toEqualTypeOf<EmployeeContextLike>();
   });
 
   it("infers T from policiesById (not from the assignments) so the result is not widened", () => {
@@ -144,8 +154,8 @@ describe("policy module exports", () => {
   it("discriminates ResolvedFrom on `via` and ResolutionWarning on `code`", () => {
     expectTypeOf<ResolvedFrom["via"]>().toEqualTypeOf<"ASSIGNMENT" | "DEFAULT">();
     expectTypeOf<Extract<ResolvedFrom, { via: "DEFAULT" }>>().not.toHaveProperty("assignmentId");
-    expectTypeOf<Extract<ResolutionWarning, { code: "POLICY_ORGANISATION_MISMATCH" }>["details"]>().toHaveProperty(
-      "policyOrganisationId",
-    );
+    expectTypeOf<
+      Extract<ResolutionWarning, { code: "POLICY_ORGANISATION_MISMATCH" }>["details"]
+    >().toHaveProperty("policyOrganisationId");
   });
 });

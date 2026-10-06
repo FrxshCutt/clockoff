@@ -26,7 +26,9 @@ export interface OnboardingProgress<T extends OnboardingStepLike = OnboardingSte
   readonly remaining: readonly T[];
 }
 
-export function computeOnboardingProgress<T extends OnboardingStepLike>(items: readonly T[]): OnboardingProgress<T> {
+export function computeOnboardingProgress<T extends OnboardingStepLike>(
+  items: readonly T[],
+): OnboardingProgress<T> {
   const totalCount = items.length;
   const remaining = items.filter((item) => !item.done);
   const completedCount = totalCount - remaining.length;

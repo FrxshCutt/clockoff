@@ -7,8 +7,20 @@ import type {
   PermissionState,
   RestrictionCategory,
 } from "../enums";
-import { addMinutes, assertNever, futureInstants, minDate, toDate, toOptionalDate } from "./instants";
-import { coveringShiftAt, mergeShiftIntervals, nextWorkingIntervalAfter, workingIntervalAt } from "./mergeShiftIntervals";
+import {
+  addMinutes,
+  assertNever,
+  futureInstants,
+  minDate,
+  toDate,
+  toOptionalDate,
+} from "./instants";
+import {
+  coveringShiftAt,
+  mergeShiftIntervals,
+  nextWorkingIntervalAfter,
+  workingIntervalAt,
+} from "./mergeShiftIntervals";
 import type {
   BreakRef,
   ComputeExpectedStateInput,
@@ -93,15 +105,20 @@ interface Context {
 // Normalisation
 // ─────────────────────────────────────────────────────────────────────────────
 
-function resolveOptions(options: WorkModeMachineOptions | undefined): Readonly<Required<WorkModeMachineOptions>> {
+function resolveOptions(
+  options: WorkModeMachineOptions | undefined,
+): Readonly<Required<WorkModeMachineOptions>> {
   const pre = options?.preShiftWarningMinutes ?? DEFAULT_WORK_MODE_OPTIONS.preShiftWarningMinutes;
-  const ending = options?.shiftEndingWarningMinutes ?? DEFAULT_WORK_MODE_OPTIONS.shiftEndingWarningMinutes;
+  const ending =
+    options?.shiftEndingWarningMinutes ?? DEFAULT_WORK_MODE_OPTIONS.shiftEndingWarningMinutes;
   for (const [name, value] of [
     ["preShiftWarningMinutes", pre],
     ["shiftEndingWarningMinutes", ending],
   ] as const) {
     if (!Number.isFinite(value) || value < 0) {
-      throw new RangeError(`workMode: options.${name} must be a finite number ≥ 0 (got ${String(value)})`);
+      throw new RangeError(
+        `workMode: options.${name} must be a finite number ≥ 0 (got ${String(value)})`,
+      );
     }
   }
   return { preShiftWarningMinutes: pre, shiftEndingWarningMinutes: ending };
@@ -134,7 +151,8 @@ function hasBreakWindow(status: BreakSessionStatus, endedAt: Date | null): boole
 }
 
 function parseBehaviour(value: unknown): BreakRestrictionBehaviour {
-  return typeof value === "string" && (BREAK_RESTRICTION_BEHAVIOURS as readonly string[]).includes(value)
+  return typeof value === "string" &&
+    (BREAK_RESTRICTION_BEHAVIOURS as readonly string[]).includes(value)
     ? (value as BreakRestrictionBehaviour)
     : "RELAX_ALL";
 }
@@ -152,7 +170,9 @@ function parseCategories(value: unknown): RestrictionCategory[] {
  */
 function assertOneOf<T extends string>(values: readonly T[], value: unknown, field: string): T {
   if (typeof value !== "string" || !(values as readonly string[]).includes(value)) {
-    throw new TypeError(`workMode: ${field} must be one of ${values.join(", ")} (got ${JSON.stringify(value)})`);
+    throw new TypeError(
+      `workMode: ${field} must be one of ${values.join(", ")} (got ${JSON.stringify(value)})`,
+    );
   }
   return value as T;
 }
@@ -177,7 +197,11 @@ function buildContext(input: ComputeExpectedStateInput): Context {
       startedAt: toDate(b.startedAt, `breakSession ${b.id}.startedAt`),
       plannedEndsAt: toDate(b.plannedEndsAt, `breakSession ${b.id}.plannedEndsAt`),
       endedAt,
-      behaviour: assertOneOf(BREAK_RESTRICTION_BEHAVIOURS, b.restrictionBehaviour, `breakSession ${b.id}.restrictionBehaviour`),
+      behaviour: assertOneOf(
+        BREAK_RESTRICTION_BEHAVIOURS,
+        b.restrictionBehaviour,
+        `breakSession ${b.id}.restrictionBehaviour`,
+      ),
       categories: parseCategories(b.relaxedCategories),
     });
   }
@@ -202,7 +226,8 @@ function buildContext(input: ComputeExpectedStateInput): Context {
 
   const intervals = mergeShiftIntervals(input.shifts);
   const shiftsById = new Map<string, ShiftRef>();
-  for (const interval of intervals) for (const shift of interval.shifts) shiftsById.set(shift.id, shift);
+  for (const interval of intervals)
+    for (const shift of interval.shifts) shiftsById.set(shift.id, shift);
 
   return {
     now,
@@ -355,7 +380,13 @@ function findActiveBreak(ctx: Context, interval: WorkingInterval, at: Date): Act
     const endsAt = breakEffectiveEnd(b, ownShift);
     if (endsAt.getTime() <= ms) continue;
     const candidate: ActiveBreak = {
-      ref: { id: b.id, shiftId: b.shiftId, startedAt: b.startedAt, plannedEndsAt: b.plannedEndsAt, endsAt },
+      ref: {
+        id: b.id,
+        shiftId: b.shiftId,
+        startedAt: b.startedAt,
+        plannedEndsAt: b.plannedEndsAt,
+        endsAt,
+      },
       behaviour: b.behaviour,
       categories: b.categories,
     };
@@ -363,7 +394,8 @@ function findActiveBreak(ctx: Context, interval: WorkingInterval, at: Date): Act
     if (
       best === null ||
       candidate.ref.startedAt.getTime() > best.ref.startedAt.getTime() ||
-      (candidate.ref.startedAt.getTime() === best.ref.startedAt.getTime() && candidate.ref.id < best.ref.id)
+      (candidate.ref.startedAt.getTime() === best.ref.startedAt.getTime() &&
+        candidate.ref.id < best.ref.id)
     ) {
       best = candidate;
     }
@@ -379,7 +411,9 @@ function evaluateAt(ctx: Context, at: Date): Snapshot {
   const upcoming = nextWorkingIntervalAfter(ctx.intervals, at);
   const upcomingShift: ShiftRef | null = upcoming?.shifts[0] ?? null;
   const imminent =
-    current === null && upcoming !== null && addMinutes(upcoming.startsAt, -preShiftWarningMinutes).getTime() <= ms
+    current === null &&
+    upcoming !== null &&
+    addMinutes(upcoming.startsAt, -preShiftWarningMinutes).getTime() <= ms
       ? upcoming
       : null;
 
@@ -541,7 +575,9 @@ export function nextTransitionAt(input: ComputeExpectedStateInput): Date | null 
 }
 
 function shiftRefJson(ref: ShiftRef | null): ExpectedStateJson["activeShift"] {
-  return ref ? { id: ref.id, startsAt: ref.startsAt.toISOString(), endsAt: ref.endsAt.toISOString() } : null;
+  return ref
+    ? { id: ref.id, startsAt: ref.startsAt.toISOString(), endsAt: ref.endsAt.toISOString() }
+    : null;
 }
 
 /** Wire / fixture representation: every instant as an ISO-8601 UTC string. */

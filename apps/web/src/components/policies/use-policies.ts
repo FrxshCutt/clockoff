@@ -47,7 +47,8 @@ export function usePolicies(query: PolicyQuery = {}) {
 export function usePolicy(id: string | null, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: policyQueryKeys.detail(id ?? ""),
-    queryFn: async ({ signal }) => (await api.get<PolicyResponse>(policyPath(id ?? ""), undefined, signal)).policy,
+    queryFn: async ({ signal }) =>
+      (await api.get<PolicyResponse>(policyPath(id ?? ""), undefined, signal)).policy,
     enabled: (options.enabled ?? true) && id !== null,
   });
 }
@@ -55,7 +56,8 @@ export function usePolicy(id: string | null, options: { enabled?: boolean } = {}
 export function usePolicyVersions(id: string | null, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: policyQueryKeys.versions(id ?? ""),
-    queryFn: ({ signal }) => api.get<PolicyVersionsResponse>(policyPath(id ?? "", "/versions"), undefined, signal),
+    queryFn: ({ signal }) =>
+      api.get<PolicyVersionsResponse>(policyPath(id ?? "", "/versions"), undefined, signal),
     select: (data) => data.versions,
     enabled: (options.enabled ?? true) && id !== null,
   });
@@ -65,7 +67,11 @@ export function usePolicyAssignments(id: string | null, options: { enabled?: boo
   return useQuery({
     queryKey: policyQueryKeys.assignments(id ?? ""),
     queryFn: ({ signal }) =>
-      api.get<ListPolicyAssignmentsResponse>(policyPath(id ?? "", "/assignments"), undefined, signal),
+      api.get<ListPolicyAssignmentsResponse>(
+        policyPath(id ?? "", "/assignments"),
+        undefined,
+        signal,
+      ),
     select: (data) => data.assignments,
     enabled: (options.enabled ?? true) && id !== null,
   });
@@ -83,7 +89,8 @@ function useSettlePolicy() {
 export function useCreatePolicy() {
   const settle = useSettlePolicy();
   return useMutation({
-    mutationFn: async (input: CreatePolicyInput) => (await api.post<PolicyResponse>("/api/policies", input)).policy,
+    mutationFn: async (input: CreatePolicyInput) =>
+      (await api.post<PolicyResponse>("/api/policies", input)).policy,
     onSuccess: (policy) => settle(policy),
   });
 }
@@ -101,7 +108,8 @@ export function usePublishPolicy() {
   const settle = useSettlePolicy();
   return useMutation({
     mutationFn: async (variables: { id: string; input: PublishPolicyInput }) =>
-      (await api.post<PolicyResponse>(policyPath(variables.id, "/publish"), variables.input)).policy,
+      (await api.post<PolicyResponse>(policyPath(variables.id, "/publish"), variables.input))
+        .policy,
     onSuccess: (policy) => settle(policy),
   });
 }
@@ -110,7 +118,8 @@ export function useDuplicatePolicy() {
   const settle = useSettlePolicy();
   return useMutation({
     mutationFn: async (variables: { id: string; input: DuplicatePolicyInput }) =>
-      (await api.post<PolicyResponse>(policyPath(variables.id, "/duplicate"), variables.input)).policy,
+      (await api.post<PolicyResponse>(policyPath(variables.id, "/duplicate"), variables.input))
+        .policy,
     onSuccess: (policy) => settle(policy),
   });
 }
@@ -118,7 +127,8 @@ export function useDuplicatePolicy() {
 export function useArchivePolicy() {
   const settle = useSettlePolicy();
   return useMutation({
-    mutationFn: async (id: string) => (await api.post<PolicyResponse>(policyPath(id, "/archive"), {})).policy,
+    mutationFn: async (id: string) =>
+      (await api.post<PolicyResponse>(policyPath(id, "/archive"), {})).policy,
     onSuccess: (policy) => settle(policy),
   });
 }
@@ -138,7 +148,12 @@ export function useAssignPolicy() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: { id: string; input: CreatePolicyAssignmentInput }) =>
-      (await api.post<PolicyAssignmentResponse>(policyPath(variables.id, "/assignments"), variables.input)).assignment,
+      (
+        await api.post<PolicyAssignmentResponse>(
+          policyPath(variables.id, "/assignments"),
+          variables.input,
+        )
+      ).assignment,
     // Assignment counts live on the policy, so the whole domain refreshes.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: policyQueryKeys.all }),
   });

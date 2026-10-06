@@ -1,6 +1,16 @@
-import { prisma, type Prisma, type ShiftImportRowStatus, type ShiftImportStatus } from "@workmode/db";
+import {
+  prisma,
+  type Prisma,
+  type ShiftImportRowStatus,
+  type ShiftImportStatus,
+} from "@workmode/db";
 import type { EmployeeCandidate, ImportExistingShift } from "@workmode/shared/csv/csvImport";
-import { importInclude, importRowInclude, type ImportRecord, type ImportRowRecord } from "./imports.mappers";
+import {
+  importInclude,
+  importRowInclude,
+  type ImportRecord,
+  type ImportRowRecord,
+} from "./imports.mappers";
 
 /**
  * CSV import queries. Every function takes the `organisationId` explicitly (from the verified membership);
@@ -14,7 +24,10 @@ export async function findImport(
   importId: string,
   db: Db = prisma,
 ): Promise<ImportRecord | null> {
-  return db.shiftImport.findFirst({ where: { id: importId, organisationId }, include: importInclude });
+  return db.shiftImport.findFirst({
+    where: { id: importId, organisationId },
+    include: importInclude,
+  });
 }
 
 export interface ListImportsFilter {
@@ -30,7 +43,9 @@ export async function listImports(
 ): Promise<{ items: ImportRecord[]; total: number }> {
   const where: Prisma.ShiftImportWhereInput = {
     organisationId,
-    ...(filter.statuses && filter.statuses.length > 0 ? { status: { in: [...filter.statuses] } } : {}),
+    ...(filter.statuses && filter.statuses.length > 0
+      ? { status: { in: [...filter.statuses] } }
+      : {}),
   };
   const [items, total] = await Promise.all([
     db.shiftImport.findMany({
@@ -72,15 +87,41 @@ export async function listEmployeeCandidates(
   });
 }
 
-export async function findActiveEmployee(organisationId: string, employeeId: string, db: Db = prisma) {
+export async function findActiveEmployee(
+  organisationId: string,
+  employeeId: string,
+  db: Db = prisma,
+) {
   return db.employee.findFirst({
     where: { id: employeeId, organisationId, deletedAt: null, employmentStatus: "ACTIVE" },
     select: { id: true, firstName: true, lastName: true },
   });
 }
 
+/** The ids among `employeeIds` that are ACTIVE and not deleted (commit re-checks the matched employees). */
+export async function listActiveEmployeeIds(
+  organisationId: string,
+  employeeIds: readonly string[],
+  db: Db = prisma,
+): Promise<Set<string>> {
+  if (employeeIds.length === 0) return new Set();
+  const rows = await db.employee.findMany({
+    where: {
+      organisationId,
+      id: { in: [...employeeIds] },
+      deletedAt: null,
+      employmentStatus: "ACTIVE",
+    },
+    select: { id: true },
+  });
+  return new Set(rows.map((r) => r.id));
+}
+
 /** Every row of an import in spreadsheet order. */
-export async function listImportRows(importId: string, db: Db = prisma): Promise<ImportRowRecord[]> {
+export async function listImportRows(
+  importId: string,
+  db: Db = prisma,
+): Promise<ImportRowRecord[]> {
   return db.shiftImportRow.findMany({
     where: { importId },
     include: importRowInclude,
@@ -101,7 +142,9 @@ export async function pageImportRows(
 ): Promise<{ items: ImportRowRecord[]; total: number }> {
   const where: Prisma.ShiftImportRowWhereInput = {
     importId,
-    ...(filter.statuses && filter.statuses.length > 0 ? { status: { in: [...filter.statuses] } } : {}),
+    ...(filter.statuses && filter.statuses.length > 0
+      ? { status: { in: [...filter.statuses] } }
+      : {}),
   };
   const [items, total] = await Promise.all([
     db.shiftImportRow.findMany({

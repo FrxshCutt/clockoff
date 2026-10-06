@@ -6,6 +6,7 @@ import {
   type ManagerNotificationType,
   type NotificationPreferences,
 } from "@workmode/validation/notifications";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
@@ -14,7 +15,12 @@ import { SectionCard } from "@/components/section";
 import { Switch } from "@/components/ui/switch";
 import { NOTIFICATION_TYPE_COPY } from "@/config/settings";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
-import { useNotificationPreferences, useUpdateNotificationPreferences } from "@/hooks/use-settings";
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+  type Availability,
+} from "@/hooks/use-settings";
+import { queryKeys } from "@/lib/query-client";
 
 type Channel = "inApp" | "email";
 const CHANNELS: readonly { key: Channel; label: string }[] = [
@@ -24,9 +30,12 @@ const CHANNELS: readonly { key: Channel; label: string }[] = [
 
 /**
  * Settings → Notifications: the caller's own alert preferences (`GET` / `PATCH /api/settings`). Each switch
- * saves immediately. Until the endpoint ships, the defaults are shown read-only with an explanation.
+ * saves immediately and flips optimistically (a preference toggle is safe to show before the server
+ * confirms); a failed save puts the previous value back. Until the endpoint ships, the defaults are shown
+ * read-only with an explanation.
  */
 export function NotificationSettings() {
+  const queryClient = useQueryClient();
   const { data, isPending, isError, error, refetch, isRefetching } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
   const toastError = useApiErrorToast();
@@ -47,11 +56,22 @@ export function NotificationSettings() {
   const preferences: NotificationPreferences = data.data ?? NOTIFICATION_PREFERENCE_DEFAULTS;
 
   const toggle = (type: ManagerNotificationType, channel: Channel, value: boolean) => {
+    const key = queryKeys.notificationPreferences;
+    const previous = queryClient.getQueryData<Availability<NotificationPreferences>>(key);
+    if (previous?.available) {
+      queryClient.setQueryData<Availability<NotificationPreferences>>(key, {
+        available: true,
+        data: { ...previous.data, [type]: { ...previous.data[type], [channel]: value } },
+      });
+    }
     update.mutate(
       { [type]: { [channel]: value } },
       {
         onSuccess: () => toast.success("Notification preferences saved"),
-        onError: (err) => toastError(err, { title: "Couldn't save your preference" }),
+        onError: (err) => {
+          if (previous) queryClient.setQueryData(key, previous);
+          toastError(err, { title: "Couldn't save your preference" });
+        },
       },
     );
   };
@@ -60,7 +80,8 @@ export function NotificationSettings() {
     <div className="space-y-6">
       {available ? null : (
         <InlineAlert variant="info" title="Notification preferences aren't available yet">
-          You&apos;ll receive the defaults shown below. You&apos;ll be able to change them here soon.
+          You&apos;ll receive the defaults shown below. You&apos;ll be able to change them here
+          soon.
         </InlineAlert>
       )}
       <SectionCard
@@ -71,10 +92,15 @@ export function NotificationSettings() {
       >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">Notification preferences by alert type and channel</caption>
+            <caption className="sr-only">
+              Notification preferences by alert type and channel
+            </caption>
             <thead className="bg-muted/40 border-b">
               <tr>
-                <th scope="col" className="text-muted-foreground px-5 py-3 text-left text-xs font-medium tracking-wide uppercase sm:px-6">
+                <th
+                  scope="col"
+                  className="text-muted-foreground px-5 py-3 text-left text-xs font-medium tracking-wide uppercase sm:px-6"
+                >
                   Alert
                 </th>
                 {CHANNELS.map((channel) => (

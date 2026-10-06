@@ -37,6 +37,19 @@ export interface ReferenceOption {
   disabled?: boolean;
 }
 
+/**
+ * Options for a `ReferenceSelect` from a React Query result: `undefined` while loading (skeleton), an empty
+ * list once the request failed (so the control still renders instead of a permanent skeleton), otherwise
+ * the mapped rows.
+ */
+export function referenceOptions<T>(
+  query: { data: readonly T[] | undefined; isError: boolean },
+  map: (item: T) => ReferenceOption,
+): ReferenceOption[] | undefined {
+  if (query.data) return query.data.map(map);
+  return query.isError ? [] : undefined;
+}
+
 export interface ReferenceSelectProps {
   value: string;
   onChange: (id: string) => void;

@@ -74,7 +74,8 @@ export function expandSeriesFromAnchor(
 ): RecurrenceOccurrence[] {
   if (until.getTime() <= anchor.startsAt.getTime()) return [];
   const wallClock = wallClockMinutesBetween(anchor.startsAt, anchor.endsAt, anchor.timezone);
-  const durationMinutes = wallClock > 0 ? wallClock : minutesBetween(anchor.startsAt, anchor.endsAt);
+  const durationMinutes =
+    wallClock > 0 ? wallClock : minutesBetween(anchor.startsAt, anchor.endsAt);
   return expandRecurrence({
     rule: anchor.recurrenceRule,
     firstStartsAt: anchor.startsAt,
@@ -142,7 +143,10 @@ export async function materialiseRecurrences(
         horizon,
       );
       const candidates = occurrences.filter(
-        (o) => !o.isAnchor && o.startsAt.getTime() > frontier && o.startsAt.getTime() < horizon.getTime(),
+        (o) =>
+          !o.isAnchor &&
+          o.startsAt.getTime() > frontier &&
+          o.startsAt.getTime() < horizon.getTime(),
       );
       if (candidates.length === 0) continue;
 
@@ -164,7 +168,11 @@ export async function materialiseRecurrences(
           continue;
         }
         planned.push(occurrence);
-        taken.push({ id: `planned-${planned.length}`, startsAt: occurrence.startsAt, endsAt: occurrence.endsAt });
+        taken.push({
+          id: `planned-${planned.length}`,
+          startsAt: occurrence.startsAt,
+          endsAt: occurrence.endsAt,
+        });
       }
       if (planned.length === 0) continue;
 

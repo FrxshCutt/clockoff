@@ -28,7 +28,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.notification.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const row = await prisma.notification.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.readAt).toBeNull();
   },
 });

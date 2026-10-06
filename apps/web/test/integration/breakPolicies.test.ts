@@ -25,7 +25,10 @@ import { GET as listRoute, POST as createRoute } from "@/app/api/break-policies/
 import { DELETE as endAssignmentRoute } from "@/app/api/break-policy-assignments/[id]/route";
 import { POST as defaultRoute } from "@/app/api/organisations/current/default-break-policy/route";
 import { getEventBus, type RealtimeEvent } from "@/server/events";
-import { computePolicyVersionString, resolveEmployeePolicies } from "@/server/policies/policies.service";
+import {
+  computePolicyVersionString,
+  resolveEmployeePolicies,
+} from "@/server/policies/policies.service";
 import {
   addMember,
   callRoute,
@@ -53,7 +56,12 @@ async function createBreakPolicy(jar: CookieJar, body: Record<string, unknown>) 
   return res.body.breakPolicy;
 }
 
-async function assign(jar: CookieJar, id: string, body: Record<string, unknown>, expectStatus = 201) {
+async function assign(
+  jar: CookieJar,
+  id: string,
+  body: Record<string, unknown>,
+  expectStatus = 201,
+) {
   const res = await callRoute<BreakPolicyAssignmentResponse & ErrorBody>(assignRoute, {
     method: "POST",
     path: `/api/break-policies/${id}/assignments`,
@@ -158,7 +166,10 @@ describe("break policies", () => {
       body: { breaksEnabled: false, maxTotalBreakMinutes: 0 },
     });
     expect(disabled.status).toBe(200);
-    expect(disabled.body.breakPolicy).toMatchObject({ breaksEnabled: false, maxTotalBreakMinutes: 0 });
+    expect(disabled.body.breakPolicy).toMatchObject({
+      breaksEnabled: false,
+      maxTotalBreakMinutes: 0,
+    });
 
     const unknown = await callRoute<ErrorBody>(patchRoute, {
       method: "PATCH",
@@ -230,7 +241,10 @@ describe("break policies", () => {
       maxBreaksPerShift: 3,
       relaxedCategories: ["GAMES"],
     });
-    expect(resolved.breakPolicyResolvedFrom).toMatchObject({ via: "ASSIGNMENT", scopeType: "EMPLOYEE" });
+    expect(resolved.breakPolicyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "EMPLOYEE",
+    });
     expect(computePolicyVersionString(resolved)).toBe(
       `none|${policy.id}:${resolved.breakPolicy!.updatedAt.getTime()}`,
     );
@@ -241,14 +255,21 @@ describe("break policies", () => {
     const { org, jar } = await setup();
     const strict = await createBreakPolicy(jar, { name: "Strict" });
     const relaxed = await createBreakPolicy(jar, { name: "Relaxed" });
-    const team = await prisma.team.create({ data: { organisationId: org.organisation.id, name: "Kitchen" } });
+    const team = await prisma.team.create({
+      data: { organisationId: org.organisation.id, name: "Kitchen" },
+    });
     const otherOrg = await createTestOrg();
     const foreignTeam = await prisma.team.create({
       data: { organisationId: otherOrg.organisation.id, name: "Elsewhere" },
     });
     const { seen, unsubscribe } = collectEvents(org.organisation.id);
 
-    const foreign = await assign(jar, strict.id, { scopeType: "TEAM", scopeId: foreignTeam.id }, 404);
+    const foreign = await assign(
+      jar,
+      strict.id,
+      { scopeType: "TEAM", scopeId: foreignTeam.id },
+      404,
+    );
     expect(foreign.error.code).toBe("NOT_FOUND");
 
     const first = await assign(jar, strict.id, { scopeType: "TEAM", scopeId: team.id });
@@ -291,7 +312,9 @@ describe("break policies", () => {
       jar,
     });
     expect(listBreakPolicyAssignmentsResponseSchema.parse(listed.body)).toBeTruthy();
-    expect(listed.body.assignments.map((a) => [a.id, a.isActive])).toEqual([[first.assignment.id, false]]);
+    expect(listed.body.assignments.map((a) => [a.id, a.isActive])).toEqual([
+      [first.assignment.id, false],
+    ]);
 
     // Strict is no longer in use → delete succeeds (soft).
     const deleted = await callRoute(deleteRoute, {
@@ -316,9 +339,14 @@ describe("break policies", () => {
     });
     expect(ended.status).toBe(204);
     expect(seen.at(-1)?.payload).toMatchObject({ breakPolicyId: relaxed.id, reason: "UNASSIGNED" });
-    const list = await callRoute<ListBreakPoliciesResponse>(listRoute, { path: "/api/break-policies", jar });
+    const list = await callRoute<ListBreakPoliciesResponse>(listRoute, {
+      path: "/api/break-policies",
+      jar,
+    });
     expect(listBreakPoliciesResponseSchema.parse(list.body)).toBeTruthy();
-    expect(list.body.breakPolicies.map((p) => [p.name, p.assignmentCount])).toEqual([["Relaxed", 0]]);
+    expect(list.body.breakPolicies.map((p) => [p.name, p.assignmentCount])).toEqual([
+      ["Relaxed", 0],
+    ]);
     unsubscribe();
   });
 
@@ -354,7 +382,10 @@ describe("break policies", () => {
 
     const resolved = await resolveEmployeePolicies(org.organisation.id, employee.id);
     expect(resolved.breakPolicy?.id).toBe(policy.id);
-    expect(resolved.breakPolicyResolvedFrom).toMatchObject({ via: "DEFAULT", scopeType: "ORGANISATION" });
+    expect(resolved.breakPolicyResolvedFrom).toMatchObject({
+      via: "DEFAULT",
+      scopeType: "ORGANISATION",
+    });
 
     const fetched = await callRoute<BreakPolicyResponse>(getRoute, {
       path: `/api/break-policies/${policy.id}`,
@@ -396,7 +427,10 @@ describe("break policies", () => {
     const { user: manager } = await createTestUser();
     await addMember(org.organisation.id, manager, "MANAGER");
     const jar = await loginAs(manager, { organisationId: org.organisation.id });
-    const read = await callRoute<ListBreakPoliciesResponse>(listRoute, { path: "/api/break-policies", jar });
+    const read = await callRoute<ListBreakPoliciesResponse>(listRoute, {
+      path: "/api/break-policies",
+      jar,
+    });
     expect(read.status).toBe(200);
     expect(read.body.breakPolicies).toHaveLength(1);
     const write = await callRoute<ErrorBody>(createRoute, {
@@ -407,5 +441,126 @@ describe("break policies", () => {
     });
     expect(write.status).toBe(403);
     expect(write.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("treats a PATCH that re-submits the stored values as a no-op: no audit, no event, no version bump", async () => {
+    const { org, jar } = await setup();
+    const policy = await createBreakPolicy(jar, {
+      name: "Same",
+      restrictionBehaviour: "RELAX_CATEGORIES",
+      relaxedCategories: ["GAMES", "SOCIAL_MEDIA"],
+    });
+    const before = await prisma.breakPolicy.findUniqueOrThrow({ where: { id: policy.id } });
+    const { seen, unsubscribe } = collectEvents(org.organisation.id);
+
+    // A full-form save: every rule as stored (categories in another order), same name, empty description.
+    const res = await callRoute<BreakPolicyResponse>(patchRoute, {
+      method: "PATCH",
+      path: `/api/break-policies/${policy.id}`,
+      params: { id: policy.id },
+      jar,
+      body: {
+        name: "Same",
+        description: null,
+        ...BREAK_POLICY_DEFAULTS,
+        restrictionBehaviour: "RELAX_CATEGORIES",
+        relaxedCategories: ["SOCIAL_MEDIA", "GAMES"],
+      },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.breakPolicy.updatedAt).toBe(before.updatedAt.toISOString());
+    expect(seen).toHaveLength(0);
+    expect(
+      await prisma.auditLog.count({
+        where: { organisationId: org.organisation.id, action: "break_policy.updated" },
+      }),
+    ).toBe(0);
+    unsubscribe();
+  });
+
+  it("resolves break policies employee > team > organisation default and rejects an already-ended window", async () => {
+    const { org, jar } = await setup();
+    const organisationId = org.organisation.id;
+    const bpDefault = await createBreakPolicy(jar, { name: "House" });
+    const bpTeam = await createBreakPolicy(jar, { name: "Kitchen" });
+    const bpEmployee = await createBreakPolicy(jar, { name: "Personal" });
+    const team = await prisma.team.create({ data: { organisationId, name: "Kitchen" } });
+    const employee = await prisma.employee.create({
+      data: { organisationId, firstName: "Kim", lastName: "Chef" },
+    });
+    await prisma.employeeTeam.create({ data: { employeeId: employee.id, teamId: team.id } });
+    await callRoute(defaultRoute, {
+      method: "POST",
+      path: "/api/organisations/current/default-break-policy",
+      jar,
+      body: { breakPolicyId: bpDefault.id },
+    });
+
+    const viaDefault = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(viaDefault.breakPolicy?.id).toBe(bpDefault.id);
+    expect(viaDefault.breakPolicyResolvedFrom).toMatchObject({
+      via: "DEFAULT",
+      scopeType: "ORGANISATION",
+    });
+
+    await assign(jar, bpTeam.id, { scopeType: "TEAM", scopeId: team.id });
+    const viaTeam = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(viaTeam.breakPolicy?.id).toBe(bpTeam.id);
+    expect(viaTeam.breakPolicyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "TEAM",
+      scopeId: team.id,
+      scopeName: "Kitchen",
+    });
+
+    const personal = await assign(jar, bpEmployee.id, {
+      scopeType: "EMPLOYEE",
+      scopeId: employee.id,
+    });
+    const viaEmployee = await resolveEmployeePolicies(organisationId, employee.id);
+    expect(viaEmployee.breakPolicy?.id).toBe(bpEmployee.id);
+    expect(viaEmployee.breakPolicyResolvedFrom).toMatchObject({
+      via: "ASSIGNMENT",
+      scopeType: "EMPLOYEE",
+      assignmentId: personal.assignment.id,
+    });
+    expect(viaEmployee.warnings).toEqual([]);
+    const list = await callRoute<ListBreakPoliciesResponse>(listRoute, {
+      path: "/api/break-policies",
+      jar,
+    });
+    expect(
+      Object.fromEntries(list.body.breakPolicies.map((p) => [p.name, p.assignedEmployeeCount])),
+    ).toEqual({ House: 0, Kitchen: 0, Personal: 1 });
+
+    // Ending the employee-level assignment falls back to the team.
+    await callRoute(endAssignmentRoute, {
+      method: "DELETE",
+      path: `/api/break-policy-assignments/${personal.assignment.id}`,
+      params: { id: personal.assignment.id },
+      jar,
+    });
+    expect((await resolveEmployeePolicies(organisationId, employee.id)).breakPolicy?.id).toBe(
+      bpTeam.id,
+    );
+
+    // A window that has already ended can never apply and is refused rather than silently unassigning.
+    const past = await assign(
+      jar,
+      bpEmployee.id,
+      {
+        scopeType: "EMPLOYEE",
+        scopeId: employee.id,
+        effectiveTo: new Date(Date.now() - 1_000).toISOString(),
+      },
+      400,
+    );
+    expect(past.error.code).toBe("VALIDATION_ERROR");
+    expect(past.error.details).toMatchObject({ fieldErrors: { effectiveTo: expect.any(Array) } });
+    expect(
+      await prisma.breakPolicyAssignment.count({
+        where: { organisationId, scopeType: "EMPLOYEE", effectiveTo: null },
+      }),
+    ).toBe(0);
   });
 });

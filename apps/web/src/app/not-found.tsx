@@ -10,7 +10,11 @@ export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (
-    <main id="main-content" tabIndex={-1} className="flex min-h-svh flex-col items-center justify-center gap-8 p-4 outline-none">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-svh flex-col items-center justify-center gap-8 p-4 outline-none"
+    >
       <Link href={ROUTES.home} aria-label="Work Mode home" className="rounded-md">
         <BrandLogo />
       </Link>

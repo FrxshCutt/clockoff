@@ -11,5 +11,7 @@ export const POST = createHandler(
     params: idParamsSchema,
     body: assignEmployeeLocationSchema,
   },
-  async ({ ctx, params, body }) => ({ employee: await assignEmployeeLocation(ctx, params.id, body) }),
+  async ({ ctx, params, body }) => ({
+    employee: await assignEmployeeLocation(ctx, params.id, body),
+  }),
 );

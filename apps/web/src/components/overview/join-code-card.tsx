@@ -13,9 +13,15 @@ export function JoinCodeCard() {
   if (isError) return null;
 
   return (
-    <section aria-labelledby="join-code-card-title" className="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6">
+    <section
+      aria-labelledby="join-code-card-title"
+      className="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6"
+    >
       <div className="flex items-start gap-4">
-        <span className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg" aria-hidden="true">
+        <span
+          className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg"
+          aria-hidden="true"
+        >
           <KeyRound className="size-5" />
         </span>
         <div className="space-y-1">
@@ -24,7 +30,10 @@ export function JoinCodeCard() {
           </h2>
           <p className="text-muted-foreground text-sm">
             Employees enter this in the Work Mode app to join.{" "}
-            <Link href={routeFor.settingsTab("join-code")} className="text-primary font-medium underline-offset-4 hover:underline">
+            <Link
+              href={routeFor.settingsTab("join-code")}
+              className="text-primary font-medium underline-offset-4 hover:underline"
+            >
               Manage
             </Link>
           </p>
@@ -37,7 +46,11 @@ export function JoinCodeCard() {
           <span className="bg-muted/60 rounded-lg border px-3 py-1.5 font-mono text-xl font-semibold tracking-[0.2em]">
             {data.joinCode}
           </span>
-          <CopyButton value={data.joinCode} label="Copy company join code" successMessage="Join code copied" />
+          <CopyButton
+            value={data.joinCode}
+            label="Copy company join code"
+            successMessage="Join code copied"
+          />
         </div>
       ) : (
         <p className="text-muted-foreground text-sm">No active code</p>

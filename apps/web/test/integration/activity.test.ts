@@ -19,7 +19,13 @@ describe("GET /api/activity", () => {
       data: { firstName: "Ann", lastName: "Alpha", primaryLocationId: location.id },
     });
     const base = Date.now() - 60 * MINUTE;
-    const types = ["WORK_MODE_STARTED", "BREAK_STARTED", "BREAK_ENDED", "WORK_MODE_ENDED", "SCHEDULE_SYNCED"] as const;
+    const types = [
+      "WORK_MODE_STARTED",
+      "BREAK_STARTED",
+      "BREAK_ENDED",
+      "WORK_MODE_ENDED",
+      "SCHEDULE_SYNCED",
+    ] as const;
     for (const [i, type] of types.entries()) {
       await recordActivity({
         organisationId,
@@ -50,7 +56,11 @@ describe("GET /api/activity", () => {
     });
     const jar = await loginAs(org.owner, { organisationId });
 
-    const first = await callRoute(activityRoute, { path: "/api/activity", query: { limit: 2 }, jar });
+    const first = await callRoute(activityRoute, {
+      path: "/api/activity",
+      query: { limit: 2 },
+      jar,
+    });
     expect(first.status).toBe(200);
     const page1 = listActivityResponseSchema.parse(first.body);
     expect(page1.items.map((e) => e.type)).toEqual(["POLICY_UPDATED", "SCHEDULE_SYNCED"]);
@@ -63,27 +73,57 @@ describe("GET /api/activity", () => {
     expect(page1.nextCursor).not.toBeNull();
 
     const page2 = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { limit: 2, cursor: page1.nextCursor! }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { limit: 2, cursor: page1.nextCursor! },
+          jar,
+        })
+      ).body,
     );
     expect(page2.items.map((e) => e.type)).toEqual(["WORK_MODE_ENDED", "BREAK_ENDED"]);
     const page3 = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { limit: 2, cursor: page2.nextCursor! }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { limit: 2, cursor: page2.nextCursor! },
+          jar,
+        })
+      ).body,
     );
     expect(page3.items.map((e) => e.type)).toEqual(["BREAK_STARTED", "WORK_MODE_STARTED"]);
     expect(page3.nextCursor).toBeNull();
 
     const byEmployee = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { employeeId: b.employee.id }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { employeeId: b.employee.id },
+          jar,
+        })
+      ).body,
     );
     expect(byEmployee.items.map((e) => e.type)).toEqual(["WORK_MODE_ENDED", "BREAK_STARTED"]);
 
     const byType = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { type: "BREAK_STARTED,BREAK_ENDED" }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { type: "BREAK_STARTED,BREAK_ENDED" },
+          jar,
+        })
+      ).body,
     );
     expect(byType.items.map((e) => e.type)).toEqual(["BREAK_ENDED", "BREAK_STARTED"]);
 
     const byLocation = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { locationId: location.id }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { locationId: location.id },
+          jar,
+        })
+      ).body,
     );
     expect(byLocation.items.every((e) => e.employee?.id === a.employee.id)).toBe(true);
     expect(byLocation.items).toHaveLength(3);
@@ -92,7 +132,10 @@ describe("GET /api/activity", () => {
       (
         await callRoute(activityRoute, {
           path: "/api/activity",
-          query: { from: new Date(base + MINUTE).toISOString(), to: new Date(base + 2 * MINUTE).toISOString() },
+          query: {
+            from: new Date(base + MINUTE).toISOString(),
+            to: new Date(base + 2 * MINUTE).toISOString(),
+          },
           jar,
         })
       ).body,
@@ -100,13 +143,25 @@ describe("GET /api/activity", () => {
     expect(byRange.items.map((e) => e.type)).toEqual(["BREAK_ENDED", "BREAK_STARTED"]);
 
     const foreignEmployee = listActivityResponseSchema.parse(
-      (await callRoute(activityRoute, { path: "/api/activity", query: { employeeId: foreign.employee.id }, jar })).body,
+      (
+        await callRoute(activityRoute, {
+          path: "/api/activity",
+          query: { employeeId: foreign.employee.id },
+          jar,
+        })
+      ).body,
     );
     expect(foreignEmployee.items).toEqual([]);
-    const all = listActivityResponseSchema.parse((await callRoute(activityRoute, { path: "/api/activity", jar })).body);
+    const all = listActivityResponseSchema.parse(
+      (await callRoute(activityRoute, { path: "/api/activity", jar })).body,
+    );
     expect(all.items.some((e) => e.type === "DEVICE_SYNC_DELAYED")).toBe(false);
 
-    const badCursor = await callRoute<ErrorBody>(activityRoute, { path: "/api/activity", query: { cursor: "nope" }, jar });
+    const badCursor = await callRoute<ErrorBody>(activityRoute, {
+      path: "/api/activity",
+      query: { cursor: "nope" },
+      jar,
+    });
     expect(badCursor.status).toBe(400);
     expect(badCursor.body.error.code).toBe("VALIDATION_ERROR");
 

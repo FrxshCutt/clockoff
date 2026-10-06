@@ -34,7 +34,11 @@ async function backdateOrganisationCreated(organisationId: string, occurredAt: D
 }
 
 async function list(jar: CookieJar, query: Record<string, string | number | undefined> = {}) {
-  const res = await callRoute<ListAuditLogsResponse>(auditLogsRoute, { path: "/api/audit-logs", query, jar });
+  const res = await callRoute<ListAuditLogsResponse>(auditLogsRoute, {
+    path: "/api/audit-logs",
+    query,
+    jar,
+  });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body;
 }
@@ -96,8 +100,13 @@ describe("GET /api/audit-logs", () => {
       "policy.archived",
       "policy.published",
     ]);
-    expect((await list(jar, { entityType: "Policy", entityId: "policy-1", action: "policy.published" })).items).toHaveLength(1);
-    expect((await list(jar, { actorUserId: admin.id })).items.map((i) => i.action)).toEqual(["shift.created"]);
+    expect(
+      (await list(jar, { entityType: "Policy", entityId: "policy-1", action: "policy.published" }))
+        .items,
+    ).toHaveLength(1);
+    expect((await list(jar, { actorUserId: admin.id })).items.map((i) => i.action)).toEqual([
+      "shift.created",
+    ]);
     const window = await list(jar, {
       from: new Date(now - 150_000).toISOString(),
       to: new Date(now - 90_000).toISOString(),
@@ -111,7 +120,11 @@ describe("GET /api/audit-logs", () => {
     for (let i = 0; i < 4; i++) {
       await audit(
         { organisation: { id: org.organisation.id }, user: org.owner },
-        { action: `thing.${i}`, entityType: "Thing", occurredAt: new Date(Date.now() - (10 - i) * 1000) },
+        {
+          action: `thing.${i}`,
+          entityType: "Thing",
+          occurredAt: new Date(Date.now() - (10 - i) * 1000),
+        },
       );
     }
     const page1 = await list(jar, { limit: 2 });
@@ -160,7 +173,10 @@ describe("GET /api/audit-logs", () => {
     // STARTER keeps 30 days.
     expect((await list(jar)).items.map((i) => i.action)).toEqual(["organisation.created"]);
     await prisma.organisation.update({ where: { id: org.organisation.id }, data: { plan: "PRO" } });
-    expect((await list(jar)).items.map((i) => i.action)).toEqual(["organisation.created", "old.thing"]);
+    expect((await list(jar)).items.map((i) => i.action)).toEqual([
+      "organisation.created",
+      "old.thing",
+    ]);
   });
 
   it("requires audit:read (MANAGER → FORBIDDEN; ADMIN allowed)", async () => {
@@ -168,14 +184,20 @@ describe("GET /api/audit-logs", () => {
     const { user: manager } = await createTestUser();
     await addMember(org.organisation.id, manager, "MANAGER");
     const managerJar = await loginAs(manager, { organisationId: org.organisation.id });
-    const forbidden = await callRoute<ErrorBody>(auditLogsRoute, { path: "/api/audit-logs", jar: managerJar });
+    const forbidden = await callRoute<ErrorBody>(auditLogsRoute, {
+      path: "/api/audit-logs",
+      jar: managerJar,
+    });
     expect(forbidden.status).toBe(403);
     expect(forbidden.body.error.code).toBe("FORBIDDEN");
 
     const { user: admin } = await createTestUser();
     await addMember(org.organisation.id, admin, "ADMIN");
     const adminJar = await loginAs(admin, { organisationId: org.organisation.id });
-    const ok = await callRoute<ListAuditLogsResponse>(auditLogsRoute, { path: "/api/audit-logs", jar: adminJar });
+    const ok = await callRoute<ListAuditLogsResponse>(auditLogsRoute, {
+      path: "/api/audit-logs",
+      jar: adminJar,
+    });
     expect(ok.status).toBe(200);
   });
 });

@@ -84,7 +84,10 @@ export function readHeaders(value: Prisma.JsonValue): string[] {
  * Raw cells keyed by header. JSONB does not keep object key order, so when the import's `headers` are
  * given the cells are returned in file order (extra "Column N" cells, if any, follow in name order).
  */
-export function readRaw(value: Prisma.JsonValue, headers?: readonly string[]): Record<string, string> {
+export function readRaw(
+  value: Prisma.JsonValue,
+  headers?: readonly string[],
+): Record<string, string> {
   const record = asRecord(value);
   const out: Record<string, string> = {};
   const cell = (header: string): string => {
@@ -122,7 +125,9 @@ export function readOptions(
       ? (record.dateFormat as DateFormat)
       : fallback.dateFormat;
   const timezone =
-    typeof record.timezone === "string" && record.timezone !== "" ? record.timezone : fallback.timezone;
+    typeof record.timezone === "string" && record.timezone !== ""
+      ? record.timezone
+      : fallback.timezone;
   const locationId = typeof record.locationId === "string" ? record.locationId : null;
   return { dateFormat, timezone, locationId };
 }
@@ -138,9 +143,18 @@ export function readProblems(value: Prisma.JsonValue): ImportProblem[] {
       typeof record.severity === "string" && SEVERITY_SET.has(record.severity)
         ? (record.severity as ImportProblemSeverity)
         : "ERROR";
-    const problem: ImportProblem = { code: record.code as ImportProblemCode, message: record.message, severity };
-    if (typeof record.field === "string" && FIELD_SET.has(record.field)) problem.field = record.field as ImportField;
-    if (record.details !== null && typeof record.details === "object" && !Array.isArray(record.details)) {
+    const problem: ImportProblem = {
+      code: record.code as ImportProblemCode,
+      message: record.message,
+      severity,
+    };
+    if (typeof record.field === "string" && FIELD_SET.has(record.field))
+      problem.field = record.field as ImportField;
+    if (
+      record.details !== null &&
+      typeof record.details === "object" &&
+      !Array.isArray(record.details)
+    ) {
       problem.details = record.details as Record<string, unknown>;
     }
     out.push(problem);
@@ -156,7 +170,10 @@ export function readParsed(value: Prisma.JsonValue | null): StoredParsedRow | nu
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
   if (typeof record.timezone !== "string") return null;
-  const parsed: StoredParsedRow = { timezone: record.timezone, overnight: record.overnight === true };
+  const parsed: StoredParsedRow = {
+    timezone: record.timezone,
+    overnight: record.overnight === true,
+  };
   const employeeName = optionalString(record.employeeName);
   if (employeeName !== undefined) parsed.employeeName = employeeName;
   const employeeExternalId = optionalString(record.employeeExternalId);
@@ -179,7 +196,11 @@ export function readParsed(value: Prisma.JsonValue | null): StoredParsedRow | nu
   if (departmentName !== undefined) parsed.departmentName = departmentName;
   const role = optionalString(record.role);
   if (role !== undefined) parsed.role = role;
-  if (typeof record.breakMinutes === "number" && Number.isInteger(record.breakMinutes) && record.breakMinutes >= 0) {
+  if (
+    typeof record.breakMinutes === "number" &&
+    Number.isInteger(record.breakMinutes) &&
+    record.breakMinutes >= 0
+  ) {
     parsed.breakMinutes = record.breakMinutes;
   }
   const resolution = readResolutionRecord(record.resolution);
@@ -194,7 +215,8 @@ function readResolutionRecord(value: unknown): RowResolution | undefined {
   if (record.skipped === true) out.skipped = true;
   if (typeof record.employeeId === "string") out.employeeId = record.employeeId;
   if (record.ignoreLocation === true) out.ignoreLocation = true;
-  if (typeof record.createdEmployeeId === "string") out.createdEmployeeId = record.createdEmployeeId;
+  if (typeof record.createdEmployeeId === "string")
+    out.createdEmployeeId = record.createdEmployeeId;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
@@ -223,7 +245,11 @@ export function skippedCountOf(record: ImportRecord): number {
   if (!hasBeenValidated(record.status)) return 0;
   return Math.max(
     0,
-    record.rowCount - record.validCount - record.warningCount - record.errorCount - record.importedCount,
+    record.rowCount -
+      record.validCount -
+      record.warningCount -
+      record.errorCount -
+      record.importedCount,
   );
 }
 
@@ -245,7 +271,9 @@ export function toImportDto(
     errorCount: record.errorCount,
     skippedCount: skippedCountOf(record),
     importedCount: record.importedCount,
-    uploadedBy: record.uploadedBy ? { id: record.uploadedBy.id, name: record.uploadedBy.name } : null,
+    uploadedBy: record.uploadedBy
+      ? { id: record.uploadedBy.id, name: record.uploadedBy.name }
+      : null,
     importedAt: record.importedAt ? record.importedAt.toISOString() : null,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -272,7 +300,9 @@ export function toImportRowDto(record: ImportRowRecord, headers?: readonly strin
   const resolution = readResolution(parsed);
   const matched = record.matchedEmployee;
   const createdHere =
-    matched !== null && resolution.createdEmployeeId !== undefined && matched.id === resolution.createdEmployeeId;
+    matched !== null &&
+    resolution.createdEmployeeId !== undefined &&
+    matched.id === resolution.createdEmployeeId;
   return {
     id: record.id,
     rowNumber: record.rowNumber,

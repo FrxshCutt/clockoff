@@ -57,7 +57,8 @@ export function isAssignmentActive(assignment: AssignmentLike, now: Date): boole
   const t = epochMs(now, "`now`");
   const from = assignment.effectiveFrom ?? null;
   const to = assignment.effectiveTo ?? null;
-  if (from !== null && epochMs(from, `effectiveFrom of assignment ${assignment.id}`) > t) return false;
+  if (from !== null && epochMs(from, `effectiveFrom of assignment ${assignment.id}`) > t)
+    return false;
   if (to !== null && epochMs(to, `effectiveTo of assignment ${assignment.id}`) <= t) return false;
   return true;
 }
@@ -92,12 +93,16 @@ export function isPolicyUsable(policy: PolicyLike): boolean {
  */
 export function compareAssignmentsNewestFirst(a: AssignmentLike, b: AssignmentLike): number {
   const dt =
-    epochMs(b.createdAt, `createdAt of assignment ${b.id}`) - epochMs(a.createdAt, `createdAt of assignment ${a.id}`);
+    epochMs(b.createdAt, `createdAt of assignment ${b.id}`) -
+    epochMs(a.createdAt, `createdAt of assignment ${a.id}`);
   if (dt !== 0) return dt;
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
 }
 
-function scopeIdsForLevel(scopeType: AssignmentScopeType, employee: EmployeeContextLike): ReadonlySet<string> {
+function scopeIdsForLevel(
+  scopeType: AssignmentScopeType,
+  employee: EmployeeContextLike,
+): ReadonlySet<string> {
   switch (scopeType) {
     case "EMPLOYEE":
       return new Set([employee.employeeId]);
@@ -130,7 +135,12 @@ function uniqueById(assignments: readonly AssignmentLike[]): AssignmentLike[] {
 }
 
 function summarise(a: AssignmentLike): AssignmentCandidateSummary {
-  return { assignmentId: a.id, scopeId: a.scopeId, policyId: a.policyId, createdAt: a.createdAt.toISOString() };
+  return {
+    assignmentId: a.id,
+    scopeId: a.scopeId,
+    policyId: a.policyId,
+    createdAt: a.createdAt.toISOString(),
+  };
 }
 
 /** Where a policy reference came from; shared by the warning builders. */
@@ -142,7 +152,9 @@ interface ReferenceSource {
 }
 
 function describeSource(where: ReferenceSource): string {
-  return where.via === "DEFAULT" ? "organisation default" : `${where.scopeType} assignment ${where.assignmentId}`;
+  return where.via === "DEFAULT"
+    ? "organisation default"
+    : `${where.scopeType} assignment ${where.assignmentId}`;
 }
 
 function inactivePolicyWarning(policy: PolicyLike, where: ReferenceSource): ResolutionWarning {
@@ -184,7 +196,11 @@ function notLoadedWarning(policyId: string, where: ReferenceSource): ResolutionW
  * Why a loaded policy may NOT be the outcome for this employee, as the warning to emit; `null` if it may.
  * Organisation is checked first: a foreign policy is a tenancy problem whatever its status.
  */
-function rejectionOf(policy: PolicyLike, organisationId: string, where: ReferenceSource): ResolutionWarning | null {
+function rejectionOf(
+  policy: PolicyLike,
+  organisationId: string,
+  where: ReferenceSource,
+): ResolutionWarning | null {
   if (policy.organisationId !== undefined && policy.organisationId !== organisationId) {
     return organisationMismatchWarning(policy.id, policy.organisationId, organisationId, where);
   }
@@ -220,7 +236,8 @@ export function resolvePolicy<T extends PolicyLike>(input: ResolveInput<T>): Res
   const assignments = uniqueById(input.assignments);
   for (const a of assignments) epochMs(a.createdAt, `createdAt of assignment ${a.id}`);
   for (const p of Object.values(policiesById)) {
-    if (p.deletedAt !== undefined && p.deletedAt !== null) epochMs(p.deletedAt, `deletedAt of policy ${p.id}`);
+    if (p.deletedAt !== undefined && p.deletedAt !== null)
+      epochMs(p.deletedAt, `deletedAt of policy ${p.id}`);
   }
   const active = assignments.filter((a) => isAssignmentActive(a, now));
 
@@ -326,7 +343,11 @@ export function resolvePolicy<T extends PolicyLike>(input: ResolveInput<T>): Res
     scopeId: employee.organisationId,
     assignmentId: null,
   };
-  const resolvedFrom: ResolvedFrom = { via: "DEFAULT", scopeType: "ORGANISATION", scopeId: employee.organisationId };
+  const resolvedFrom: ResolvedFrom = {
+    via: "DEFAULT",
+    scopeType: "ORGANISATION",
+    scopeId: employee.organisationId,
+  };
   const policy = lookupPolicy(policiesById, defaultId);
   if (policy === undefined) {
     warnings.push(notLoadedWarning(defaultId, where));
@@ -345,10 +366,17 @@ export function resolvePolicy<T extends PolicyLike>(input: ResolveInput<T>): Res
  * as own data properties, so even an id of `__proto__` is stored as a key rather than replacing the
  * prototype; the result is still a plain object (safe to pass to React Server Components).
  */
-export function indexPoliciesById<T extends { id: string }>(policies: readonly T[]): Record<string, T> {
+export function indexPoliciesById<T extends { id: string }>(
+  policies: readonly T[],
+): Record<string, T> {
   const out: Record<string, T> = {};
   for (const p of policies) {
-    Object.defineProperty(out, p.id, { value: p, enumerable: true, writable: true, configurable: true });
+    Object.defineProperty(out, p.id, {
+      value: p,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
   }
   return out;
 }
@@ -381,7 +409,9 @@ export interface ResolvedWorkPolicy<T extends VersionedPolicyLike> extends Resol
  * warnings of both merged into `warnings`. Break policies carry their rules on the row itself and have no
  * versions, so they use `resolvePolicy` directly.
  */
-export function resolveWorkPolicy<T extends VersionedPolicyLike>(input: ResolveInput<T>): ResolvedWorkPolicy<T> {
+export function resolveWorkPolicy<T extends VersionedPolicyLike>(
+  input: ResolveInput<T>,
+): ResolvedWorkPolicy<T> {
   const resolution = resolvePolicy(input);
   const { warnings: versionWarnings, ...version } = resolvePolicyVersion(resolution.policy);
   return {

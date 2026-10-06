@@ -22,18 +22,32 @@ export function PricingPlans() {
           <li
             key={plan}
             data-plan={plan}
-            className={cn("bg-card flex flex-col gap-5 rounded-xl border p-5 shadow-xs", plan === "BUSINESS" && "border-primary/50 ring-primary/20 ring-1")}
+            className={cn(
+              "bg-card flex flex-col gap-5 rounded-xl border p-5 shadow-xs",
+              plan === "BUSINESS" && "border-primary/50 ring-primary/20 ring-1",
+            )}
           >
             <div className="space-y-1">
               <h3 className="font-semibold">{definition.name}</h3>
               <p className="text-2xl font-semibold tracking-tight">{definition.priceLabel}</p>
-              {!enterprise ? <p className="text-muted-foreground text-xs">Per organisation, billed monthly.</p> : <p className="text-muted-foreground text-xs">Custom contract and invoicing.</p>}
+              {!enterprise ? (
+                <p className="text-muted-foreground text-xs">Per organisation, billed monthly.</p>
+              ) : (
+                <p className="text-muted-foreground text-xs">Custom contract and invoicing.</p>
+              )}
             </div>
             <dl className="space-y-1.5 text-sm">
               {planLimitLines(plan).map((line) => (
                 <div key={line.key} className="flex items-start justify-between gap-3">
                   <dt className="text-muted-foreground">{line.label}</dt>
-                  <dd className={cn("text-right font-medium", !line.included && "text-muted-foreground font-normal")}>{line.value}</dd>
+                  <dd
+                    className={cn(
+                      "text-right font-medium",
+                      !line.included && "text-muted-foreground font-normal",
+                    )}
+                  >
+                    {line.value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -53,7 +67,11 @@ export function PricingPlans() {
                 </a>
               </Button>
             ) : (
-              <Button asChild variant={plan === "BUSINESS" ? "default" : "outline"} className="w-full">
+              <Button
+                asChild
+                variant={plan === "BUSINESS" ? "default" : "outline"}
+                className="w-full"
+              >
                 <Link href={demoHref}>Request a demo</Link>
               </Button>
             )}

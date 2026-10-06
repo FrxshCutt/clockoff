@@ -97,17 +97,24 @@ export async function listNotifications(
   return {
     items: page.map(toNotificationDto),
     nextCursor:
-      rows.length > query.limit && last ? encodeKeysetCursor({ at: last.createdAt, id: last.id }) : null,
+      rows.length > query.limit && last
+        ? encodeKeysetCursor({ at: last.createdAt, id: last.id })
+        : null,
     unreadCount,
   };
 }
 
 /** `POST /api/notifications/:id/read` — only the recipient can mark their own notification (404 otherwise). */
-export async function markNotificationAsRead(ctx: ManagerContext, id: string): Promise<Notification> {
+export async function markNotificationAsRead(
+  ctx: ManagerContext,
+  id: string,
+): Promise<Notification> {
   const existing = await findNotificationForUser(ctx.organisation.id, ctx.user.id, id);
   if (!existing) throw new AppError("NOT_FOUND", "Notification not found");
   if (existing.readAt) return toNotificationDto(existing);
-  return toNotificationDto(await markNotificationRead(id, new Date()));
+  return toNotificationDto(
+    await markNotificationRead(ctx.organisation.id, ctx.user.id, id, new Date()),
+  );
 }
 
 /** `POST /api/notifications/read-all` */
@@ -166,9 +173,13 @@ export async function createManagerNotification(
   input: CreateManagerNotificationInput,
   dbOrOptions: Db | CreateManagerNotificationOptions = prisma,
 ): Promise<NotificationRow[]> {
-  const options: CreateManagerNotificationOptions = isDb(dbOrOptions) ? { db: dbOrOptions } : dbOrOptions;
+  const options: CreateManagerNotificationOptions = isDb(dbOrOptions)
+    ? { db: dbOrOptions }
+    : dbOrOptions;
   const db = options.db ?? prisma;
-  const recipientIds = [...new Set([...(input.userIds ?? []), ...(input.userId ? [input.userId] : [])])];
+  const recipientIds = [
+    ...new Set([...(input.userIds ?? []), ...(input.userId ? [input.userId] : [])]),
+  ];
   if (recipientIds.length === 0) return [];
 
   const memberships = await findMembershipsForUsers(input.organisationId, recipientIds, db);
@@ -178,8 +189,10 @@ export async function createManagerNotification(
   return created;
 }
 
-export interface NotifyOrganisationManagersInput
-  extends Omit<CreateManagerNotificationInput, "userId" | "userIds"> {
+export interface NotifyOrganisationManagersInput extends Omit<
+  CreateManagerNotificationInput,
+  "userId" | "userIds"
+> {
   /** Only managers with one of these roles (default: every member). */
   roles?: readonly Role[];
 }
@@ -189,7 +202,9 @@ export async function notifyOrganisationManagers(
   input: NotifyOrganisationManagersInput,
   dbOrOptions: Db | CreateManagerNotificationOptions = prisma,
 ): Promise<NotificationRow[]> {
-  const options: CreateManagerNotificationOptions = isDb(dbOrOptions) ? { db: dbOrOptions } : dbOrOptions;
+  const options: CreateManagerNotificationOptions = isDb(dbOrOptions)
+    ? { db: dbOrOptions }
+    : dbOrOptions;
   const db = options.db ?? prisma;
   const memberships = await findOrganisationMemberships(input.organisationId, input.roles, db);
   const rows = buildRows(input, memberships, options.respectPreferences ?? true);

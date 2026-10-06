@@ -11,10 +11,28 @@ import type { ActivityEvent } from "@workmode/validation/activity";
 import type { DeviceSummary } from "@workmode/validation/devices";
 import type { EmployeeInvite } from "@workmode/validation/invites";
 import type { MobileEmployee, MobileOrganisation } from "@workmode/validation/mobile";
-import { deriveOverrideStatus, type Override, type OverridePayload } from "@workmode/validation/overrides";
-import type { DeviceStatus, EmployeeSummary, NamedRef, ShiftSummary } from "@workmode/validation/refs";
-import type { BreakSessionResponse, EmployeeWorkStateResponse } from "@workmode/validation/workState";
-import type { DeviceRow, EmployeeRow, NextShiftRow, OverrideRow, ShiftRow } from "./employees.repository";
+import {
+  deriveOverrideStatus,
+  type Override,
+  type OverridePayload,
+} from "@workmode/validation/overrides";
+import type {
+  DeviceStatus,
+  EmployeeSummary,
+  NamedRef,
+  ShiftSummary,
+} from "@workmode/validation/refs";
+import type {
+  BreakSessionResponse,
+  EmployeeWorkStateResponse,
+} from "@workmode/validation/workState";
+import type {
+  DeviceRow,
+  EmployeeRow,
+  NextShiftRow,
+  OverrideRow,
+  ShiftRow,
+} from "./employees.repository";
 
 /**
  * Row → API DTO mappers for the employee domain. Instants become UTC ISO-8601 strings; nothing beyond the
@@ -120,7 +138,8 @@ export function toShiftSummaryFromNext(row: NextShiftRow): ShiftSummary {
     endsAt: iso(row.endsAt),
     timezone: row.timezone,
     status: row.status,
-    location: row.locationId && row.locationName ? { id: row.locationId, name: row.locationName } : null,
+    location:
+      row.locationId && row.locationName ? { id: row.locationId, name: row.locationName } : null,
   };
 }
 
@@ -200,7 +219,10 @@ export function effectiveInviteStatus(
   return invite.status;
 }
 
-export function toEmployeeInviteDto(invite: EmployeeInviteRow, now: Date = new Date()): EmployeeInvite {
+export function toEmployeeInviteDto(
+  invite: EmployeeInviteRow,
+  now: Date = new Date(),
+): EmployeeInvite {
   return {
     id: invite.id,
     employeeId: invite.employeeId,
@@ -314,7 +336,11 @@ export function toActivityEventDto(
 }
 
 export function toDeviceStatusDto(
-  status: { badge: DeviceStatus["badge"]; reason?: string; severity: DeviceStatus["severity"] } | null,
+  status: {
+    badge: DeviceStatus["badge"];
+    reason?: string;
+    severity: DeviceStatus["severity"];
+  } | null,
   since: Date | null,
 ): DeviceStatus | null {
   if (!status) return null;

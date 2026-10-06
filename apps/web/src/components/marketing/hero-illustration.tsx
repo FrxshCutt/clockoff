@@ -7,9 +7,22 @@ import { cn } from "@/lib/utils";
  */
 export function HeroIllustration({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 560 340" className={cn("h-auto w-full", className)} aria-hidden="true" focusable="false">
+    <svg
+      viewBox="0 0 560 340"
+      className={cn("h-auto w-full", className)}
+      aria-hidden="true"
+      focusable="false"
+    >
       {/* card */}
-      <rect x="20" y="20" width="520" height="300" rx="22" className="fill-card stroke-border" strokeWidth="1.5" />
+      <rect
+        x="20"
+        y="20"
+        width="520"
+        height="300"
+        rx="22"
+        className="fill-card stroke-border"
+        strokeWidth="1.5"
+      />
       <text x="48" y="64" className="fill-foreground" fontSize="16" fontWeight="600">
         Tuesday · Harbour Street
       </text>
@@ -22,7 +35,15 @@ export function HeroIllustration({ className }: { className?: string }) {
         const x = 48 + i * 77;
         return (
           <g key={hour}>
-            <line x1={x} y1="130" x2={x} y2="218" className="stroke-border" strokeWidth="1" strokeDasharray="2 4" />
+            <line
+              x1={x}
+              y1="130"
+              x2={x}
+              y2="218"
+              className="stroke-border"
+              strokeWidth="1"
+              strokeDasharray="2 4"
+            />
             <text x={x} y="240" className="fill-muted-foreground" fontSize="11" textAnchor="middle">
               {hour}:00
             </text>
@@ -38,25 +59,60 @@ export function HeroIllustration({ className }: { className?: string }) {
 
       {/* working 09–13 */}
       <rect x="125" y="150" width="154" height="48" rx="10" className="fill-primary" />
-      <text x="202" y="170" className="fill-primary-foreground" fontSize="12" fontWeight="600" textAnchor="middle">
+      <text
+        x="202"
+        y="170"
+        className="fill-primary-foreground"
+        fontSize="12"
+        fontWeight="600"
+        textAnchor="middle"
+      >
         Work Mode on
       </text>
-      <text x="202" y="186" className="fill-primary-foreground" fontSize="10" textAnchor="middle" opacity="0.85">
+      <text
+        x="202"
+        y="186"
+        className="fill-primary-foreground"
+        fontSize="10"
+        textAnchor="middle"
+        opacity="0.85"
+      >
         social, games, streaming paused
       </text>
 
       {/* break 13:00–13:30 */}
       <rect x="279" y="150" width="19" height="48" rx="6" className="fill-warning" />
-      <text x="289" y="128" className="fill-foreground" fontSize="11" textAnchor="middle" fontWeight="600">
+      <text
+        x="289"
+        y="128"
+        className="fill-foreground"
+        fontSize="11"
+        textAnchor="middle"
+        fontWeight="600"
+      >
         Break
       </text>
 
       {/* working 13:30–17 */}
       <rect x="298" y="150" width="135" height="48" rx="10" className="fill-primary" />
-      <text x="365" y="170" className="fill-primary-foreground" fontSize="12" fontWeight="600" textAnchor="middle">
+      <text
+        x="365"
+        y="170"
+        className="fill-primary-foreground"
+        fontSize="12"
+        fontWeight="600"
+        textAnchor="middle"
+      >
         Back to work
       </text>
-      <text x="365" y="186" className="fill-primary-foreground" fontSize="10" textAnchor="middle" opacity="0.85">
+      <text
+        x="365"
+        y="186"
+        className="fill-primary-foreground"
+        fontSize="10"
+        textAnchor="middle"
+        opacity="0.85"
+      >
         shields return automatically
       </text>
 
@@ -68,21 +124,45 @@ export function HeroIllustration({ className }: { className?: string }) {
 
       {/* status pills */}
       <g>
-        <rect x="48" y="266" width="150" height="30" rx="15" className="fill-success/15 stroke-success/40" strokeWidth="1" />
+        <rect
+          x="48"
+          y="266"
+          width="150"
+          height="30"
+          rx="15"
+          className="fill-success/15 stroke-success/40"
+          strokeWidth="1"
+        />
         <circle cx="66" cy="281" r="5" className="fill-success" />
         <text x="80" y="285" className="fill-foreground" fontSize="12" fontWeight="500">
           Phone connected
         </text>
       </g>
       <g>
-        <rect x="210" y="266" width="186" height="30" rx="15" className="fill-primary/10 stroke-primary/30" strokeWidth="1" />
+        <rect
+          x="210"
+          y="266"
+          width="186"
+          height="30"
+          rx="15"
+          className="fill-primary/10 stroke-primary/30"
+          strokeWidth="1"
+        />
         <circle cx="228" cy="281" r="5" className="fill-primary" />
         <text x="242" y="285" className="fill-foreground" fontSize="12" fontWeight="500">
           Manager sees: Working
         </text>
       </g>
       <g>
-        <rect x="408" y="266" width="104" height="30" rx="15" className="fill-muted stroke-border" strokeWidth="1" />
+        <rect
+          x="408"
+          y="266"
+          width="104"
+          height="30"
+          rx="15"
+          className="fill-muted stroke-border"
+          strokeWidth="1"
+        />
         <text x="460" y="285" className="fill-muted-foreground" fontSize="12" textAnchor="middle">
           Never: screens
         </text>

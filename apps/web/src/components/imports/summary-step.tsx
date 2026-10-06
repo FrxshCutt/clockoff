@@ -24,7 +24,10 @@ export function SummaryStep({ record, result, onStartAnother }: SummaryStepProps
   return (
     <div className="space-y-6">
       <div className="bg-card/50 flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed px-6 py-12 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-700 ring-8 ring-emerald-500/10 dark:text-emerald-300" aria-hidden="true">
+        <div
+          className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-700 ring-8 ring-emerald-500/10 dark:text-emerald-300"
+          aria-hidden="true"
+        >
           <CalendarCheck className="size-6" />
         </div>
         <div className="max-w-md space-y-1.5">
@@ -32,7 +35,8 @@ export function SummaryStep({ record, result, onStartAnother }: SummaryStepProps
             {formatNumber(created)} {created === 1 ? "shift" : "shifts"} added to the schedule
           </h2>
           <p className="text-muted-foreground text-sm text-pretty">
-            From <span className="text-foreground font-medium">{record.filename}</span>. Work Mode switches on automatically when each shift starts.
+            From <span className="text-foreground font-medium">{record.filename}</span>. Work Mode
+            switches on automatically when each shift starts.
           </p>
         </div>
       </div>
@@ -40,21 +44,29 @@ export function SummaryStep({ record, result, onStartAnother }: SummaryStepProps
       <dl className="grid gap-4 sm:grid-cols-4">
         <div className="bg-card rounded-xl border p-5 shadow-xs">
           <dt className="text-muted-foreground text-sm">Shifts created</dt>
-          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatNumber(created)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+            {formatNumber(created)}
+          </dd>
         </div>
         {result ? (
           <div className="bg-card rounded-xl border p-5 shadow-xs">
             <dt className="text-muted-foreground text-sm">Employees created</dt>
-            <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatNumber(result.employeesCreated)}</dd>
+            <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+              {formatNumber(result.employeesCreated)}
+            </dd>
           </div>
         ) : null}
         <div className="bg-card rounded-xl border p-5 shadow-xs">
           <dt className="text-muted-foreground text-sm">Rows skipped</dt>
-          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatNumber(skipped)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+            {formatNumber(skipped)}
+          </dd>
         </div>
         <div className="bg-card rounded-xl border p-5 shadow-xs">
           <dt className="text-muted-foreground text-sm">Rows with errors</dt>
-          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{formatNumber(record.errorCount)}</dd>
+          <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+            {formatNumber(record.errorCount)}
+          </dd>
         </div>
       </dl>
 

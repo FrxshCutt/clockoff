@@ -34,7 +34,11 @@ export interface DataTableFacetedFilterProps<TData, TValue> {
  * Multi-select filter for one column (use with `filterFn: facetedFilter()`). Shows per-option counts from
  * the table's faceted row model.
  */
-export function DataTableFacetedFilter<TData, TValue>({ column, title, options }: DataTableFacetedFilterProps<TData, TValue>) {
+export function DataTableFacetedFilter<TData, TValue>({
+  column,
+  title,
+  options,
+}: DataTableFacetedFilterProps<TData, TValue>) {
   if (!column) return null;
   const facets = column.getFacetedUniqueValues();
   const current = column.getFilterValue();
@@ -68,7 +72,11 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
                   options
                     .filter((o) => selected.has(o.value))
                     .map((o) => (
-                      <Badge key={o.value} variant="secondary" className="rounded-sm px-1 font-normal">
+                      <Badge
+                        key={o.value}
+                        variant="secondary"
+                        className="rounded-sm px-1 font-normal"
+                      >
                         {o.label}
                       </Badge>
                     ))
@@ -88,11 +96,17 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
                 const isSelected = selected.has(option.value);
                 const count = facets.get(option.value);
                 return (
-                  <CommandItem key={option.value} value={option.label} onSelect={() => toggle(option.value)}>
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => toggle(option.value)}
+                  >
                     <span
                       className={cn(
                         "border-primary flex size-4 items-center justify-center rounded-[4px] border",
-                        isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "opacity-50 [&_svg]:invisible",
                       )}
                       aria-hidden="true"
                     >
@@ -102,7 +116,9 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
                     <span>{option.label}</span>
                     <span className="sr-only">{isSelected ? "(selected)" : ""}</span>
                     {count !== undefined ? (
-                      <span className="text-muted-foreground ml-auto font-mono text-xs tabular-nums">{count}</span>
+                      <span className="text-muted-foreground ml-auto font-mono text-xs tabular-nums">
+                        {count}
+                      </span>
                     ) : null}
                   </CommandItem>
                 );
@@ -112,7 +128,10 @@ export function DataTableFacetedFilter<TData, TValue>({ column, title, options }
               <>
                 <CommandSeparator />
                 <CommandGroup>
-                  <CommandItem onSelect={() => column.setFilterValue(undefined)} className="justify-center text-center">
+                  <CommandItem
+                    onSelect={() => column.setFilterValue(undefined)}
+                    className="justify-center text-center"
+                  >
                     Clear filter
                   </CommandItem>
                 </CommandGroup>

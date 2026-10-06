@@ -82,28 +82,78 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: "workspace",
     label: "Workspace",
     items: [
-      { title: "Overview", href: ROUTES.overview, icon: LayoutDashboard, description: "Live status and setup progress" },
-      { title: "Employees", href: ROUTES.employees, icon: Users, description: "People, invites and devices" },
-      { title: "Schedule", href: ROUTES.schedule, icon: CalendarClock, description: "Shifts and rota imports" },
-      { title: "Policies", href: ROUTES.policies, icon: ShieldCheck, description: "What is restricted during shifts" },
-      { title: "Break Rules", href: ROUTES.breakRules, icon: Coffee, description: "How breaks relax restrictions" },
+      {
+        title: "Overview",
+        href: ROUTES.overview,
+        icon: LayoutDashboard,
+        description: "Live status and setup progress",
+      },
+      {
+        title: "Employees",
+        href: ROUTES.employees,
+        icon: Users,
+        description: "People, invites and devices",
+      },
+      {
+        title: "Schedule",
+        href: ROUTES.schedule,
+        icon: CalendarClock,
+        description: "Shifts and rota imports",
+      },
+      {
+        title: "Policies",
+        href: ROUTES.policies,
+        icon: ShieldCheck,
+        description: "What is restricted during shifts",
+      },
+      {
+        title: "Break Rules",
+        href: ROUTES.breakRules,
+        icon: Coffee,
+        description: "How breaks relax restrictions",
+      },
     ],
   },
   {
     id: "operations",
     label: "Operations",
     items: [
-      { title: "Integrations", href: ROUTES.integrations, icon: Plug, description: "Connect rota software" },
-      { title: "Activity", href: ROUTES.activity, icon: Activity, description: "What happened, and when" },
-      { title: "Locations & Teams", href: ROUTES.locations, icon: MapPin, description: "Sites and teams" },
+      {
+        title: "Integrations",
+        href: ROUTES.integrations,
+        icon: Plug,
+        description: "Connect rota software",
+      },
+      {
+        title: "Activity",
+        href: ROUTES.activity,
+        icon: Activity,
+        description: "What happened, and when",
+      },
+      {
+        title: "Locations & Teams",
+        href: ROUTES.locations,
+        icon: MapPin,
+        description: "Sites and teams",
+      },
     ],
   },
   {
     id: "organisation",
     label: "Organisation",
     items: [
-      { title: "Settings", href: ROUTES.settings, icon: Settings, description: "Organisation, join code and managers" },
-      { title: "Billing", href: ROUTES.billing, icon: CreditCard, description: "Plan and invoices" },
+      {
+        title: "Settings",
+        href: ROUTES.settings,
+        icon: Settings,
+        description: "Organisation, join code and managers",
+      },
+      {
+        title: "Billing",
+        href: ROUTES.billing,
+        icon: CreditCard,
+        description: "Plan and invoices",
+      },
       { title: "Help", href: ROUTES.help, icon: LifeBuoy, description: "Guides and support" },
     ],
   },
@@ -175,7 +225,10 @@ export interface Crumb {
  * Breadcrumbs for a dashboard path: `/employees/abc` → Employees › Details. `labels` overrides labels for
  * specific segments (e.g. an employee's name for their id).
  */
-export function getBreadcrumbs(pathname: string, labels: Readonly<Record<string, string>> = {}): Crumb[] {
+export function getBreadcrumbs(
+  pathname: string,
+  labels: Readonly<Record<string, string>> = {},
+): Crumb[] {
   const segments = (pathname.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
   const crumbs: Crumb[] = [];
   let href = "";
@@ -215,7 +268,11 @@ export function isInternalPath(href: string | null | undefined): href is string 
 export function safeRedirectPath(next: string | null | undefined): string | null {
   if (!isInternalPath(next)) return null;
   const path = next.split(/[?#]/)[0] ?? "";
-  if (AUTH_ROUTES.some((route) => route !== ROUTES.acceptInvite && (path === route || path.startsWith(`${route}/`)))) {
+  if (
+    AUTH_ROUTES.some(
+      (route) => route !== ROUTES.acceptInvite && (path === route || path.startsWith(`${route}/`)),
+    )
+  ) {
     return null;
   }
   return next;
@@ -230,7 +287,10 @@ function hasControlCharsOrBackslash(value: string): boolean {
 }
 
 /** Where to send a manager after sign-in / sign-up. */
-export function getPostAuthRedirect(input: { organisationCount: number; next?: string | null }): string {
+export function getPostAuthRedirect(input: {
+  organisationCount: number;
+  next?: string | null;
+}): string {
   if (input.organisationCount === 0) {
     const next = safeRedirectPath(input.next);
     // Accepting an invite creates the membership, so let that flow continue.
@@ -243,5 +303,7 @@ export function getPostAuthRedirect(input: { organisationCount: number; next?: s
 /** `/login?next=/employees%3Fq%3Dx` for the current location. */
 export function loginRedirectUrl(currentPath: string | null | undefined): string {
   const next = safeRedirectPath(currentPath);
-  return next && next !== ROUTES.overview ? `${ROUTES.login}?next=${encodeURIComponent(next)}` : ROUTES.login;
+  return next && next !== ROUTES.overview
+    ? `${ROUTES.login}?next=${encodeURIComponent(next)}`
+    : ROUTES.login;
 }

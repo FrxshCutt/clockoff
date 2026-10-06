@@ -42,7 +42,9 @@ export async function countUnreadForUser(
   userId: string,
   db: Db = prisma,
 ): Promise<number> {
-  return db.notification.count({ where: { ...recipientWhere(organisationId, userId), readAt: null } });
+  return db.notification.count({
+    where: { ...recipientWhere(organisationId, userId), readAt: null },
+  });
 }
 
 export async function findNotificationForUser(
@@ -56,17 +58,20 @@ export async function findNotificationForUser(
   });
 }
 
-/** Set `readAt` once (a second call leaves the original timestamp). Returns the fresh row. */
+/**
+ * Set `readAt` once (a second call leaves the original timestamp). The write is scoped to the recipient
+ * like every other query here, so a guessed id can never flip another manager's row. Returns the fresh row.
+ */
 export async function markNotificationRead(
+  organisationId: string,
+  userId: string,
   notificationId: string,
   now: Date,
   db: Db = prisma,
 ): Promise<NotificationRow> {
-  await db.notification.updateMany({
-    where: { id: notificationId, readAt: null },
-    data: { readAt: now },
-  });
-  return db.notification.findUniqueOrThrow({ where: { id: notificationId } });
+  const where = { id: notificationId, ...recipientWhere(organisationId, userId) };
+  await db.notification.updateMany({ where: { ...where, readAt: null }, data: { readAt: now } });
+  return db.notification.findFirstOrThrow({ where });
 }
 
 export async function markAllReadForUser(

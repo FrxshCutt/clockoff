@@ -19,6 +19,7 @@ import {
   type ExpectedState,
   type WorkModeMachineOptions,
 } from "@workmode/shared/workMode/workModeMachine";
+import { recordActivity } from "@/server/activity/recordActivity";
 import { publishEvent } from "@/server/events";
 import { resolveForEmployees, type EmployeePolicyResolution } from "./externalServices";
 import {
@@ -98,7 +99,8 @@ export function effectiveBreakEnd(
 ): Date {
   const startMs = session.startedAt.getTime();
   const capMs = Math.max(startMs, Math.min(session.plannedEndsAt.getTime(), shiftEndsAt.getTime()));
-  if (session.endedAt) return new Date(Math.max(startMs, Math.min(session.endedAt.getTime(), capMs)));
+  if (session.endedAt)
+    return new Date(Math.max(startMs, Math.min(session.endedAt.getTime(), capMs)));
   if (session.status === "ENDED") return new Date(capMs);
   return new Date(Math.max(startMs, Math.min(capMs, now.getTime())));
 }
@@ -111,7 +113,9 @@ export function summariseShiftBreaks(
 ): { count: number; minutes: number } {
   let minutes = 0;
   for (const session of sessions) {
-    minutes += ceilMinutes(effectiveBreakEnd(session, shift.endsAt, now).getTime() - session.startedAt.getTime());
+    minutes += ceilMinutes(
+      effectiveBreakEnd(session, shift.endsAt, now).getTime() - session.startedAt.getTime(),
+    );
   }
   return { count: sessions.length, minutes };
 }
@@ -152,7 +156,9 @@ export function estimateExpectedSince(
   return new Date(Math.max(...past));
 }
 
-export function machineOptionsFor(policy: EmployeePolicyResolution | null | undefined): Required<WorkModeMachineOptions> {
+export function machineOptionsFor(
+  policy: EmployeePolicyResolution | null | undefined,
+): Required<WorkModeMachineOptions> {
   const pre = policy?.policy?.currentVersion?.restrictionConfig.preShiftWarningMinutes;
   return {
     preShiftWarningMinutes: typeof pre === "number" && pre >= 0 ? pre : 15,
@@ -178,14 +184,26 @@ function deriveDisplayedState(
     previous && previous.state === state ? previous.stateSince : now;
 
   if (reportedState === null || reportedAt === null) {
-    return { state: expected.state, stateSince: keepSince(expected.state), source: "SERVER_COMPUTED" };
+    return {
+      state: expected.state,
+      stateSince: keepSince(expected.state),
+      source: "SERVER_COMPUTED",
+    };
   }
   if (expectedChanged && reportedAt.getTime() < now.getTime()) {
-    return { state: expected.state, stateSince: keepSince(expected.state), source: "SERVER_COMPUTED" };
+    return {
+      state: expected.state,
+      stateSince: keepSince(expected.state),
+      source: "SERVER_COMPUTED",
+    };
   }
   if (previous && previous.source === "SERVER_COMPUTED") {
     // Still waiting for the device to catch up with the last transition: follow the expectation.
-    return { state: expected.state, stateSince: keepSince(expected.state), source: "SERVER_COMPUTED" };
+    return {
+      state: expected.state,
+      stateSince: keepSince(expected.state),
+      source: "SERVER_COMPUTED",
+    };
   }
   return { state: reportedState, stateSince: keepSince(reportedState), source: "DEVICE_REPORT" };
 }
@@ -244,7 +262,13 @@ export function evaluateEmployee(input: EvaluateEmployeeInput): EmployeeEvaluati
     (previous.activeShiftId ?? null) !== activeShiftId ||
     (previous.activeBreakSessionId ?? null) !== activeBreakSessionId;
 
-  const expectedSince = estimateExpectedSince(expected, input.shifts, input.sessionsByShift, now, options);
+  const expectedSince = estimateExpectedSince(
+    expected,
+    input.shifts,
+    input.sessionsByShift,
+    now,
+    options,
+  );
   const expectedWork = toExpectedWorkState(expected, expectedSince);
   const badge = deriveDeviceStatus({
     now,
@@ -257,7 +281,9 @@ export function evaluateEmployee(input: EvaluateEmployeeInput): EmployeeEvaluati
   const shiftActive = isShiftActive(expectedWork);
   const displayed = deriveDisplayedState(previous, expected, expectedChanged, now);
 
-  const activeShift = activeShiftId ? input.shifts.find((s) => s.id === activeShiftId) ?? null : null;
+  const activeShift = activeShiftId
+    ? (input.shifts.find((s) => s.id === activeShiftId) ?? null)
+    : null;
   const breakSummary = activeShift
     ? summariseShiftBreaks(activeShift, input.sessionsByShift.get(activeShift.id) ?? [], now)
     : { count: 0, minutes: 0 };
@@ -373,8 +399,42 @@ export async function persistEvaluation(
   return { row, startedSyncDelayedEpisode: evaluation.syncDelayedEpisodeStarting && wonGuard };
 }
 
+/**
+ * SYSTEM `DEVICE_SYNC_DELAYED` for the evaluation that started a sync-delayed / offline episode — i.e. whose
+ * `persistEvaluation` won the marker guard. Every path that persists an evaluation (the job tick, `GET /sync`,
+ * `recomputeEmployeeWorkState`) must call this when `startedSyncDelayedEpisode` is true, otherwise the write
+ * that claimed the episode would silence the event for good (the job only ever sees the marker already set).
+ */
+export async function recordSyncDelayedEpisode(
+  evaluation: EmployeeEvaluation,
+  now: Date,
+  db: Db = prisma,
+): Promise<void> {
+  await recordActivity(
+    {
+      organisationId: evaluation.organisationId,
+      employeeId: evaluation.employee.id,
+      deviceId: evaluation.device?.id ?? null,
+      actorType: "SYSTEM",
+      type: "DEVICE_SYNC_DELAYED",
+      occurredAt: now,
+      metadata: {
+        badge: evaluation.badge?.badge ?? null,
+        reason: evaluation.badge?.reason ?? null,
+        lastDeviceSyncAt: evaluation.device?.lastDeviceSyncAt?.toISOString() ?? null,
+        expectedState: evaluation.expected.state,
+        activeShiftId: evaluation.expected.activeShift?.id ?? null,
+      },
+    },
+    { db },
+  );
+}
+
 /** `employee.work_state.changed` — ids, states and the derived badge only (§12). */
-export function publishWorkStateChanged(evaluation: EmployeeEvaluation, row: EmployeeWorkState): void {
+export function publishWorkStateChanged(
+  evaluation: EmployeeEvaluation,
+  row: EmployeeWorkState,
+): void {
   publishEvent({
     type: "employee.work_state.changed",
     organisationId: evaluation.organisationId,
@@ -409,7 +469,8 @@ export async function recomputeEmployeeWorkState(
   );
   const evaluation = evaluations[0];
   if (!evaluation) return null;
-  const { row } = await persistEvaluation(evaluation, db);
+  const { row, startedSyncDelayedEpisode } = await persistEvaluation(evaluation, db);
+  if (startedSyncDelayedEpisode) await recordSyncDelayedEpisode(evaluation, now, db);
   if ((params.publish ?? true) && evaluation.changed) publishWorkStateChanged(evaluation, row);
   return { evaluation, row };
 }

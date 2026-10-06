@@ -133,11 +133,15 @@ describe("safeRedirectPath", () => {
 describe("post-auth redirects", () => {
   it("sends managers without an organisation to create one", () => {
     expect(getPostAuthRedirect({ organisationCount: 0 })).toBe("/create-organisation");
-    expect(getPostAuthRedirect({ organisationCount: 0, next: "/employees" })).toBe("/create-organisation");
+    expect(getPostAuthRedirect({ organisationCount: 0, next: "/employees" })).toBe(
+      "/create-organisation",
+    );
   });
 
   it("lets an invite acceptance continue even without an organisation", () => {
-    expect(getPostAuthRedirect({ organisationCount: 0, next: "/accept-invite?token=t" })).toBe("/accept-invite?token=t");
+    expect(getPostAuthRedirect({ organisationCount: 0, next: "/accept-invite?token=t" })).toBe(
+      "/accept-invite?token=t",
+    );
   });
 
   it("sends members to `next` or the overview", () => {
@@ -171,10 +175,17 @@ describe("isInternalPath", () => {
     expect(isInternalPath("/login")).toBe(true);
   });
 
-  it.each(["https://evil.example", "//evil.example", "/\\evil.example", "/a\tb", "javascript:alert(1)", "policies", "", null, undefined])(
-    "rejects %j",
-    (value) => {
-      expect(isInternalPath(value)).toBe(false);
-    },
-  );
+  it.each([
+    "https://evil.example",
+    "//evil.example",
+    "/\\evil.example",
+    "/a\tb",
+    "javascript:alert(1)",
+    "policies",
+    "",
+    null,
+    undefined,
+  ])("rejects %j", (value) => {
+    expect(isInternalPath(value)).toBe(false);
+  });
 });

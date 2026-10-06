@@ -42,25 +42,37 @@ describe("§6.4 DST scenarios", () => {
     // The spec phrases this as "02:30 → 03:30". That is the US/Sydney gap (02:00–03:00). Europe/London's gap on
     // 2026-03-29 is 01:00–02:00 (01:00 GMT → 02:00 BST), so the London equivalent is 01:30 → 02:30, and 02:30
     // itself is a normal BST time.
-    const ny = time.localToInstant({ date: "2026-03-08", time: "02:30", timezone: "America/New_York" });
+    const ny = time.localToInstant({
+      date: "2026-03-08",
+      time: "02:30",
+      timezone: "America/New_York",
+    });
     expect(ny).toEqual({
       instant: new Date("2026-03-08T07:30:00.000Z"),
       warning: "NONEXISTENT_LOCAL_TIME_SHIFTED",
       normalisedLocalTime: "03:30",
     });
-    const london = time.localToInstant({ date: "2026-03-29", time: "01:30", timezone: "Europe/London" });
+    const london = time.localToInstant({
+      date: "2026-03-29",
+      time: "01:30",
+      timezone: "Europe/London",
+    });
     expect(london).toEqual({
       instant: new Date("2026-03-29T01:30:00.000Z"),
       warning: "NONEXISTENT_LOCAL_TIME_SHIFTED",
       normalisedLocalTime: "02:30",
     });
-    expect(time.localToInstant({ date: "2026-03-29", time: "02:30", timezone: "Europe/London" })).toEqual({
+    expect(
+      time.localToInstant({ date: "2026-03-29", time: "02:30", timezone: "Europe/London" }),
+    ).toEqual({
       instant: new Date("2026-03-29T01:30:00.000Z"),
     });
   });
 
   it("fall-back: Europe/London 2026-10-25 01:30 takes the first occurrence (BST, 00:30Z)", () => {
-    expect(time.localToInstant({ date: "2026-10-25", time: "01:30", timezone: "Europe/London" })).toEqual({
+    expect(
+      time.localToInstant({ date: "2026-10-25", time: "01:30", timezone: "Europe/London" }),
+    ).toEqual({
       instant: new Date("2026-10-25T00:30:00.000Z"),
       warning: "AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE",
     });
@@ -82,11 +94,17 @@ describe("§6.4 DST scenarios", () => {
     expect(time.minutesBetween(spring.startsAt, spring.endsAt)).toBe(7 * 60);
     expect(time.minutesBetween(fall.startsAt, fall.endsAt)).toBe(9 * 60);
     expect(spring.isOvernight && fall.isOvernight).toBe(true);
-    expect(time.formatShiftRange(fall.startsAt, fall.endsAt, "Europe/London")).toBe("Sat 24 Oct, 22:00–06:00 (+1)");
+    expect(time.formatShiftRange(fall.startsAt, fall.endsAt, "Europe/London")).toBe(
+      "Sat 24 Oct, 22:00–06:00 (+1)",
+    );
   });
 
   it("a weekly 09:00 series keeps 09:00 local across the spring-forward boundary", () => {
-    const first = time.localToInstant({ date: "2026-03-23", time: "09:00", timezone: "Europe/London" }).instant;
+    const first = time.localToInstant({
+      date: "2026-03-23",
+      time: "09:00",
+      timezone: "Europe/London",
+    }).instant;
     const occ = time.expandRecurrence({
       rule: "FREQ=WEEKLY;BYDAY=MO",
       firstStartsAt: first,
@@ -94,7 +112,11 @@ describe("§6.4 DST scenarios", () => {
       timezone: "Europe/London",
       until: time.recurrenceUntilFromLocalDate("2026-04-06", "Europe/London"),
     });
-    expect(occ.map((o) => time.instantToLocal(o.startsAt, "Europe/London").time)).toEqual(["09:00", "09:00", "09:00"]);
+    expect(occ.map((o) => time.instantToLocal(o.startsAt, "Europe/London").time)).toEqual([
+      "09:00",
+      "09:00",
+      "09:00",
+    ]);
     expect(occ.map((o) => o.startsAt.toISOString())).toEqual([
       "2026-03-23T09:00:00.000Z",
       "2026-03-30T08:00:00.000Z",

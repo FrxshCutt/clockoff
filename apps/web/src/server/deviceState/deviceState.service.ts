@@ -48,7 +48,8 @@ export async function applyReportedState(
 ): Promise<boolean> {
   const existing = await db.employeeWorkState.findUnique({ where: { employeeId } });
   if (existing?.reportedAt && existing.reportedAt.getTime() > reportedAt.getTime()) return false;
-  const stateSince = existing && existing.state === reportedState ? existing.stateSince : reportedAt;
+  const stateSince =
+    existing && existing.state === reportedState ? existing.stateSince : reportedAt;
   const data = {
     reportedState,
     reportedAt,
@@ -97,28 +98,46 @@ export async function reportDeviceState(
     osVersion: input.osVersion,
     timezone: input.timezone,
     policyVersionId,
-    ...(input.scheduleVersionApplied !== undefined ? { scheduleVersion: input.scheduleVersionApplied } : {}),
+    ...(input.scheduleVersionApplied !== undefined
+      ? { scheduleVersion: input.scheduleVersionApplied }
+      : {}),
     lastDeviceSyncAt: now,
     lastSeenAt: now,
     lastClockSkewSeconds: clockSkewSeconds,
   });
 
   // Transitions only — the periodic check-in must not flood the feed.
-  const base = { organisationId, employeeId, deviceId: previous.id, actorType: "EMPLOYEE_DEVICE" as const, occurredAt: now };
+  const base = {
+    organisationId,
+    employeeId,
+    deviceId: previous.id,
+    actorType: "EMPLOYEE_DEVICE" as const,
+    occurredAt: now,
+  };
   if (isPermissionGranted(previous.permissionState, input.permissionState)) {
-    await recordActivity({ ...base, type: "PERMISSION_GRANTED", metadata: { permissionState: input.permissionState } });
+    await recordActivity({
+      ...base,
+      type: "PERMISSION_GRANTED",
+      metadata: { permissionState: input.permissionState },
+    });
   } else if (isPermissionLost(previous.permissionState, input.permissionState)) {
     await recordActivity({
       ...base,
       type: "PERMISSION_NEEDS_ATTENTION",
-      metadata: { permissionState: input.permissionState, previousPermissionState: previous.permissionState },
+      metadata: {
+        permissionState: input.permissionState,
+        previousPermissionState: previous.permissionState,
+      },
     });
   }
   if (isSelectionConfigured(previous.selectionState, input.selectionState)) {
     await recordActivity({
       ...base,
       type: "SELECTION_CONFIGURED",
-      metadata: { selectionState: input.selectionState, ...(input.selectionCounts ? { selectionCounts: input.selectionCounts } : {}) },
+      metadata: {
+        selectionState: input.selectionState,
+        ...(input.selectionCounts ? { selectionCounts: input.selectionCounts } : {}),
+      },
     });
   }
 

@@ -39,7 +39,10 @@ export const SESSION_CHANGE_ERROR_CODES = ["UNAUTHENTICATED", "NO_ORGANISATION"]
 
 /** True when `error` should make the dashboard re-check `GET /api/auth/me`. */
 export function isSessionChangeError(error: unknown): boolean {
-  return isApiClientError(error) && (SESSION_CHANGE_ERROR_CODES as readonly string[]).includes(error.code);
+  return (
+    isApiClientError(error) &&
+    (SESSION_CHANGE_ERROR_CODES as readonly string[]).includes(error.code)
+  );
 }
 
 /**
@@ -53,12 +56,17 @@ export function makeQueryClient(): QueryClient {
 
   const onSessionError = (error: unknown, key?: readonly unknown[]) => {
     if (!client || !isSessionChangeError(error)) return;
-    const isCurrentUserQuery = key !== undefined && key[0] === queryKeys.currentUser[0] && key[1] === queryKeys.currentUser[1];
+    const isCurrentUserQuery =
+      key !== undefined &&
+      key[0] === queryKeys.currentUser[0] &&
+      key[1] === queryKeys.currentUser[1];
     if (!isCurrentUserQuery) void client.invalidateQueries({ queryKey: queryKeys.currentUser });
   };
 
   client = new QueryClient({
-    queryCache: new QueryCache({ onError: (error, query) => onSessionError(error, query.queryKey) }),
+    queryCache: new QueryCache({
+      onError: (error, query) => onSessionError(error, query.queryKey),
+    }),
     mutationCache: new MutationCache({ onError: (error) => onSessionError(error) }),
     defaultOptions: {
       queries: {

@@ -45,7 +45,8 @@ export function useBreakPolicy(id: string | null, options: { enabled?: boolean }
   return useQuery({
     queryKey: breakPolicyQueryKeys.detail(id ?? ""),
     queryFn: async ({ signal }) =>
-      (await api.get<BreakPolicyResponse>(breakPolicyPath(id ?? ""), undefined, signal)).breakPolicy,
+      (await api.get<BreakPolicyResponse>(breakPolicyPath(id ?? ""), undefined, signal))
+        .breakPolicy,
     enabled: (options.enabled ?? true) && id !== null,
   });
 }
@@ -54,7 +55,11 @@ export function useBreakPolicyAssignments(id: string | null, options: { enabled?
   return useQuery({
     queryKey: breakPolicyQueryKeys.assignments(id ?? ""),
     queryFn: ({ signal }) =>
-      api.get<ListBreakPolicyAssignmentsResponse>(breakPolicyPath(id ?? "", "/assignments"), undefined, signal),
+      api.get<ListBreakPolicyAssignmentsResponse>(
+        breakPolicyPath(id ?? "", "/assignments"),
+        undefined,
+        signal,
+      ),
     select: (data) => data.assignments,
     enabled: (options.enabled ?? true) && id !== null,
   });
@@ -82,7 +87,8 @@ export function useUpdateBreakPolicy() {
   const settle = useSettleBreakPolicy();
   return useMutation({
     mutationFn: async (variables: { id: string; input: UpdateBreakPolicyInput }) =>
-      (await api.patch<BreakPolicyResponse>(breakPolicyPath(variables.id), variables.input)).breakPolicy,
+      (await api.patch<BreakPolicyResponse>(breakPolicyPath(variables.id), variables.input))
+        .breakPolicy,
     onSuccess: (policy) => settle(policy),
   });
 }
@@ -102,8 +108,12 @@ export function useAssignBreakPolicy() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: { id: string; input: CreateBreakPolicyAssignmentInput }) =>
-      (await api.post<BreakPolicyAssignmentResponse>(breakPolicyPath(variables.id, "/assignments"), variables.input))
-        .assignment,
+      (
+        await api.post<BreakPolicyAssignmentResponse>(
+          breakPolicyPath(variables.id, "/assignments"),
+          variables.input,
+        )
+      ).assignment,
     // Assignment counts live on the break policy, so the whole domain refreshes.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: breakPolicyQueryKeys.all }),
   });
@@ -113,7 +123,9 @@ export function useRemoveBreakPolicyAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (variables: { assignmentId: string; breakPolicyId: string }) =>
-      api.delete<void>(`/api/break-policy-assignments/${encodeURIComponent(variables.assignmentId)}`),
+      api.delete<void>(
+        `/api/break-policy-assignments/${encodeURIComponent(variables.assignmentId)}`,
+      ),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: breakPolicyQueryKeys.all }),
   });
 }

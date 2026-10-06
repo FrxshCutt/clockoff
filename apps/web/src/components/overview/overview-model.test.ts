@@ -1,4 +1,8 @@
-import { COMPLIANCE_METRIC_KEYS, type ComplianceEmployeeRow, type UpcomingShift } from "@workmode/validation/compliance";
+import {
+  COMPLIANCE_METRIC_KEYS,
+  type ComplianceEmployeeRow,
+  type UpcomingShift,
+} from "@workmode/validation/compliance";
 import { describe, expect, it } from "vitest";
 import {
   METRIC_CARDS,
@@ -26,18 +30,21 @@ describe("metric cards", () => {
     for (const card of METRIC_CARDS) expect(card.description.trim()).not.toBe("");
   });
 
-  it("links each card to the employees quick filter that counts the same rows", () => {
+  it("links a card to the employees quick filter only when it selects exactly the rows the metric counted", () => {
     expect(metricHref("totalEmployees")).toBe("/employees");
     expect(metricHref("connected")).toBe("/employees?filter=connected");
-    expect(metricHref("awaitingSetup")).toBe("/employees?filter=awaitingSetup");
     expect(metricHref("missingPermissions")).toBe("/employees?filter=permissionsMissing");
-    expect(metricHref("workingNow")).toBe("/employees?filter=working");
     expect(metricHref("onBreak")).toBe("/employees?filter=onBreak");
-    expect(metricHref("needsAttention")).toBe("/employees?filter=needsAttention");
   });
 
-  it("sends 'Work Mode active' to the compliance tab, which has the exact API filter", () => {
+  it("sends metrics without an identical quick filter to the compliance tab, which has the exact API filter", () => {
+    // NOT_INVITED counts as awaiting setup; the employees quick filter starts at INVITED.
+    expect(metricHref("awaitingSetup")).toBe("/activity?tab=compliance&filter=AWAITING_SETUP");
+    // Expected on shift, whatever the phone reports — not the WORKING / WORK_MODE_ACTIVE badges.
+    expect(metricHref("workingNow")).toBe("/activity?tab=compliance&filter=WORKING_NOW");
     expect(metricHref("workModeActive")).toBe("/activity?tab=compliance&filter=WORK_MODE_ACTIVE");
+    // PERMISSIONS_MISSING only needs attention while on shift; the quick filter counts it always.
+    expect(metricHref("needsAttention")).toBe("/activity?tab=compliance&filter=NEEDS_ATTENTION");
   });
 
   it("tones a value by what it means, and keeps zero neutral", () => {
@@ -63,19 +70,36 @@ describe("upcomingShiftsWithin", () => {
   const now = Date.parse("2026-10-06T09:00:00.000Z");
   const hours = (n: number) => new Date(now + n * 3_600_000).toISOString();
   const shift = (id: string, startHours: number, endHours: number): UpcomingShift => ({
-    shift: { id, startsAt: hours(startHours), endsAt: hours(endHours), timezone: "Europe/London", status: "SCHEDULED", location: null },
+    shift: {
+      id,
+      startsAt: hours(startHours),
+      endsAt: hours(endHours),
+      timezone: "Europe/London",
+      status: "SCHEDULED",
+      location: null,
+    },
     employee,
     deviceStatus: null,
     ready: true,
   });
 
   it("keeps shifts that start within the window or are already in progress, soonest first", () => {
-    const result = upcomingShiftsWithin([shift("later", 11, 19), shift("inProgress", -2, 6), shift("soon", 1, 9)], now);
+    const result = upcomingShiftsWithin(
+      [shift("later", 11, 19), shift("inProgress", -2, 6), shift("soon", 1, 9)],
+      now,
+    );
     expect(result.map((entry) => entry.shift.id)).toEqual(["inProgress", "soon", "later"]);
   });
 
   it("drops shifts that start after the window or have already ended", () => {
-    const result = upcomingShiftsWithin([shift("tooLate", UPCOMING_SHIFT_WINDOW_HOURS + 1, 30), shift("ended", -10, -1), shift("edge", UPCOMING_SHIFT_WINDOW_HOURS, 20)], now);
+    const result = upcomingShiftsWithin(
+      [
+        shift("tooLate", UPCOMING_SHIFT_WINDOW_HOURS + 1, 30),
+        shift("ended", -10, -1),
+        shift("edge", UPCOMING_SHIFT_WINDOW_HOURS, 20),
+      ],
+      now,
+    );
     expect(result.map((entry) => entry.shift.id)).toEqual(["edge"]);
   });
 
@@ -83,14 +107,21 @@ describe("upcomingShiftsWithin", () => {
     expect(upcomingShiftsWithin([shift("a", 3, 4)], now, 2)).toEqual([]);
     expect(upcomingShiftsWithin([shift("a", 3, 4)], now, 4).map((e) => e.shift.id)).toEqual(["a"]);
     expect(upcomingShiftsWithin([shift("a", 1, 2)], "not a date")).toEqual([]);
-    const broken = { ...shift("b", 1, 2), shift: { ...shift("b", 1, 2).shift, startsAt: "garbage" } };
+    const broken = {
+      ...shift("b", 1, 2),
+      shift: { ...shift("b", 1, 2).shift, startsAt: "garbage" },
+    };
     expect(upcomingShiftsWithin([broken], now)).toEqual([]);
   });
 });
 
 describe("describeAwaitingSetup", () => {
   type Input = Parameters<typeof describeAwaitingSetup>[0];
-  const row = (overrides: Partial<Input> & { inviteStatus?: ComplianceEmployeeRow["employee"]["inviteStatus"] } = {}): Input => {
+  const row = (
+    overrides: Partial<Input> & {
+      inviteStatus?: ComplianceEmployeeRow["employee"]["inviteStatus"];
+    } = {},
+  ): Input => {
     const { inviteStatus, ...rest } = overrides;
     return {
       employee: { ...employee, inviteStatus: inviteStatus ?? "INVITED" },
@@ -125,34 +156,74 @@ describe("describeAwaitingSetup", () => {
   });
 
   it("explains what is still missing for a partly set up phone", () => {
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "DENIED" }))).toMatchObject({
+    expect(
+      describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "DENIED" })),
+    ).toMatchObject({
       statusText: "Permission missing",
       tone: "danger",
       inviteAction: null,
     });
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "REVOKED" })).statusText).toBe("Permission missing");
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "APPROVED", selectionState: "NONE" }))).toMatchObject({
+    expect(
+      describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "REVOKED" }))
+        .statusText,
+    ).toBe("Permission missing");
+    expect(
+      describeAwaitingSetup(
+        row({
+          inviteStatus: "SETUP_INCOMPLETE",
+          permissionState: "APPROVED",
+          selectionState: "NONE",
+        }),
+      ),
+    ).toMatchObject({
       statusText: "Joined · no apps selected yet",
       tone: "warning",
     });
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "NOT_DETERMINED" })).statusText).toBe(
-      "Joined · permission not granted yet",
-    );
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: null })).statusText).toBe("Joined · permission not granted yet");
-    expect(describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "APPROVED", selectionState: "CONFIGURED" })).statusText).toBe(
-      "Joined · setup incomplete",
-    );
+    expect(
+      describeAwaitingSetup(
+        row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: "NOT_DETERMINED" }),
+      ).statusText,
+    ).toBe("Joined · permission not granted yet");
+    expect(
+      describeAwaitingSetup(row({ inviteStatus: "SETUP_INCOMPLETE", permissionState: null }))
+        .statusText,
+    ).toBe("Joined · permission not granted yet");
+    expect(
+      describeAwaitingSetup(
+        row({
+          inviteStatus: "SETUP_INCOMPLETE",
+          permissionState: "APPROVED",
+          selectionState: "CONFIGURED",
+        }),
+      ).statusText,
+    ).toBe("Joined · setup incomplete");
   });
 
   it("falls back to the humanised lifecycle label for stages the panel does not expect", () => {
-    expect(describeAwaitingSetup(row({ inviteStatus: "CONNECTED" }))).toMatchObject({ stage: "other", statusText: "Connected", inviteAction: null });
-    expect(describeAwaitingSetup(row({ inviteStatus: "DEACTIVATED" })).statusText).toBe("Deactivated");
+    expect(describeAwaitingSetup(row({ inviteStatus: "CONNECTED" }))).toMatchObject({
+      stage: "other",
+      statusText: "Connected",
+      inviteAction: null,
+    });
+    expect(describeAwaitingSetup(row({ inviteStatus: "DEACTIVATED" })).statusText).toBe(
+      "Deactivated",
+    );
   });
 
   it("surfaces the attention reason, else the badge's reason, as the detail line", () => {
-    const badge = { badge: "PERMISSIONS_MISSING" as const, reason: "Screen Time access was revoked", severity: "warning" as const, since: null };
-    expect(describeAwaitingSetup(row({ attentionReason: "Clock is 7 minutes out", deviceStatus: badge })).detail).toBe("Clock is 7 minutes out");
-    expect(describeAwaitingSetup(row({ deviceStatus: badge })).detail).toBe("Screen Time access was revoked");
+    const badge = {
+      badge: "PERMISSIONS_MISSING" as const,
+      reason: "Screen Time access was revoked",
+      severity: "warning" as const,
+      since: null,
+    };
+    expect(
+      describeAwaitingSetup(row({ attentionReason: "Clock is 7 minutes out", deviceStatus: badge }))
+        .detail,
+    ).toBe("Clock is 7 minutes out");
+    expect(describeAwaitingSetup(row({ deviceStatus: badge })).detail).toBe(
+      "Screen Time access was revoked",
+    );
     expect(describeAwaitingSetup(row({ attentionReason: "  " })).detail).toBeNull();
   });
 });

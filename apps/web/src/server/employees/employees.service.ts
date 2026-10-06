@@ -5,6 +5,7 @@ import {
   type Organisation as OrganisationRow,
 } from "@workmode/db";
 import { computeBreakAllowance } from "@workmode/shared/breaks/breakRules";
+import type { InviteStatus } from "@workmode/shared/enums";
 import { AppError, isAppError, type ApiErrorCode } from "@workmode/shared/errors";
 import { PLAN_CONFIG, isWithinLimit, planLimitsFor } from "@workmode/shared/plans";
 import { toExpectedStateJson } from "@workmode/shared/workMode/workModeMachine";
@@ -32,6 +33,8 @@ import { publishActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { createEmployeeInvite } from "@/server/employeeInvites/employeeInvites.service";
 import { publishEvent } from "@/server/events";
+import { publishBreakPolicyChanged, publishPolicyChanged } from "@/server/policies";
+import { RATE_LIMITS, enforceRateLimit } from "@/server/rateLimit";
 import { listShiftsForEmployee } from "@/server/shifts";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { revokeEmployeeAccess } from "./employeeAccess";
@@ -76,7 +79,10 @@ import {
 import { recomputeEmployeeInviteStatus } from "./inviteStatus";
 
 export { getEmployeeStatusContext, computeEmployeeStatus } from "./employees.status";
-export { recomputeEmployeeInviteStatus, recomputeEmployeeInviteStatusDetailed } from "./inviteStatus";
+export {
+  recomputeEmployeeInviteStatus,
+  recomputeEmployeeInviteStatusDetailed,
+} from "./inviteStatus";
 
 /**
  * Employees (§5 employees, §9 lifecycle). Every function receives the verified `ManagerContext` and
@@ -116,7 +122,8 @@ function toEmployeeDto(
     locations: employeeLocations(row),
     teams: row.teams.map((t) => toNamedRef(t.team)),
     employmentStatus: row.employmentStatus,
-    inviteStatus: row.inviteStatus,
+    // Derived live (an invite that expired since the last recompute reads NOT_INVITED, not INVITED).
+    inviteStatus: computed?.inviteStatus ?? row.inviteStatus,
     deviceStatus: computed ? toDeviceStatusDto(computed.status, computed.since) : null,
     policyOverride: policies?.policyOverride ?? null,
     breakPolicyOverride: policies?.breakPolicyOverride ?? null,
@@ -227,7 +234,15 @@ async function assertEmployeeCapacity(organisation: OrganisationPolicyRef): Prom
   throw new AppError(
     "CONFLICT",
     `Your ${PLAN_CONFIG[organisation.plan].name} plan includes up to ${String(limit)} active employees. Upgrade your plan or deactivate an employee to add another.`,
-    { details: { reason: "PLAN_LIMIT", metric: "employees", plan: organisation.plan, limit, current } },
+    {
+      details: {
+        reason: "PLAN_LIMIT",
+        metric: "employees",
+        plan: organisation.plan,
+        limit,
+        current,
+      },
+    },
   );
 }
 
@@ -271,11 +286,7 @@ function uniqueIds(...lists: Array<readonly string[] | undefined>): string[] {
 
 // ── List ────────────────────────────────────────────────────────────────────
 
-type SortField = EmployeeQuery["sort"] extends infer S
-  ? S extends `-${infer F}`
-    ? F
-    : S
-  : never;
+type SortField = EmployeeQuery["sort"] extends infer S ? (S extends `-${infer F}` ? F : S) : never;
 
 function parseSort(sort: EmployeeQuery["sort"]): { field: SortField; direction: "asc" | "desc" } {
   return sort.startsWith("-")
@@ -283,7 +294,10 @@ function parseSort(sort: EmployeeQuery["sort"]): { field: SortField; direction: 
     : { field: sort as SortField, direction: "asc" };
 }
 
-function orderByFor(field: SortField, direction: "asc" | "desc"): Prisma.EmployeeOrderByWithRelationInput[] {
+function orderByFor(
+  field: SortField,
+  direction: "asc" | "desc",
+): Prisma.EmployeeOrderByWithRelationInput[] {
   const tieBreak: Prisma.EmployeeOrderByWithRelationInput[] = [
     { lastName: "asc" },
     { firstName: "asc" },
@@ -308,7 +322,39 @@ function orderByFor(field: SortField, direction: "asc" | "desc"): Prisma.Employe
   }
 }
 
-function whereFor(organisationId: string, query: EmployeeQuery): Prisma.EmployeeWhereInput {
+/**
+ * `inviteStatus` filter. The stored column is a cache refreshed by `recomputeEmployeeInviteStatus`, so an
+ * invite that expired since then still reads INVITED there. To agree with the DTO (derived live), INVITED
+ * additionally demands a live invite and NOT_INVITED also admits INVITED rows whose invites all expired.
+ */
+function inviteStatusWhere(
+  statuses: readonly InviteStatus[],
+  now: Date,
+): Prisma.EmployeeWhereInput {
+  const liveInvite: Prisma.EmployeeInviteWhereInput = {
+    status: { in: ["PENDING", "SENT"] },
+    expiresAt: { gt: now },
+  };
+  const or: Prisma.EmployeeWhereInput[] = [];
+  const plain = statuses.filter((s) => s !== "INVITED" && s !== "NOT_INVITED");
+  if (plain.length > 0) or.push({ inviteStatus: { in: plain } });
+  if (statuses.includes("INVITED")) {
+    or.push({ inviteStatus: "INVITED", invites: { some: liveInvite } });
+  }
+  if (statuses.includes("NOT_INVITED")) {
+    or.push(
+      { inviteStatus: "NOT_INVITED" },
+      { inviteStatus: "INVITED", invites: { none: liveInvite } },
+    );
+  }
+  return { OR: or };
+}
+
+function whereFor(
+  organisationId: string,
+  query: EmployeeQuery,
+  now: Date,
+): Prisma.EmployeeWhereInput {
   const and: Prisma.EmployeeWhereInput[] = [];
   if (query.search) {
     const contains = { contains: query.search, mode: "insensitive" as const };
@@ -323,7 +369,7 @@ function whereFor(organisationId: string, query: EmployeeQuery): Prisma.Employee
     });
   }
   if (query.inviteStatus && query.inviteStatus.length > 0) {
-    and.push({ inviteStatus: { in: query.inviteStatus } });
+    and.push(inviteStatusWhere(query.inviteStatus, now));
   }
   if (query.employmentStatus && query.employmentStatus.length > 0) {
     and.push({ employmentStatus: { in: query.employmentStatus } });
@@ -348,11 +394,13 @@ export async function listEmployees(
 ): Promise<ListEmployeesResponse> {
   const organisation = ctx.organisation;
   const now = new Date();
-  const where = whereFor(organisation.id, query);
+  const where = whereFor(organisation.id, query, now);
   const { field, direction } = parseSort(query.sort);
   const orderBy = orderByFor(field, direction);
-  const deviceStatusFilter = query.deviceStatus && query.deviceStatus.length > 0 ? new Set(query.deviceStatus) : null;
-  const needsInMemory = deviceStatusFilter !== null || query.policyId !== undefined || field === "lastSyncAt";
+  const deviceStatusFilter =
+    query.deviceStatus && query.deviceStatus.length > 0 ? new Set(query.deviceStatus) : null;
+  const needsInMemory =
+    deviceStatusFilter !== null || query.policyId !== undefined || field === "lastSyncAt";
 
   if (!needsInMemory) {
     const [total, rows] = await Promise.all([
@@ -384,7 +432,9 @@ export async function listEmployees(
   });
   let items = await buildEmployeeDtos(organisation, rows, now);
   if (deviceStatusFilter) {
-    items = items.filter((e) => e.deviceStatus !== null && deviceStatusFilter.has(e.deviceStatus.badge));
+    items = items.filter(
+      (e) => e.deviceStatus !== null && deviceStatusFilter.has(e.deviceStatus.badge),
+    );
   }
   if (query.policyId !== undefined) {
     items = items.filter((e) => e.resolvedPolicy?.id === query.policyId);
@@ -413,7 +463,10 @@ export async function listEmployees(
 // ── Read ────────────────────────────────────────────────────────────────────
 
 /** `GET /api/employees/:id` (`employees:read`). */
-export async function getEmployee(ctx: ManagerContext, employeeId: string): Promise<EmployeeDetail> {
+export async function getEmployee(
+  ctx: ManagerContext,
+  employeeId: string,
+): Promise<EmployeeDetail> {
   const row = await requireEmployee(ctx, employeeId);
   const now = new Date();
   const [data, latestInvite] = await Promise.all([
@@ -691,7 +744,10 @@ export async function deactivateEmployee(
 }
 
 /** `POST /api/employees/:id/reactivate`. Subject to the plan limit; the employee must join again. */
-export async function reactivateEmployee(ctx: ManagerContext, employeeId: string): Promise<Employee> {
+export async function reactivateEmployee(
+  ctx: ManagerContext,
+  employeeId: string,
+): Promise<Employee> {
   const before = await requireEmployee(ctx, employeeId);
   if (before.employmentStatus === "ACTIVE") return reloadEmployeeDto(ctx, employeeId);
   await assertEmployeeCapacity(ctx.organisation);
@@ -760,7 +816,12 @@ export async function archiveEmployee(ctx: ManagerContext, employeeId: string): 
     type: "device.status.changed",
     organisationId,
     employeeId,
-    payload: { employeeId, inviteStatus: "DEACTIVATED", employmentStatus: "INACTIVE", archived: true },
+    payload: {
+      employeeId,
+      inviteStatus: "DEACTIVATED",
+      employmentStatus: "INACTIVE",
+      archived: true,
+    },
   });
   return reloadEmployeeDto(ctx, employeeId, { includeArchived: true });
 }
@@ -808,6 +869,13 @@ export async function assignEmployeePolicy(
       tx,
     );
   });
+  // Devices resolving through this employee-level assignment must re-sync (silent push + dashboard frame).
+  publishPolicyChanged({
+    organisationId: ctx.organisation.id,
+    policyId: input.policyId ?? null,
+    reason: input.policyId ? "ASSIGNED" : "UNASSIGNED",
+    affectedEmployeeIds: [employeeId],
+  });
   return reloadEmployeeDto(ctx, employeeId);
 }
 
@@ -846,6 +914,12 @@ export async function assignEmployeeBreakPolicy(
       },
       tx,
     );
+  });
+  publishBreakPolicyChanged({
+    organisationId: ctx.organisation.id,
+    breakPolicyId: input.breakPolicyId ?? null,
+    reason: input.breakPolicyId ? "ASSIGNED" : "UNASSIGNED",
+    affectedEmployeeIds: [employeeId],
   });
   return reloadEmployeeDto(ctx, employeeId);
 }
@@ -988,6 +1062,11 @@ async function applyBulkAction(
 ): Promise<void> {
   switch (input.action) {
     case "INVITE":
+      // `POST /employees/:id/invites` is rate limited per IP; a bulk EMAIL invite draws on the same budget
+      // (same key) so one request cannot send hundreds of emails. LINK delivers nothing and is not limited.
+      if (input.payload.channel === "EMAIL") {
+        await enforceRateLimit(RATE_LIMITS.employeeInvite, ctx.ip ?? "unknown");
+      }
       await createEmployeeInvite(ctx, employeeId, input.payload);
       return;
     case "ASSIGN_POLICY":
@@ -997,7 +1076,9 @@ async function applyBulkAction(
       await assignEmployeeBreakPolicy(ctx, employeeId, input.payload);
       return;
     case "ASSIGN_LOCATION":
-      await assignEmployeeLocation(ctx, employeeId, { primaryLocationId: input.payload.primaryLocationId });
+      await assignEmployeeLocation(ctx, employeeId, {
+        primaryLocationId: input.payload.primaryLocationId,
+      });
       return;
     case "ADD_TO_TEAM":
       await addEmployeeToTeam(ctx, employeeId, input.payload.teamId);
@@ -1069,13 +1150,13 @@ export async function getEmployeeState(
   if (!context) throw new AppError("EMPLOYEE_NOT_FOUND", "Employee not found");
   const computed = computeEmployeeStatus(context, now);
   const resolved = policies.get(employeeId);
-  const summary = toEmployeeSummary(row);
+  const summary = toEmployeeSummary({ ...row, inviteStatus: computed.inviteStatus });
 
   const activeShiftRow = computed.expected.activeShift
-    ? context.shifts.find((s) => s.id === computed.expected.activeShift?.id) ?? null
+    ? (context.shifts.find((s) => s.id === computed.expected.activeShift?.id) ?? null)
     : null;
   const activeBreakRow = computed.expected.activeBreak
-    ? context.breakSessions.find((b) => b.id === computed.expected.activeBreak?.id) ?? null
+    ? (context.breakSessions.find((b) => b.id === computed.expected.activeBreak?.id) ?? null)
     : null;
   const breakAllowance =
     activeShiftRow && resolved?.breakPolicyRules
@@ -1120,7 +1201,7 @@ export async function getEmployeeState(
       : null,
     activeOverrides: activeOverrides.map((o) => toOverrideDto(o, now)),
     timeline: timelineRows.map((e) =>
-      toActivityEventDto(e, summary, e.actorUserId ? actorById.get(e.actorUserId) ?? null : null),
+      toActivityEventDto(e, summary, e.actorUserId ? (actorById.get(e.actorUserId) ?? null) : null),
     ),
   };
 }
@@ -1158,7 +1239,9 @@ function encodeCursor(row: ActivityEventRow): string {
 function decodeCursor(value: string | undefined): ActivityCursor | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<ActivityCursor>;
+    const parsed = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as Partial<ActivityCursor>;
     if (
       typeof parsed.t === "string" &&
       !Number.isNaN(Date.parse(parsed.t)) &&
@@ -1193,7 +1276,11 @@ export async function listEmployeeActivity(
     and.push({ OR: [{ occurredAt: { lt: at } }, { occurredAt: at, id: { lt: cursor.id } }] });
   }
   const rows = await prisma.activityEvent.findMany({
-    where: { organisationId: ctx.organisation.id, employeeId, ...(and.length > 0 ? { AND: and } : {}) },
+    where: {
+      organisationId: ctx.organisation.id,
+      employeeId,
+      ...(and.length > 0 ? { AND: and } : {}),
+    },
     orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
     take: query.limit + 1,
   });
@@ -1206,7 +1293,7 @@ export async function listEmployeeActivity(
   const summary = toEmployeeSummary(row);
   return {
     items: page.map((e) =>
-      toActivityEventDto(e, summary, e.actorUserId ? actorById.get(e.actorUserId) ?? null : null),
+      toActivityEventDto(e, summary, e.actorUserId ? (actorById.get(e.actorUserId) ?? null) : null),
     ),
     nextCursor,
   };

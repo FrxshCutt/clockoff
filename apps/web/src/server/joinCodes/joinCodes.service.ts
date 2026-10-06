@@ -49,8 +49,22 @@ export async function getJoinCodes(ctx: ManagerContext): Promise<JoinCodeRespons
 }
 
 /**
+ * Which unique constraint a P2002 hit. Postgres reports the violated columns, so the one-ACTIVE-per-
+ * organisation partial index (`company_join_codes_one_active_per_org`, on `organisation_id`) is
+ * distinguishable from the globally unique `code`. An unparsed target counts as a code collision: drawing
+ * again is the safe default.
+ */
+function violatesOneActiveIndex(err: Prisma.PrismaClientKnownRequestError): boolean {
+  const target = (err.meta as { target?: unknown } | undefined)?.target;
+  const fields = Array.isArray(target) ? target.map(String) : [String(target ?? "")];
+  return fields.some((f) => f.includes("organisation_id") || f.includes("one_active"));
+}
+
+/**
  * `POST /api/organisations/current/join-code/regenerate` (org:manage): revoke the active code and create a
- * fresh one in one transaction. A collision on the globally unique `code` (P2002) draws again.
+ * fresh one in one transaction (serialised per organisation by the row lock). A collision on the globally
+ * unique `code` (P2002) draws again; a one-ACTIVE violation — only possible if the lock were bypassed —
+ * answers CONFLICT at once instead of burning every draw on it.
  */
 export async function regenerateJoinCode(ctx: ManagerContext): Promise<JoinCodeResponse> {
   const organisationId = ctx.organisation.id;
@@ -78,7 +92,13 @@ export async function regenerateJoinCode(ctx: ManagerContext): Promise<JoinCodeR
       });
       return getJoinCodes(ctx);
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") continue;
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        if (!violatesOneActiveIndex(err)) continue;
+        throw new AppError(
+          "CONFLICT",
+          "The join code was changed by another request; reload and retry",
+        );
+      }
       throw err;
     }
   }

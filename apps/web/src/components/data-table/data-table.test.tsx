@@ -29,7 +29,13 @@ const columns: ColumnDef<Person>[] = [
 
 function render(props: Partial<Parameters<typeof DataTable<Person>>[0]> = {}) {
   return renderToStaticMarkup(
-    <DataTable<Person> label="People" columns={columns} data={PEOPLE} getRowId={(p) => p.id} {...props} />,
+    <DataTable<Person>
+      label="People"
+      columns={columns}
+      data={PEOPLE}
+      getRowId={(p) => p.id}
+      {...props}
+    />,
   );
 }
 
@@ -42,7 +48,7 @@ describe("DataTable (server render)", () => {
     const html = render({ initialPageSize: 10 });
     expect(html).toMatch(/<caption[^>]*class="[^"]*sr-only[^"]*">People<\/caption>/);
     // Only the selection column declares a width.
-    expect(html.match(/style="width:\d+px"/g)).toEqual(["style=\"width:40px\""]);
+    expect(html.match(/style="width:\d+px"/g)).toEqual(['style="width:40px"']);
     expect(html).toContain("sticky top-0");
     expect(bodyRowCount(html)).toBe(10);
     expect(html).toContain("Person 01");
@@ -95,14 +101,19 @@ describe("DataTable (server render)", () => {
   });
 
   it("makes rows keyboard-focusable when they are clickable", () => {
-    const html = render({ onRowClick: () => undefined, getRowLabel: (p) => `Open ${p.name}`, initialPageSize: 10 });
+    const html = render({
+      onRowClick: () => undefined,
+      getRowLabel: (p) => `Open ${p.name}`,
+      initialPageSize: 10,
+    });
     expect(html).toContain('tabindex="0"');
     expect(html).toContain('aria-label="Open Person 01"');
   });
 });
 
 describe("facetedFilterFn", () => {
-  const row = (value: unknown) => ({ getValue: () => value }) as unknown as Parameters<typeof facetedFilterFn<Person>>[0];
+  const row = (value: unknown) =>
+    ({ getValue: () => value }) as unknown as Parameters<typeof facetedFilterFn<Person>>[0];
 
   it("keeps rows whose value (or any array value) is selected", () => {
     expect(facetedFilterFn(row("OWNER"), "role", ["OWNER", "ADMIN"])).toBe(true);

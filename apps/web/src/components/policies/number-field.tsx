@@ -2,11 +2,21 @@
 
 import type { ReactNode } from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export interface NumberFieldProps<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>> {
+export interface NumberFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+> {
   control: Control<TFieldValues, unknown, unknown>;
   name: TName;
   label: ReactNode;
@@ -24,7 +34,10 @@ export interface NumberFieldProps<TFieldValues extends FieldValues, TName extend
  * Whole-number input bound to a `z.number()` field. The form value is a real number (NaN while the box is
  * empty so the schema can say "enter a number"), never a string.
  */
-export function NumberField<TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
+export function NumberField<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   control,
   name,
   label,

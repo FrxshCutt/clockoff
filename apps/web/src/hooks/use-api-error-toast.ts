@@ -22,5 +22,8 @@ export function showApiErrorToast(error: unknown, options: ApiErrorToastOptions 
 }
 
 export function useApiErrorToast(): (error: unknown, options?: ApiErrorToastOptions) => void {
-  return useCallback((error: unknown, options?: ApiErrorToastOptions) => showApiErrorToast(error, options), []);
+  return useCallback(
+    (error: unknown, options?: ApiErrorToastOptions) => showApiErrorToast(error, options),
+    [],
+  );
 }

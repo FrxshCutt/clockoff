@@ -5,11 +5,11 @@ package, `WorkModeCore`, that holds everything that is not UI. The Xcode project
 `apps/ios/project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen). Settings live in
 `apps/ios/Config/*.xcconfig`.
 
-| Requirement | Version |
-| --- | --- |
-| Xcode | 26.x (Swift 6 toolchain, Swift 5 language mode, strict concurrency `minimal`) |
-| XcodeGen | 2.46 (`brew install xcodegen`) |
-| Deployment target | iOS 16.4 |
+| Requirement       | Version                                                                       |
+| ----------------- | ----------------------------------------------------------------------------- |
+| Xcode             | 26.x (Swift 6 toolchain, Swift 5 language mode, strict concurrency `minimal`) |
+| XcodeGen          | 2.46 (`brew install xcodegen`)                                                |
+| Deployment target | iOS 16.4                                                                      |
 
 ## Quick start (simulator)
 
@@ -29,14 +29,14 @@ press Run. Start the API first (`pnpm dev` at the repo root). The Debug build ta
 
 ## Targets
 
-| Target | Type | Bundle id | Entitlements | Role |
-| --- | --- | --- | --- | --- |
-| `WorkModeApp` | app | `com.workmode.app` | Family Controls, App Groups, `aps-environment` | Onboarding, Home/Schedule/Settings, sync, owns the `RestrictionProvider` |
-| `WorkModeDeviceActivityMonitor` | app extension (`com.apple.deviceactivity.monitor-extension`) | `com.workmode.app.devicemonitor` | Family Controls, App Groups | Woken by iOS at shift and break boundaries, even when the app is closed |
-| `WorkModeShieldConfiguration` | app extension (`com.apple.ManagedSettingsUI.shield-configuration-service`) | `com.workmode.app.shieldconfig` | Family Controls, App Groups | Draws the screen shown over a blocked app |
-| `WorkModeShieldAction` | app extension (`com.apple.ManagedSettings.shield-action-service`) | `com.workmode.app.shieldaction` | Family Controls, App Groups | Handles taps on that screen's buttons |
-| `WorkModeAppTests` | unit tests, hosted by the app | `com.workmode.app.tests` | none | View models, sync, the mock provider |
-| `WorkModeCore` (SPM, `Packages/WorkModeCore`) | static library | none | none | Models, API client, Keychain, App Group storage, engine, planner |
+| Target                                        | Type                                                                       | Bundle id                        | Entitlements                                   | Role                                                                     |
+| --------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------ |
+| `WorkModeApp`                                 | app                                                                        | `com.workmode.app`               | Family Controls, App Groups, `aps-environment` | Onboarding, Home/Schedule/Settings, sync, owns the `RestrictionProvider` |
+| `WorkModeDeviceActivityMonitor`               | app extension (`com.apple.deviceactivity.monitor-extension`)               | `com.workmode.app.devicemonitor` | Family Controls, App Groups                    | Woken by iOS at shift and break boundaries, even when the app is closed  |
+| `WorkModeShieldConfiguration`                 | app extension (`com.apple.ManagedSettingsUI.shield-configuration-service`) | `com.workmode.app.shieldconfig`  | Family Controls, App Groups                    | Draws the screen shown over a blocked app                                |
+| `WorkModeShieldAction`                        | app extension (`com.apple.ManagedSettings.shield-action-service`)          | `com.workmode.app.shieldaction`  | Family Controls, App Groups                    | Handles taps on that screen's buttons                                    |
+| `WorkModeAppTests`                            | unit tests, hosted by the app                                              | `com.workmode.app.tests`         | none                                           | View models, sync, the mock provider                                     |
+| `WorkModeCore` (SPM, `Packages/WorkModeCore`) | static library                                                             | none                             | none                                           | Models, API client, Keychain, App Group storage, engine, planner         |
 
 The extensions link only `WorkModeCore`, which imports Foundation, `os` and Security, and never UIKit,
 SwiftUI or the Screen Time frameworks. Extensions have tight memory limits. The shield configuration
@@ -44,21 +44,21 @@ extension also imports UIKit, because `ShieldConfiguration` takes `UIColor`s.
 
 ## Configuration (xcconfig)
 
-| File | What it sets |
-| --- | --- |
-| `Config/Base.xcconfig` | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`. |
-| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `WORKMODE_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`. |
-| `Config/Debug.xcconfig` | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
-| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.workmode.example` (a placeholder: replace it before shipping), APNs production. |
+| File                      | What it sets                                                                                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Config/Base.xcconfig`    | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                           |
+| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `WORKMODE_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                |
+| `Config/Debug.xcconfig`   | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
+| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.workmode.example` (a placeholder: replace it before shipping), APNs production.                     |
 
 Settings that matter:
 
-| Setting | Debug | Release | Used by |
-| --- | --- | --- | --- |
-| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS` | *(empty)* | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider` |
-| `API_BASE_URL` | `http://localhost:3000` | `https://app.workmode.example` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL` |
-| `WORKMODE_ALLOW_LOCAL_HTTP` | `YES` | `NO` | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` |
-| `WORKMODE_PUSH_ENVIRONMENT` | `sandbox` | `production` | Info.plist `WorkModePushEnvironment`, sent with the push token |
+| Setting                               | Debug                           | Release                        | Used by                                                                           |
+| ------------------------------------- | ------------------------------- | ------------------------------ | --------------------------------------------------------------------------------- |
+| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS` | _(empty)_                      | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                  |
+| `API_BASE_URL`                        | `http://localhost:3000`         | `https://app.workmode.example` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL`                         |
+| `WORKMODE_ALLOW_LOCAL_HTTP`           | `YES`                           | `NO`                           | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription` |
+| `WORKMODE_PUSH_ENVIRONMENT`           | `sandbox`                       | `production`                   | Info.plist `WorkModePushEnvironment`, sent with the push token                    |
 
 In xcconfig, `//` starts a comment. URLs are therefore written as `http:/$()/host:port`.
 
@@ -80,10 +80,10 @@ WORKMODE_MOCK_RESTRICTIONS_CONDITION =      // use the real Screen Time provider
 `group.com.workmode.app.shared` is on all four targets. It must match `AppGroup.identifier` in WorkModeCore,
 `WORKMODE_APP_GROUP` and every `*.entitlements` file. The container holds:
 
-| File | Writer | Reader | Contents |
-| --- | --- | --- | --- |
-| `WorkMode/state.json` | app, monitor | app, monitor | `CachedState`: organisation, employee, policy, break policy, shifts, versions, active break and overrides, sync timestamps, engine state, event outbox |
-| `WorkMode/plans.json` | app | monitor, shield configuration | `PlansFile`: DeviceActivity name → `{ shiftId, plan, activity, breakBehaviour }`, plus the employer name for the shield |
+| File                  | Writer       | Reader                        | Contents                                                                                                                                               |
+| --------------------- | ------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WorkMode/state.json` | app, monitor | app, monitor                  | `CachedState`: organisation, employee, policy, break policy, shifts, versions, active break and overrides, sync timestamps, engine state, event outbox |
+| `WorkMode/plans.json` | app          | monitor, shield configuration | `PlansFile`: DeviceActivity name → `{ shiftId, plan, activity, breakBehaviour }`, plus the employer name for the shield                                |
 
 Files are written atomically with `completeUntilFirstUserAuthentication` protection, so the monitor
 extension can read them while the phone is locked after its first unlock. Writes go through
@@ -201,6 +201,7 @@ address:
    ```
 
    Find the Bonjour name with `scutil --get LocalHostName` and add `.local`.
+
 3. Build and run the Debug configuration. Plain HTTP is allowed **in Debug only**: the "Debug-only local
    HTTP (ATS)" build phase adds `NSAppTransportSecurity › NSAllowsLocalNetworking`, which covers `.local`
    names, unqualified host names and local IP addresses. It also adds `NSLocalNetworkUsageDescription`. On
@@ -223,7 +224,7 @@ address:
 - any of the three extensions is missing from `WorkModeApp.app/PlugIns`.
 
 The mock is compiled only under `#if DEBUG_MOCK_RESTRICTIONS`, deliberately not also under
-`targetEnvironment(simulator)`: `make build-release` builds Release *for the simulator*, and that build must
+`targetEnvironment(simulator)`: `make build-release` builds Release _for the simulator_, and that build must
 not contain the mock. A Release simulator build therefore uses `AppleScreenTimeRestrictionProvider`.
 
 ## Sessions, tokens and the event outbox
@@ -253,32 +254,32 @@ not contain the mock. A Release simulator build therefore uses `AppleScreenTimeR
 
 ## Code map and seams for the Screen Time stage
 
-| Area | File(s) |
-| --- | --- |
-| §8.3 protocol and value types | `Packages/WorkModeCore/Sources/WorkModeCore/Restrictions/RestrictionProvider.swift` (`RestrictionProvider`, `RestrictionPlan`, `BreakBehaviour`, `ActivityPlan`, `RestrictionEngineState`, `RestrictionAuthorizationStatus`, `SelectionCountsProviding`) |
-| Planning and reconciling | `Restrictions/ActivityPlanner.swift` (`ActivityPlanner`, `RestrictionReconciler`, `RestrictionAction`) |
-| Engine (placeholder for the fixture-tested port) | `Engine/WorkModeEngine.swift` (`WorkModeEngineProtocol`, `WorkModeEngine`), `Engine/WorkModeEvents.swift` |
-| App Group | `Storage/AppGroup.swift`, `AppGroupFileStore.swift`, `StateCache.swift`, `EventOutbox.swift`, `PlansStore.swift` |
-| Networking | `Networking/APIClient.swift`, `TokenRefresher.swift`, `MobileAPI.swift`, `Endpoint.swift`; `Security/TokenStore.swift` (`KeychainTokenStore`, `ResilientTokenStore`, `InMemoryTokenStore`) |
-| Release checks | `Scripts/verify-release.sh` (run by `make build-release`) |
-| Apple provider (to complete) | `WorkModeApp/Restrictions/AppleScreenTimeRestrictionProvider.swift`: persist the `FamilyActivitySelection` in the App Group, apply `ManagedSettingsStore(named: .workMode)` shields, register `DeviceActivitySchedule`s from `ActivityPlan` |
-| App picker (to complete) | `WorkModeApp/Restrictions/RestrictionProviderSupport.swift` (`SelectionConfiguring`, `RestrictionProviderFactory`) and onboarding screens 5–8 in `WorkModeApp/Onboarding/ScreenTimeSetupViews.swift` |
-| Extensions (to complete) | `WorkModeDeviceActivityMonitor/DeviceActivityMonitorExtension.swift` (look up `PlansStore.entry(forActivityNamed:)`, apply or clear shields, record `CachedState.engineState`, queue events through `WorkModeEvents` + `EventOutbox`); `WorkModeShieldConfiguration/…`; `WorkModeShieldAction/…` |
-| Sync | `WorkModeApp/Sync/SyncCoordinator.swift`: `GET /sync` → cache diff → engine → `ActivityPlanner` + `deviceComponents(for:in:)` → `provider.scheduleActivities` → reconcile shields → `POST /events` → `POST /device/state` |
+| Area                                             | File(s)                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §8.3 protocol and value types                    | `Packages/WorkModeCore/Sources/WorkModeCore/Restrictions/RestrictionProvider.swift` (`RestrictionProvider`, `RestrictionPlan`, `BreakBehaviour`, `ActivityPlan`, `RestrictionEngineState`, `RestrictionAuthorizationStatus`, `SelectionCountsProviding`)                                                                      |
+| Planning and reconciling                         | `Restrictions/ActivityPlanner.swift` (`ActivityPlanner`, `RestrictionReconciler`, `RestrictionAction`)                                                                                                                                                                                                                        |
+| Engine (placeholder for the fixture-tested port) | `Engine/WorkModeEngine.swift` (`WorkModeEngineProtocol`, `WorkModeEngine`), `Engine/WorkModeEvents.swift`                                                                                                                                                                                                                     |
+| App Group                                        | `Storage/AppGroup.swift`, `AppGroupFileStore.swift`, `StateCache.swift`, `EventOutbox.swift`, `PlansStore.swift`                                                                                                                                                                                                              |
+| Networking                                       | `Networking/APIClient.swift`, `TokenRefresher.swift`, `MobileAPI.swift`, `Endpoint.swift`; `Security/TokenStore.swift` (`KeychainTokenStore`, `ResilientTokenStore`, `InMemoryTokenStore`)                                                                                                                                    |
+| Release checks                                   | `Scripts/verify-release.sh` (run by `make build-release`)                                                                                                                                                                                                                                                                     |
+| Apple provider                                   | `WorkModeApp/Restrictions/AppleScreenTimeRestrictionProvider.swift` (authorisation, `SelectionStore`, two `ManagedSettingsStore`s, `DeviceActivity` scheduling) — see `docs/SCREEN_TIME_IMPLEMENTATION.md`                                                                                                                    |
+| App picker                                       | `WorkModeApp/Restrictions/ScreenTimeSelectionPicker.swift` (`FamilyActivityPicker` sheet, `SelectionConfiguring`) and onboarding screens 5–8 in `WorkModeApp/Features/Onboarding/ScreenTimeSetupViews.swift`                                                                                                                  |
+| Extensions                                       | `WorkModeDeviceActivityMonitor/DeviceActivityMonitorExtension.swift` (delegates to `MonitorEventHandler` in Core: reads `plans.json`, applies/clears shields, records engine state, queues events); `WorkModeShieldConfiguration/…` (shield card from App Group strings); `WorkModeShieldAction/…` (close / open-status flag) |
+| Sync                                             | `WorkModeApp/Sync/SyncCoordinator.swift`: replay queued offline breaks → `GET /sync` → cache diff → engine → `ActivityPlanner` → write `plans.json` → `provider.scheduleActivities` → reconcile shields → local notifications → `POST /events` → `POST /device/state`; see `docs/SYNC_AND_OFFLINE.md`                         |
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| --- | --- |
-| `xcodegen: command not found` | `brew install xcodegen` |
-| `Unable to find a destination matching … iPhone 17 Pro` | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"` |
-| Build error "Signing for … requires a development team" | You built without `CODE_SIGNING_ALLOWED=NO` (for example from Xcode, for a device). Set `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`. |
-| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id. |
-| `Info.plist API_BASE_URL is missing or invalid` crash at launch | The xcconfig value is malformed. Remember `http:/$()/host`, because `//` starts a comment. |
-| "Can't reach Work Mode" on a device | The API is not reachable from the phone: check the Wi-Fi, the `.local` name, `Local.xcconfig`, and that local-network access is allowed in Settings › Privacy & Security › Local Network. |
-| Keychain error -34018 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed. |
-| `BGTaskScheduler refused com.workmode.app.refresh` in the log | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`. |
-| Yellow "DEVELOPMENT MODE" banner on a device | You are running Debug with the mock. Set `WORKMODE_MOCK_RESTRICTIONS_CONDITION =` in `Local.xcconfig`, or run Release. |
-| Tests fail to compile after disabling the mock in `Local.xcconfig` | The hosted tests use `MockRestrictionProvider`. Remove the override before running `make test`. |
-| "Your sign-in can't be read right now" on Home | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking. |
-| Stale project after pulling | `make generate`, then `make clean` if Xcode still shows removed files. |
+| Symptom                                                               | Fix                                                                                                                                                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xcodegen: command not found`                                         | `brew install xcodegen`                                                                                                                                                                   |
+| `Unable to find a destination matching … iPhone 17 Pro`               | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"`                                                                                                                |
+| Build error "Signing for … requires a development team"               | You built without `CODE_SIGNING_ALLOWED=NO` (for example from Xcode, for a device). Set `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`.                                            |
+| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id.                                                                      |
+| `Info.plist API_BASE_URL is missing or invalid` crash at launch       | The xcconfig value is malformed. Remember `http:/$()/host`, because `//` starts a comment.                                                                                                |
+| "Can't reach Work Mode" on a device                                   | The API is not reachable from the phone: check the Wi-Fi, the `.local` name, `Local.xcconfig`, and that local-network access is allowed in Settings › Privacy & Security › Local Network. |
+| Keychain error -34018                                                 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed.                                                                      |
+| `BGTaskScheduler refused com.workmode.app.refresh` in the log         | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`.                                                                                    |
+| Yellow "DEVELOPMENT MODE" banner on a device                          | You are running Debug with the mock. Set `WORKMODE_MOCK_RESTRICTIONS_CONDITION =` in `Local.xcconfig`, or run Release.                                                                    |
+| Tests fail to compile after disabling the mock in `Local.xcconfig`    | The hosted tests use `MockRestrictionProvider`. Remove the override before running `make test`.                                                                                           |
+| "Your sign-in can't be read right now" on Home                        | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking.   |
+| Stale project after pulling                                           | `make generate`, then `make clean` if Xcode still shows removed files.                                                                                                                    |

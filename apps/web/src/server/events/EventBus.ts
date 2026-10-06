@@ -16,6 +16,14 @@ export const REALTIME_EVENT_TYPES = [
   "OVERRIDE_CREATED",
   "OVERRIDE_REVOKED",
   "OVERRIDE_EXPIRED",
+  /**
+   * Policy lifecycle events published by the policies / break-policies services and consumed by the device
+   * push bridge. Payload: policyId | breakPolicyId (null when the organisation default was cleared), reason,
+   * affectedEmployeeIds, affectedEmployeeCount; POLICY_CHANGED adds versionId / versionNumber on publish.
+   * `policy.changed` above is the older dashboard-facing spelling, kept for compatibility.
+   */
+  "POLICY_CHANGED",
+  "BREAK_POLICY_CHANGED",
 ] as const;
 export type KnownRealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number];
 

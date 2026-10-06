@@ -7,7 +7,10 @@ import {
   type UpcomingShift,
 } from "@workmode/validation/compliance";
 import { complianceListHref } from "@/components/activity/activity-filters";
-import { EMPLOYEE_URL_PARAMS, type EmployeeQuickFilter } from "@/components/employees/employee-filters";
+import {
+  EMPLOYEE_URL_PARAMS,
+  type EmployeeQuickFilter,
+} from "@/components/employees/employee-filters";
 import { ROUTES } from "@/config/navigation";
 import { humanizeEnum, toDate, type DateInput } from "@/lib/format";
 
@@ -36,30 +39,76 @@ export interface MetricCardMeta {
 }
 
 export const METRIC_CARDS: readonly MetricCardMeta[] = [
-  { key: "totalEmployees", label: "Total employees", description: "Active employees in your organisation.", icon: "users" },
-  { key: "connected", label: "Connected", description: "Phones set up and ready to enforce Work Mode.", icon: "circle-check" },
-  { key: "awaitingSetup", label: "Awaiting setup", description: "Invited or joined, but not finished setting up.", icon: "hourglass" },
-  { key: "missingPermissions", label: "Missing permissions", description: "Screen Time access denied or revoked.", icon: "shield-alert" },
-  { key: "workingNow", label: "Working now", description: "Expected to be on shift right now.", icon: "clock" },
-  { key: "workModeActive", label: "Work Mode active", description: "Phones confirming restrictions are on.", icon: "shield-check" },
-  { key: "onBreak", label: "On break", description: "Breaks in progress right now.", icon: "coffee" },
-  { key: "needsAttention", label: "Needs attention", description: "On shift with a permission, sync or state problem.", icon: "triangle-alert" },
+  {
+    key: "totalEmployees",
+    label: "Total employees",
+    description: "Active employees in your organisation.",
+    icon: "users",
+  },
+  {
+    key: "connected",
+    label: "Connected",
+    description: "Phones set up and ready to enforce Work Mode.",
+    icon: "circle-check",
+  },
+  {
+    key: "awaitingSetup",
+    label: "Awaiting setup",
+    description: "Invited or joined, but not finished setting up.",
+    icon: "hourglass",
+  },
+  {
+    key: "missingPermissions",
+    label: "Missing permissions",
+    description: "Screen Time access denied or revoked.",
+    icon: "shield-alert",
+  },
+  {
+    key: "workingNow",
+    label: "Working now",
+    description: "Expected to be on shift right now.",
+    icon: "clock",
+  },
+  {
+    key: "workModeActive",
+    label: "Work Mode active",
+    description: "Phones confirming restrictions are on.",
+    icon: "shield-check",
+  },
+  {
+    key: "onBreak",
+    label: "On break",
+    description: "Breaks in progress right now.",
+    icon: "coffee",
+  },
+  {
+    key: "needsAttention",
+    label: "Needs attention",
+    description: "On shift with a permission, sync or state problem.",
+    icon: "triangle-alert",
+  },
 ];
 
 /**
- * Where a metric card leads. The employees list has quick filters that count the same rows for most
- * metrics; "Work Mode active" (phones *confirming* restrictions) has no employees-list equivalent, so it
- * opens the Compliance tab with the exact API filter the metric is defined by.
+ * Where a metric card leads. A card may only link to an employees-list quick filter when that filter
+ * selects exactly the rows the metric counted (`complianceFlags` on the server vs `QUICK_FILTER_META`):
+ * connected (inviteStatus CONNECTED), missing permissions (badge PERMISSIONS_MISSING) and on break (badge
+ * ON_BREAK) match one-to-one. The others do not — "awaiting setup" also counts NOT_INVITED, "working now"
+ * means expected on shift (whatever the phone reports) and "needs attention" only counts PERMISSIONS_MISSING
+ * while on shift — so they open the Compliance tab, which uses the API's own filter for the metric.
  */
-const EMPLOYEE_QUICK_FILTER_FOR_METRIC: Record<ComplianceMetricKey, EmployeeQuickFilter | "all" | null> = {
+const EMPLOYEE_QUICK_FILTER_FOR_METRIC: Record<
+  ComplianceMetricKey,
+  EmployeeQuickFilter | "all" | null
+> = {
   totalEmployees: "all",
   connected: "connected",
-  awaitingSetup: "awaitingSetup",
+  awaitingSetup: null,
   missingPermissions: "permissionsMissing",
-  workingNow: "working",
+  workingNow: null,
   workModeActive: null,
   onBreak: "onBreak",
-  needsAttention: "needsAttention",
+  needsAttention: null,
 };
 
 export function metricHref(key: ComplianceMetricKey): string {
@@ -129,12 +178,22 @@ export interface AwaitingSetupDescription {
 }
 
 export function describeAwaitingSetup(
-  row: Pick<ComplianceEmployeeRow, "employee" | "deviceStatus" | "permissionState" | "selectionState" | "attentionReason">,
+  row: Pick<
+    ComplianceEmployeeRow,
+    "employee" | "deviceStatus" | "permissionState" | "selectionState" | "attentionReason"
+  >,
 ): AwaitingSetupDescription {
   const detail = row.attentionReason?.trim() || row.deviceStatus?.reason?.trim() || null;
   switch (row.employee.inviteStatus) {
     case "NOT_INVITED":
-      return { stage: "notInvited", statusText: "Not invited yet", tone: "neutral", detail, inviteAction: "invite", canCopyInvite: true };
+      return {
+        stage: "notInvited",
+        statusText: "Not invited yet",
+        tone: "neutral",
+        detail,
+        inviteAction: "invite",
+        canCopyInvite: true,
+      };
     case "INVITED":
       return {
         stage: "invited",
@@ -156,7 +215,14 @@ export function describeAwaitingSetup(
     case "SETUP_INCOMPLETE": {
       const permission = row.permissionState;
       if (permission === "DENIED" || permission === "REVOKED") {
-        return { stage: "setupIncomplete", statusText: "Permission missing", tone: "danger", detail, inviteAction: null, canCopyInvite: false };
+        return {
+          stage: "setupIncomplete",
+          statusText: "Permission missing",
+          tone: "danger",
+          detail,
+          inviteAction: null,
+          canCopyInvite: false,
+        };
       }
       if (permission === "APPROVED" && row.selectionState === "NONE") {
         return {
@@ -178,7 +244,14 @@ export function describeAwaitingSetup(
           canCopyInvite: false,
         };
       }
-      return { stage: "setupIncomplete", statusText: "Joined · setup incomplete", tone: "warning", detail, inviteAction: null, canCopyInvite: false };
+      return {
+        stage: "setupIncomplete",
+        statusText: "Joined · setup incomplete",
+        tone: "warning",
+        detail,
+        inviteAction: null,
+        canCopyInvite: false,
+      };
     }
     default:
       return {

@@ -18,7 +18,12 @@ import { RequestDemoForm } from "./request-demo-form";
 /** Server-render the marketing building blocks (node, no DOM) and check the copy and structure they emit. */
 
 function escape(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/'/g, "&#x27;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/'/g, "&#x27;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 describe("marketing chrome", () => {
@@ -44,7 +49,9 @@ describe("marketing chrome", () => {
   });
 
   it("page intro and CTA band carry the demo source through", () => {
-    const intro = renderToStaticMarkup(<PageIntro eyebrow="Eyebrow" title="Title here" lead="Lead text." />);
+    const intro = renderToStaticMarkup(
+      <PageIntro eyebrow="Eyebrow" title="Title here" lead="Lead text." />,
+    );
     expect(intro).toMatch(/<h1[^>]*>Title here<\/h1>/);
     const band = renderToStaticMarkup(<CtaBand source="pricing" />);
     expect(band).toContain('href="/request-demo?source=pricing"');
@@ -78,7 +85,10 @@ describe("privacy page pieces", () => {
     for (const group of DEVICE_TO_SERVER_ALLOWED_FIELDS) {
       expect(html).toContain(`data-key="${group.key}"`);
       expect(html).toContain(escape(group.label));
-      for (const field of group.fields) expect(html).toContain(`<code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">${field}</code>`);
+      for (const field of group.fields)
+        expect(html).toContain(
+          `<code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">${field}</code>`,
+        );
     }
   });
 
@@ -90,7 +100,9 @@ describe("privacy page pieces", () => {
 
 describe("request demo form", () => {
   it("renders the labelled fields, a hidden honeypot and a submit button", () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
     const html = renderToStaticMarkup(
       <QueryClientProvider client={client}>
         <TooltipProvider>
@@ -98,10 +110,22 @@ describe("request demo form", () => {
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    for (const label of ["Your name", "Work email", "Company", "Team size", "What would you like to see?"]) expect(html).toContain(label);
-    expect(html).toMatch(/<input[^>]*name="email"[^>]*type="email"|<input[^>]*type="email"[^>]*name="email"/);
+    for (const label of [
+      "Your name",
+      "Work email",
+      "Company",
+      "Team size",
+      "What would you like to see?",
+    ])
+      expect(html).toContain(label);
+    expect(html).toMatch(
+      /<input[^>]*name="email"[^>]*type="email"|<input[^>]*type="email"[^>]*name="email"/,
+    );
     expect(html).toMatch(/<input[^>]*id="request-demo-website"[^>]*tabindex="-1"/);
-    expect(html).toContain('aria-hidden="true" class="absolute -left-[9999px]');
+    // Class order is Prettier/Tailwind-sorted, so match the honeypot wrapper by its classes, not their order.
+    expect(html).toMatch(
+      /<div aria-hidden="true" class="[^"]*\babsolute\b[^"]*-left-\[9999px\][^"]*">/,
+    );
     expect(html).toMatch(/<button[^>]*type="submit"[^>]*>[\s\S]*?Request a demo/);
     expect(html).not.toContain("Thanks, we");
   });

@@ -35,14 +35,19 @@ export function JoinCodeSettings() {
   const revoke = useRevokeCompanyCode();
   const toastError = useApiErrorToast();
 
-  const dateOptions = { timeZone: organisation.data?.organisation.timezone, dateFormat: organisation.data?.organisation.dateFormat };
+  const dateOptions = {
+    timeZone: organisation.data?.organisation.timezone,
+    dateFormat: organisation.data?.organisation.dateFormat,
+  };
 
   const columns = useMemo<ColumnDef<JoinCode>[]>(
     () => [
       {
         accessorKey: "code",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
-        cell: ({ row }) => <span className="font-mono font-medium tracking-wider">{row.original.code}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono font-medium tracking-wider">{row.original.code}</span>
+        ),
       },
       {
         accessorKey: "status",
@@ -60,7 +65,9 @@ export function JoinCodeSettings() {
         cell: ({ row }) => (
           <span className="text-sm">
             {formatDateTime(row.original.createdAt, dateOptions)}
-            {row.original.createdBy ? <span className="text-muted-foreground"> by {row.original.createdBy.name}</span> : null}
+            {row.original.createdBy ? (
+              <span className="text-muted-foreground"> by {row.original.createdBy.name}</span>
+            ) : null}
           </span>
         ),
       },
@@ -93,19 +100,28 @@ export function JoinCodeSettings() {
   }
   if (joinCode.isError) {
     return (
-      <ErrorState title="Couldn't load the join code" error={joinCode.error} onRetry={() => void joinCode.refetch()} isRetrying={joinCode.isRefetching} />
+      <ErrorState
+        title="Couldn't load the join code"
+        error={joinCode.error}
+        onRetry={() => void joinCode.refetch()}
+        isRetrying={joinCode.isRefetching}
+      />
     );
   }
 
   const history = joinCode.data.available ? joinCode.data.data : null;
   const code = history ? (history.current?.code ?? null) : organisation.data.joinCode;
-  const rows: JoinCode[] = history ? [...(history.current ? [history.current] : []), ...history.history] : [];
+  const rows: JoinCode[] = history
+    ? [...(history.current ? [history.current] : []), ...history.history]
+    : [];
 
   // ConfirmDialog keeps itself open when onConfirm rejects, so errors are toasted and rethrown.
   const runRegenerate = async () => {
     try {
       await regenerate.mutateAsync();
-      toast.success(code ? "New join code created. The old code no longer works." : "Join code created");
+      toast.success(
+        code ? "New join code created. The old code no longer works." : "Join code created",
+      );
     } catch (err) {
       toastError(err, { title: "Couldn't create a new join code" });
       throw err;
@@ -141,7 +157,12 @@ export function JoinCodeSettings() {
                 <span className="bg-muted/60 rounded-lg border px-4 py-2 font-mono text-xl font-semibold tracking-[0.15em] sm:text-3xl sm:tracking-[0.25em]">
                   {code}
                 </span>
-                <CopyButton value={code} label="Copy join code" successMessage="Join code copied" size="sm">
+                <CopyButton
+                  value={code}
+                  label="Copy join code"
+                  successMessage="Join code copied"
+                  size="sm"
+                >
                   Copy
                 </CopyButton>
               </div>
@@ -167,7 +188,11 @@ export function JoinCodeSettings() {
                   destructive
                   onConfirm={runRevoke}
                   trigger={
-                    <Button type="button" variant="outline" className="text-destructive hover:text-destructive">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                    >
                       <ShieldOff aria-hidden="true" />
                       Revoke
                     </Button>
@@ -216,12 +241,20 @@ export function JoinCodeSettings() {
             initialPageSize={10}
             stickyHeader={false}
             emptyState={
-              <EmptyState icon={KeyRound} title="No codes yet" description="Create a join code and it will appear here." size="sm" bordered={false} headingLevel={3} />
+              <EmptyState
+                icon={KeyRound}
+                title="No codes yet"
+                description="Create a join code and it will appear here."
+                size="sm"
+                bordered={false}
+                headingLevel={3}
+              />
             }
           />
         ) : (
           <InlineAlert variant="info" title="Code history isn't available yet">
-            Previous codes will be listed here once the join-code history endpoint is live. The current code above is up to date.
+            Previous codes will be listed here once the join-code history endpoint is live. The
+            current code above is up to date.
           </InlineAlert>
         )}
       </SectionCard>
@@ -230,8 +263,14 @@ export function JoinCodeSettings() {
         <ol className="text-muted-foreground list-decimal space-y-2 pl-5 text-sm">
           <li>Add the employee in Employees, with the name they&apos;ll type in the app.</li>
           <li>They install Work Mode on their iPhone and enter the company join code.</li>
-          <li>Work Mode matches their name to your employee list. If more than one employee matches, they also enter their personal invite code.</li>
-          <li>They approve Screen Time access and choose which apps to restrict. You only ever see whether setup is complete.</li>
+          <li>
+            Work Mode matches their name to your employee list. If more than one employee matches,
+            they also enter their personal invite code.
+          </li>
+          <li>
+            They approve Screen Time access and choose which apps to restrict. You only ever see
+            whether setup is complete.
+          </li>
         </ol>
       </SectionCard>
     </div>

@@ -3,7 +3,14 @@
 import { Check, ChevronsUpDown, LoaderCircle, type LucideIcon } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -83,7 +90,10 @@ export function MultiSelectCombobox({
             aria-expanded={open}
             aria-haspopup="listbox"
             disabled={isDisabled}
-            className={cn("w-full justify-between font-normal", selectedCount === 0 && "text-muted-foreground")}
+            className={cn(
+              "w-full justify-between font-normal",
+              selectedCount === 0 && "text-muted-foreground",
+            )}
           >
             <span className="flex min-w-0 items-center gap-2">
               {Icon ? <Icon className="text-muted-foreground" aria-hidden="true" /> : null}
@@ -113,7 +123,9 @@ export function MultiSelectCombobox({
                       <span
                         className={cn(
                           "flex size-4 shrink-0 items-center justify-center rounded-[4px] border",
-                          selected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                          selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-input",
                         )}
                         aria-hidden="true"
                       >
@@ -125,7 +137,11 @@ export function MultiSelectCombobox({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{option.name}</span>
-                        {option.hint ? <span className="text-muted-foreground block truncate text-xs">{option.hint}</span> : null}
+                        {option.hint ? (
+                          <span className="text-muted-foreground block truncate text-xs">
+                            {option.hint}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="sr-only">{selected ? "(assigned)" : "(not assigned)"}</span>
                     </CommandItem>

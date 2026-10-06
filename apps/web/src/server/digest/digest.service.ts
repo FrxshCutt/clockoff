@@ -1,7 +1,10 @@
 import { prisma } from "@workmode/db";
 import type { DeviceStatusBadge } from "@workmode/shared/enums";
 import { buildAppLink, sendEmailSafely } from "@/server/email";
-import { createManagerNotification, publishNotificationCreated } from "@/server/workState/externalServices";
+import {
+  createManagerNotification,
+  publishNotificationCreated,
+} from "@/server/workState/externalServices";
 
 /**
  * Manager compliance digest (§10). Sent by the Work Mode job at most once per organisation per hour when
@@ -39,7 +42,8 @@ export interface DigestResult {
 
 /** `notificationPreferences.digestEmail !== false` (unset = opted in). */
 export function digestEmailEnabled(preferences: unknown): boolean {
-  if (typeof preferences !== "object" || preferences === null || Array.isArray(preferences)) return true;
+  if (typeof preferences !== "object" || preferences === null || Array.isArray(preferences))
+    return true;
   return (preferences as Record<string, unknown>).digestEmail !== false;
 }
 
@@ -97,7 +101,8 @@ export async function sendOrganisationDigest(params: {
   const employees = [...params.employees].sort((a, b) =>
     `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`),
   );
-  if (employees.length === 0) return { sent: false, skipped: "NO_EMPLOYEES", notifications: 0, emails: 0 };
+  if (employees.length === 0)
+    return { sent: false, skipped: "NO_EMPLOYEES", notifications: 0, emails: 0 };
 
   const outcome = await prisma.$transaction(async (tx) => {
     // Serialise per organisation so concurrent ticks cannot both pass the "recently sent" check. The lock
@@ -146,7 +151,8 @@ export async function sendOrganisationDigest(params: {
     return { organisationName: organisation.name, members, notifications };
   });
 
-  if ("skipped" in outcome) return { sent: false, skipped: outcome.skipped, notifications: 0, emails: 0 };
+  if ("skipped" in outcome)
+    return { sent: false, skipped: outcome.skipped, notifications: 0, emails: 0 };
   // Realtime hints only after the commit, so subscribers never see rolled-back rows.
   for (const row of outcome.notifications) publishNotificationCreated(row);
 

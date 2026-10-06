@@ -12,9 +12,22 @@ export interface DataTableColumnHeaderProps<TData, TValue> {
 }
 
 /** Sortable column header: click (or Enter/Space) cycles ascending → descending → unsorted. */
-export function DataTableColumnHeader<TData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
+export function DataTableColumnHeader<TData, TValue>({
+  column,
+  title,
+  className,
+}: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <span className={cn("text-muted-foreground text-xs font-medium tracking-wide uppercase", className)}>{title}</span>;
+    return (
+      <span
+        className={cn(
+          "text-muted-foreground text-xs font-medium tracking-wide uppercase",
+          className,
+        )}
+      >
+        {title}
+      </span>
+    );
   }
   const sorted = column.getIsSorted();
   const Icon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ArrowUpDown;

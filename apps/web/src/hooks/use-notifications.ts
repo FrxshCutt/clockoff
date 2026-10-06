@@ -20,7 +20,8 @@ export function useNotifications(options: { enabled?: boolean } = {}) {
         const raw = await api.get<unknown>("/api/notifications", undefined, signal);
         return { ...normalizeNotifications(raw), available: true };
       } catch (error) {
-        if (hasErrorCode(error, "NOT_FOUND", "COMING_SOON")) return { ...EMPTY_NOTIFICATIONS, available: false };
+        if (hasErrorCode(error, "NOT_FOUND", "COMING_SOON"))
+          return { ...EMPTY_NOTIFICATIONS, available: false };
         throw error;
       }
     },

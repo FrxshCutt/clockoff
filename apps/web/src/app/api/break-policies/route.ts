@@ -1,4 +1,7 @@
-import { breakPolicyQuerySchema, createBreakPolicySchema } from "@workmode/validation/breakPolicies";
+import {
+  breakPolicyQuerySchema,
+  createBreakPolicySchema,
+} from "@workmode/validation/breakPolicies";
 import { createBreakPolicy, listBreakPolicies } from "@/server/breakPolicies/breakPolicies.service";
 import { createHandler, json } from "@/server/http/apiHandler";
 

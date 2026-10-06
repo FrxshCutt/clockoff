@@ -60,7 +60,9 @@ async function expectEmployeeUntouched(b: TenantFixture): Promise<void> {
   expect(await prisma.policyAssignment.count({ where: { scopeId: row.id } })).toBe(0);
   expect(await prisma.breakPolicyAssignment.count({ where: { scopeId: row.id } })).toBe(0);
   expect(await prisma.employeeInvite.count({ where: { employeeId: row.id } })).toBe(0);
-  expect(await prisma.auditLog.count({ where: { organisationId: b.organisation.id, entityId: row.id } })).toBe(0);
+  expect(
+    await prisma.auditLog.count({ where: { organisationId: b.organisation.id, entityId: row.id } }),
+  ).toBe(0);
 }
 
 const employeeReads: Array<{ name: string; handler: RouteHandler; suffix: string }> = [
@@ -93,16 +95,71 @@ const employeeWrites: Array<{
   body?: unknown;
   employmentStatus?: "ACTIVE" | "INACTIVE";
 }> = [
-  { name: "PATCH /api/employees/:id", handler: patchRoute, method: "PATCH", suffix: "", body: { jobTitle: "Hijacked" } },
+  {
+    name: "PATCH /api/employees/:id",
+    handler: patchRoute,
+    method: "PATCH",
+    suffix: "",
+    body: { jobTitle: "Hijacked" },
+  },
   { name: "DELETE /api/employees/:id", handler: deleteRoute, method: "DELETE", suffix: "" },
-  { name: "POST /api/employees/:id/deactivate", handler: deactivateRoute, method: "POST", suffix: "/deactivate", body: { reason: "cross-tenant" } },
-  { name: "POST /api/employees/:id/reactivate", handler: reactivateRoute, method: "POST", suffix: "/reactivate", body: {}, employmentStatus: "INACTIVE" },
-  { name: "POST /api/employees/:id/archive", handler: archiveRoute, method: "POST", suffix: "/archive", body: {} },
-  { name: "POST /api/employees/:id/assign-policy", handler: assignPolicyRoute, method: "POST", suffix: "/assign-policy", body: { policyId: null } },
-  { name: "POST /api/employees/:id/assign-break-policy", handler: assignBreakPolicyRoute, method: "POST", suffix: "/assign-break-policy", body: { breakPolicyId: null } },
-  { name: "POST /api/employees/:id/assign-location", handler: assignLocationRoute, method: "POST", suffix: "/assign-location", body: { primaryLocationId: null } },
-  { name: "POST /api/employees/:id/assign-team", handler: assignTeamRoute, method: "POST", suffix: "/assign-team", body: { teamIds: [] } },
-  { name: "POST /api/employees/:id/invites", handler: createInviteRoute, method: "POST", suffix: "/invites", body: { channel: "LINK" } },
+  {
+    name: "POST /api/employees/:id/deactivate",
+    handler: deactivateRoute,
+    method: "POST",
+    suffix: "/deactivate",
+    body: { reason: "cross-tenant" },
+  },
+  {
+    name: "POST /api/employees/:id/reactivate",
+    handler: reactivateRoute,
+    method: "POST",
+    suffix: "/reactivate",
+    body: {},
+    employmentStatus: "INACTIVE",
+  },
+  {
+    name: "POST /api/employees/:id/archive",
+    handler: archiveRoute,
+    method: "POST",
+    suffix: "/archive",
+    body: {},
+  },
+  {
+    name: "POST /api/employees/:id/assign-policy",
+    handler: assignPolicyRoute,
+    method: "POST",
+    suffix: "/assign-policy",
+    body: { policyId: null },
+  },
+  {
+    name: "POST /api/employees/:id/assign-break-policy",
+    handler: assignBreakPolicyRoute,
+    method: "POST",
+    suffix: "/assign-break-policy",
+    body: { breakPolicyId: null },
+  },
+  {
+    name: "POST /api/employees/:id/assign-location",
+    handler: assignLocationRoute,
+    method: "POST",
+    suffix: "/assign-location",
+    body: { primaryLocationId: null },
+  },
+  {
+    name: "POST /api/employees/:id/assign-team",
+    handler: assignTeamRoute,
+    method: "POST",
+    suffix: "/assign-team",
+    body: { teamIds: [] },
+  },
+  {
+    name: "POST /api/employees/:id/invites",
+    handler: createInviteRoute,
+    method: "POST",
+    suffix: "/invites",
+    body: { channel: "LINK" },
+  },
 ];
 
 for (const write of employeeWrites) {
@@ -153,7 +210,9 @@ async function expectInviteUntouched(b: TenantFixture): Promise<void> {
   expect(invite.revokedAt).toBeNull();
   expect(invite.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
   expect(
-    await prisma.auditLog.count({ where: { organisationId: b.organisation.id, entityId: invite.id } }),
+    await prisma.auditLog.count({
+      where: { organisationId: b.organisation.id, entityId: invite.id },
+    }),
   ).toBe(0);
 }
 

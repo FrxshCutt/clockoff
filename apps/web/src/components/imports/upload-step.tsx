@@ -35,14 +35,23 @@ export interface UploadStepProps {
  * Step 1: pick a CSV (drop zone or file dialog), choose the import options and upload. The file is checked
  * in the browser first (extension, size, not empty) so an obviously wrong file never leaves the machine.
  */
-export function UploadStep({ canImport, organisationTimezone, defaultDateFormat, onUploaded }: UploadStepProps) {
+export function UploadStep({
+  canImport,
+  organisationTimezone,
+  defaultDateFormat,
+  onUploaded,
+}: UploadStepProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [contentType, setContentType] = useState<string>("text/csv");
   const [fileError, setFileError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [options, setOptions] = useState<ImportOptionsInput>({ dateFormat: defaultDateFormat, timezone: null, locationId: null });
+  const [options, setOptions] = useState<ImportOptionsInput>({
+    dateFormat: defaultDateFormat,
+    timezone: null,
+    locationId: null,
+  });
   const upload = useUploadImport();
 
   const pick = (candidate: File | null | undefined) => {
@@ -71,7 +80,11 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
     const formData = new FormData();
     // Browsers often report no MIME type for .csv; send the one derived from the extension so the API's
     // content-type check passes for a file we already know is CSV-like.
-    formData.append("file", file.type === contentType ? file : new File([file], file.name, { type: contentType }), file.name);
+    formData.append(
+      "file",
+      file.type === contentType ? file : new File([file], file.name, { type: contentType }),
+      file.name,
+    );
     for (const [key, value] of uploadMetadataEntries(options)) formData.append(key, value);
     try {
       const response = await upload.mutateAsync(formData);
@@ -112,7 +125,10 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
           !canImport && "opacity-70",
         )}
       >
-        <div className="bg-primary/10 text-primary ring-primary/15 flex size-12 items-center justify-center rounded-full ring-8" aria-hidden="true">
+        <div
+          className="bg-primary/10 text-primary ring-primary/15 flex size-12 items-center justify-center rounded-full ring-8"
+          aria-hidden="true"
+        >
           <Icon className="size-6" />
         </div>
         <div className="max-w-md space-y-1.5">
@@ -140,8 +156,13 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
           <span className="text-muted-foreground text-sm">or drag a file here</span>
         </div>
         <p className="text-muted-foreground text-xs">
-          CSV up to {formatFileSize(IMPORT_LIMITS.maxFileBytes)} and {formatNumber(IMPORT_LIMITS.maxRows)} rows. Comma, semicolon or tab separated.{" "}
-          <a href={IMPORT_TEMPLATE_URL} download className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline">
+          CSV up to {formatFileSize(IMPORT_LIMITS.maxFileBytes)} and{" "}
+          {formatNumber(IMPORT_LIMITS.maxRows)} rows. Comma, semicolon or tab separated.{" "}
+          <a
+            href={IMPORT_TEMPLATE_URL}
+            download
+            className="text-primary inline-flex items-center gap-1 font-medium underline-offset-4 hover:underline"
+          >
             <Download className="size-3.5" aria-hidden="true" />
             Download the template
           </a>
@@ -163,7 +184,14 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
               <p className="text-muted-foreground text-xs">{formatFileSize(file.size)}</p>
             </div>
           </div>
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove file" onClick={clear} disabled={upload.isPending}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Remove file"
+            onClick={clear}
+            disabled={upload.isPending}
+          >
             <X aria-hidden="true" />
           </Button>
         </div>
@@ -174,13 +202,21 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
           <h3 id={`${inputId}-options`} className="text-sm font-semibold">
             Import options
           </h3>
-          <p className="text-muted-foreground text-sm">You can change these again when mapping columns.</p>
+          <p className="text-muted-foreground text-sm">
+            You can change these again when mapping columns.
+          </p>
         </div>
-        <ImportOptionsFields value={options} onChange={setOptions} organisationTimezone={organisationTimezone} disabled={!canImport || upload.isPending} />
+        <ImportOptionsFields
+          value={options}
+          onChange={setOptions}
+          organisationTimezone={organisationTimezone}
+          disabled={!canImport || upload.isPending}
+        />
       </section>
 
       {upload.error ? (
-        hasErrorCode(upload.error, "INVALID_CSV", "PAYLOAD_TOO_LARGE", "UNSUPPORTED_MEDIA_TYPE") && fileProblems.length > 0 ? (
+        hasErrorCode(upload.error, "INVALID_CSV", "PAYLOAD_TOO_LARGE", "UNSUPPORTED_MEDIA_TYPE") &&
+        fileProblems.length > 0 ? (
           <InlineAlert variant="danger" title="We couldn't read that file">
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
               {fileProblems.map((problem, index) => (
@@ -194,8 +230,17 @@ export function UploadStep({ canImport, organisationTimezone, defaultDateFormat,
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="button" onClick={() => void submit()} disabled={!file || !canImport || upload.isPending} aria-busy={upload.isPending || undefined}>
-          {upload.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <FileUp aria-hidden="true" />}
+        <Button
+          type="button"
+          onClick={() => void submit()}
+          disabled={!file || !canImport || upload.isPending}
+          aria-busy={upload.isPending || undefined}
+        >
+          {upload.isPending ? (
+            <LoaderCircle className="animate-spin" aria-hidden="true" />
+          ) : (
+            <FileUp aria-hidden="true" />
+          )}
           {upload.isPending ? "Uploading…" : "Upload and continue"}
         </Button>
       </div>

@@ -54,7 +54,11 @@ registerTenantIsolationCase({
   name: "GET /api/policies/:id of another tenant",
   build: async (_a, b) => {
     const policy = await createPublishedPolicyInOrg(b.organisation.id);
-    return { handler: getPolicyRoute, path: `/api/policies/${policy.id}`, params: { id: policy.id } };
+    return {
+      handler: getPolicyRoute,
+      path: `/api/policies/${policy.id}`,
+      params: { id: policy.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -74,7 +78,9 @@ registerTenantIsolationCase({
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
     expect(
-      await prisma.policy.count({ where: { organisationId: b.organisation.id, name: "Untouched" } }),
+      await prisma.policy.count({
+        where: { organisationId: b.organisation.id, name: "Untouched" },
+      }),
     ).toBe(1);
   },
 });

@@ -34,7 +34,9 @@ const organisationSettingsReader = z
   .object({
     weekStartsOn: z.enum(WEEK_STARTS).catch(ORGANISATION_SETTINGS_DEFAULTS.weekStartsOn),
     timeFormat: z.enum(TIME_FORMATS).catch(ORGANISATION_SETTINGS_DEFAULTS.timeFormat),
-    requireInviteCodeToJoin: z.boolean().catch(ORGANISATION_SETTINGS_DEFAULTS.requireInviteCodeToJoin),
+    requireInviteCodeToJoin: z
+      .boolean()
+      .catch(ORGANISATION_SETTINGS_DEFAULTS.requireInviteCodeToJoin),
   })
   .catch(ORGANISATION_SETTINGS_DEFAULTS);
 
@@ -46,7 +48,9 @@ const organisationSummarySchema = z.object({
   dateFormat: z.enum(DATE_FORMATS).catch("DMY"),
   plan: z.enum(PLANS).catch("STARTER"),
   billingStatus: z.enum(BILLING_STATUSES).catch("TRIAL"),
-  settings: organisationSettingsReader.optional().transform((v): OrganisationSettings => v ?? ORGANISATION_SETTINGS_DEFAULTS),
+  settings: organisationSettingsReader
+    .optional()
+    .transform((v): OrganisationSettings => v ?? ORGANISATION_SETTINGS_DEFAULTS),
 });
 export type OrganisationSummary = z.output<typeof organisationSummarySchema>;
 
@@ -66,7 +70,11 @@ export interface CurrentOrganisation {
 }
 
 /** Parses `value` or throws `ApiClientError(INVALID_RESPONSE)` naming the endpoint and the mismatch. */
-export function parseResponse<S extends z.ZodType>(schema: S, value: unknown, endpoint: string): z.output<S> {
+export function parseResponse<S extends z.ZodType>(
+  schema: S,
+  value: unknown,
+  endpoint: string,
+): z.output<S> {
   const result = schema.safeParse(value);
   if (!result.success) {
     throw new ApiClientError({
@@ -142,18 +150,31 @@ const managerInviteRowSchema = z.object({
 });
 
 /** Invite states that can still be acted on (re-sent or revoked). */
-const OPEN_INVITE_STATUSES = ["PENDING", "EXPIRED"] as const satisfies readonly ManagerInviteState[];
+const OPEN_INVITE_STATUSES = [
+  "PENDING",
+  "EXPIRED",
+] as const satisfies readonly ManagerInviteState[];
 type OpenInviteStatus = (typeof OPEN_INVITE_STATUSES)[number];
 
-export type PendingManagerInvite = Omit<z.infer<typeof managerInviteRowSchema>, "status"> & { status: OpenInviteStatus };
+export type PendingManagerInvite = Omit<z.infer<typeof managerInviteRowSchema>, "status"> & {
+  status: OpenInviteStatus;
+};
 
-function isOpenInvite(invite: z.infer<typeof managerInviteRowSchema>): invite is PendingManagerInvite {
+function isOpenInvite(
+  invite: z.infer<typeof managerInviteRowSchema>,
+): invite is PendingManagerInvite {
   return (OPEN_INVITE_STATUSES as readonly string[]).includes(invite.status);
 }
 
 const membersShapes = z.union([
-  z.object({ members: z.array(memberRowSchema), invites: z.array(managerInviteRowSchema).optional() }),
-  z.object({ items: z.array(memberRowSchema), invites: z.array(managerInviteRowSchema).optional() }),
+  z.object({
+    members: z.array(memberRowSchema),
+    invites: z.array(managerInviteRowSchema).optional(),
+  }),
+  z.object({
+    items: z.array(memberRowSchema),
+    invites: z.array(managerInviteRowSchema).optional(),
+  }),
 ]);
 
 export interface MembersList {
@@ -233,7 +254,11 @@ const acceptInviteShapes = z.union([
 
 /** Returns the organisation joined, when the response says which. */
 export function normalizeAcceptInvite(raw: unknown): { organisationId: string | null } {
-  const data = parseResponse(acceptInviteShapes, raw, "POST /api/organisations/current/members/accept");
+  const data = parseResponse(
+    acceptInviteShapes,
+    raw,
+    "POST /api/organisations/current/members/accept",
+  );
   if ("organisationId" in data) return { organisationId: data.organisationId };
   if ("organisation" in data) return { organisationId: data.organisation.id };
   return { organisationId: null };
@@ -242,7 +267,9 @@ export function normalizeAcceptInvite(raw: unknown): { organisationId: string | 
 // ── Onboarding ──────────────────────────────────────────────────────────────
 
 const onboardingSchema = z.object({
-  items: z.array(z.object({ key: z.string(), label: z.string(), done: z.boolean(), href: z.string() })),
+  items: z.array(
+    z.object({ key: z.string(), label: z.string(), done: z.boolean(), href: z.string() }),
+  ),
   complete: z.boolean().optional(),
   allDone: z.boolean().optional(),
   dismissedAt: z.string().nullable().optional(),
@@ -261,7 +288,10 @@ export function normalizeOnboarding(raw: unknown): OnboardingChecklist {
   const completedCount = data.items.filter((item) => item.done).length;
   return {
     // Links are rendered as-is, so only same-origin paths are kept (anything else points at the overview).
-    items: data.items.map((item) => ({ ...item, href: isInternalPath(item.href) ? item.href : ROUTES.overview })),
+    items: data.items.map((item) => ({
+      ...item,
+      href: isInternalPath(item.href) ? item.href : ROUTES.overview,
+    })),
     completedCount,
     totalCount: data.items.length,
     complete: data.complete ?? data.allDone ?? completedCount === data.items.length,
@@ -279,7 +309,14 @@ const notificationSchema = z.object({
   readAt: z.string().nullable().optional(),
   createdAt: z.string(),
 });
-export type NotificationItem = { id: string; type: string; title: string; body: string; readAt: string | null; createdAt: string };
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+};
 
 const notificationsSchema = z.object({
   items: z.array(notificationSchema),

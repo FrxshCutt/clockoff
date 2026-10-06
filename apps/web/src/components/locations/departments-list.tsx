@@ -27,11 +27,15 @@ import { useDeleteDepartment, useDepartmentsList } from "./use-locations-teams";
 
 /** Departments tab: a simple CRUD list (`/api/departments`). */
 export function DepartmentsSection() {
+  // Organisation structure is edited by owners and admins only (`org:manage`), as the API enforces.
   const canManage = usePermission("org:manage");
   const departments = useDepartmentsList();
   const remove = useDeleteDepartment();
   const toastError = useApiErrorToast();
-  const [dialog, setDialog] = useState<{ open: boolean; department: Department | null }>({ open: false, department: null });
+  const [dialog, setDialog] = useState<{ open: boolean; department: Department | null }>({
+    open: false,
+    department: null,
+  });
   const [deleting, setDeleting] = useState<Department | null>(null);
 
   const columns = useMemo<ColumnDef<Department>[]>(
@@ -44,7 +48,9 @@ export function DepartmentsSection() {
       {
         accessorKey: "employeeCount",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Employees" />,
-        cell: ({ row }) => <span className="text-sm tabular-nums">{formatNumber(row.original.employeeCount)}</span>,
+        cell: ({ row }) => (
+          <span className="text-sm tabular-nums">{formatNumber(row.original.employeeCount)}</span>
+        ),
       },
       {
         id: "actions",
@@ -55,12 +61,19 @@ export function DepartmentsSection() {
           canManage ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon-sm" aria-label={`Actions for ${row.original.name}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Actions for ${row.original.name}`}
+                >
                   <MoreHorizontal aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem onSelect={() => setDialog({ open: true, department: row.original })}>
+                <DropdownMenuItem
+                  onSelect={() => setDialog({ open: true, department: row.original })}
+                >
                   <Pencil aria-hidden="true" />
                   Rename
                 </DropdownMenuItem>
@@ -116,14 +129,22 @@ export function DepartmentsSection() {
           <EmptyState
             icon={copy.icon}
             title={copy.title}
-            description={canManage ? copy.description : "Only owners and admins can add departments."}
+            description={
+              canManage
+                ? copy.description
+                : "You don't have permission to add departments. Ask an owner or admin."
+            }
             headingLevel={3}
             action={addButton}
           />
         }
       />
 
-      <DepartmentDialog open={dialog.open} onOpenChange={(open) => setDialog((prev) => ({ ...prev, open }))} department={dialog.department} />
+      <DepartmentDialog
+        open={dialog.open}
+        onOpenChange={(open) => setDialog((prev) => ({ ...prev, open }))}
+        department={dialog.department}
+      />
 
       <ConfirmDialog
         open={deleting !== null}
@@ -131,7 +152,11 @@ export function DepartmentsSection() {
           if (!open) setDeleting(null);
         }}
         title={deleting ? `Delete ${deleting.name}?` : "Delete department?"}
-        description={warnings.length > 0 ? warnings.join(" ") : "This department has no employees. This can't be undone."}
+        description={
+          warnings.length > 0
+            ? warnings.join(" ")
+            : "This department has no employees. This can't be undone."
+        }
         confirmLabel="Delete department"
         destructive
         onConfirm={async () => {

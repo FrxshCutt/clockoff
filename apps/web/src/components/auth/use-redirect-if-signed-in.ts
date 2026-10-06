@@ -13,7 +13,8 @@ export function useRedirectIfSignedIn(next: string | null) {
   // Cached data from a session that has since ended must not count as signed in.
   const me = isUnauthenticatedError(error) ? undefined : data;
   useEffect(() => {
-    if (me) router.replace(getPostAuthRedirect({ organisationCount: me.organisations.length, next }));
+    if (me)
+      router.replace(getPostAuthRedirect({ organisationCount: me.organisations.length, next }));
   }, [me, next, router]);
   return Boolean(me);
 }

@@ -28,7 +28,9 @@ describe("StatusBadge rendering", () => {
   });
 
   it("supports a custom label, hidden icon and no description", () => {
-    const html = renderToStaticMarkup(<StatusBadge kind="role" value="OWNER" label="Owner (you)" hideIcon describe={false} />);
+    const html = renderToStaticMarkup(
+      <StatusBadge kind="role" value="OWNER" label="Owner (you)" hideIcon describe={false} />,
+    );
     expect(html).toContain("Owner (you)");
     expect(html).not.toContain("<svg");
     expect(html).not.toContain("title=");
@@ -36,29 +38,40 @@ describe("StatusBadge rendering", () => {
 });
 
 describe("PlaceholderPage", () => {
-  it.each(Object.keys(EMPTY_STATES) as EmptyStateKey[])("renders the %s empty state inside the page frame", (key) => {
-    const copy = EMPTY_STATES[key];
-    const html = renderToStaticMarkup(<PlaceholderPage title="Title" description="Description" emptyState={key} />);
-    expect(html.match(/<h1/g)?.length).toBe(1);
-    expect(html).toContain(copy.title.replace(/'/g, "&#x27;"));
-    expect(html).toContain(copy.description.replace(/'/g, "&#x27;"));
-    if ("action" in copy && copy.action) expect(html).toContain(copy.action.label);
-  });
+  it.each(Object.keys(EMPTY_STATES) as EmptyStateKey[])(
+    "renders the %s empty state inside the page frame",
+    (key) => {
+      const copy = EMPTY_STATES[key];
+      const html = renderToStaticMarkup(
+        <PlaceholderPage title="Title" description="Description" emptyState={key} />,
+      );
+      expect(html.match(/<h1/g)?.length).toBe(1);
+      expect(html).toContain(copy.title.replace(/'/g, "&#x27;"));
+      expect(html).toContain(copy.description.replace(/'/g, "&#x27;"));
+      if ("action" in copy && copy.action) expect(html).toContain(copy.action.label);
+    },
+  );
 
   it("disables actions whose flow isn't built yet and links the rest", () => {
-    const employees = renderToStaticMarkup(<PlaceholderPage title="Employees" emptyState="employees" />);
+    const employees = renderToStaticMarkup(
+      <PlaceholderPage title="Employees" emptyState="employees" />,
+    );
     expect(employees).toMatch(/<button[^>]*disabled=""[^>]*>Add Employee<\/button>/);
     expect(employees).toContain("This section is being built.");
-    const policies = renderToStaticMarkup(<PlaceholderPage title="Policies" emptyState="policies" />);
+    const policies = renderToStaticMarkup(
+      <PlaceholderPage title="Policies" emptyState="policies" />,
+    );
     expect(policies).toMatch(/<a[^>]*href="\/policies\/new"[^>]*>Create Policy<\/a>/);
   });
 });
 
 describe("layout primitives", () => {
   it("render their landmarks and headings", () => {
-    expect(renderToStaticMarkup(<PageHeader title="Settings" description="d" actions={<button>Go</button>} />)).toMatch(
-      /<h1[^>]*>Settings<\/h1>/,
-    );
+    expect(
+      renderToStaticMarkup(
+        <PageHeader title="Settings" description="d" actions={<button>Go</button>} />,
+      ),
+    ).toMatch(/<h1[^>]*>Settings<\/h1>/);
     const section = renderToStaticMarkup(
       <Section title="Members">
         <p>body</p>
@@ -73,8 +86,12 @@ describe("layout primitives", () => {
     expect(card).toContain('role="region"');
     expect(card).toContain("Delete");
     expect(renderToStaticMarkup(<EmptyState title="Nothing" headingLevel={3} />)).toContain("<h3");
-    expect(renderToStaticMarkup(<InlineAlert variant="danger">Broken</InlineAlert>)).toContain('role="alert"');
-    expect(renderToStaticMarkup(<InlineAlert variant="info">FYI</InlineAlert>)).toContain('role="status"');
+    expect(renderToStaticMarkup(<InlineAlert variant="danger">Broken</InlineAlert>)).toContain(
+      'role="alert"',
+    );
+    expect(renderToStaticMarkup(<InlineAlert variant="info">FYI</InlineAlert>)).toContain(
+      'role="status"',
+    );
     expect(
       renderToStaticMarkup(
         <KbdGroup>
@@ -86,9 +103,16 @@ describe("layout primitives", () => {
   });
 
   it("MetricCard shows a skeleton while loading and the value after", () => {
-    expect(renderToStaticMarkup(<MetricCard label="Connected" value={12} isLoading />)).toContain('aria-busy="true"');
+    expect(renderToStaticMarkup(<MetricCard label="Connected" value={12} isLoading />)).toContain(
+      'aria-busy="true"',
+    );
     const loaded = renderToStaticMarkup(
-      <MetricCard label="Connected" value={12} trend={{ direction: "up", label: "+3 today" }} href="/employees" />,
+      <MetricCard
+        label="Connected"
+        value={12}
+        trend={{ direction: "up", label: "+3 today" }}
+        href="/employees"
+      />,
     );
     expect(loaded).toContain(">12<");
     expect(loaded).toContain("+3 today");

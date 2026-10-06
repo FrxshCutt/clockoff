@@ -1,4 +1,4 @@
-import { Prisma } from "@workmode/db";
+import { Prisma, prisma } from "@workmode/db";
 import { resolveBreakBehaviour, type BreakBehaviour } from "@workmode/shared/breaks/breakRules";
 import { AppError } from "@workmode/shared/errors";
 import {
@@ -11,7 +11,7 @@ import {
   type OverridePayload,
   type RevokeOverrideInput,
 } from "@workmode/validation/overrides";
-import { recordActivity } from "@/server/activity/recordActivity";
+import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { toOverrideDto } from "@/server/employees/employees.mappers";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
@@ -58,8 +58,14 @@ export function encodeOverrideCursor(row: Pick<OverrideRow, "createdAt" | "id">)
 export function decodeOverrideCursor(value: string | undefined): OverrideCursor | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<OverrideCursor>;
-    if (typeof parsed.c === "string" && !Number.isNaN(Date.parse(parsed.c)) && typeof parsed.id === "string") {
+    const parsed = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as Partial<OverrideCursor>;
+    if (
+      typeof parsed.c === "string" &&
+      !Number.isNaN(Date.parse(parsed.c)) &&
+      typeof parsed.id === "string"
+    ) {
       return { c: parsed.c, id: parsed.id };
     }
   } catch {
@@ -125,7 +131,11 @@ export async function listOverrides(
   };
 }
 
-export async function getOverride(ctx: ManagerContext, id: string, now: Date = new Date()): Promise<Override> {
+export async function getOverride(
+  ctx: ManagerContext,
+  id: string,
+  now: Date = new Date(),
+): Promise<Override> {
   const row = await findOverrideInOrganisation(ctx.organisation.id, id);
   if (!row) throw new AppError("NOT_FOUND", "Override not found");
   return toOverrideDto(row, now);
@@ -141,7 +151,10 @@ export async function createOverride(
   if (input.type === "EMERGENCY_POLICY_OVERRIDE") {
     requirePermission(ctx, "org:manage");
     if (input.employeeId !== undefined) {
-      throw validationError("employeeId", "EMERGENCY_POLICY_OVERRIDE is organisation-wide; omit employeeId");
+      throw validationError(
+        "employeeId",
+        "EMERGENCY_POLICY_OVERRIDE is organisation-wide; omit employeeId",
+      );
     }
   }
 
@@ -167,59 +180,77 @@ export async function createOverride(
   }
   const window = resolveOverrideWindow(windowInput, now, ctx.membership.role);
   if (!window.ok) {
-    if (window.code === "OVERRIDE_TOO_LONG") throw new AppError("OVERRIDE_TOO_LONG", window.message);
+    if (window.code === "OVERRIDE_TOO_LONG")
+      throw new AppError("OVERRIDE_TOO_LONG", window.message);
     throw validationError("expiresAt", window.message);
   }
 
   const payload = await resolveStoredPayload(organisationId, input);
-  const row = await createOverrideRow({
-    organisationId,
-    employeeId: employee?.id ?? null,
-    type: input.type,
-    reason: input.reason,
-    createdById: ctx.user.id,
-    startsAt: window.startsAt,
-    expiresAt: window.expiresAt,
-    payload: payload as Prisma.InputJsonValue,
+  // Row, audit entry and activity event land together or not at all; realtime hints go out after the commit.
+  const { row, dto, event } = await prisma.$transaction(async (tx) => {
+    const row = await createOverrideRow(
+      {
+        organisationId,
+        employeeId: employee?.id ?? null,
+        type: input.type,
+        reason: input.reason,
+        createdById: ctx.user.id,
+        startsAt: window.startsAt,
+        expiresAt: window.expiresAt,
+        payload: payload as Prisma.InputJsonValue,
+      },
+      tx,
+    );
+    const dto = toOverrideDto(row, now);
+    await audit(
+      ctx,
+      {
+        action: "override.created",
+        entityType: "ManagerOverride",
+        entityId: row.id,
+        after: {
+          type: dto.type,
+          employeeId: row.employeeId,
+          reason: dto.reason,
+          startsAt: dto.startsAt,
+          expiresAt: dto.expiresAt,
+          payload: dto.payload,
+        },
+      },
+      tx,
+    );
+    const { event } = await recordActivity(
+      {
+        organisationId,
+        employeeId: row.employeeId,
+        actorType: "MANAGER",
+        actorUserId: ctx.user.id,
+        type: "OVERRIDE_CREATED",
+        occurredAt: now,
+        metadata: {
+          overrideId: row.id,
+          type: row.type,
+          startsAt: dto.startsAt,
+          expiresAt: dto.expiresAt,
+          durationMinutes: window.durationMinutes,
+          orgWide: row.employeeId === null,
+          ...(payload.restrictionBehaviour
+            ? { restrictionBehaviour: payload.restrictionBehaviour }
+            : {}),
+          ...(payload.breakPolicyId ? { breakPolicyId: payload.breakPolicyId } : {}),
+        },
+      },
+      { db: tx, publish: false },
+    );
+    return { row, dto, event };
   });
-  const dto = toOverrideDto(row, now);
-
-  await audit(ctx, {
-    action: "override.created",
-    entityType: "ManagerOverride",
-    entityId: row.id,
-    after: {
-      type: dto.type,
-      employeeId: row.employeeId,
-      reason: dto.reason,
-      startsAt: dto.startsAt,
-      expiresAt: dto.expiresAt,
-      payload: dto.payload,
-    },
-  });
-  await recordActivity({
-    organisationId,
-    employeeId: row.employeeId,
-    actorType: "MANAGER",
-    actorUserId: ctx.user.id,
-    type: "OVERRIDE_CREATED",
-    occurredAt: now,
-    metadata: {
-      overrideId: row.id,
-      type: row.type,
-      startsAt: dto.startsAt,
-      expiresAt: dto.expiresAt,
-      durationMinutes: window.durationMinutes,
-      orgWide: row.employeeId === null,
-      ...(payload.restrictionBehaviour ? { restrictionBehaviour: payload.restrictionBehaviour } : {}),
-      ...(payload.breakPolicyId ? { breakPolicyId: payload.breakPolicyId } : {}),
-    },
-  });
+  publishActivity(event);
 
   ensureOrganisationBridged(organisationId);
   publishOverrideEvent("OVERRIDE_CREATED", row);
   // Organisation-wide overrides are picked up for every active employee by the next job tick.
-  if (row.employeeId) await recomputeEmployeeWorkState({ organisationId, employeeId: row.employeeId, now });
+  if (row.employeeId)
+    await recomputeEmployeeWorkState({ organisationId, employeeId: row.employeeId, now });
   return dto;
 }
 
@@ -237,17 +268,26 @@ export async function revokeOverride(
     throw new AppError("OVERRIDE_EXPIRED", "This override has already expired");
   }
 
-  const revoked = await revokeOverrideRow(organisationId, row.id, now);
+  // The guarded revoke and its audit entry commit together; a lost race writes neither.
+  const revoked = await prisma.$transaction(async (tx) => {
+    const won = await revokeOverrideRow(organisationId, row.id, now, tx);
+    if (!won) return false;
+    await audit(
+      ctx,
+      {
+        action: "override.revoked",
+        entityType: "ManagerOverride",
+        entityId: row.id,
+        before: { revokedAt: null, expiresAt: row.expiresAt.toISOString() },
+        after: { revokedAt: now.toISOString(), reason: _input.reason ?? null },
+      },
+      tx,
+    );
+    return true;
+  });
   const current = (await findOverrideInOrganisation(organisationId, row.id)) ?? row;
   if (!revoked) return toOverrideDto(current, now); // lost a race with a concurrent revoke
 
-  await audit(ctx, {
-    action: "override.revoked",
-    entityType: "ManagerOverride",
-    entityId: row.id,
-    before: { revokedAt: null, expiresAt: row.expiresAt.toISOString() },
-    after: { revokedAt: now.toISOString(), reason: _input.reason ?? null },
-  });
   ensureOrganisationBridged(organisationId);
   publishOverrideEvent("OVERRIDE_REVOKED", current);
   if (current.employeeId) {

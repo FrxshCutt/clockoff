@@ -3,23 +3,62 @@
 import type { Shift } from "@workmode/validation/shifts";
 import { SHIFT_LIMITS } from "@workmode/validation/shifts";
 import { RECURRENCE_WEEKDAY_CODES, type LocalDateString } from "@workmode/shared/time/time";
-import { Ban, CalendarPlus, Coffee, Copy, LoaderCircle, MoonStar, Plus, Repeat, ShieldAlert, Trash2, X } from "lucide-react";
+import {
+  Ban,
+  CalendarPlus,
+  Coffee,
+  Copy,
+  LoaderCircle,
+  MoonStar,
+  Plus,
+  Repeat,
+  ShieldAlert,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { useFieldArray, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { FormErrorAlert, SubmitButton, TextareaField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SubmitButton,
+  TextareaField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { InlineAlert } from "@/components/inline-alert";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, Form } from "@/components/ui/form";
+import {
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Form,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
@@ -29,8 +68,21 @@ import { getErrorMessage } from "@/lib/errorMessages";
 import { cn } from "@/lib/utils";
 import { EmployeePicker, type EmployeeRef } from "./employee-picker";
 import { LocationSelect } from "./location-select";
-import { REPEAT_OPTIONS, REPEAT_OPTION_LABELS, WEEKDAY_LABELS, describeRecurrenceRule, isWeekdayCode } from "./rrule-builder";
-import { employeeName, formatLocalDay, futureSeriesShifts, seriesIdOf, shiftLocalTimes, shiftTimeLabel } from "./schedule-model";
+import {
+  REPEAT_OPTIONS,
+  REPEAT_OPTION_LABELS,
+  WEEKDAY_LABELS,
+  describeRecurrenceRule,
+  isWeekdayCode,
+} from "./rrule-builder";
+import {
+  employeeName,
+  formatLocalDay,
+  futureSeriesShifts,
+  seriesIdOf,
+  shiftLocalTimes,
+  shiftTimeLabel,
+} from "./schedule-model";
 import {
   fetchEmployeeShiftsFrom,
   useBulkShiftAction,
@@ -57,10 +109,15 @@ import {
   type ShiftFormValues,
 } from "./shift-form-model";
 
-
 export type ShiftDrawerState =
   | { mode: "closed" }
-  | { mode: "create"; date: LocalDateString; employeeId?: string | null; employee?: EmployeeRef | null; locationId?: string | null }
+  | {
+      mode: "create";
+      date: LocalDateString;
+      employeeId?: string | null;
+      employee?: EmployeeRef | null;
+      locationId?: string | null;
+    }
   | { mode: "edit"; shift: Shift };
 
 export interface ShiftDrawerProps {
@@ -79,14 +136,36 @@ export type SeriesScope = "this" | "future";
  * always fresh. Save → POST or PATCH, plus duplicate / cancel / delete actions; members of a recurrence
  * series can apply save, cancel and delete to "this and future shifts".
  */
-export function ShiftDrawer({ state, onClose, organisationTimezone, canEdit, knownShifts = [] }: ShiftDrawerProps) {
+export function ShiftDrawer({
+  state,
+  onClose,
+  organisationTimezone,
+  canEdit,
+  knownShifts = [],
+}: ShiftDrawerProps) {
   const open = state.mode !== "closed";
-  const formKey = state.mode === "edit" ? `edit:${state.shift.id}:${state.shift.version}` : state.mode === "create" ? `create:${state.date}:${state.employeeId ?? ""}` : "closed";
+  const formKey =
+    state.mode === "edit"
+      ? `edit:${state.shift.id}:${state.shift.version}`
+      : state.mode === "create"
+        ? `create:${state.date}:${state.employeeId ?? ""}`
+        : "closed";
   return (
     <Sheet open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" showCloseButton={false}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 p-0 sm:max-w-xl"
+        showCloseButton={false}
+      >
         {state.mode !== "closed" ? (
-          <ShiftDrawerBody key={formKey} state={state} onClose={onClose} organisationTimezone={organisationTimezone} canEdit={canEdit} knownShifts={knownShifts} />
+          <ShiftDrawerBody
+            key={formKey}
+            state={state}
+            onClose={onClose}
+            organisationTimezone={organisationTimezone}
+            canEdit={canEdit}
+            knownShifts={knownShifts}
+          />
         ) : null}
       </SheetContent>
     </Sheet>
@@ -101,7 +180,13 @@ interface BodyProps {
   knownShifts: readonly Shift[];
 }
 
-function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownShifts }: BodyProps) {
+function ShiftDrawerBody({
+  state,
+  onClose,
+  organisationTimezone,
+  canEdit,
+  knownShifts,
+}: BodyProps) {
   const isEdit = state.mode === "edit";
   const shift = isEdit ? state.shift : null;
   const toastError = useApiErrorToast();
@@ -120,7 +205,14 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
   );
 
   const defaults = useMemo<ShiftFormValues>(
-    () => (isEdit ? shiftToFormValues(state.shift) : emptyShiftForm({ employeeId: state.employeeId ?? null, locationId: state.locationId ?? null, date: state.date })),
+    () =>
+      isEdit
+        ? shiftToFormValues(state.shift)
+        : emptyShiftForm({
+            employeeId: state.employeeId ?? null,
+            locationId: state.locationId ?? null,
+            date: state.date,
+          }),
     [isEdit, state],
   );
   const form = useZodForm(shiftFormSchema, { defaultValues: defaults });
@@ -128,14 +220,27 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
   const watched = useWatch({ control: form.control });
   const locationId = watched.locationId ?? NO_LOCATION;
   const repeat = watched.repeat ?? "none";
-  const timezone = shift ? shift.timezone : formTimezone(locationId, locations.data ?? [], organisationTimezone);
+  const timezone = shift
+    ? shift.timezone
+    : formTimezone(locationId, locations.data ?? [], organisationTimezone);
   const preview = previewShiftTimes(
-    { date: watched.date ?? "", startTime: watched.startTime ?? "", endTime: watched.endTime ?? "" },
+    {
+      date: watched.date ?? "",
+      startTime: watched.startTime ?? "",
+      endTime: watched.endTime ?? "",
+    },
     timezone,
   );
   const inSeries = shift ? seriesIdOf(shift) !== null : false;
   const readOnly = !canEdit;
-  const pending = busy || createShift.isPending || updateShift.isPending || deleteShift.isPending || duplicateShift.isPending || cancelShift.isPending || bulk.isPending;
+  const pending =
+    busy ||
+    createShift.isPending ||
+    updateShift.isPending ||
+    deleteShift.isPending ||
+    duplicateShift.isPending ||
+    cancelShift.isPending ||
+    bulk.isPending;
 
   const idPrefix = useId();
   const dateId = `${idPrefix}-date`;
@@ -164,23 +269,33 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
     setSubmitError(null);
     try {
       if (!shift) {
-        const response = await createShift.mutateAsync(toCreateShiftInput(values, { allowOverlap }));
+        const response = await createShift.mutateAsync(
+          toCreateShiftInput(values, { allowOverlap }),
+        );
         surfaceWarnings(response);
         const skipped = response.skippedOccurrences?.length ?? 0;
         if (skipped > 0) {
-          toast.warning(`${skipped} ${skipped === 1 ? "occurrence was" : "occurrences were"} skipped because ${skipped === 1 ? "it" : "they"} overlapped existing shifts.`);
+          toast.warning(
+            `${skipped} ${skipped === 1 ? "occurrence was" : "occurrences were"} skipped because ${skipped === 1 ? "it" : "they"} overlapped existing shifts.`,
+          );
         }
         const count = response.shifts.length;
         closeAfter(count > 1 ? `${count} shifts created` : "Shift created");
         return;
       }
       const applyTo = scope === "future" && inSeries ? "THIS_AND_FUTURE" : "THIS";
-      const response = await updateShift.mutateAsync({ id: shift.id, input: toUpdateShiftInput(values, shift, { allowOverlap, applyTo }) });
+      const response = await updateShift.mutateAsync({
+        id: shift.id,
+        input: toUpdateShiftInput(values, shift, { allowOverlap, applyTo }),
+      });
       surfaceWarnings(response);
       closeAfter(applyTo === "THIS_AND_FUTURE" ? "This and future shifts saved" : "Shift saved");
     } catch (error) {
       if (hasErrorCode(error, "INVALID_RECURRENCE")) {
-        form.setError(values.repeat === "weekly" ? "weekdays" : "customRule", { type: "server", message: getErrorMessage(error) });
+        form.setError(values.repeat === "weekly" ? "weekdays" : "customRule", {
+          type: "server",
+          message: getErrorMessage(error),
+        });
       } else if (!applyApiFieldErrors(form, error)) {
         setSubmitError(error);
       }
@@ -195,24 +310,39 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
     setBusy(true);
     try {
       if (scope === "future" && inSeries) {
-        const targets = await loadFutureSiblings();
+        const siblings = await loadFutureSiblings();
+        // Bulk CANCEL answers CONFLICT per already-cancelled/completed member; only scheduled ones are sent.
+        const targets =
+          action === "CANCEL" ? siblings.filter((s) => s.status === "SCHEDULED") : siblings;
         const ids = targets.length > 0 ? targets.map((s) => s.id) : [shift.id];
         const result = await bulk.mutateAsync(
-          action === "CANCEL" ? { action: "CANCEL", shiftIds: ids } : { action: "DELETE", shiftIds: ids },
+          action === "CANCEL"
+            ? { action: "CANCEL", shiftIds: ids }
+            : { action: "DELETE", shiftIds: ids },
         );
-        if (result.failed.length > 0) toast.warning(`${result.failed.length} ${result.failed.length === 1 ? "shift" : "shifts"} could not be ${action === "CANCEL" ? "cancelled" : "deleted"}`);
-        closeAfter(`${result.succeeded} ${result.succeeded === 1 ? "shift" : "shifts"} ${action === "CANCEL" ? "cancelled" : "deleted"}`);
+        if (result.failed.length > 0)
+          toast.warning(
+            `${result.failed.length} ${result.failed.length === 1 ? "shift" : "shifts"} could not be ${action === "CANCEL" ? "cancelled" : "deleted"}`,
+          );
+        closeAfter(
+          `${result.succeeded} ${result.succeeded === 1 ? "shift" : "shifts"} ${action === "CANCEL" ? "cancelled" : "deleted"}`,
+        );
         return;
       }
       if (action === "CANCEL") {
-        await cancelShift.mutateAsync({ id: shift.id, input: cancelReason.trim() ? { reason: cancelReason.trim() } : {} });
+        await cancelShift.mutateAsync({
+          id: shift.id,
+          input: cancelReason.trim() ? { reason: cancelReason.trim() } : {},
+        });
         closeAfter("Shift cancelled");
       } else {
         await deleteShift.mutateAsync(shift.id);
         closeAfter("Shift deleted");
       }
     } catch (error) {
-      toastError(error, { title: action === "CANCEL" ? "Couldn't cancel the shift" : "Couldn't delete the shift" });
+      toastError(error, {
+        title: action === "CANCEL" ? "Couldn't cancel the shift" : "Couldn't delete the shift",
+      });
       throw error;
     } finally {
       setBusy(false);
@@ -220,7 +350,9 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
   };
 
   const [cancelReason, setCancelReason] = useState("");
-  const [duplicateDate, setDuplicateDate] = useState<string>(() => (shift ? shiftLocalTimes(shift, shift.timezone).startDate : ""));
+  const [duplicateDate, setDuplicateDate] = useState<string>(() =>
+    shift ? shiftLocalTimes(shift, shift.timezone).startDate : "",
+  );
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [duplicateError, setDuplicateError] = useState<unknown>(null);
 
@@ -236,8 +368,13 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
     }
   };
 
-  const overlapConflicts = hasErrorCode(submitError, "SHIFT_OVERLAP") ? resolveConflicts(readOverlapConflictIds(submitError.details), knownShifts) : [];
-  const genericSubmitError = submitError && !hasErrorCode(submitError, "SHIFT_OVERLAP", "SHIFT_TOO_SHORT") ? submitError : null;
+  const overlapConflicts = hasErrorCode(submitError, "SHIFT_OVERLAP")
+    ? resolveConflicts(readOverlapConflictIds(submitError.details), knownShifts)
+    : [];
+  const genericSubmitError =
+    submitError && !hasErrorCode(submitError, "SHIFT_OVERLAP", "SHIFT_TOO_SHORT")
+      ? submitError
+      : null;
 
   return (
     <Form {...form}>
@@ -257,7 +394,13 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                 )}
               </SheetDescription>
             </div>
-            <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label="Close"
+            >
               <X aria-hidden="true" />
             </Button>
           </div>
@@ -270,14 +413,20 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
             </InlineAlert>
           ) : null}
 
-          {genericSubmitError ? <FormErrorAlert error={genericSubmitError} title="Couldn't save the shift" /> : null}
+          {genericSubmitError ? (
+            <FormErrorAlert error={genericSubmitError} title="Couldn't save the shift" />
+          ) : null}
           {hasErrorCode(submitError, "SHIFT_TOO_SHORT") ? (
             <InlineAlert variant="danger" title="Shift too short">
-              Shifts must be at least {SHIFT_LIMITS.minDurationMinutes} minutes long. Check the start and end times.
+              Shifts must be at least {SHIFT_LIMITS.minDurationMinutes} minutes long. Check the
+              start and end times.
             </InlineAlert>
           ) : null}
           {hasErrorCode(submitError, "SHIFT_OVERLAP") ? (
-            <InlineAlert variant="danger" title="This shift overlaps another shift for the same employee">
+            <InlineAlert
+              variant="danger"
+              title="This shift overlaps another shift for the same employee"
+            >
               {overlapConflicts.length > 0 ? (
                 <ul className="mt-1 list-disc space-y-0.5 pl-4 tabular-nums">
                   {overlapConflicts.map((c) => (
@@ -289,9 +438,19 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-2">Change the date or times, cancel the other shift, or save anyway if the double booking is intended.</p>
+              <p className="mt-2">
+                Change the date or times, cancel the other shift, or save anyway if the double
+                booking is intended.
+              </p>
               {!readOnly ? (
-                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void onAllowOverlap()} disabled={pending}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => void onAllowOverlap()}
+                  disabled={pending}
+                >
                   <ShieldAlert aria-hidden="true" />
                   Allow overlap and save
                 </Button>
@@ -309,7 +468,9 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                 {shift ? (
                   <p className="text-sm">
                     {employeeName(shift.employee)}
-                    {shift.employee.jobTitle ? <span className="text-muted-foreground"> · {shift.employee.jobTitle}</span> : null}
+                    {shift.employee.jobTitle ? (
+                      <span className="text-muted-foreground"> · {shift.employee.jobTitle}</span>
+                    ) : null}
                   </p>
                 ) : (
                   <FormControl>
@@ -349,7 +510,9 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                     className="w-full"
                   />
                 </FormControl>
-                <FormDescription>Times are entered in {formatTimeZoneLabel(timezone)}.</FormDescription>
+                <FormDescription>
+                  Times are entered in {formatTimeZoneLabel(timezone)}.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -406,11 +569,14 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                   Ends next day
                 </span>
               ) : null}
-              {preview.durationMinutes !== null ? <span>Length: {formatDurationMinutes(preview.durationMinutes)}</span> : null}
+              {preview.durationMinutes !== null ? (
+                <span>Length: {formatDurationMinutes(preview.durationMinutes)}</span>
+              ) : null}
             </p>
             {preview.tooShort ? (
               <InlineAlert variant="warning" title="Shorter than the minimum">
-                Shifts must be at least {SHIFT_LIMITS.minDurationMinutes} minutes. The API will reject this shift.
+                Shifts must be at least {SHIFT_LIMITS.minDurationMinutes} minutes. The API will
+                reject this shift.
               </InlineAlert>
             ) : null}
             {preview.warnings.map((warning) => (
@@ -433,7 +599,9 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                   variant="outline"
                   size="sm"
                   disabled={breaks.fields.length >= SHIFT_LIMITS.maxScheduledBreaks}
-                  onClick={() => breaks.append({ offsetMinutesFromStart: "240", durationMinutes: "30" })}
+                  onClick={() =>
+                    breaks.append({ offsetMinutesFromStart: "240", durationMinutes: "30" })
+                  }
                 >
                   <Plus aria-hidden="true" />
                   Add break
@@ -441,11 +609,16 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
               ) : null}
             </div>
             {breaks.fields.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No scheduled breaks. Employees can still take breaks the Break Rules allow.</p>
+              <p className="text-muted-foreground text-sm">
+                No scheduled breaks. Employees can still take breaks the Break Rules allow.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {breaks.fields.map((item, index) => (
-                  <li key={item.id} className="grid grid-cols-[1fr_1fr_auto] items-start gap-2 rounded-lg border p-3">
+                  <li
+                    key={item.id}
+                    className="grid grid-cols-[1fr_1fr_auto] items-start gap-2 rounded-lg border p-3"
+                  >
                     <FormField
                       control={form.control}
                       name={`scheduledBreaks.${index}.offsetMinutesFromStart`}
@@ -453,7 +626,12 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                         <FormItem>
                           <FormLabel className="text-xs">Starts after (min)</FormLabel>
                           <FormControl>
-                            <Input inputMode="numeric" {...field} disabled={readOnly} aria-label={`Break ${index + 1} starts after minutes`} />
+                            <Input
+                              inputMode="numeric"
+                              {...field}
+                              disabled={readOnly}
+                              aria-label={`Break ${index + 1} starts after minutes`}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -466,14 +644,26 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                         <FormItem>
                           <FormLabel className="text-xs">Length (min)</FormLabel>
                           <FormControl>
-                            <Input inputMode="numeric" {...field} disabled={readOnly} aria-label={`Break ${index + 1} length in minutes`} />
+                            <Input
+                              inputMode="numeric"
+                              {...field}
+                              disabled={readOnly}
+                              aria-label={`Break ${index + 1} length in minutes`}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     {!readOnly ? (
-                      <Button type="button" variant="ghost" size="icon-sm" className="mt-5" aria-label={`Remove break ${index + 1}`} onClick={() => breaks.remove(index)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="mt-5"
+                        aria-label={`Remove break ${index + 1}`}
+                        onClick={() => breaks.remove(index)}
+                      >
                         <X aria-hidden="true" />
                       </Button>
                     ) : (
@@ -486,7 +676,14 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
           </div>
 
           {/* Notes */}
-          <TextareaField control={form.control} name="notes" label="Notes" placeholder="Anything the employee should know (optional)" rows={3} disabled={readOnly} />
+          <TextareaField
+            control={form.control}
+            name="notes"
+            label="Notes"
+            placeholder="Anything the employee should know (optional)"
+            rows={3}
+            disabled={readOnly}
+          />
 
           <Separator />
 
@@ -498,10 +695,16 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                 Repeats
               </Label>
               <p className="text-sm">
-                {describeRecurrenceRule(shift.recurrenceRule) ?? (shift.parentRecurrenceId ? "Part of a repeating series" : "Does not repeat")}
+                {describeRecurrenceRule(shift.recurrenceRule) ??
+                  (shift.parentRecurrenceId ? "Part of a repeating series" : "Does not repeat")}
               </p>
               {inSeries && !readOnly ? (
-                <RadioGroup value={scope} onValueChange={(value) => setScope(value === "future" ? "future" : "this")} aria-label="Apply changes to" className="gap-2">
+                <RadioGroup
+                  value={scope}
+                  onValueChange={(value) => setScope(value === "future" ? "future" : "this")}
+                  aria-label="Apply changes to"
+                  className="gap-2"
+                >
                   <label className="flex items-center gap-2 text-sm">
                     <RadioGroupItem value="this" /> This shift only
                   </label>
@@ -553,13 +756,21 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                           variant="outline"
                           size="sm"
                           value={(field.value ?? []).filter(isWeekdayCode)}
-                          onValueChange={(value) => field.onChange(RECURRENCE_WEEKDAY_CODES.filter((code) => value.includes(code)))}
+                          onValueChange={(value) =>
+                            field.onChange(
+                              RECURRENCE_WEEKDAY_CODES.filter((code) => value.includes(code)),
+                            )
+                          }
                           aria-label="Weekdays"
                           className="flex-wrap"
                           disabled={readOnly}
                         >
                           {RECURRENCE_WEEKDAY_CODES.map((code) => (
-                            <ToggleGroupItem key={code} value={code} aria-label={WEEKDAY_LABELS[code].long}>
+                            <ToggleGroupItem
+                              key={code}
+                              value={code}
+                              aria-label={WEEKDAY_LABELS[code].long}
+                            >
                               {WEEKDAY_LABELS[code].short}
                             </ToggleGroupItem>
                           ))}
@@ -578,9 +789,18 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                     <FormItem>
                       <FormLabel>Rule (RFC 5545)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,TU" spellCheck={false} disabled={readOnly} className="font-mono text-sm" />
+                        <Input
+                          {...field}
+                          placeholder="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,TU"
+                          spellCheck={false}
+                          disabled={readOnly}
+                          className="font-mono text-sm"
+                        />
                       </FormControl>
-                      <FormDescription>FREQ=DAILY, WEEKLY or MONTHLY with INTERVAL, BYDAY, BYMONTHDAY… The end date is set below, not with UNTIL.</FormDescription>
+                      <FormDescription>
+                        FREQ=DAILY, WEEKLY or MONTHLY with INTERVAL, BYDAY, BYMONTHDAY… The end date
+                        is set below, not with UNTIL.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -596,7 +816,10 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                       <FormControl>
                         <Input id={untilId} type="date" {...field} disabled={readOnly} />
                       </FormControl>
-                      <FormDescription>Last date a shift in this series may start on. At most {SHIFT_LIMITS.maxRecurrenceOccurrences} shifts are created.</FormDescription>
+                      <FormDescription>
+                        Last date a shift in this series may start on. At most{" "}
+                        {SHIFT_LIMITS.maxRecurrenceOccurrences} shifts are created.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -625,32 +848,61 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                 <PopoverContent align="start" className="w-72 space-y-3">
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Copy this shift to another date</p>
-                    <p className="text-muted-foreground text-xs">Same times and breaks, in {formatTimeZoneLabel(shift.timezone)}.</p>
+                    <p className="text-muted-foreground text-xs">
+                      Same times and breaks, in {formatTimeZoneLabel(shift.timezone)}.
+                    </p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor={`${idPrefix}-dup`}>Date</Label>
-                    <Input id={`${idPrefix}-dup`} type="date" value={duplicateDate} onChange={(event) => setDuplicateDate(event.target.value)} />
+                    <Input
+                      id={`${idPrefix}-dup`}
+                      type="date"
+                      value={duplicateDate}
+                      onChange={(event) => setDuplicateDate(event.target.value)}
+                    />
                   </div>
                   {duplicateError ? (
                     <InlineAlert variant="danger">
-                      {hasErrorCode(duplicateError, "SHIFT_OVERLAP") ? "The employee already has a shift at that time on that date." : getErrorMessage(duplicateError)}
+                      {hasErrorCode(duplicateError, "SHIFT_OVERLAP")
+                        ? "The employee already has a shift at that time on that date."
+                        : getErrorMessage(duplicateError)}
                     </InlineAlert>
                   ) : null}
                   <div className="flex justify-end gap-2">
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setDuplicateOpen(false)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDuplicateOpen(false)}
+                    >
                       Close
                     </Button>
-                    <Button type="button" size="sm" onClick={() => void onDuplicate()} disabled={duplicateShift.isPending || !/^\d{4}-\d{2}-\d{2}$/.test(duplicateDate)}>
-                      {duplicateShift.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <CalendarPlus aria-hidden="true" />}
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void onDuplicate()}
+                      disabled={
+                        duplicateShift.isPending || !/^\d{4}-\d{2}-\d{2}$/.test(duplicateDate)
+                      }
+                    >
+                      {duplicateShift.isPending ? (
+                        <LoaderCircle className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <CalendarPlus aria-hidden="true" />
+                      )}
                       Duplicate
                     </Button>
                   </div>
                 </PopoverContent>
               </Popover>
 
-              {shift.status !== "CANCELLED" ? (
+              {shift.status === "SCHEDULED" ? (
                 <ConfirmDialog
-                  title={scope === "future" && inSeries ? "Cancel this and future shifts?" : "Cancel this shift?"}
+                  title={
+                    scope === "future" && inSeries
+                      ? "Cancel this and future shifts?"
+                      : "Cancel this shift?"
+                  }
                   description={
                     scope === "future" && inSeries
                       ? "Every shift in the series from this one onwards is cancelled. If one is in progress, Work Mode ends immediately."
@@ -672,19 +924,36 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
                 >
                   <div className="space-y-1.5">
                     <Label htmlFor={`${idPrefix}-reason`}>Reason (optional)</Label>
-                    <Textarea id={`${idPrefix}-reason`} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} maxLength={500} rows={2} placeholder="Shown in the audit log" />
+                    <Textarea
+                      id={`${idPrefix}-reason`}
+                      value={cancelReason}
+                      onChange={(event) => setCancelReason(event.target.value)}
+                      maxLength={500}
+                      rows={2}
+                      placeholder="Shown in the audit log"
+                    />
                   </div>
                 </ConfirmDialog>
               ) : null}
 
               <ConfirmDialog
-                title={scope === "future" && inSeries ? "Delete this and future shifts?" : "Delete this shift?"}
+                title={
+                  scope === "future" && inSeries
+                    ? "Delete this and future shifts?"
+                    : "Delete this shift?"
+                }
                 description="This permanently removes the shift. To keep a record, cancel it instead."
                 confirmLabel="Delete"
                 destructive
                 onConfirm={() => runSeriesAction("DELETE")}
                 trigger={
-                  <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" disabled={pending}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    disabled={pending}
+                  >
                     <Trash2 aria-hidden="true" />
                     Delete
                   </Button>
@@ -692,13 +961,24 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
               />
             </div>
           ) : null}
-          <div className={cn("flex items-center justify-end gap-2", shift && !readOnly && "sm:ml-auto")}>
+          <div
+            className={cn(
+              "flex items-center justify-end gap-2",
+              shift && !readOnly && "sm:ml-auto",
+            )}
+          >
             <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
               {readOnly ? "Close" : "Discard"}
             </Button>
             {!readOnly ? (
               <SubmitButton isPending={pending} pendingLabel="Saving…">
-                {shift ? (scope === "future" && inSeries ? "Save this and future" : "Save changes") : repeat !== "none" ? "Create series" : "Create shift"}
+                {shift
+                  ? scope === "future" && inSeries
+                    ? "Save this and future"
+                    : "Save changes"
+                  : repeat !== "none"
+                    ? "Create series"
+                    : "Create shift"}
               </SubmitButton>
             ) : null}
           </div>
@@ -707,4 +987,3 @@ function ShiftDrawerBody({ state, onClose, organisationTimezone, canEdit, knownS
     </Form>
   );
 }
-

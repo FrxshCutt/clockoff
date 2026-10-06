@@ -25,7 +25,11 @@ export interface IntegrationStatusCardProps {
  * Every supported rota provider with its connection state. Providers without an implementation yet read
  * "Coming soon" (from the shared registry) rather than pretending to be connectable.
  */
-export function IntegrationStatusCard({ statuses, isLoading = false, className }: IntegrationStatusCardProps) {
+export function IntegrationStatusCard({
+  statuses,
+  isLoading = false,
+  className,
+}: IntegrationStatusCardProps) {
   const providers = listProviders();
   const byProvider = new Map((statuses ?? []).map((row) => [row.provider, row] as const));
 
@@ -46,7 +50,10 @@ export function IntegrationStatusCard({ statuses, isLoading = false, className }
       footer={
         <p className="text-muted-foreground mr-auto text-xs">
           Shifts can be imported from a CSV in the meantime.{" "}
-          <Link href={ROUTES.scheduleImport} className="text-primary font-medium underline-offset-4 hover:underline">
+          <Link
+            href={ROUTES.scheduleImport}
+            className="text-primary font-medium underline-offset-4 hover:underline"
+          >
             Import schedule
           </Link>
         </p>
@@ -60,7 +67,9 @@ export function IntegrationStatusCard({ statuses, isLoading = false, className }
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{provider.displayName}</p>
                 {row?.lastError ? (
-                  <p className="truncate text-xs text-amber-700 dark:text-amber-400">{row.lastError}</p>
+                  <p className="truncate text-xs text-amber-700 dark:text-amber-400">
+                    {row.lastError}
+                  </p>
                 ) : row?.lastSyncAt ? (
                   <p className="text-muted-foreground text-xs">
                     Last sync <RelativeTime value={row.lastSyncAt} />

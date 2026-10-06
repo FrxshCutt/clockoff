@@ -37,7 +37,9 @@ export interface InviteManagerDialogProps {
 export function InviteManagerDialog({ roles }: InviteManagerDialogProps) {
   const [open, setOpen] = useState(false);
   const invite = useInviteMember();
-  const defaultRole: Role = roles.includes("MANAGER") ? "MANAGER" : (roles[roles.length - 1] ?? "MANAGER");
+  const defaultRole: Role = roles.includes("MANAGER")
+    ? "MANAGER"
+    : (roles[roles.length - 1] ?? "MANAGER");
   const form = useZodForm(inviteMemberSchema, { defaultValues: { email: "", role: defaultRole } });
 
   const roleOptions: SelectOption[] = roles.map((role) => {
@@ -96,7 +98,12 @@ export function InviteManagerDialog({ roles }: InviteManagerDialogProps) {
             />
             <SelectField control={form.control} name="role" label="Role" options={roleOptions} />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={invite.isPending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={invite.isPending}
+              >
                 Cancel
               </Button>
               <SubmitButton isPending={invite.isPending} pendingLabel="Sending…">

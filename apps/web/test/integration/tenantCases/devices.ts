@@ -12,7 +12,11 @@ registerTenantIsolationCase({
   name: "GET /api/devices/:id of another tenant",
   build: async (_a, b) => {
     const { device } = await createTestDevice(b.organisation.id);
-    return { handler: getDeviceRoute, path: `/api/devices/${device.id}`, params: { id: device.id } };
+    return {
+      handler: getDeviceRoute,
+      path: `/api/devices/${device.id}`,
+      params: { id: device.id },
+    };
   },
   expectCode: "NOT_FOUND",
 });
@@ -31,7 +35,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (_a, b) => {
-    const row = await prisma.device.findFirstOrThrow({ where: { organisationId: b.organisation.id } });
+    const row = await prisma.device.findFirstOrThrow({
+      where: { organisationId: b.organisation.id },
+    });
     expect(row.isActive).toBe(true);
     expect(row.deactivatedAt).toBeNull();
   },

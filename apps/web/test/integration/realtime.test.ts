@@ -12,7 +12,10 @@ function streamRequest(jar: CookieJar | null, signal: AbortSignal, query = ""): 
   const headers: Record<string, string> = {};
   const cookie = jar?.header();
   if (cookie) headers.cookie = cookie;
-  return new NextRequest(new URL(`/api/realtime/stream${query}`, env().APP_URL), { headers, signal });
+  return new NextRequest(new URL(`/api/realtime/stream${query}`, env().APP_URL), {
+    headers,
+    signal,
+  });
 }
 
 /** Read decoded chunks until `predicate` matches the accumulated text (or time runs out). */
@@ -26,10 +29,13 @@ async function readUntil(
   const deadline = Date.now() + timeoutMs;
   while (!predicate(text)) {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) throw new Error(`timed out waiting for SSE frame; got: ${JSON.stringify(text)}`);
+    if (remaining <= 0)
+      throw new Error(`timed out waiting for SSE frame; got: ${JSON.stringify(text)}`);
     const next = await Promise.race([
       reader.read(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("read timed out")), remaining)),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("read timed out")), remaining),
+      ),
     ]);
     if (next.done) break;
     text += decoder.decode(next.value, { stream: true });
@@ -57,7 +63,9 @@ describe("GET /api/realtime/stream", () => {
     const jar = await loginAs(org.owner, { organisationId: org.organisation.id });
     const controller = new AbortController();
 
-    const response = await streamRoute(streamRequest(jar, controller.signal), { params: Promise.resolve({}) });
+    const response = await streamRoute(streamRequest(jar, controller.signal), {
+      params: Promise.resolve({}),
+    });
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(response.headers.get("cache-control")).toContain("no-cache");
@@ -70,7 +78,11 @@ describe("GET /api/realtime/stream", () => {
     expect(hello).toContain("retry: 5000");
 
     // Another tenant's event must never reach this stream; ours must.
-    publishEvent({ type: "shift.changed", organisationId: other.organisation.id, payload: { shiftIds: ["x"] } });
+    publishEvent({
+      type: "shift.changed",
+      organisationId: other.organisation.id,
+      payload: { shiftIds: ["x"] },
+    });
     const { event } = await recordActivity({
       organisationId: org.organisation.id,
       employeeId: employee.id,
@@ -105,19 +117,38 @@ describe("GET /api/realtime/stream", () => {
     const reader = response.body!.getReader();
     await readUntil(reader, (t) => t.includes("retry: 5000"));
 
-    publishEvent({ type: "employee.work_state.changed", organisationId: org.organisation.id, employeeId: b.employee.id, payload: { state: "WORKING" } });
-    publishEvent({ type: "employee.work_state.changed", organisationId: org.organisation.id, employeeId: a.employee.id, payload: { state: "ON_BREAK" } });
-    publishEvent({ type: "import.completed", organisationId: org.organisation.id, payload: { importId: "i-1" } });
+    publishEvent({
+      type: "employee.work_state.changed",
+      organisationId: org.organisation.id,
+      employeeId: b.employee.id,
+      payload: { state: "WORKING" },
+    });
+    publishEvent({
+      type: "employee.work_state.changed",
+      organisationId: org.organisation.id,
+      employeeId: a.employee.id,
+      payload: { state: "ON_BREAK" },
+    });
+    publishEvent({
+      type: "import.completed",
+      organisationId: org.organisation.id,
+      payload: { importId: "i-1" },
+    });
     const text = await readUntil(reader, (t) => t.includes("event: import.completed"));
     const received = frames(text);
-    expect(received.map((f) => f.event)).toEqual(["employee.work_state.changed", "import.completed"]);
+    expect(received.map((f) => f.event)).toEqual([
+      "employee.work_state.changed",
+      "import.completed",
+    ]);
     expect((received[0]!.data as { employeeId: string }).employeeId).toBe(a.employee.id);
     controller.abort();
   });
 
   it("requires a signed-in manager", async () => {
     const controller = new AbortController();
-    const response = await streamRoute(streamRequest(null, controller.signal), { params: Promise.resolve({}) });
+    const response = await streamRoute(streamRequest(null, controller.signal), {
+      params: Promise.resolve({}),
+    });
     expect(response.status).toBe(401);
     controller.abort();
   });

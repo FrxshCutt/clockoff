@@ -69,7 +69,13 @@ export function MultiSelectFilter<V extends string>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className={cn("h-9 border-dashed", className)} aria-label={`${title} filter`}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn("h-9 border-dashed", className)}
+          aria-label={`${title} filter`}
+        >
           <CirclePlus aria-hidden="true" />
           {title}
           {selected.size > 0 ? (
@@ -87,7 +93,11 @@ export function MultiSelectFilter<V extends string>({
                   options
                     .filter((o) => selected.has(o.value))
                     .map((o) => (
-                      <Badge key={o.value} variant="secondary" className="rounded-sm px-1 font-normal">
+                      <Badge
+                        key={o.value}
+                        variant="secondary"
+                        className="rounded-sm px-1 font-normal"
+                      >
                         {o.label}
                       </Badge>
                     ))
@@ -103,16 +113,26 @@ export function MultiSelectFilter<V extends string>({
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             {[...groups.entries()].map(([group, items]) => (
-              <CommandGroup key={group || "ungrouped"} heading={group ? (groupLabels[group] ?? group) : undefined}>
+              <CommandGroup
+                key={group || "ungrouped"}
+                heading={group ? (groupLabels[group] ?? group) : undefined}
+              >
                 {items.map((option) => {
                   const isSelected = selected.has(option.value);
                   return (
-                    <CommandItem key={option.value} value={`${option.label} ${option.value}`} onSelect={() => toggle(option.value)} aria-checked={isSelected} role="menuitemcheckbox">
+                    <CommandItem
+                      key={option.value}
+                      value={`${option.label} ${option.value}`}
+                      onSelect={() => toggle(option.value)}
+                      aria-checked={isSelected}
+                    >
                       <span
                         aria-hidden="true"
                         className={cn(
                           "border-input flex size-4 items-center justify-center rounded-[4px] border",
-                          isSelected ? "bg-primary text-primary-foreground border-primary" : "opacity-60",
+                          isSelected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "opacity-60",
                         )}
                       >
                         {isSelected ? <Check className="size-3" /> : null}

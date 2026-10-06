@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { computeOnboardingProgress, type OnboardingStepLike } from "./useOnboarding";
 
-const step = (key: string, done: boolean): OnboardingStepLike => ({ key, label: `Step ${key}`, done, href: `/${key}` });
+const step = (key: string, done: boolean): OnboardingStepLike => ({
+  key,
+  label: `Step ${key}`,
+  done,
+  href: `/${key}`,
+});
 
 describe("computeOnboardingProgress", () => {
   it("reports nothing to do for an empty checklist (and never divides by zero)", () => {
@@ -22,14 +27,25 @@ describe("computeOnboardingProgress", () => {
     expect(progress.totalCount).toBe(3);
     expect(progress.percent).toBe(33);
     expect(progress.allDone).toBe(false);
-    expect(computeOnboardingProgress([step("a", true), step("b", true), step("c", false)]).percent).toBe(67);
+    expect(
+      computeOnboardingProgress([step("a", true), step("b", true), step("c", false)]).percent,
+    ).toBe(67);
   });
 
   it("picks the first undone step in checklist order as the next step", () => {
-    const items = [step("createCompany", true), step("createPolicy", false), step("addEmployees", false), step("goLive", false)];
+    const items = [
+      step("createCompany", true),
+      step("createPolicy", false),
+      step("addEmployees", false),
+      step("goLive", false),
+    ];
     const progress = computeOnboardingProgress(items);
     expect(progress.nextStep?.key).toBe("createPolicy");
-    expect(progress.remaining.map((item) => item.key)).toEqual(["createPolicy", "addEmployees", "goLive"]);
+    expect(progress.remaining.map((item) => item.key)).toEqual([
+      "createPolicy",
+      "addEmployees",
+      "goLive",
+    ]);
   });
 
   it("skips over done steps that come after an undone one", () => {

@@ -35,8 +35,9 @@ export const QUICK_FILTER_META: Record<EmployeeQuickFilter, QuickFilterMeta> = {
   },
   awaitingSetup: {
     label: "Awaiting setup",
-    description: "Invited or joined, but Screen Time setup isn't finished yet.",
-    inviteStatus: ["INVITED", "JOINED", "SETUP_INCOMPLETE"],
+    description:
+      "Not connected yet: not invited, invited, or joined without finishing Screen Time setup (what Overview counts).",
+    inviteStatus: ["NOT_INVITED", "INVITED", "JOINED", "SETUP_INCOMPLETE"],
   },
   permissionsMissing: {
     label: "Permissions missing",

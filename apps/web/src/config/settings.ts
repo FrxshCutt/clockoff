@@ -2,7 +2,13 @@ import type { Permission } from "@workmode/shared/permissions";
 import type { ManagerNotificationType } from "@workmode/validation/notifications";
 
 /** Settings page tabs, in display order. The `?tab=` query parameter selects one. */
-export const SETTINGS_TABS = ["organisation", "join-code", "members", "notifications", "danger-zone"] as const;
+export const SETTINGS_TABS = [
+  "organisation",
+  "join-code",
+  "members",
+  "notifications",
+  "danger-zone",
+] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export const DEFAULT_SETTINGS_TAB: SettingsTab = "organisation";
@@ -51,7 +57,10 @@ export const SETTINGS_TAB_EDIT_PERMISSION: Record<SettingsTab, Permission | null
 };
 
 /** Human copy for each manager notification type shown on the Notifications tab. */
-export const NOTIFICATION_TYPE_COPY: Record<ManagerNotificationType, { label: string; description: string }> = {
+export const NOTIFICATION_TYPE_COPY: Record<
+  ManagerNotificationType,
+  { label: string; description: string }
+> = {
   EMPLOYEE_JOINED: {
     label: "Employee joined",
     description: "An employee joined your organisation from the Work Mode app.",

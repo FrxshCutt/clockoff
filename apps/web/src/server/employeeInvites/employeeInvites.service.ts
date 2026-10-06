@@ -22,9 +22,11 @@ import { recomputeEmployeeInviteStatus } from "@/server/employees/inviteStatus";
 import { getActiveJoinCode } from "@/server/organisations";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {
+  countActiveDevices,
   findInviteInOrganisation,
   inviteCodeExists,
   revokeLiveInvitesForEmployee,
+  unlinkWhenNoActiveDevice,
   type InviteRow,
 } from "./employeeInvites.repository";
 
@@ -32,6 +34,10 @@ import {
  * Employee invites (§5). An invite is a per-employee 6-character code (no vowels, no 0/O/1/I) the
  * employee types in the iOS app together with the company join code. Rules:
  * - Creating an invite revokes any previous live one for the same employee (one active code per person).
+ * - Only ACTIVE employees who are not joined from a phone still in use can be invited (EMPLOYEE_INACTIVE /
+ *   EMPLOYEE_ALREADY_LINKED). "In use" = active link AND an active device, the join flow's own test: an
+ *   employee whose only phone a manager deactivated is DEACTIVATED (§9) and would otherwise be stuck when
+ *   the organisation requires invite codes, so inviting them ends the dead link and they read INVITED.
  * - Codes expire after 14 days; a resend extends the expiry (and may switch channel).
  * - LINK: the manager shares the instructions themselves — the invite is SENT immediately.
  * - EMAIL: the instructions are emailed to the employee's address; SENT once the provider accepted it,
@@ -73,15 +79,25 @@ interface InviteEmployee {
   primaryLocation: { id: string; name: string; timezone: string | null } | null;
 }
 
-function isLinked(employee: { userLink: { unlinkedAt: Date | null } | null }): boolean {
+function hasActiveLink(employee: { userLink: { unlinkedAt: Date | null } | null }): boolean {
   return employee.userLink !== null && employee.userLink.unlinkedAt === null;
 }
 
-function assertInvitable(employee: InviteEmployee): void {
+/** Joined from a phone that is still in use (same test as the join flow's `isLinked`). */
+function isLinkedToActivePhone(employee: InviteEmployee, activeDevices: number): boolean {
+  return hasActiveLink(employee) && activeDevices > 0;
+}
+
+/** Linked, but every device was deactivated (lost / retired phone): the link is dead and may be ended. */
+function hasDeadLink(employee: InviteEmployee, activeDevices: number): boolean {
+  return hasActiveLink(employee) && activeDevices === 0;
+}
+
+function assertInvitable(employee: InviteEmployee, activeDevices: number): void {
   if (employee.employmentStatus !== "ACTIVE") {
     throw new AppError("EMPLOYEE_INACTIVE", "Reactivate this employee before inviting them");
   }
-  if (isLinked(employee)) {
+  if (isLinkedToActivePhone(employee, activeDevices)) {
     throw new AppError(
       "EMPLOYEE_ALREADY_LINKED",
       "This employee has already joined from their phone",
@@ -291,8 +307,10 @@ export async function createEmployeeInvite(
   const organisationId = ctx.organisation.id;
   const employee = await findEmployeeInOrganisation(organisationId, employeeId);
   if (!employee) throw new AppError("EMPLOYEE_NOT_FOUND", "Employee not found");
-  assertInvitable(employee);
+  const activeDevices = await countActiveDevices(organisationId, employeeId);
+  assertInvitable(employee, activeDevices);
   assertChannelUsable(employee, input.channel);
+  const endDeadLink = hasDeadLink(employee, activeDevices);
 
   let created: EmployeeInviteRow | null = null;
   for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS && created === null; attempt++) {
@@ -301,6 +319,7 @@ export async function createEmployeeInvite(
     try {
       created = await prisma.$transaction(async (tx) => {
         await revokeLiveInvitesForEmployee(tx, organisationId, employeeId, now);
+        const unlinked = endDeadLink ? await unlinkWhenNoActiveDevice(tx, employeeId, now) : 0;
         const invite = await tx.employeeInvite.create({
           data: {
             organisationId,
@@ -319,7 +338,12 @@ export async function createEmployeeInvite(
             action: "employee.invite_created",
             entityType: "EmployeeInvite",
             entityId: invite.id,
-            after: { employeeId, channel: invite.channel, expiresAt: invite.expiresAt },
+            after: {
+              employeeId,
+              channel: invite.channel,
+              expiresAt: invite.expiresAt,
+              ...(unlinked > 0 ? { endedDeadLink: true } : {}),
+            },
           },
           tx,
         );
@@ -365,9 +389,11 @@ export async function resendEmployeeInvite(
     );
   }
   const employee = existing.employee;
-  assertInvitable(employee);
+  const activeDevices = await countActiveDevices(organisationId, employee.id);
+  assertInvitable(employee, activeDevices);
   const channel = input.channel ?? existing.channel;
   assertChannelUsable(employee, channel);
+  const endDeadLink = hasDeadLink(employee, activeDevices);
 
   const updated = await prisma.$transaction(async (tx) => {
     const claimed = await tx.employeeInvite.updateMany({
@@ -379,7 +405,9 @@ export async function resendEmployeeInvite(
         expiresAt: expiresIn(EMPLOYEE_INVITE_TTL_MS, now),
       },
     });
-    if (claimed.count !== 1) throw new AppError("INVITE_INVALID", "This invite can no longer be re-sent");
+    if (claimed.count !== 1)
+      throw new AppError("INVITE_INVALID", "This invite can no longer be re-sent");
+    const unlinked = endDeadLink ? await unlinkWhenNoActiveDevice(tx, employee.id, now) : 0;
     await audit(
       ctx,
       {
@@ -387,7 +415,11 @@ export async function resendEmployeeInvite(
         entityType: "EmployeeInvite",
         entityId: existing.id,
         before: { channel: existing.channel, expiresAt: existing.expiresAt },
-        after: { channel, expiresAt: expiresIn(EMPLOYEE_INVITE_TTL_MS, now) },
+        after: {
+          channel,
+          expiresAt: expiresIn(EMPLOYEE_INVITE_TTL_MS, now),
+          ...(unlinked > 0 ? { endedDeadLink: true } : {}),
+        },
       },
       tx,
     );

@@ -70,7 +70,11 @@ export function resolutionWarningKey(warning: ResolutionWarning): string {
       ].join(":");
     }
     case "POLICY_NOT_PUBLISHED":
-      return [warning.code, warning.details.policyId, warning.details.currentVersionId ?? NONE].join(":");
+      return [
+        warning.code,
+        warning.details.policyId,
+        warning.details.currentVersionId ?? NONE,
+      ].join(":");
     case "POLICY_VERSION_NOT_LOADED":
       return [
         warning.code,

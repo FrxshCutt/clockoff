@@ -51,7 +51,15 @@ function ShiftRowsSkeleton() {
  * Shifts starting in the next 12 hours. Times are shown in each shift's own zone (a London café and a
  * Manchester site read correctly side by side), with whether the employee's phone is ready to enforce Work Mode.
  */
-export function UpcomingShiftsList({ shifts, isLoading = false, error, onRetry, isRetrying, dateFormat, className }: UpcomingShiftsListProps) {
+export function UpcomingShiftsList({
+  shifts,
+  isLoading = false,
+  error,
+  onRetry,
+  isRetrying,
+  dateFormat,
+  className,
+}: UpcomingShiftsListProps) {
   const now = useNow();
   const upcoming = shifts && now !== null ? upcomingShiftsWithin(shifts, now) : null;
 
@@ -71,7 +79,13 @@ export function UpcomingShiftsList({ shifts, isLoading = false, error, onRetry, 
       contentClassName="px-5 py-2 sm:px-6"
     >
       {error ? (
-        <ErrorState size="sm" title="Couldn't load upcoming shifts" error={error} onRetry={onRetry} isRetrying={isRetrying} />
+        <ErrorState
+          size="sm"
+          title="Couldn't load upcoming shifts"
+          error={error}
+          onRetry={onRetry}
+          isRetrying={isRetrying}
+        />
       ) : isLoading || upcoming === null || now === null ? (
         <ShiftRowsSkeleton />
       ) : upcoming.length === 0 ? (
@@ -94,7 +108,10 @@ export function UpcomingShiftsList({ shifts, isLoading = false, error, onRetry, 
             const when = describeNextShift(entry.shift, now, { dateFormat });
             const name = `${entry.employee.firstName} ${entry.employee.lastName}`.trim();
             return (
-              <li key={entry.shift.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
+              <li
+                key={entry.shift.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4"
+              >
                 <div className="w-full shrink-0 sm:w-32">
                   <p className="text-sm font-medium">{when?.primary ?? "—"}</p>
                   <p className="text-muted-foreground text-xs tabular-nums">{when?.range ?? "—"}</p>
@@ -122,7 +139,11 @@ export function UpcomingShiftsList({ shifts, isLoading = false, error, onRetry, 
                     entry.deviceStatus ? (
                       <StatusBadge kind="deviceStatus" value={entry.deviceStatus.badge} size="sm" />
                     ) : (
-                      <TonedBadge tone="success" size="sm" description="The phone is connected and can enforce Work Mode.">
+                      <TonedBadge
+                        tone="success"
+                        size="sm"
+                        description="The phone is connected and can enforce Work Mode."
+                      >
                         Ready
                       </TonedBadge>
                     )

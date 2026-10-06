@@ -77,7 +77,11 @@ export function buildShiftInstants(input: BuildShiftInstantsInput): ShiftInstant
   if (!isValidLocalDate(input.date)) throw invalidField("date", input.date, "YYYY-MM-DD");
   if (!isValidLocalTime(input.startTime)) throw invalidField("startTime", input.startTime, "HH:mm");
   if (!isValidLocalTime(input.endTime)) throw invalidField("endTime", input.endTime, "HH:mm");
-  const start = localToInstant({ date: input.date, time: input.startTime, timezone: input.timezone });
+  const start = localToInstant({
+    date: input.date,
+    time: input.startTime,
+    timezone: input.timezone,
+  });
   const isOvernight = input.endTime <= input.startTime;
   const endDate = isOvernight ? addLocalDays(input.date, 1) : input.date;
   const end = localToInstant({ date: endDate, time: input.endTime, timezone: input.timezone });
@@ -87,14 +91,18 @@ export function buildShiftInstants(input: BuildShiftInstantsInput): ShiftInstant
   if (end.warning) warnings.push(`END_${end.warning}`);
 
   if (end.instant.getTime() <= start.instant.getTime()) {
-    throw new AppError("VALIDATION_ERROR", "Shift end must be after its start once DST is applied", {
-      details: {
-        reason: "SHIFT_END_NOT_AFTER_START",
-        startsAt: start.instant.toISOString(),
-        endsAt: end.instant.toISOString(),
-        warnings,
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Shift end must be after its start once DST is applied",
+      {
+        details: {
+          reason: "SHIFT_END_NOT_AFTER_START",
+          startsAt: start.instant.toISOString(),
+          endsAt: end.instant.toISOString(),
+          warnings,
+        },
       },
-    });
+    );
   }
 
   const result: ShiftInstants = {

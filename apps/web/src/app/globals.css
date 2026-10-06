@@ -122,9 +122,10 @@
   /* `--font-inter` (set by next/font on <html>) already ends in the system stack; the var() fallback keeps text in
      the system font even if that class is ever missing. Keep in sync with the `fallback` list in app/layout.tsx. */
   --font-sans:
-    var(--font-inter, ui-sans-serif), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    var(--font-inter, ui-sans-serif), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 @layer base {

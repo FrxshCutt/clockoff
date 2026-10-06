@@ -59,14 +59,40 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
+    enum Tab: Hashable {
+        case home
+        case schedule
+        case settings
+    }
+
+    @EnvironmentObject private var model: AppModel
+    @State private var selectedTab: Tab = .home
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(Tab.home)
             ScheduleView()
                 .tabItem { Label("Schedule", systemImage: "calendar") }
+                .tag(Tab.schedule)
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tag(Tab.settings)
+        }
+        // "Open Work Mode" on a shield: show the status (Home) and clear the request.
+        .onChange(of: model.controller.statusRequestedFromShield) { requested in
+            guard requested else { return }
+            selectedTab = .home
+            model.controller.statusRequestedFromShield = false
+        }
+        .sheet(item: $model.repair) { repair in
+            SetupRepairView(model: repair, onClose: { model.dismissRepair() })
+        }
+        .alert("Work Mode", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.notice ?? "")
         }
     }
 }

@@ -72,13 +72,21 @@ describe("employee setup guide", () => {
   });
 
   it("names the app's main tabs by their navigation titles", () => {
-    expect(IOS_MAIN_SCREENS.map((screen) => screen.name)).toEqual(["Work Mode", "Schedule", "Settings"]);
+    expect(IOS_MAIN_SCREENS.map((screen) => screen.name)).toEqual([
+      "Work Mode",
+      "Schedule",
+      "Settings",
+    ]);
   });
 });
 
 describe("troubleshooting", () => {
   it("covers permission, sync and clock problems with real badges and concrete steps", () => {
-    expect(TROUBLESHOOTING.map((item) => item.id)).toEqual(["permission-revoked", "sync-delayed", "clock-skew"]);
+    expect(TROUBLESHOOTING.map((item) => item.id)).toEqual([
+      "permission-revoked",
+      "sync-delayed",
+      "clock-skew",
+    ]);
     for (const item of TROUBLESHOOTING) {
       if (item.badge !== null) expect(DEVICE_STATUS_BADGES, item.id).toContain(item.badge);
       expect(item.symptom, item.id).toMatch(/\.$/);

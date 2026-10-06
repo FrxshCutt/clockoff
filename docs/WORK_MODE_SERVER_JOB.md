@@ -12,12 +12,12 @@ Code: `apps/web/src/server/workState/workStateJob.ts` (`runWorkModeTick`), `apps
 
 ## Running it
 
-| How | When to use it |
-| --- | --- |
-| `pnpm --filter @workmode/web jobs` (`tsx src/jobs/main.ts`) | The default: a long-running process beside the web app. node-cron `* * * * *` while `JOBS_ENABLED` is `true` (default). Runs one tick immediately at start-up so a fresh deploy catches up. |
+| How                                                              | When to use it                                                                                                                                                                                                     |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @workmode/web jobs` (`tsx src/jobs/main.ts`)      | The default: a long-running process beside the web app. node-cron `* * * * *` while `JOBS_ENABLED` is `true` (default). Runs one tick immediately at start-up so a fresh deploy catches up.                        |
 | `POST /api/jobs/tick` with `Authorization: Bearer <CRON_SECRET>` | Platforms with an external scheduler (Vercel Cron, GitHub Actions, Kubernetes CronJob). Set `JOBS_ENABLED=false` on the web app in that case. The route has `maxDuration = 300`. Response: `{ ok: true, report }`. |
 
-Both may run at the same time: every write in the tick is guarded (see *Idempotency*), so overlapping
+Both may run at the same time: every write in the tick is guarded (see _Idempotency_), so overlapping
 ticks never double-emit. The in-process runner also has an overlap guard — a tick still running when the
 next minute fires is skipped with a warning (nothing is lost; the next tick catches up).
 
@@ -77,16 +77,16 @@ config (15 when none resolves), `shiftEndingWarningMinutes` is 5 — then `deriv
 
 **Columns written** on `EmployeeWorkState`:
 
-| Column | Value |
-| --- | --- |
-| `expectedState`, `expectedRestriction` | `ExpectedState.state` / `.effectiveRestriction` |
-| `expectedComputedAt` | `now` |
-| `nextTransitionAt` | `ExpectedState.nextTransitionAt` (null when nothing is scheduled) |
-| `activeShiftId`, `activeBreakSessionId` | from the expected state |
-| `breaksTakenCount`, `breakMinutesUsed` | sessions of the active shift so far, each read as the break rules read it (`min(endedAt ?? now, plannedEndsAt, shift.endsAt)`) |
-| `state`, `stateSince`, `source` | the **displayed state** — rule below |
-| `attentionReason` | the badge's reason when it needs a manager — rule below |
-| `lastUpdatedAt` | `now` |
+| Column                                  | Value                                                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `expectedState`, `expectedRestriction`  | `ExpectedState.state` / `.effectiveRestriction`                                                                                |
+| `expectedComputedAt`                    | `now`                                                                                                                          |
+| `nextTransitionAt`                      | `ExpectedState.nextTransitionAt` (null when nothing is scheduled)                                                              |
+| `activeShiftId`, `activeBreakSessionId` | from the expected state                                                                                                        |
+| `breaksTakenCount`, `breakMinutesUsed`  | sessions of the active shift so far, each read as the break rules read it (`min(endedAt ?? now, plannedEndsAt, shift.endsAt)`) |
+| `state`, `stateSince`, `source`         | the **displayed state** — rule below                                                                                           |
+| `attentionReason`                       | the badge's reason when it needs a manager — rule below                                                                        |
+| `lastUpdatedAt`                         | `now`                                                                                                                          |
 
 `reportedState` / `reportedAt` are owned by the device paths (`POST /device/state`, `POST /events`) and are
 never touched by the job.
@@ -117,10 +117,10 @@ Thresholds live in `DEVICE_STATUS_THRESHOLDS` (`@workmode/shared/status/deriveDe
 
 **Server-owned ActivityEvents** emitted by this step:
 
-| Event | When | Dedupe guard |
-| --- | --- | --- |
-| `DEVICE_SYNC_DELAYED` | the badge becomes `SYNC_DELAYED` / `OFFLINE` | once per episode: the write that first stores the `Device sync delayed` marker in `attentionReason` is a guarded `UPDATE … WHERE attention_reason NOT LIKE '%marker%'`; only the tick whose update affected a row records the event. The episode ends when the device syncs again (marker cleared) and a new silence starts a new one. |
-| `POLICY_RESOLUTION_WARNING` | `resolveForEmployees` reports `AMBIGUOUS_TEAM_ASSIGNMENT` | once per `(employee, kind:resolutionWarningKey)` per 24 h, keyed in `metadata.resolutionWarningKey`. |
+| Event                       | When                                                      | Dedupe guard                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEVICE_SYNC_DELAYED`       | the badge becomes `SYNC_DELAYED` / `OFFLINE`              | once per episode: the write that first stores the `Device sync delayed` marker in `attentionReason` is a guarded `UPDATE … WHERE attention_reason NOT LIKE '%marker%'`; only the evaluation whose update affected a row records the event (`recordSyncDelayedEpisode` in `workState.service.ts`). The same guard runs wherever an evaluation is persisted — a job tick, `GET /sync`, or `recomputeEmployeeWorkState` after a break, device event or override — so whichever path first notices the silent device owns the event and the others see the marker. The episode ends when the device syncs again (marker cleared) and a new silence starts a new one. |
+| `POLICY_RESOLUTION_WARNING` | `resolveForEmployees` reports `AMBIGUOUS_TEAM_ASSIGNMENT` | once per `(employee, kind:resolutionWarningKey)` per 24 h, keyed in `metadata.resolutionWarningKey`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 `diffStates(previousExpected, expected)` is evaluated and counted in the report (`transitions`) and logged
 at debug level, but the events it implies (`WORK_MODE_STARTED`, `BREAK_STARTED`, …) are **not** written by
@@ -181,16 +181,16 @@ from the mobile endpoints, the overrides service, the SSE route and each tick. O
 The tick is safe to run twice at once (node-cron and an external cron, or two replicas) and safe to re-run
 for the same minute:
 
-| Write | Guard |
-| --- | --- |
-| break closure | `UPDATE break_sessions … WHERE status = 'ACTIVE'`; events only for rows this call changed |
-| scheduled break start | `clientBreakId = scheduled:<id>` unique; the shift row is `SELECT … FOR UPDATE` while a break starts |
-| work-state row | plain upsert of the latest evaluation (last writer wins — both compute the same thing) |
-| `DEVICE_SYNC_DELAYED` | guarded update on the `attentionReason` marker |
-| `POLICY_RESOLUTION_WARNING` | lookup by `(employee, metadata.resolutionWarningKey, 24 h)` before insert |
-| `OVERRIDE_EXPIRED` | guarded claim of `expiredEventEmittedAt` |
-| digest | advisory lock + latest `COMPLIANCE_DIGEST` row within the hour |
-| recurrences / completion | owned by the shifts service, idempotent by construction |
+| Write                       | Guard                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| break closure               | `UPDATE break_sessions … WHERE status = 'ACTIVE'`; events only for rows this call changed                                                                                                                                                                                                                                                                                                                                                                     |
+| scheduled break start       | `clientBreakId = scheduled:<id>` unique; the shift row is `SELECT … FOR UPDATE` while a break starts. A unique violation is recovered by `startBreak` **after** the transaction rolled back (Postgres aborts the whole transaction on it): a `clientBreakId` race re-runs the transaction so the idempotency step returns the committed row, the one-active-per-shift index maps to `BREAK_ALREADY_ACTIVE`, and a key owned by another employee is `CONFLICT` |
+| work-state row              | plain upsert of the latest evaluation (last writer wins — both compute the same thing)                                                                                                                                                                                                                                                                                                                                                                        |
+| `DEVICE_SYNC_DELAYED`       | guarded update on the `attentionReason` marker — the same guard for ticks and on-demand evaluations (`GET /sync`, `recomputeEmployeeWorkState`)                                                                                                                                                                                                                                                                                                               |
+| `POLICY_RESOLUTION_WARNING` | lookup by `(employee, metadata.resolutionWarningKey, 24 h)` before insert                                                                                                                                                                                                                                                                                                                                                                                     |
+| `OVERRIDE_EXPIRED`          | guarded claim of `expiredEventEmittedAt`                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| digest                      | advisory lock + latest `COMPLIANCE_DIGEST` row within the hour                                                                                                                                                                                                                                                                                                                                                                                                |
+| recurrences / completion    | owned by the shifts service, idempotent by construction                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 A tick never deletes anything and never writes device-reported fields.
 
@@ -198,12 +198,23 @@ A tick never deletes anything and never writes device-reported fields.
 
 ```jsonc
 {
-  "now": "2026-10-06T08:00:00.000Z", "durationMs": 412,
-  "organisations": 3, "employeesEvaluated": 41, "stateRowsChanged": 5, "transitions": 2,
-  "breaksExpired": 1, "breaksEndedByShift": 0, "scheduledBreaksStarted": 1, "scheduledBreaksSkipped": 0,
-  "syncDelayedEpisodes": 0, "resolutionWarnings": 0, "overridesExpired": 1, "digestsSent": 1,
-  "recurrencesCreated": 0, "shiftsCompleted": 3,
-  "errors": []            // organisation ids (or "overrides" / "recurrences" / "shifts") whose step failed
+  "now": "2026-10-06T08:00:00.000Z",
+  "durationMs": 412,
+  "organisations": 3,
+  "employeesEvaluated": 41,
+  "stateRowsChanged": 5,
+  "transitions": 2,
+  "breaksExpired": 1,
+  "breaksEndedByShift": 0,
+  "scheduledBreaksStarted": 1,
+  "scheduledBreaksSkipped": 0,
+  "syncDelayedEpisodes": 0,
+  "resolutionWarnings": 0,
+  "overridesExpired": 1,
+  "digestsSent": 1,
+  "recurrencesCreated": 0,
+  "shiftsCompleted": 3,
+  "errors": [], // organisation ids (or "overrides" / "recurrences" / "shifts") whose step failed
 }
 ```
 
@@ -219,7 +230,7 @@ A tick never deletes anything and never writes device-reported fields.
   (`occurredAt` is the original `expiresAt`).
 - **No pushes**: `APNS_*` unset means the Noop provider (log lines `silent push … provider: noop`). Devices
   still re-sync on their own schedule (`GET /sync` on launch / foreground).
-- **No digest**: there is one at most per hour per organisation, only for employees with a shift *today*
+- **No digest**: there is one at most per hour per organisation, only for employees with a shift _today_
   (organisation / location time zone), only to OWNER / ADMIN members; email also needs
   `digestEmail !== false` on the membership.
 

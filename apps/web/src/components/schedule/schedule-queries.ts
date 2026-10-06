@@ -1,6 +1,10 @@
 "use client";
 
-import type { Employee, EmployeeDetailResponse, ListEmployeesResponse } from "@workmode/validation/employees";
+import type {
+  Employee,
+  EmployeeDetailResponse,
+  ListEmployeesResponse,
+} from "@workmode/validation/employees";
 import type { ListLocationsResponse, Location } from "@workmode/validation/locationsTeams";
 import type {
   BulkShiftActionInput,
@@ -15,7 +19,13 @@ import type {
 } from "@workmode/validation/shifts";
 import { updateShiftSchema } from "@workmode/validation/shifts";
 import type { z } from "zod";
-import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 
 /**
@@ -25,8 +35,17 @@ import { api } from "@/lib/api-client";
 export const scheduleKeys = {
   shiftsRoot: ["org", "shifts"] as const,
   shifts: (query: ShiftsQueryInput) =>
-    ["org", "shifts", "range", query.from, query.to, query.employeeId ?? null, query.locationId ?? null] as const,
-  employeeShifts: (employeeId: string, from: string | null) => ["org", "shifts", "employee", employeeId, from] as const,
+    [
+      "org",
+      "shifts",
+      "range",
+      query.from,
+      query.to,
+      query.employeeId ?? null,
+      query.locationId ?? null,
+    ] as const,
+  employeeShifts: (employeeId: string, from: string | null) =>
+    ["org", "shifts", "employee", employeeId, from] as const,
   locations: ["org", "locations"] as const,
   employeeSearch: (search: string) => ["org", "employees", "search", search] as const,
   employee: (id: string) => ["org", "employees", "detail", id] as const,
@@ -49,7 +68,12 @@ export function useShifts(input: ShiftsQueryInput | null) {
       if (!input) return [] as Shift[];
       const response = await api.get<ListShiftsResponse>(
         "/api/shifts",
-        { from: input.from, to: input.to, employeeId: input.employeeId ?? undefined, locationId: input.locationId ?? undefined },
+        {
+          from: input.from,
+          to: input.to,
+          employeeId: input.employeeId ?? undefined,
+          locationId: input.locationId ?? undefined,
+        },
         signal,
       );
       return response.shifts;
@@ -57,9 +81,19 @@ export function useShifts(input: ShiftsQueryInput | null) {
   });
 }
 
-/** `GET /api/employees/:id/shifts?from=` — used to find the later members of a recurrence series. */
+/** How far past `from` (or now) the series lookup reaches; the recurrence job materialises only 8 weeks ahead. */
+const SERIES_LOOKAHEAD_MS = 400 * 86_400_000;
+
+/**
+ * `GET /api/employees/:id/shifts?from&to&limit` — used to find the later members of a recurrence series.
+ * `to` is sent explicitly because the API's default window ends about three months after `from`.
+ */
 export async function fetchEmployeeShiftsFrom(employeeId: string, from: string): Promise<Shift[]> {
-  const response = await api.get<ListShiftsResponse>(`/api/employees/${encodeURIComponent(employeeId)}/shifts`, { from, limit: 200 });
+  const to = new Date(Math.max(Date.parse(from), Date.now()) + SERIES_LOOKAHEAD_MS).toISOString();
+  const response = await api.get<ListShiftsResponse>(
+    `/api/employees/${encodeURIComponent(employeeId)}/shifts`,
+    { from, to, limit: 200 },
+  );
   return response.shifts;
 }
 
@@ -67,7 +101,8 @@ export function useLocations() {
   return useQuery({
     queryKey: scheduleKeys.locations,
     staleTime: 60_000,
-    queryFn: async ({ signal }) => (await api.get<ListLocationsResponse>("/api/locations", undefined, signal)).locations,
+    queryFn: async ({ signal }) =>
+      (await api.get<ListLocationsResponse>("/api/locations", undefined, signal)).locations,
   });
 }
 
@@ -80,7 +115,12 @@ export function useEmployeeSearch(search: string, options: { enabled?: boolean }
     queryFn: async ({ signal }) => {
       const response = await api.get<ListEmployeesResponse>(
         "/api/employees",
-        { search: search.trim() || undefined, pageSize: 50, sort: "lastName", employmentStatus: "ACTIVE" },
+        {
+          search: search.trim() || undefined,
+          pageSize: 50,
+          sort: "lastName",
+          employmentStatus: "ACTIVE",
+        },
         signal,
       );
       return response.items;
@@ -93,7 +133,14 @@ export function useEmployee(id: string | null) {
     queryKey: scheduleKeys.employee(id ?? ""),
     enabled: id !== null,
     staleTime: 60_000,
-    queryFn: async ({ signal }) => (await api.get<EmployeeDetailResponse>(`/api/employees/${encodeURIComponent(id ?? "")}`, undefined, signal)).employee,
+    queryFn: async ({ signal }) =>
+      (
+        await api.get<EmployeeDetailResponse>(
+          `/api/employees/${encodeURIComponent(id ?? "")}`,
+          undefined,
+          signal,
+        )
+      ).employee,
   });
 }
 
@@ -133,7 +180,8 @@ export interface UpdateShiftVariables {
 export function useUpdateShift() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, input }: UpdateShiftVariables) => api.patch<ShiftResponse>(`/api/shifts/${encodeURIComponent(id)}`, input),
+    mutationFn: ({ id, input }: UpdateShiftVariables) =>
+      api.patch<ShiftResponse>(`/api/shifts/${encodeURIComponent(id)}`, input),
     onMutate: async ({ optimistic }) => {
       if (!optimistic) return { snapshot: null };
       await queryClient.cancelQueries({ queryKey: scheduleKeys.shiftsRoot });
@@ -183,7 +231,8 @@ export function useCancelShift() {
 export function useBulkShiftAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: BulkShiftActionInput) => api.post<BulkShiftActionResponse>("/api/shifts/bulk", input),
+    mutationFn: (input: BulkShiftActionInput) =>
+      api.post<BulkShiftActionResponse>("/api/shifts/bulk", input),
     onSuccess: () => invalidateShifts(queryClient),
   });
 }

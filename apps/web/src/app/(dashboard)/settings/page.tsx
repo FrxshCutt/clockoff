@@ -12,7 +12,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const tab = parseSettingsTab(Array.isArray(raw) ? raw[0] : raw);
   return (
     <>
-      <PageHeader title="Settings" description="Your organisation, join code, managers and notification preferences." />
+      <PageHeader
+        title="Settings"
+        description="Your organisation, join code, managers and notification preferences."
+      />
       <SettingsTabs initialTab={tab} />
     </>
   );

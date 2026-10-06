@@ -28,7 +28,10 @@ export function useBreadcrumbLabels(): Readonly<Record<string, string>> {
   );
 }
 
-export function useBreadcrumbLabel(segment: string | null | undefined, label: string | null | undefined): void {
+export function useBreadcrumbLabel(
+  segment: string | null | undefined,
+  label: string | null | undefined,
+): void {
   useEffect(() => {
     if (!segment || !label) return;
     labels = { ...labels, [segment]: label };

@@ -15,7 +15,12 @@ export const GET = createHandler(
  * series as well.
  */
 export const PATCH = createHandler(
-  { auth: "manager", permission: "schedule:write", params: idParamsSchema, body: updateShiftSchema },
+  {
+    auth: "manager",
+    permission: "schedule:write",
+    params: idParamsSchema,
+    body: updateShiftSchema,
+  },
   async ({ ctx, params, body }) => updateShift(ctx, params.id, body),
 );
 

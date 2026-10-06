@@ -20,7 +20,8 @@ export function IntegrationsList() {
   const integrations = useIntegrations();
   const canWrite = usePermission("integrations:write");
 
-  const allComingSoon = integrations.data?.every((integration) => integration.availability === "COMING_SOON") ?? false;
+  const allComingSoon =
+    integrations.data?.every((integration) => integration.availability === "COMING_SOON") ?? false;
 
   return (
     <div className="space-y-6">
@@ -44,7 +45,9 @@ export function IntegrationsList() {
               {ACTIVATION_MODES.map((mode) => (
                 <div key={mode} className="rounded-lg border p-4">
                   <dt className="font-medium">{ACTIVATION_MODE_COPY[mode].label}</dt>
-                  <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">{ACTIVATION_MODE_COPY[mode].detail}</dd>
+                  <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                    {ACTIVATION_MODE_COPY[mode].detail}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -60,7 +63,11 @@ export function IntegrationsList() {
           isRetrying={integrations.isRefetching}
         />
       ) : integrations.isPending ? (
-        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Loading integrations">
+        <ul
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          aria-busy="true"
+          aria-label="Loading integrations"
+        >
           {Array.from({ length: 6 }, (_, index) => (
             <li key={index}>
               <CardSkeleton lines={4} />
@@ -74,14 +81,20 @@ export function IntegrationsList() {
           description={EMPTY_STATES.integrations.description}
           action={
             <Button asChild>
-              <Link href={EMPTY_STATES.integrations.action.href}>{EMPTY_STATES.integrations.action.label}</Link>
+              <Link href={EMPTY_STATES.integrations.action.href}>
+                {EMPTY_STATES.integrations.action.label}
+              </Link>
             </Button>
           }
         />
       ) : (
         <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label="Rota providers">
           {integrations.data.map((integration) => (
-            <IntegrationCard key={integration.provider} integration={integration} canWrite={canWrite} />
+            <IntegrationCard
+              key={integration.provider}
+              integration={integration}
+              canWrite={canWrite}
+            />
           ))}
         </ul>
       )}

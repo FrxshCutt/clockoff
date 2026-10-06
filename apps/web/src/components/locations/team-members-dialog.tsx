@@ -7,17 +7,33 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import { EmployeePicker, formatEmployeeHint, formatEmployeeName } from "@/components/policies/employee-picker";
+import {
+  EmployeePicker,
+  formatEmployeeHint,
+  formatEmployeeName,
+} from "@/components/policies/employee-picker";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { usePermission } from "@/hooks/use-current-user";
 import { formatCount } from "@/lib/format";
 import { LOCATIONS_EMPTY_STATES } from "./locations-copy";
-import { TEAM_MEMBERS_PAGE_SIZE, useAddTeamMembers, useRemoveTeamMember, useTeamMembers } from "./use-locations-teams";
+import {
+  TEAM_MEMBERS_PAGE_SIZE,
+  useAddTeamMembers,
+  useRemoveTeamMember,
+  useTeamMembers,
+} from "./use-locations-teams";
 
 export interface TeamMembersDialogProps {
   team: Team | null;
@@ -35,7 +51,9 @@ export function TeamMembersDialog({ team, open, onOpenChange }: TeamMembersDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-lg">
-        {team && open ? <TeamMembersBody key={team.id} team={team} onClose={() => onOpenChange(false)} /> : null}
+        {team && open ? (
+          <TeamMembersBody key={team.id} team={team} onClose={() => onOpenChange(false)} />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -102,7 +120,8 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
       <DialogHeader>
         <DialogTitle>Members of {team.name}</DialogTitle>
         <DialogDescription>
-          Adding or removing people changes which Work Policy and Break Rules apply to them from their phone&apos;s next sync.
+          Adding or removing people changes which Work Policy and Break Rules apply to them from
+          their phone&apos;s next sync.
         </DialogDescription>
       </DialogHeader>
 
@@ -152,7 +171,13 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
               ))}
             </ul>
           ) : members.isError ? (
-            <ErrorState size="sm" title="Couldn't load members" error={members.error} onRetry={() => void members.refetch()} isRetrying={members.isRefetching} />
+            <ErrorState
+              size="sm"
+              title="Couldn't load members"
+              error={members.error}
+              onRetry={() => void members.refetch()}
+              isRetrying={members.isRefetching}
+            />
           ) : current.length === 0 ? (
             <EmptyState
               icon={LOCATIONS_EMPTY_STATES.teamMembers.icon}
@@ -170,9 +195,16 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
                   <li key={employee.id} className="flex items-center gap-3 px-3 py-2.5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{formatEmployeeName(employee)}</p>
-                      {hint ? <p className="text-muted-foreground truncate text-xs">{hint}</p> : null}
+                      {hint ? (
+                        <p className="text-muted-foreground truncate text-xs">{hint}</p>
+                      ) : null}
                     </div>
-                    <StatusBadge kind="inviteStatus" value={employee.inviteStatus} size="sm" hideIcon />
+                    <StatusBadge
+                      kind="inviteStatus"
+                      value={employee.inviteStatus}
+                      size="sm"
+                      hideIcon
+                    />
                     {canEdit ? (
                       <Button
                         type="button"
@@ -182,7 +214,11 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
                         disabled={removing}
                         onClick={() => void removeMember(employee)}
                       >
-                        {removing ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <UserRoundMinus aria-hidden="true" />}
+                        {removing ? (
+                          <LoaderCircle className="animate-spin" aria-hidden="true" />
+                        ) : (
+                          <UserRoundMinus aria-hidden="true" />
+                        )}
                       </Button>
                     ) : null}
                   </li>
@@ -191,7 +227,9 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
             </ul>
           )}
           {total > TEAM_MEMBERS_PAGE_SIZE ? (
-            <p className="text-muted-foreground text-xs">Showing the first {TEAM_MEMBERS_PAGE_SIZE} of {total} members.</p>
+            <p className="text-muted-foreground text-xs">
+              Showing the first {TEAM_MEMBERS_PAGE_SIZE} of {total} members.
+            </p>
           ) : null}
         </section>
       </div>
@@ -201,8 +239,16 @@ function TeamMembersBody({ team, onClose }: { team: Team; onClose: () => void })
           Done
         </Button>
         {canEdit ? (
-          <Button type="button" onClick={() => void submitAdd()} disabled={toAdd.size === 0 || add.isPending}>
-            {add.isPending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <UserRoundPlus aria-hidden="true" />}
+          <Button
+            type="button"
+            onClick={() => void submitAdd()}
+            disabled={toAdd.size === 0 || add.isPending}
+          >
+            {add.isPending ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : (
+              <UserRoundPlus aria-hidden="true" />
+            )}
             {toAdd.size === 0 ? "Add members" : `Add ${formatCount(toAdd.size, "employee")}`}
           </Button>
         ) : null}

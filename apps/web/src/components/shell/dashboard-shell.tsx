@@ -26,16 +26,28 @@ export { resolveGateState, type GateState } from "./gate";
  * - While the session loads (or a redirect is pending) the full shell skeleton renders, so protected content
  *   never flashes.
  */
-export function DashboardShell({ children, defaultSidebarOpen = true }: { children: ReactNode; defaultSidebarOpen?: boolean }) {
+export function DashboardShell({
+  children,
+  defaultSidebarOpen = true,
+}: {
+  children: ReactNode;
+  defaultSidebarOpen?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const { data: me, error, isPending, refetch, isRefetching } = useCurrentUser();
-  const { mutate: selectOrganisation, isError: autoSelectFailed } = useSwitchOrganisation({ navigateTo: null });
+  const { mutate: selectOrganisation, isError: autoSelectFailed } = useSwitchOrganisation({
+    navigateTo: null,
+  });
   const autoSelected = useRef(false);
 
   // A failed background refetch keeps the last good `me`; only an ended session (401) overrides it.
-  const state = resolveGateState({ isPending, error, organisationCount: me ? me.organisations.length : null });
+  const state = resolveGateState({
+    isPending,
+    error,
+    organisationCount: me ? me.organisations.length : null,
+  });
 
   // Redirect once per episode: clearing the cache below can briefly flip the state back to "loading".
   const redirectedFor = useRef<GateState | null>(null);
@@ -44,7 +56,11 @@ export function DashboardShell({ children, defaultSidebarOpen = true }: { childr
       redirectedFor.current = null;
       return;
     }
-    if ((state !== "unauthenticated" && state !== "no-organisation") || redirectedFor.current === state) return;
+    if (
+      (state !== "unauthenticated" && state !== "no-organisation") ||
+      redirectedFor.current === state
+    )
+      return;
     redirectedFor.current = state;
     if (state === "unauthenticated") {
       // Drop every cached response (the previous session's organisation data, and the stale `me` that would
@@ -58,7 +74,8 @@ export function DashboardShell({ children, defaultSidebarOpen = true }: { childr
 
   // Memberships exist but none is selected yet (e.g. first sign-in after accepting an invite): pick the first.
   const firstOrganisationId = me?.organisations[0]?.id;
-  const needsSelection = state === "ready" && me?.currentOrganisationId === null && firstOrganisationId !== undefined;
+  const needsSelection =
+    state === "ready" && me?.currentOrganisationId === null && firstOrganisationId !== undefined;
   useEffect(() => {
     if (needsSelection && firstOrganisationId && !autoSelected.current) {
       autoSelected.current = true;
@@ -68,7 +85,11 @@ export function DashboardShell({ children, defaultSidebarOpen = true }: { childr
 
   if (state === "error") {
     return (
-      <main id="main-content" tabIndex={-1} className="flex min-h-svh items-center justify-center p-4 outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-svh items-center justify-center p-4 outline-none"
+      >
         <ErrorState
           className="w-full max-w-lg"
           title="We couldn't load your workspace"

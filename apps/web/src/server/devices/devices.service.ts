@@ -74,7 +74,10 @@ async function withStatuses(
 }
 
 /** `GET /api/devices?page&pageSize&employeeId&locationId&isActive&permissionState` */
-export async function listDevices(ctx: ManagerContext, query: DeviceQuery): Promise<ListDevicesResponse> {
+export async function listDevices(
+  ctx: ManagerContext,
+  query: DeviceQuery,
+): Promise<ListDevicesResponse> {
   const { rows, total } = await findDevicesPage(
     ctx.organisation.id,
     {
@@ -85,7 +88,12 @@ export async function listDevices(ctx: ManagerContext, query: DeviceQuery): Prom
     },
     { skip: (query.page - 1) * query.pageSize, take: query.pageSize },
   );
-  const items = await withStatuses(ctx.organisation.id, ctx.organisation.timezone, rows, new Date());
+  const items = await withStatuses(
+    ctx.organisation.id,
+    ctx.organisation.timezone,
+    rows,
+    new Date(),
+  );
   return {
     items,
     page: query.page,
@@ -95,7 +103,10 @@ export async function listDevices(ctx: ManagerContext, query: DeviceQuery): Prom
   };
 }
 
-async function loadDeviceOrThrow(organisationId: string, id: string): Promise<DeviceWithEmployeeRow> {
+async function loadDeviceOrThrow(
+  organisationId: string,
+  id: string,
+): Promise<DeviceWithEmployeeRow> {
   const row = await findDeviceInOrganisation(organisationId, id);
   if (!row) throw new AppError("NOT_FOUND", "Device not found");
   return row;
@@ -104,7 +115,12 @@ async function loadDeviceOrThrow(organisationId: string, id: string): Promise<De
 /** `GET /api/devices/:id` */
 export async function getDevice(ctx: ManagerContext, id: string): Promise<DeviceResponse> {
   const row = await loadDeviceOrThrow(ctx.organisation.id, id);
-  const [item] = await withStatuses(ctx.organisation.id, ctx.organisation.timezone, [row], new Date());
+  const [item] = await withStatuses(
+    ctx.organisation.id,
+    ctx.organisation.timezone,
+    [row],
+    new Date(),
+  );
   return item!;
 }
 

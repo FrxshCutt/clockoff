@@ -5,7 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { FormErrorAlert, SubmitButton, TextField, applyApiFieldErrors, useZodForm } from "@/components/forms/form-fields";
+import {
+  FormErrorAlert,
+  SubmitButton,
+  TextField,
+  applyApiFieldErrors,
+  useZodForm,
+} from "@/components/forms/form-fields";
 import { TimezoneField } from "@/components/forms/timezone-select";
 import { FormSkeleton } from "@/components/loading-skeletons";
 import { Button } from "@/components/ui/button";
@@ -36,7 +42,8 @@ export function CreateOrganisationForm() {
 
   // Detect the browser's zone after mount (the server can't know it).
   useEffect(() => {
-    if (!getValues("timezone")) setValue("timezone", detectTimeZone("Europe/London"), { shouldDirty: false });
+    if (!getValues("timezone"))
+      setValue("timezone", detectTimeZone("Europe/London"), { shouldDirty: false });
   }, [getValues, setValue]);
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -65,7 +72,10 @@ export function CreateOrganisationForm() {
       description="Tell us about your business. You can change these details later in Settings."
       footer={
         hasOrganisations ? (
-          <Link href={ROUTES.overview} className={`${authLinkClass} inline-flex items-center gap-1`}>
+          <Link
+            href={ROUTES.overview}
+            className={`${authLinkClass} inline-flex items-center gap-1`}
+          >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to dashboard
           </Link>
@@ -77,7 +87,9 @@ export function CreateOrganisationForm() {
       <Form {...form}>
         <form onSubmit={onSubmit} className="space-y-5" noValidate>
           <FormErrorAlert error={create.error} />
-          {hasErrorCode(create.error, "EMAIL_NOT_VERIFIED") ? <ResendVerificationButton email={me.data?.user.email ?? null} /> : null}
+          {hasErrorCode(create.error, "EMAIL_NOT_VERIFIED") ? (
+            <ResendVerificationButton email={me.data?.user.email ?? null} />
+          ) : null}
           <TextField
             control={form.control}
             name="name"
@@ -99,7 +111,11 @@ export function CreateOrganisationForm() {
             placeholder="e.g. High Street"
             description="Add more locations and teams later."
           />
-          <SubmitButton className="w-full" isPending={create.isPending || create.isSuccess} pendingLabel="Creating organisation…">
+          <SubmitButton
+            className="w-full"
+            isPending={create.isPending || create.isSuccess}
+            pendingLabel="Creating organisation…"
+          >
             Create organisation
           </SubmitButton>
         </form>
@@ -120,12 +136,19 @@ function ResendVerificationButton({ email }: { email: string | null }) {
       disabled={resend.isPending || resend.isSuccess}
       onClick={() =>
         resend.mutate(undefined, {
-          onSuccess: () => toast.success(email ? `Verification email sent to ${email}` : "Verification email sent"),
+          onSuccess: () =>
+            toast.success(
+              email ? `Verification email sent to ${email}` : "Verification email sent",
+            ),
           onError: (error) => toastError(error, { title: "Couldn't send the email" }),
         })
       }
     >
-      {resend.isSuccess ? "Verification email sent" : resend.isPending ? "Sending…" : "Resend verification email"}
+      {resend.isSuccess
+        ? "Verification email sent"
+        : resend.isPending
+          ? "Sending…"
+          : "Resend verification email"}
     </Button>
   );
 }

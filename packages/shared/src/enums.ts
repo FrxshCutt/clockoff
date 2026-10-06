@@ -22,7 +22,13 @@ export type JoinCodeStatus = (typeof JOIN_CODE_STATUSES)[number];
 export const INVITE_CHANNELS = ["LINK", "EMAIL", "SMS"] as const;
 export type InviteChannel = (typeof INVITE_CHANNELS)[number];
 
-export const EMPLOYEE_INVITE_STATUSES = ["PENDING", "SENT", "ACCEPTED", "EXPIRED", "REVOKED"] as const;
+export const EMPLOYEE_INVITE_STATUSES = [
+  "PENDING",
+  "SENT",
+  "ACCEPTED",
+  "EXPIRED",
+  "REVOKED",
+] as const;
 export type EmployeeInviteStatus = (typeof EMPLOYEE_INVITE_STATUSES)[number];
 
 export const EMPLOYMENT_STATUSES = ["ACTIVE", "INACTIVE"] as const;
@@ -42,7 +48,13 @@ export type InviteStatus = (typeof INVITE_STATUSES)[number];
 export const PLATFORMS = ["IOS"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
-export const PERMISSION_STATES = ["NOT_DETERMINED", "APPROVED", "DENIED", "REVOKED", "UNKNOWN"] as const;
+export const PERMISSION_STATES = [
+  "NOT_DETERMINED",
+  "APPROVED",
+  "DENIED",
+  "REVOKED",
+  "UNKNOWN",
+] as const;
 export type PermissionState = (typeof PERMISSION_STATES)[number];
 
 export const SELECTION_STATES = ["NONE", "CONFIGURED"] as const;
@@ -71,7 +83,11 @@ export type PolicyStatus = (typeof POLICY_STATUSES)[number];
 export const ASSIGNMENT_SCOPE_TYPES = ["ORGANISATION", "LOCATION", "TEAM", "EMPLOYEE"] as const;
 export type AssignmentScopeType = (typeof ASSIGNMENT_SCOPE_TYPES)[number];
 
-export const BREAK_RESTRICTION_BEHAVIOURS = ["RELAX_ALL", "RELAX_CATEGORIES", "KEEP_RESTRICTIONS"] as const;
+export const BREAK_RESTRICTION_BEHAVIOURS = [
+  "RELAX_ALL",
+  "RELAX_CATEGORIES",
+  "KEEP_RESTRICTIONS",
+] as const;
 export type BreakRestrictionBehaviour = (typeof BREAK_RESTRICTION_BEHAVIOURS)[number];
 
 export const SHIFT_STATUSES = ["SCHEDULED", "CANCELLED", "COMPLETED"] as const;
@@ -95,10 +111,22 @@ export type BreakSessionStatus = (typeof BREAK_SESSION_STATUSES)[number];
 export const WORK_STATE_SOURCES = ["DEVICE_REPORT", "SERVER_COMPUTED"] as const;
 export type WorkStateSource = (typeof WORK_STATE_SOURCES)[number];
 
-export const SHIFT_IMPORT_STATUSES = ["UPLOADED", "MAPPED", "VALIDATED", "IMPORTED", "FAILED"] as const;
+export const SHIFT_IMPORT_STATUSES = [
+  "UPLOADED",
+  "MAPPED",
+  "VALIDATED",
+  "IMPORTED",
+  "FAILED",
+] as const;
 export type ShiftImportStatus = (typeof SHIFT_IMPORT_STATUSES)[number];
 
-export const SHIFT_IMPORT_ROW_STATUSES = ["VALID", "WARNING", "ERROR", "IMPORTED", "SKIPPED"] as const;
+export const SHIFT_IMPORT_ROW_STATUSES = [
+  "VALID",
+  "WARNING",
+  "ERROR",
+  "IMPORTED",
+  "SKIPPED",
+] as const;
 export type ShiftImportRowStatus = (typeof SHIFT_IMPORT_ROW_STATUSES)[number];
 
 export const INTEGRATION_PROVIDERS = [
@@ -111,7 +139,12 @@ export const INTEGRATION_PROVIDERS = [
 ] as const;
 export type IntegrationProvider = (typeof INTEGRATION_PROVIDERS)[number];
 
-export const INTEGRATION_STATUSES = ["NOT_CONNECTED", "CONNECTED", "ERROR", "DISCONNECTED"] as const;
+export const INTEGRATION_STATUSES = [
+  "NOT_CONNECTED",
+  "CONNECTED",
+  "ERROR",
+  "DISCONNECTED",
+] as const;
 export type IntegrationStatus = (typeof INTEGRATION_STATUSES)[number];
 
 export const ACTIVATION_MODES = ["SCHEDULED", "CLOCK_EVENT"] as const;

@@ -18,7 +18,15 @@ import { InlineAlert } from "@/components/inline-alert";
 import { SectionCard } from "@/components/section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -94,7 +102,9 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
         onSaved?.(saved, "update");
       } else {
         const saved = await create.mutateAsync(toCreatePolicyInput(values));
-        toast.success(`${saved.name} created as a draft`, { description: "Publish it when you're ready to roll it out." });
+        toast.success(`${saved.name} created as a draft`, {
+          description: "Publish it when you're ready to roll it out.",
+        });
         onSaved?.(saved, "create");
       }
     } catch (error) {
@@ -111,7 +121,10 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
           </InlineAlert>
         ) : null}
 
-        <SectionCard title="Basics" description="How the policy appears in the dashboard and in the Work Mode app.">
+        <SectionCard
+          title="Basics"
+          description="How the policy appears in the dashboard and in the Work Mode app."
+        >
           <div className="space-y-5">
             <TextField
               control={form.control}
@@ -138,7 +151,10 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
           </div>
         </SectionCard>
 
-        <SectionCard title="Restricted categories" description="Which kinds of apps the phone shields while Work Mode is on.">
+        <SectionCard
+          title="Restricted categories"
+          description="Which kinds of apps the phone shields while Work Mode is on."
+        >
           <div className="space-y-5">
             <FormField
               control={form.control}
@@ -177,7 +193,7 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
                     <FormDescription>
                       {otherSelected
                         ? "Required while “Other selected apps” is restricted."
-                        : "Recommended. Each employee picks which of their apps fall under these categories in the Screen Time picker on their phone; the employer never sees the list."}
+                        : "Each employee picks which of their apps fall under these categories in the Screen Time picker on their phone; the employer never sees the list. iPhone always requires this, so keep it on."}
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -218,7 +234,10 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
           />
         </SectionCard>
 
-        <SectionCard title="Shield message" description="What employees read when they open a restricted app during a shift.">
+        <SectionCard
+          title="Shield message"
+          description="What employees read when they open a restricted app during a shift."
+        >
           <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_16rem] md:items-start">
             <FormField
               control={form.control}
@@ -239,20 +258,29 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
                     />
                   </FormControl>
                   <FormDescription className="flex items-start justify-between gap-4">
-                    <span>Keep it short and friendly. Leave it empty to use the app’s default.</span>
+                    <span>
+                      Keep it short and friendly. Leave it empty to use the app’s default.
+                    </span>
                     <span className="shrink-0 tabular-nums">
-                      {(field.value ?? "").length} / {RESTRICTION_CONFIG_LIMITS.shieldMessageMaxLength}
+                      {(field.value ?? "").length} /{" "}
+                      {RESTRICTION_CONFIG_LIMITS.shieldMessageMaxLength}
                     </span>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <ShieldPreview message={shieldMessage ?? ""} organisationName={organisation.data?.organisation.name} />
+            <ShieldPreview
+              message={shieldMessage ?? ""}
+              organisationName={organisation.data?.organisation.name}
+            />
           </div>
         </SectionCard>
 
-        <SectionCard title="Activation" description="When Work Mode switches on, and how much warning employees get.">
+        <SectionCard
+          title="Activation"
+          description="When Work Mode switches on, and how much warning employees get."
+        >
           <div className="space-y-5">
             <FormField
               control={form.control}
@@ -279,10 +307,16 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
                             className={cn(
                               "has-focus-visible:ring-ring/50 flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors has-focus-visible:ring-[3px]",
                               checked ? "border-primary/50 bg-primary/5" : "hover:bg-accent/50",
-                              (disabled || option.disabled) && "cursor-not-allowed opacity-60 hover:bg-transparent",
+                              (disabled || option.disabled) &&
+                                "cursor-not-allowed opacity-60 hover:bg-transparent",
                             )}
                           >
-                            <RadioGroupItem id={id} value={option.value} disabled={option.disabled} className="mt-0.5" />
+                            <RadioGroupItem
+                              id={id}
+                              value={option.value}
+                              disabled={option.disabled}
+                              className="mt-0.5"
+                            />
                             <span className="min-w-0 space-y-0.5">
                               <span className="flex flex-wrap items-center gap-2 text-sm leading-5 font-medium">
                                 {option.label}
@@ -292,7 +326,9 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
                                   </Badge>
                                 ) : null}
                               </span>
-                              <span className="text-muted-foreground block text-xs leading-4">{option.description}</span>
+                              <span className="text-muted-foreground block text-xs leading-4">
+                                {option.description}
+                              </span>
                             </span>
                           </label>
                         );
@@ -329,14 +365,22 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
           />
         </SectionCard>
 
-        <FormErrorAlert error={mutationError} title={policy ? "Couldn't save the policy" : "Couldn't create the policy"} />
+        <FormErrorAlert
+          error={mutationError}
+          title={policy ? "Couldn't save the policy" : "Couldn't create the policy"}
+        />
 
         {disabled ? null : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-muted-foreground text-sm">{saveHintText(policy)}</p>
             <div className="flex items-center gap-2">
               {policy && form.formState.isDirty ? (
-                <Button type="button" variant="ghost" onClick={() => form.reset(toPolicyFormValues(policy))} disabled={isPending}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => form.reset(toPolicyFormValues(policy))}
+                  disabled={isPending}
+                >
                   <RotateCcw aria-hidden="true" />
                   Discard changes
                 </Button>

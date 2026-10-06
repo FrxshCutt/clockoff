@@ -31,6 +31,17 @@ describe("summariseBulkResult", () => {
     expect(summary.description).not.toContain("raw server text");
   });
 
+  it("explains a REACTIVATE conflict as the plan limit", () => {
+    const summary = summariseBulkResult({
+      action: "REACTIVATE",
+      processed: 1,
+      succeeded: 0,
+      failed: [{ employeeId: A, code: "CONFLICT", message: "raw" }],
+    });
+    expect(summary.tone).toBe("error");
+    expect(summary.description).toContain("active-employee limit");
+  });
+
   it("is an error when every item failed and truncates long failure lists", () => {
     const failed = [A, B, A, B, A].map((employeeId) => ({
       employeeId,

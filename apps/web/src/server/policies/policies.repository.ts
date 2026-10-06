@@ -33,7 +33,9 @@ const policyPrismaInclude = {
   },
 } satisfies Prisma.PolicyInclude;
 type PolicyPrismaRow = Prisma.PolicyGetPayload<{ include: typeof policyPrismaInclude }>;
-export type PolicyRow = Omit<PolicyPrismaRow, "versions"> & { draftVersion: PolicyVersionRow | null };
+export type PolicyRow = Omit<PolicyPrismaRow, "versions"> & {
+  draftVersion: PolicyVersionRow | null;
+};
 
 function withDraft(row: PolicyPrismaRow): PolicyRow {
   const { versions, ...rest } = row;
@@ -187,7 +189,12 @@ export type ResolutionPolicyRow = Prisma.PolicyGetPayload<{
 }>;
 
 export interface ResolutionInputs {
-  organisation: { id: string; name: string; defaultPolicyId: string | null; defaultBreakPolicyId: string | null };
+  organisation: {
+    id: string;
+    name: string;
+    defaultPolicyId: string | null;
+    defaultBreakPolicyId: string | null;
+  };
   employees: Array<{
     id: string;
     primaryLocationId: string | null;
@@ -200,7 +207,8 @@ export interface ResolutionInputs {
 }
 
 /**
- * Everything the shared resolver needs for a set of employees, loaded in a fixed number of queries:
+ * Everything the shared resolver needs for a set of employees (of this organisation, not soft-deleted),
+ * loaded in a fixed number of queries:
  * EVERY assignment of the organisation (any scope, any window — the resolver picks) and every referenced
  * policy regardless of status / soft-deletion / organisation (so unusable ones are skipped with a warning
  * instead of silently falling through). Policies carry `currentVersion`, as `resolvePolicyVersion` requires.
@@ -217,7 +225,7 @@ export async function loadResolutionInputs(
     }),
     employeeIds.length
       ? db.employee.findMany({
-          where: { id: { in: [...employeeIds] }, organisationId },
+          where: { id: { in: [...employeeIds] }, organisationId, deletedAt: null },
           select: { id: true, primaryLocationId: true, teams: { select: { teamId: true } } },
         })
       : [],
@@ -238,8 +246,17 @@ export async function loadResolutionInputs(
           include: resolutionPolicyInclude,
         })
       : [],
-    breakPolicyIds.size ? db.breakPolicy.findMany({ where: { id: { in: [...breakPolicyIds] } } }) : [],
+    breakPolicyIds.size
+      ? db.breakPolicy.findMany({ where: { id: { in: [...breakPolicyIds] } } })
+      : [],
   ]);
 
-  return { organisation, employees, policyAssignments, breakPolicyAssignments, policies, breakPolicies };
+  return {
+    organisation,
+    employees,
+    policyAssignments,
+    breakPolicyAssignments,
+    policies,
+    breakPolicies,
+  };
 }

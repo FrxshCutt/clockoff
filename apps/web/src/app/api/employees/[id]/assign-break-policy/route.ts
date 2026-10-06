@@ -11,5 +11,7 @@ export const POST = createHandler(
     params: idParamsSchema,
     body: assignEmployeeBreakPolicySchema,
   },
-  async ({ ctx, params, body }) => ({ employee: await assignEmployeeBreakPolicy(ctx, params.id, body) }),
+  async ({ ctx, params, body }) => ({
+    employee: await assignEmployeeBreakPolicy(ctx, params.id, body),
+  }),
 );

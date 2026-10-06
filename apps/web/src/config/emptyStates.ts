@@ -48,7 +48,8 @@ export const EMPTY_STATES = {
   employeeDetail: {
     icon: Users,
     title: "Employee details",
-    description: "Profile, invite status, device connection and upcoming shifts for this employee will appear here.",
+    description:
+      "Profile, invite status, device connection and upcoming shifts for this employee will appear here.",
     action: { label: "Back to employees", href: ROUTES.employees },
   },
   schedule: {
@@ -61,7 +62,8 @@ export const EMPTY_STATES = {
   scheduleImport: {
     icon: FileUp,
     title: "Import your rota",
-    description: "Upload a CSV of shifts. Every row is checked before anything is saved, so you can fix problems first.",
+    description:
+      "Upload a CSV of shifts. Every row is checked before anything is saved, so you can fix problems first.",
     action: { label: "Upload CSV" },
     secondaryAction: { label: "Back to schedule", href: ROUTES.schedule },
   },
@@ -70,6 +72,13 @@ export const EMPTY_STATES = {
     icon: ShieldCheck,
     title: "No Work Policy yet",
     description: "Create a Work Policy to decide which distractions are restricted during shifts.",
+    action: { label: "Create Policy", href: ROUTES.policyNew },
+  },
+  policiesAllArchived: {
+    icon: ShieldCheck,
+    title: "No active policies",
+    description:
+      "Every Work Policy is archived. Show archived policies to duplicate one, or create a new policy.",
     action: { label: "Create Policy", href: ROUTES.policyNew },
   },
   policyNew: {
@@ -82,19 +91,22 @@ export const EMPTY_STATES = {
   policyDetail: {
     icon: ShieldCheck,
     title: "Policy details",
-    description: "Restricted categories, assignments and version history for this Work Policy will appear here.",
+    description:
+      "Restricted categories, assignments and version history for this Work Policy will appear here.",
     action: { label: "Back to policies", href: ROUTES.policies },
   },
   breakRules: {
     icon: Coffee,
     title: "No Break Rules yet",
-    description: "Set how long breaks last and what relaxes during them, so employees can step away without switching Work Mode off.",
+    description:
+      "Set how long breaks last and what relaxes during them, so employees can step away without switching Work Mode off.",
     action: { label: "Create Break Rules", href: ROUTES.breakRuleNew },
   },
   breakRuleNew: {
     icon: Coffee,
     title: "Create Break Rules",
-    description: "Set how long breaks last, how often they can be taken and what relaxes during them.",
+    description:
+      "Set how long breaks last, how often they can be taken and what relaxes during them.",
     action: { label: "Back to Break Rules", href: ROUTES.breakRules },
   },
   breakRuleDetail: {
@@ -106,18 +118,21 @@ export const EMPTY_STATES = {
   integrations: {
     icon: Plug,
     title: "No integrations connected",
-    description: "Connect your rota software to keep shifts in sync automatically. CSV import works in the meantime.",
+    description:
+      "Connect your rota software to keep shifts in sync automatically. CSV import works in the meantime.",
     action: { label: "Import a CSV instead", href: ROUTES.scheduleImport },
   },
   activity: {
     icon: Activity,
     title: "No activity yet",
-    description: "Employees joining, finishing setup, starting Work Mode and taking breaks will show up here as it happens.",
+    description:
+      "Employees joining, finishing setup, starting Work Mode and taking breaks will show up here as it happens.",
   },
   locations: {
     icon: MapPin,
     title: "No locations or teams yet",
-    description: "Add locations and teams to assign policies and schedules to the right people at once.",
+    description:
+      "Add locations and teams to assign policies and schedules to the right people at once.",
     action: { label: "Add Location" },
   },
   devices: {
@@ -129,13 +144,15 @@ export const EMPTY_STATES = {
   deviceDetail: {
     icon: Smartphone,
     title: "Device details",
-    description: "Connection, Screen Time permission and sync status for this device will appear here.",
+    description:
+      "Connection, Screen Time permission and sync status for this device will appear here.",
     action: { label: "Back to devices", href: ROUTES.devices },
   },
   auditLogs: {
     icon: ScrollText,
     title: "No audit entries yet",
-    description: "Changes managers make to employees, policies, schedules and settings are recorded here.",
+    description:
+      "Changes managers make to employees, policies, schedules and settings are recorded here.",
   },
   members: {
     icon: UserPlus,

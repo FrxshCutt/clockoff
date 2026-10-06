@@ -20,7 +20,11 @@ async function setup(breakPolicy: Partial<Prisma.BreakPolicyUncheckedCreateInput
   const { device, employee } = await createTestDevice(org.organisation.id);
   const connected = await prisma.device.update({
     where: { id: device.id },
-    data: { permissionState: "APPROVED", selectionState: "CONFIGURED", lastDeviceSyncAt: new Date() },
+    data: {
+      permissionState: "APPROVED",
+      selectionState: "CONFIGURED",
+      lastDeviceSyncAt: new Date(),
+    },
   });
   const policy = await prisma.breakPolicy.create({
     data: { organisationId: org.organisation.id, name: "Breaks", ...breakPolicy },
@@ -42,7 +46,11 @@ async function setup(breakPolicy: Partial<Prisma.BreakPolicyUncheckedCreateInput
   return { org, device: connected, employee, policy, shift, headers: await bearer(connected) };
 }
 
-function startBody(shiftId: string, requestedAt: Date = new Date(), extra: Record<string, unknown> = {}) {
+function startBody(
+  shiftId: string,
+  requestedAt: Date = new Date(),
+  extra: Record<string, unknown> = {},
+) {
   return { clientBreakId: randomUUID(), shiftId, requestedAt: requestedAt.toISOString(), ...extra };
 }
 
@@ -65,8 +73,10 @@ async function end(headers: Record<string, string>, id: string, body: Record<str
   });
 }
 
-const countActivity = (employeeId: string, type: "BREAK_STARTED" | "BREAK_ENDED" | "BREAK_EXPIRED") =>
-  prisma.activityEvent.count({ where: { employeeId, type } });
+const countActivity = (
+  employeeId: string,
+  type: "BREAK_STARTED" | "BREAK_ENDED" | "BREAK_EXPIRED",
+) => prisma.activityEvent.count({ where: { employeeId, type } });
 
 describe("POST /api/mobile/v1/breaks/start (live)", () => {
   it("starts a break under the resolved policy, is idempotent on clientBreakId and refuses overlaps", async () => {
@@ -87,11 +97,15 @@ describe("POST /api/mobile/v1/breaks/start (live)", () => {
     expect(parsed.allowance.breaksRemaining).toBe(1);
     expect(parsed.allowance.canStartNow).toBe(false);
 
-    const row = await prisma.breakSession.findUniqueOrThrow({ where: { id: parsed.breakSession.id } });
+    const row = await prisma.breakSession.findUniqueOrThrow({
+      where: { id: parsed.breakSession.id },
+    });
     expect(row.breakPolicyId).toBe(policy.id);
     expect(row.employeeId).toBe(employee.id);
     expect(await countActivity(employee.id, "BREAK_STARTED")).toBe(1);
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.activeBreakSessionId).toBe(parsed.breakSession.id);
     expect(workState.expectedState).toBe("ON_BREAK");
     expect(workState.breaksTakenCount).toBe(1);
@@ -99,7 +113,9 @@ describe("POST /api/mobile/v1/breaks/start (live)", () => {
     // Retry with the same clientBreakId → the same session, nothing new written.
     const replay = await start(headers, body);
     expect(replay.status).toBe(201);
-    expect(mobileBreakResponseSchema.parse(replay.body).breakSession.id).toBe(parsed.breakSession.id);
+    expect(mobileBreakResponseSchema.parse(replay.body).breakSession.id).toBe(
+      parsed.breakSession.id,
+    );
     expect(await prisma.breakSession.count({ where: { shiftId: shift.id } })).toBe(1);
     expect(await countActivity(employee.id, "BREAK_STARTED")).toBe(1);
 
@@ -111,7 +127,10 @@ describe("POST /api/mobile/v1/breaks/start (live)", () => {
   });
 
   it("refuses too-soon, limit-reached, not-on-shift and foreign shifts with structured codes", async () => {
-    const { headers, org, employee, shift } = await setup({ maxBreaksPerShift: 1, minGapBetweenBreaksMinutes: 0 });
+    const { headers, org, employee, shift } = await setup({
+      maxBreaksPerShift: 1,
+      minGapBetweenBreaksMinutes: 0,
+    });
     const now = Date.now();
     const fresh = await prisma.shift.create({
       data: {
@@ -134,13 +153,21 @@ describe("POST /api/mobile/v1/breaks/start (live)", () => {
     const tooSoon = await start(headers, startBody(shift.id));
     expect(tooSoon.status).toBe(409);
     expect(tooSoon.body.error.code).toBe("BREAK_TOO_SOON");
-    expect((tooSoon.body.error.details as { reason: string }).reason).toBe("MIN_MINUTES_AFTER_SHIFT_START");
-    await prisma.shift.update({ where: { id: shift.id }, data: { startsAt: new Date(now - 2 * HOUR) } });
+    expect((tooSoon.body.error.details as { reason: string }).reason).toBe(
+      "MIN_MINUTES_AFTER_SHIFT_START",
+    );
+    await prisma.shift.update({
+      where: { id: shift.id },
+      data: { startsAt: new Date(now - 2 * HOUR) },
+    });
 
     const first = await start(headers, startBody(shift.id));
     expect(first.status).toBe(201);
     const session = mobileBreakResponseSchema.parse(first.body).breakSession;
-    const ended = await end(headers, session.id, { endedAt: new Date().toISOString(), reason: "EMPLOYEE_ENDED" });
+    const ended = await end(headers, session.id, {
+      endedAt: new Date().toISOString(),
+      reason: "EMPLOYEE_ENDED",
+    });
     expect(ended.status).toBe(200);
 
     const limit = await start(headers, startBody(shift.id));
@@ -163,6 +190,69 @@ describe("POST /api/mobile/v1/breaks/start (live)", () => {
   });
 });
 
+describe("POST /api/mobile/v1/breaks/start (concurrency and idempotency keys)", () => {
+  it("serialises concurrent starts on one shift: exactly one break, the other refused BREAK_ALREADY_ACTIVE", async () => {
+    const { headers, shift, employee } = await setup();
+    const results = await Promise.all([
+      start(headers, startBody(shift.id)),
+      start(headers, startBody(shift.id)),
+    ]);
+    const statuses = results.map((r) => r.status).sort();
+    expect(statuses, JSON.stringify(results.map((r) => r.body))).toEqual([201, 409]);
+    const refused = results.find((r) => r.status === 409)!;
+    expect(refused.body.error.code).toBe("BREAK_ALREADY_ACTIVE");
+    expect(await prisma.breakSession.count({ where: { shiftId: shift.id } })).toBe(1);
+    expect(
+      await prisma.breakSession.count({ where: { shiftId: shift.id, status: "ACTIVE" } }),
+    ).toBe(1);
+    expect(await countActivity(employee.id, "BREAK_STARTED")).toBe(1);
+  });
+
+  it("never answers with another employee's session for a colliding clientBreakId (CONFLICT)", async () => {
+    const { headers, shift, org, employee } = await setup();
+    const other = await createTestDevice(org.organisation.id);
+    const now = Date.now();
+    const otherShift = await prisma.shift.create({
+      data: {
+        organisationId: org.organisation.id,
+        employeeId: other.employee.id,
+        startsAt: new Date(now - 2 * HOUR),
+        endsAt: new Date(now + 4 * HOUR),
+        timezone: "Europe/London",
+      },
+    });
+    const clientBreakId = randomUUID();
+    const theirs = await prisma.breakSession.create({
+      data: {
+        organisationId: org.organisation.id,
+        employeeId: other.employee.id,
+        shiftId: otherShift.id,
+        startedAt: new Date(now - 5 * MINUTE),
+        plannedEndsAt: new Date(now + 10 * MINUTE),
+        clientBreakId,
+      },
+    });
+
+    const res = await start(headers, { ...startBody(shift.id), clientBreakId });
+    expect(res.status, JSON.stringify(res.body)).toBe(409);
+    expect(res.body.error.code).toBe("CONFLICT");
+    expect(await prisma.breakSession.count({ where: { employeeId: employee.id } })).toBe(0);
+    const untouched = await prisma.breakSession.findUniqueOrThrow({ where: { id: theirs.id } });
+    expect(untouched.status).toBe("ACTIVE");
+    expect(untouched.employeeId).toBe(other.employee.id);
+
+    // The same device's own key still replays idempotently.
+    const mine = startBody(shift.id);
+    const first = await start(headers, mine);
+    expect(first.status).toBe(201);
+    const replay = await start(headers, mine);
+    expect(replay.status).toBe(201);
+    expect(mobileBreakResponseSchema.parse(replay.body).breakSession.id).toBe(
+      mobileBreakResponseSchema.parse(first.body).breakSession.id,
+    );
+  });
+});
+
 describe("POST /api/mobile/v1/breaks/start (offline reconciliation)", () => {
   it("accepts a late request at its device-reported start and records it as already expired", async () => {
     const { headers, shift, employee } = await setup();
@@ -172,7 +262,9 @@ describe("POST /api/mobile/v1/breaks/start (offline reconciliation)", () => {
     const parsed = mobileBreakResponseSchema.parse(res.body);
     expect(parsed.breakSession.status).toBe("ENDED");
     expect(parsed.breakSession.endReason).toBe("EXPIRED");
-    expect(Math.abs(Date.parse(parsed.breakSession.startedAt) - requestedAt.getTime())).toBeLessThan(1000);
+    expect(
+      Math.abs(Date.parse(parsed.breakSession.startedAt) - requestedAt.getTime()),
+    ).toBeLessThan(1000);
     expect(parsed.breakSession.endedAt).toBe(parsed.breakSession.plannedEndsAt);
     expect(parsed.allowance.breaksTaken).toBe(1);
     expect(parsed.allowance.minutesUsed).toBe(15);
@@ -189,19 +281,26 @@ describe("POST /api/mobile/v1/breaks/start (offline reconciliation)", () => {
     expect(await prisma.breakSession.count({ where: { shiftId: shift.id } })).toBe(0);
 
     const requestedAt = new Date(Date.now() - 20 * MINUTE);
-    const late = await start(headers, startBody(shift.id, requestedAt, { requestedDurationMinutes: 10 }));
+    const late = await start(
+      headers,
+      startBody(shift.id, requestedAt, { requestedDurationMinutes: 10 }),
+    );
     expect(late.status, JSON.stringify(late.body)).toBe(201);
     const parsed = mobileBreakResponseSchema.parse(late.body);
     expect(parsed.breakSession.status).toBe("ENDED");
     expect(parsed.breakSession.endReason).toBe("POLICY_CHANGED");
-    expect(Math.abs(Date.parse(parsed.breakSession.startedAt) - requestedAt.getTime())).toBeLessThan(1000);
+    expect(
+      Math.abs(Date.parse(parsed.breakSession.startedAt) - requestedAt.getTime()),
+    ).toBeLessThan(1000);
     expect(parsed.allowance.canStartNow).toBe(false);
     expect(await countActivity(employee.id, "BREAK_STARTED")).toBe(1);
     expect(await countActivity(employee.id, "BREAK_ENDED")).toBe(1);
     const started = await prisma.activityEvent.findFirstOrThrow({
       where: { employeeId: employee.id, type: "BREAK_STARTED" },
     });
-    expect((started.metadata as { refusalCode?: string }).refusalCode).toBe("EMPLOYEE_BREAKS_NOT_ALLOWED");
+    expect((started.metadata as { refusalCode?: string }).refusalCode).toBe(
+      "EMPLOYEE_BREAKS_NOT_ALLOWED",
+    );
   });
 
   it("rejects a request older than the reconciliation window", async () => {
@@ -215,7 +314,9 @@ describe("POST /api/mobile/v1/breaks/start (offline reconciliation)", () => {
 describe("POST /api/mobile/v1/breaks/:id/end", () => {
   it("ends the employee's active break once, clamps the reported end and is idempotent", async () => {
     const { headers, shift, employee, org } = await setup();
-    const started = mobileBreakResponseSchema.parse((await start(headers, startBody(shift.id))).body).breakSession;
+    const started = mobileBreakResponseSchema.parse(
+      (await start(headers, startBody(shift.id))).body,
+    ).breakSession;
 
     // A reported end far in the future is clamped to the planned end / receive time.
     const res = await end(headers, started.id, {
@@ -227,13 +328,20 @@ describe("POST /api/mobile/v1/breaks/:id/end", () => {
     expect(parsed.breakSession.status).toBe("ENDED");
     expect(parsed.breakSession.endReason).toBe("EMPLOYEE_ENDED");
     expect(Date.parse(parsed.breakSession.endedAt!)).toBeLessThanOrEqual(Date.now() + 1000);
-    expect(Date.parse(parsed.breakSession.endedAt!)).toBeGreaterThanOrEqual(Date.parse(started.startedAt));
+    expect(Date.parse(parsed.breakSession.endedAt!)).toBeGreaterThanOrEqual(
+      Date.parse(started.startedAt),
+    );
     expect(await countActivity(employee.id, "BREAK_ENDED")).toBe(1);
-    const workState = await prisma.employeeWorkState.findUniqueOrThrow({ where: { employeeId: employee.id } });
+    const workState = await prisma.employeeWorkState.findUniqueOrThrow({
+      where: { employeeId: employee.id },
+    });
     expect(workState.activeBreakSessionId).toBeNull();
     expect(workState.expectedState).toBe("WORKING");
 
-    const replay = await end(headers, started.id, { endedAt: new Date().toISOString(), reason: "EXPIRED" });
+    const replay = await end(headers, started.id, {
+      endedAt: new Date().toISOString(),
+      reason: "EXPIRED",
+    });
     expect(replay.status).toBe(200);
     const replayed = mobileBreakResponseSchema.parse(replay.body).breakSession;
     expect(replayed.endedAt).toBe(parsed.breakSession.endedAt);
@@ -262,15 +370,23 @@ describe("POST /api/mobile/v1/breaks/:id/end", () => {
         clientBreakId: randomUUID(),
       },
     });
-    const foreign = await end(headers, foreignSession.id, { endedAt: new Date().toISOString(), reason: "EMPLOYEE_ENDED" });
+    const foreign = await end(headers, foreignSession.id, {
+      endedAt: new Date().toISOString(),
+      reason: "EMPLOYEE_ENDED",
+    });
     expect(foreign.status).toBe(404);
     expect(foreign.body.error.code).toBe("NOT_FOUND");
     expect(
       (await prisma.breakSession.findUniqueOrThrow({ where: { id: foreignSession.id } })).status,
     ).toBe("ACTIVE");
-    expect(await prisma.breakSession.count({ where: { organisationId: org.organisation.id } })).toBe(1);
+    expect(
+      await prisma.breakSession.count({ where: { organisationId: org.organisation.id } }),
+    ).toBe(1);
 
-    const missing = await end(headers, randomUUID(), { endedAt: new Date().toISOString(), reason: "EMPLOYEE_ENDED" });
+    const missing = await end(headers, randomUUID(), {
+      endedAt: new Date().toISOString(),
+      reason: "EMPLOYEE_ENDED",
+    });
     expect(missing.status).toBe(404);
   });
 });

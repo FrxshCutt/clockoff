@@ -22,7 +22,10 @@ export function useLogin() {
       await api.post<unknown>("/api/auth/login", input);
       // Fresh session: forget anything cached for a previous user, then load the new one.
       queryClient.removeQueries();
-      return queryClient.fetchQuery({ queryKey: queryKeys.currentUser, queryFn: ({ signal }) => fetchCurrentUser(signal) });
+      return queryClient.fetchQuery({
+        queryKey: queryKeys.currentUser,
+        queryFn: ({ signal }) => fetchCurrentUser(signal),
+      });
     },
   });
 }
@@ -55,7 +58,9 @@ export function useLogout(options: { redirectTo?: string } = {}) {
 }
 
 export function useForgotPassword() {
-  return useMutation({ mutationFn: (input: { email: string }) => api.post<unknown>("/api/auth/forgot-password", input) });
+  return useMutation({
+    mutationFn: (input: { email: string }) => api.post<unknown>("/api/auth/forgot-password", input),
+  });
 }
 
 /**
@@ -65,7 +70,10 @@ export function useForgotPassword() {
 export function useResetPassword() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { token: string; password: string }): Promise<{ me: CurrentUser | null }> => {
+    mutationFn: async (input: {
+      token: string;
+      password: string;
+    }): Promise<{ me: CurrentUser | null }> => {
       await api.post<unknown>("/api/auth/reset-password", input);
       queryClient.removeQueries();
       try {
@@ -102,7 +110,12 @@ export function useChangePassword() {
 }
 
 const createdOrganisationSchema = z.object({
-  organisation: z.object({ id: z.string(), name: z.string(), slug: z.string().optional(), timezone: z.string().optional() }),
+  organisation: z.object({
+    id: z.string(),
+    name: z.string(),
+    slug: z.string().optional(),
+    timezone: z.string().optional(),
+  }),
 });
 
 export function useCreateOrganisation() {
@@ -128,7 +141,8 @@ export function useSwitchOrganisation(options: { navigateTo?: string | null } = 
   const router = useRouter();
   const navigateTo = options.navigateTo === undefined ? ROUTES.overview : options.navigateTo;
   return useMutation({
-    mutationFn: (organisationId: string) => api.post<unknown>("/api/auth/switch-organisation", { organisationId }),
+    mutationFn: (organisationId: string) =>
+      api.post<unknown>("/api/auth/switch-organisation", { organisationId }),
     onSuccess: async () => {
       await queryClient.resetQueries();
       if (navigateTo) {
@@ -144,7 +158,11 @@ export function useManagerInvitePreview(token: string | null) {
     queryKey: queryKeys.managerInvite(token ?? ""),
     enabled: Boolean(token),
     queryFn: async ({ signal }) => {
-      const raw = await api.get<unknown>(`/api/invites/manager/${encodeURIComponent(token ?? "")}`, undefined, signal);
+      const raw = await api.get<unknown>(
+        `/api/invites/manager/${encodeURIComponent(token ?? "")}`,
+        undefined,
+        signal,
+      );
       return normalizeInvitePreview(raw);
     },
     retry: false,

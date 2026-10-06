@@ -11,16 +11,16 @@ Everything here is implemented; the parts that genuinely cannot run in the iOS S
 
 ## 1. Where things live
 
-| Layer | Target | Files | Frameworks |
-| --- | --- | --- | --- |
-| Engine, rules, storage, decisions | `WorkModeCore` (SPM library, no Apple Screen Time imports) | `Engine/WorkModeEngine.swift`, `WorkModeTransitions.swift`, `Breaks/BreakRules.swift`, `BreakLedger.swift`, `Restrictions/ActivityPlanner.swift`, `ShieldApplier.swift`, `SelectionStore.swift`, `MonitorEventHandler.swift`, `ShieldCopy.swift`, `Storage/*` | Foundation, os |
-| ManagedSettings / FamilyControls adapter | `WorkModeScreenTime` (SPM library) | `ManagedSettingsShieldStore.swift`, `SelectionCodec.swift`, `ScreenTimeAuthorization.swift` | ManagedSettings, FamilyControls |
-| Apple provider, picker, controller | `WorkModeApp` | `Restrictions/AppleScreenTimeRestrictionProvider.swift`, `ScreenTimeSelectionPicker.swift`, `RestrictionProviderSupport.swift`, `WorkMode/WorkModeController.swift`, `UIWorkState.swift`, `BreakStarting.swift` | + DeviceActivity, Combine, SwiftUI |
-| Monitor extension | `WorkModeDeviceActivityMonitor` | `DeviceActivityMonitorExtension.swift` (wires `MonitorEventHandler`) | DeviceActivity + the two libraries |
-| Shield UI | `WorkModeShieldConfiguration` | `ShieldConfigurationExtension.swift` (`ShieldCopy`) | ManagedSettingsUI, UIKit |
-| Shield buttons | `WorkModeShieldAction` | `ShieldActionExtension.swift` (`SharedFlags`) | ManagedSettings |
+| Layer                                    | Target                                                     | Files                                                                                                                                                                                                                                                         | Frameworks                         |
+| ---------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Engine, rules, storage, decisions        | `WorkModeCore` (SPM library, no Apple Screen Time imports) | `Engine/WorkModeEngine.swift`, `WorkModeTransitions.swift`, `Breaks/BreakRules.swift`, `BreakLedger.swift`, `Restrictions/ActivityPlanner.swift`, `ShieldApplier.swift`, `SelectionStore.swift`, `MonitorEventHandler.swift`, `ShieldCopy.swift`, `Storage/*` | Foundation, os                     |
+| ManagedSettings / FamilyControls adapter | `WorkModeScreenTime` (SPM library)                         | `ManagedSettingsShieldStore.swift`, `SelectionCodec.swift`, `ScreenTimeAuthorization.swift`                                                                                                                                                                   | ManagedSettings, FamilyControls    |
+| Apple provider, picker, controller       | `WorkModeApp`                                              | `Restrictions/AppleScreenTimeRestrictionProvider.swift`, `ScreenTimeSelectionPicker.swift`, `RestrictionProviderSupport.swift`, `WorkMode/WorkModeController.swift`, `UIWorkState.swift`, `BreakStarting.swift`                                               | + DeviceActivity, Combine, SwiftUI |
+| Monitor extension                        | `WorkModeDeviceActivityMonitor`                            | `DeviceActivityMonitorExtension.swift` (wires `MonitorEventHandler`)                                                                                                                                                                                          | DeviceActivity + the two libraries |
+| Shield UI                                | `WorkModeShieldConfiguration`                              | `ShieldConfigurationExtension.swift` (`ShieldCopy`)                                                                                                                                                                                                           | ManagedSettingsUI, UIKit           |
+| Shield buttons                           | `WorkModeShieldAction`                                     | `ShieldActionExtension.swift` (`SharedFlags`)                                                                                                                                                                                                                 | ManagedSettings                    |
 
-Every *decision* is in `WorkModeCore` and unit-tested in the simulator with in-memory shield stores
+Every _decision_ is in `WorkModeCore` and unit-tested in the simulator with in-memory shield stores
 (`InMemoryShieldStores`) and temporary App Group directories. The Apple-specific code is a thin, logic-free
 layer over those decisions, so the simulator tests cover what the device will do.
 
@@ -35,22 +35,22 @@ test bundle must be byte-identical to the docs file (`make sync-fixtures`, the t
 
 - The app asks once, on onboarding screen 6, with
   `AuthorizationCenter.shared.requestAuthorization(for: .individual)`. The employee is the device owner,
-  so the *individual* authorisation is the right one: no Family Sharing, no parent/child roles.
+  so the _individual_ authorisation is the right one: no Family Sharing, no parent/child roles.
 - `AuthorizationCenter.shared.$authorizationStatus` (Combine) is observed for the life of the process.
   `AuthorizationStatus` is mapped to `RestrictionAuthorizationStatus` (`notDetermined` / `approved` /
   `denied`; an unknown future value counts as not determined, never as approved).
 - The value reported to the server is derived with `RestrictionAuthorizationStatus.permissionState(previous:)`:
-  a denial *after* an approval is `REVOKED`, a first denial is `DENIED`.
+  a denial _after_ an approval is `REVOKED`, a first denial is `DENIED`.
 - **Revocation** (Settings › Screen Time › Apps with Screen Time access › Work Mode off, or Screen Time turned
   off altogether): iOS removes the app's ManagedSettings on its side. The provider additionally
   1. clears both shield stores (`ShieldApplier.clearAll`) so nothing on our side claims otherwise,
   2. writes `engineState = PERMISSION_ERROR` (source `provider`) to the App Group `state.json`,
   3. calls `onAuthorizationStatusChange` and posts `Notification.Name.workModeAuthorizationStatusDidChange`.
-  `WorkModeController.handleAuthorizationChange` then queues one `PERMISSION_NEEDS_ATTENTION` event
-  (`metadata.permissionState = REVOKED`, `reason = PERMISSION_REVOKED`), records `lastPermissionState`, reconciles,
-  and publishes `UIWorkState.actionRequired(.screenTimeNotAllowed(.revoked))`. The Home card shows
-  "Action required" with a button to `WorkModeController.settingsURL` (`UIApplication.openSettingsURLString`).
-  The next `/device/state` check-in carries `permissionState: REVOKED` and `restrictionEngineState: PERMISSION_ERROR`.
+     `WorkModeController.handleAuthorizationChange` then queues one `PERMISSION_NEEDS_ATTENTION` event
+     (`metadata.permissionState = REVOKED`, `reason = PERMISSION_REVOKED`), records `lastPermissionState`, reconciles,
+     and publishes `UIWorkState.actionRequired(.screenTimeNotAllowed(.revoked))`. The Home card shows
+     "Action required" with a button to `WorkModeController.settingsURL` (`UIApplication.openSettingsURLString`).
+     The next `/device/state` check-in carries `permissionState: REVOKED` and `restrictionEngineState: PERMISSION_ERROR`.
 - **Honesty rule.** The device never reports an active state it cannot prove. `currentEngineState()`
   returns `PERMISSION_ERROR` whenever authorisation is not approved, whatever the cache says (§5).
 
@@ -85,14 +85,14 @@ Work Mode writes to two named `ManagedSettingsStore`s (`ManagedSettingsStore.Nam
 `com.workmode.shields.work`, `.breakRelaxed` = `com.workmode.shields.breakRelaxed`). Apple unions the
 settings of every store, so "at most one store populated at a time" is the invariant `ShieldApplier` keeps:
 
-| Intent | `ShieldApplier` | work store | break store |
-| --- | --- | --- | --- |
-| Shift in progress (`WORK`) | `applyWork()` | work selection | cleared |
-| Break, `RELAX_ALL` | `applyBreak(.relaxAll)` | cleared | cleared |
-| Break, `RELAX_CATEGORIES` with a `breakKept` selection | `applyBreak(.relaxCategories(kept:))` | cleared | breakKept selection |
-| Break, `RELAX_CATEGORIES` without one | same | work selection (fallback) | cleared |
-| Break, `KEEP_RESTRICTIONS` | `applyBreak(.keepRestrictions)` | work selection (applied only if not already up) | cleared |
-| Off shift, override, revocation, leave | `clearAll()` | `clearAllSettings()` | `clearAllSettings()` |
+| Intent                                                 | `ShieldApplier`                       | work store                                      | break store          |
+| ------------------------------------------------------ | ------------------------------------- | ----------------------------------------------- | -------------------- |
+| Shift in progress (`WORK`)                             | `applyWork()`                         | work selection                                  | cleared              |
+| Break, `RELAX_ALL`                                     | `applyBreak(.relaxAll)`               | cleared                                         | cleared              |
+| Break, `RELAX_CATEGORIES` with a `breakKept` selection | `applyBreak(.relaxCategories(kept:))` | cleared                                         | breakKept selection  |
+| Break, `RELAX_CATEGORIES` without one                  | same                                  | work selection (fallback)                       | cleared              |
+| Break, `KEEP_RESTRICTIONS`                             | `applyBreak(.keepRestrictions)`       | work selection (applied only if not already up) | cleared              |
+| Off shift, override, revocation, leave                 | `clearAll()`                          | `clearAllSettings()`                            | `clearAllSettings()` |
 
 `ManagedSettingsShieldStore.apply` sets `shield.applications`, `shield.webDomains`,
 `shield.applicationCategories = .specific(categoryTokens, except: [])` and `shield.webDomainCategories`
@@ -117,15 +117,15 @@ foreground without flapping.
 
 `WorkModeController.reconcile()` feeds that into `ReconcileDecision.decide`:
 
-| Expected (engine) | Provider reports | Decision | Reason recorded on the events |
-| --- | --- | --- | --- |
-| `WORK` | `UNKNOWN` | apply work, log "UNKNOWN → corrected" | `UNKNOWN_CORRECTED` |
-| `WORK` | `OFF_SHIFT` / `ON_BREAK` / … | apply work | `RECONCILE` |
-| `WORK` | `WORKING` / `SHIFT_ENDING` | nothing | — |
-| `NONE` | any active state or `UNKNOWN` | clear | `RECONCILE` / `UNKNOWN_CORRECTED` |
-| `BREAK_RELAXED` | not `ON_BREAK` | apply the break behaviour | `RECONCILE` |
-| `PERMISSION_ERROR` | shields still up | clear | `RECONCILE` |
-| anything needing shields | no work selection | nothing; `PERMISSION_ERROR`, `selectionIncomplete` flag | `SELECTION_MISSING` |
+| Expected (engine)        | Provider reports              | Decision                                                | Reason recorded on the events     |
+| ------------------------ | ----------------------------- | ------------------------------------------------------- | --------------------------------- |
+| `WORK`                   | `UNKNOWN`                     | apply work, log "UNKNOWN → corrected"                   | `UNKNOWN_CORRECTED`               |
+| `WORK`                   | `OFF_SHIFT` / `ON_BREAK` / …  | apply work                                              | `RECONCILE`                       |
+| `WORK`                   | `WORKING` / `SHIFT_ENDING`    | nothing                                                 | —                                 |
+| `NONE`                   | any active state or `UNKNOWN` | clear                                                   | `RECONCILE` / `UNKNOWN_CORRECTED` |
+| `BREAK_RELAXED`          | not `ON_BREAK`                | apply the break behaviour                               | `RECONCILE`                       |
+| `PERMISSION_ERROR`       | shields still up              | clear                                                   | `RECONCILE`                       |
+| anything needing shields | no work selection             | nothing; `PERMISSION_ERROR`, `selectionIncomplete` flag | `SELECTION_MISSING`               |
 
 Engine state and `WORK_MODE_STARTED` / `WORK_MODE_ENDED` events are written **only when something actually
 changed**, in one coordinated `state.json` write (`WorkModeController.record`), so a sync running at the same
@@ -135,7 +135,7 @@ time sees the new state and does not repeat the events.
 
 Because tokens are opaque, the device cannot derive "the work selection minus the relaxed categories". A
 break policy with `RELAX_CATEGORIES` therefore needs a **second selection**, `breakKept`
-(`selection-breakKept.json`): the subset of the work selection that must *stay* blocked during breaks. The
+(`selection-breakKept.json`): the subset of the work selection that must _stay_ blocked during breaks. The
 employee makes it with the same picker (`SelectionConfiguring.configureSelection(kind: .breakKept)`, title
 "Keep blocked on breaks"). `RestrictionPlan.requiresBreakSubsetSelection` says whether a policy needs it.
 
@@ -155,14 +155,14 @@ normally.
    - A transient failure (`APIError.isTransient`: no network, timeout, 5xx; or `CREDENTIALS_UNAVAILABLE`):
      the break starts **offline** from the local approval (`BreakLedger.startLocalBreak`): the session's `id`
      is the `clientBreakId`, and a `QueuedBreakRecord { clientBreakId, shiftId, requestedAt,
-     requestedDurationMinutes, plannedEndsAt, status: PENDING_START }` is appended to
+requestedDurationMinutes, plannedEndsAt, status: PENDING_START }` is appended to
      `CachedState.queuedBreaks` for the sync layer to replay with the **same** `clientBreakId` and
      `requestedAt` (the server validates that instant itself, see BREAK_RULES.md "online and offline").
    - Any other error (a server refusal such as `BREAK_TOO_SOON`) is rethrown and nothing is started.
 3. The relaxation is applied now (`applyBreakRestrictions`), the `plans.json` entry for
    `break-<clientBreakId>` is written **before** `scheduleBreak` registers the DeviceActivity (§7), and a
    `BREAK_STARTED` event is queued (`breakSessionId` for a server break, `clientBreakId` + `reason:
-   OFFLINE_START` for a local one). The controller arms its own timer for the exact `plannedEndsAt`.
+OFFLINE_START` for a local one). The controller arms its own timer for the exact `plannedEndsAt`.
 4. `endBreakEarly()` calls `BreakStarting.endBreak(id:endedAt:reason: EMPLOYEE_ENDED)` for a server break;
    offline (or for a break that never reached the server) the end is recorded on the queued record
    (`PENDING_END` with `serverBreakSessionId`, or kept with the pending start). The session is closed,
@@ -202,12 +202,12 @@ the break is still running). A refusal means the local break is dropped and the 
 
 Apple's limits and what they mean for Work Mode:
 
-| Limit | Effect | Mitigation |
-| --- | --- | --- |
+| Limit                                            | Effect                                                                                                                                                    | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Minimum interval 15 minutes (`intervalTooShort`) | A shift interval under 15 min is not registered (the API refuses such shifts anyway). A break shorter than 15 min cannot have its own exact end activity. | `BreakActivitySchedule.make`: `intervalStart` = start floored to the minute, `intervalEnd` = max(`plannedEndsAt`, start + 15 min) rounded up to the minute; the **true** `plannedEndsAt` is in the `plans.json` entry. The app ends the break exactly on time while it is alive; **with the app closed, a break under 15 minutes is restored within 15 minutes of its start**, not at `plannedEndsAt`. The server state is exact regardless. |
-| At most 20 monitored activities | Not every shift in a 14-day sync window can be registered. | `ActivityPlanner` registers the next **18** shift intervals within a 7-day horizon and keeps **2 slots** for break activities; every sync (and every launch/time change) re-plans, so the window rolls forward. |
-| Schedules follow the device clock and time zone | See §9. | |
-| `startMonitoring` with a start in the past | Allowed; `intervalDidStart` fires immediately. | This is how a shift already in progress is (re)registered on every sync; the monitor's apply is idempotent. |
+| At most 20 monitored activities                  | Not every shift in a 14-day sync window can be registered.                                                                                                | `ActivityPlanner` registers the next **18** shift intervals within a 7-day horizon and keeps **2 slots** for break activities; every sync (and every launch/time change) re-plans, so the window rolls forward.                                                                                                                                                                                                                              |
+| Schedules follow the device clock and time zone  | See §9.                                                                                                                                                   |                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `startMonitoring` with a start in the past       | Allowed; `intervalDidStart` fires immediately.                                                                                                            | This is how a shift already in progress is (re)registered on every sync; the monitor's apply is idempotent.                                                                                                                                                                                                                                                                                                                                  |
 
 ## 8. The three extensions
 
@@ -217,14 +217,14 @@ thin `WorkModeScreenTime` adapter (ManagedSettings + FamilyControls are needed t
 tokens). No UIKit, no networking, no SwiftUI. All of its logic is `MonitorEventHandler` (tested in
 `MonitorEventHandlerTests`):
 
-| Callback | Activity | Action |
-| --- | --- | --- |
-| `intervalWillStartWarning` | `shift-*` | `SharedFlags.shiftStartingSoon`, engine state `SHIFT_STARTING_SOON` (never downgrading a running Work Mode) |
-| `intervalDidStart` | `shift-*` | re-evaluate the cached schedule; apply the work shields (or the running break's behaviour; nothing under a lifting override or without permission); record `WORKING` (source `monitorExtension`); queue `WORK_MODE_STARTED` |
-| `intervalDidEnd` | `shift-*` | if the cache says another interval already covers now, keep enforcing; else clear both stores, end a running break (`SHIFT_ENDED` → `BREAK_ENDED`, or `EXPIRED` on a tie), drop break entries, record `OFF_SHIFT`, queue `WORK_MODE_ENDED` |
-| `intervalDidStart` | `break-*` | no-op (the app applied the relaxation when the break started) |
-| `intervalDidEnd` | `break-*` | if the break record is still active and its `plannedEndsAt` has passed: mark it `EXPIRED` at `plannedEndsAt`, queue `BREAK_EXPIRED`, restore the work shields (or clear if the shift has ended) |
-| any | unknown name / no `plans.json` entry | ignored |
+| Callback                   | Activity                             | Action                                                                                                                                                                                                                                     |
+| -------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `intervalWillStartWarning` | `shift-*`                            | `SharedFlags.shiftStartingSoon`, engine state `SHIFT_STARTING_SOON` (never downgrading a running Work Mode)                                                                                                                                |
+| `intervalDidStart`         | `shift-*`                            | re-evaluate the cached schedule; apply the work shields (or the running break's behaviour; nothing under a lifting override or without permission); record `WORKING` (source `monitorExtension`); queue `WORK_MODE_STARTED`                |
+| `intervalDidEnd`           | `shift-*`                            | if the cache says another interval already covers now, keep enforcing; else clear both stores, end a running break (`SHIFT_ENDED` → `BREAK_ENDED`, or `EXPIRED` on a tie), drop break entries, record `OFF_SHIFT`, queue `WORK_MODE_ENDED` |
+| `intervalDidStart`         | `break-*`                            | no-op (the app applied the relaxation when the break started)                                                                                                                                                                              |
+| `intervalDidEnd`           | `break-*`                            | if the break record is still active and its `plannedEndsAt` has passed: mark it `EXPIRED` at `plannedEndsAt`, queue `BREAK_EXPIRED`, restore the work shields (or clear if the shift has ended)                                            |
+| any                        | unknown name / no `plans.json` entry | ignored                                                                                                                                                                                                                                    |
 
 Events go through the shared outbox in `state.json`; the app uploads them on its next sync. The app and the
 extension both record what they applied in `engineState`, so whichever observes a transition first emits
@@ -263,14 +263,14 @@ on the next foreground and publishes `statusRequestedFromShield` so the UI shows
 
 ## 10. What the simulator can and cannot do
 
-| | Simulator | Device |
-| --- | --- | --- |
-| `AuthorizationCenter.requestAuthorization` | returns without approving (status stays not determined) | real prompt |
-| `FamilyActivityPicker` | renders but has no apps to list | real picker |
-| `ManagedSettingsStore` shields | accepted, never enforced | enforced |
-| `DeviceActivityCenter.startMonitoring` | may throw / never fires | fires on time, survives reboot |
-| `WorkModeCore` engine, rules, planner, ledger, applier, monitor logic | fully tested (`make test`) | same code |
-| Release build with the real provider and no mock | compiles and is verified (`make build-release`) | runs |
+|                                                                       | Simulator                                               | Device                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------- | ------------------------------ |
+| `AuthorizationCenter.requestAuthorization`                            | returns without approving (status stays not determined) | real prompt                    |
+| `FamilyActivityPicker`                                                | renders but has no apps to list                         | real picker                    |
+| `ManagedSettingsStore` shields                                        | accepted, never enforced                                | enforced                       |
+| `DeviceActivityCenter.startMonitoring`                                | may throw / never fires                                 | fires on time, survives reboot |
+| `WorkModeCore` engine, rules, planner, ledger, applier, monitor logic | fully tested (`make test`)                              | same code                      |
+| Release build with the real provider and no mock                      | compiles and is verified (`make build-release`)         | runs                           |
 
 Debug builds therefore use `MockRestrictionProvider` (`DEBUG_MOCK_RESTRICTIONS`), which simulates
 authorisation, selection counts, both stores and DeviceActivity's limits, and the app shows the yellow
@@ -291,17 +291,17 @@ attached. Use a Work Policy blocking Social Media + Games, a break policy with 2
 The numbered steps mirror the product Definition of Done items 5–10 (the repository holds no copy of that
 list; this is the Screen Time end-to-end sequence those items describe).
 
-| # | Steps | Expected |
-| --- | --- | --- |
-| 5 | Join with the company code; on screen 6 tap "Allow Screen Time access" and approve; on screen 7 pick a social app, a game, and the Social Media and Games categories; complete setup. | iOS prompt shown once; `PERMISSION_GRANTED`, `SELECTION_CONFIGURED` (counts only) and `SETUP_COMPLETED` appear in the dashboard activity; device status shows selection counts (e.g. 2 categories, 2 apps), never names. |
-| 6 | Schedule a shift starting in ~20 minutes. Sync (pull to refresh). **Force-quit the app.** Wait. | 15 min before: Home (on reopen) says "Starting soon". At the start minute, with the app still closed, the picked apps show the Work Mode shield (employer name, "Work Mode is active until HH:mm" or the policy message). Dashboard: `WORK_MODE_STARTED` (reason `INTERVAL_STARTED`) after the phone next syncs; device status Working. Tap "Open Work Mode" on a shield, reopen the app → the status screen is shown. |
-| 7 | Open the app, tap "Take a break" (15 min). Force-quit. Wait 15 min. | The shielded apps open immediately (RELAX_ALL). `BREAK_STARTED` in the dashboard. At the planned end, with the app closed, the shields return within one minute; `BREAK_EXPIRED` after the next sync. Repeat with a 5-minute break: the shields return at ~15 minutes after the start with the app closed, at 5 minutes with it open. |
-| 7b | Switch the employee to the `RELAX_CATEGORIES` break policy, sync, take a break **before** making the second selection; then make the "Keep blocked on breaks" selection (game + Games) and take another break. | First break: everything stays blocked and the app shows "Selection incomplete". Second break: the social app opens, the game stays shielded. |
-| 8 | Let the shift reach its end (or shorten it from the dashboard and sync) with the app closed, once during a break. | Shields lift at the end minute; a running break is ended with the shift (`BREAK_ENDED` then `WORK_MODE_ENDED`). Reopen: "Off shift". |
-| 9 | During a shift, from the dashboard apply "Exempt temporarily" (15 min), then sync the phone (foreground). Let it expire. | Shields lift at once; Home "Work Mode paused" with the resume time; `WORK_MODE_ENDED` with the override id; at expiry shields return, `WORK_MODE_STARTED`. |
-| 10 | During a shift, Settings › Screen Time › Apps with Screen Time access › turn Work Mode off. Return to the app. Then turn it back on. | Shields are gone (iOS). The app shows "Action required — Screen Time access is off" with a Settings button; dashboard: `PERMISSION_NEEDS_ATTENTION`, device Needs attention, permission `REVOKED`, engine `PERMISSION_ERROR` — the device never claims it is enforcing. After re-enabling and reopening: shields return, `WORK_MODE_STARTED`. |
-| R | Reboot the phone during a shift, do not open the app, unlock once. | Shields are in force after unlock (they were applied before; a boundary that fires after the reboot is handled by the extension). Opening the app shows Working with no new events. |
-| O | Turn on Airplane Mode, take a break, end it early, turn Airplane Mode off, pull to refresh. | The break starts and ends on the phone immediately; after reconnecting the sync layer replays it with the same `clientBreakId` and the dashboard shows one `BREAK_STARTED` (reason `OFFLINE_START`) and one `BREAK_ENDED`. |
+| #   | Steps                                                                                                                                                                                                          | Expected                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5   | Join with the company code; on screen 6 tap "Allow Screen Time access" and approve; on screen 7 pick a social app, a game, and the Social Media and Games categories; complete setup.                          | iOS prompt shown once; `PERMISSION_GRANTED`, `SELECTION_CONFIGURED` (counts only) and `SETUP_COMPLETED` appear in the dashboard activity; device status shows selection counts (e.g. 2 categories, 2 apps), never names.                                                                                                                                                                                               |
+| 6   | Schedule a shift starting in ~20 minutes. Sync (pull to refresh). **Force-quit the app.** Wait.                                                                                                                | 15 min before: Home (on reopen) says "Starting soon". At the start minute, with the app still closed, the picked apps show the Work Mode shield (employer name, "Work Mode is active until HH:mm" or the policy message). Dashboard: `WORK_MODE_STARTED` (reason `INTERVAL_STARTED`) after the phone next syncs; device status Working. Tap "Open Work Mode" on a shield, reopen the app → the status screen is shown. |
+| 7   | Open the app, tap "Take a break" (15 min). Force-quit. Wait 15 min.                                                                                                                                            | The shielded apps open immediately (RELAX_ALL). `BREAK_STARTED` in the dashboard. At the planned end, with the app closed, the shields return within one minute; `BREAK_EXPIRED` after the next sync. Repeat with a 5-minute break: the shields return at ~15 minutes after the start with the app closed, at 5 minutes with it open.                                                                                  |
+| 7b  | Switch the employee to the `RELAX_CATEGORIES` break policy, sync, take a break **before** making the second selection; then make the "Keep blocked on breaks" selection (game + Games) and take another break. | First break: everything stays blocked and the app shows "Selection incomplete". Second break: the social app opens, the game stays shielded.                                                                                                                                                                                                                                                                           |
+| 8   | Let the shift reach its end (or shorten it from the dashboard and sync) with the app closed, once during a break.                                                                                              | Shields lift at the end minute; a running break is ended with the shift (`BREAK_ENDED` then `WORK_MODE_ENDED`). Reopen: "Off shift".                                                                                                                                                                                                                                                                                   |
+| 9   | During a shift, from the dashboard apply "Exempt temporarily" (15 min), then sync the phone (foreground). Let it expire.                                                                                       | Shields lift at once; Home "Work Mode paused" with the resume time; `WORK_MODE_ENDED` with the override id; at expiry shields return, `WORK_MODE_STARTED`.                                                                                                                                                                                                                                                             |
+| 10  | During a shift, Settings › Screen Time › Apps with Screen Time access › turn Work Mode off. Return to the app. Then turn it back on.                                                                           | Shields are gone (iOS). The app shows "Action required — Screen Time access is off" with a Settings button; dashboard: `PERMISSION_NEEDS_ATTENTION`, device Needs attention, permission `REVOKED`, engine `PERMISSION_ERROR` — the device never claims it is enforcing. After re-enabling and reopening: shields return, `WORK_MODE_STARTED`.                                                                          |
+| R   | Reboot the phone during a shift, do not open the app, unlock once.                                                                                                                                             | Shields are in force after unlock (they were applied before; a boundary that fires after the reboot is handled by the extension). Opening the app shows Working with no new events.                                                                                                                                                                                                                                    |
+| O   | Turn on Airplane Mode, take a break, end it early, turn Airplane Mode off, pull to refresh.                                                                                                                    | The break starts and ends on the phone immediately; after reconnecting the sync layer replays it with the same `clientBreakId` and the dashboard shows one `BREAK_STARTED` (reason `OFFLINE_START`) and one `BREAK_ENDED`.                                                                                                                                                                                             |
 
 ## 12. APIs for the other app engineers
 

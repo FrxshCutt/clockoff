@@ -9,20 +9,20 @@ export const GET = createHandler(
   async ({ ctx, params }) => ({ location: await getLocation(ctx, params.id) }),
 );
 
-/** `PATCH /api/locations/:id` (employees:write) → `{ location }`. */
+/** `PATCH /api/locations/:id` (org:manage) → `{ location }`. */
 export const PATCH = createHandler(
   {
     auth: "manager",
-    permission: "employees:write",
+    permission: "org:manage",
     params: idParamsSchema,
     body: updateLocationSchema,
   },
   async ({ ctx, params, body }) => ({ location: await updateLocation(ctx, params.id, body) }),
 );
 
-/** `DELETE /api/locations/:id` (employees:write) → 204. CONFLICT while shifts are still scheduled there. */
+/** `DELETE /api/locations/:id` (org:manage) → 204. CONFLICT while shifts are still scheduled there. */
 export const DELETE = createHandler(
-  { auth: "manager", permission: "employees:write", params: idParamsSchema },
+  { auth: "manager", permission: "org:manage", params: idParamsSchema },
   async ({ ctx, params }) => {
     await deleteLocation(ctx, params.id);
   },

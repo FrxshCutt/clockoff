@@ -3,7 +3,6 @@
 import type { Location } from "@workmode/validation/locationsTeams";
 import { toast } from "sonner";
 import {
-  FormErrorAlert,
   SubmitButton,
   SwitchField,
   TextField,
@@ -14,9 +13,17 @@ import {
 import { TimezoneField } from "@/components/forms/timezone-select";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { formatTimeZoneLabel } from "@/lib/format";
 import {
+  describeStructureConflict,
   emptyLocationForm,
   locationFormSchema,
   locationToFormValues,
@@ -24,6 +31,7 @@ import {
   toUpdateLocationInput,
   type LocationFormValues,
 } from "./locations-view-model";
+import { StructureErrorAlert } from "./structure-error-alert";
 import { useCreateLocation, useUpdateLocation } from "./use-locations-teams";
 
 export interface LocationFormSheetProps {
@@ -37,7 +45,13 @@ export interface LocationFormSheetProps {
 }
 
 /** Add / Edit location drawer: `POST /api/locations` or `PATCH /api/locations/:id` (changed fields only). */
-export function LocationFormSheet({ open, onOpenChange, location = null, organisationTimezone, onSaved }: LocationFormSheetProps) {
+export function LocationFormSheet({
+  open,
+  onOpenChange,
+  location = null,
+  organisationTimezone,
+  onSaved,
+}: LocationFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
@@ -69,7 +83,9 @@ function LocationForm({
 }) {
   const mode = location ? "edit" : "create";
   const form = useZodForm(locationFormSchema, {
-    defaultValues: location ? locationToFormValues(location, organisationTimezone) : emptyLocationForm(organisationTimezone),
+    defaultValues: location
+      ? locationToFormValues(location, organisationTimezone)
+      : emptyLocationForm(organisationTimezone),
   });
   const create = useCreateLocation();
   const update = useUpdateLocation();
@@ -96,7 +112,15 @@ function LocationForm({
         onSaved?.(saved, "create");
       }
     } catch (error) {
-      applyApiFieldErrors(form, error);
+      // A duplicate name (409 with `details.field`) belongs on the Name field, like a validation error.
+      const conflict = describeStructureConflict(error, "location");
+      if (conflict?.field)
+        form.setError(
+          conflict.field,
+          { type: "server", message: conflict.message },
+          { shouldFocus: true },
+        );
+      else applyApiFieldErrors(form, error);
     }
   });
 
@@ -113,8 +137,19 @@ function LocationForm({
         </SheetHeader>
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
-          <FormErrorAlert error={create.error ?? update.error} title={mode === "edit" ? "Couldn't save changes" : "Couldn't add the location"} />
-          <TextField control={form.control} name="name" label="Name" placeholder="e.g. Harbour Street" autoComplete="off" autoFocus={mode === "create"} />
+          <StructureErrorAlert
+            error={create.error ?? update.error}
+            kind="location"
+            title={mode === "edit" ? "Couldn't save changes" : "Couldn't add the location"}
+          />
+          <TextField
+            control={form.control}
+            name="name"
+            label="Name"
+            placeholder="e.g. Harbour Street"
+            autoComplete="off"
+            autoFocus={mode === "create"}
+          />
           <SwitchField
             control={form.control}
             name="useOrganisationTimezone"

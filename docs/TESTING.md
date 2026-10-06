@@ -3,12 +3,12 @@
 Work Mode has four test layers. Each one has a single place for its files, a single command, and a rule
 about what it may touch.
 
-| Layer | Where | Runner | Touches |
-| --- | --- | --- | --- |
-| Unit | `packages/*/src/**/*.test.ts`, `apps/web/src/**/*.test.ts` (next to the source) | Vitest (`unit` project in `apps/web`) | Nothing outside the process: no database, no network |
-| Integration | `apps/web/test/integration/**/*.test.ts` (and `apps/web/src/**/*.integration.test.ts`) | Vitest (`integration` project) | The dedicated `TEST_DATABASE_URL` database (reset every run) |
-| End-to-end (smoke) | `apps/web/e2e/**` | Playwright | A running dev server on `:3000` with a seeded dev database |
-| iOS | `apps/ios/Packages/WorkModeCore/Tests/**` and the app's XCTest targets | XCTest (`make -C apps/ios test`) | Simulator only; `MockRestrictionProvider` instead of Screen Time |
+| Layer              | Where                                                                                  | Runner                                | Touches                                                          |
+| ------------------ | -------------------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| Unit               | `packages/*/src/**/*.test.ts`, `apps/web/src/**/*.test.ts` (next to the source)        | Vitest (`unit` project in `apps/web`) | Nothing outside the process: no database, no network             |
+| Integration        | `apps/web/test/integration/**/*.test.ts` (and `apps/web/src/**/*.integration.test.ts`) | Vitest (`integration` project)        | The dedicated `TEST_DATABASE_URL` database (reset every run)     |
+| End-to-end (smoke) | `apps/web/e2e/**`                                                                      | Playwright                            | A running dev server on `:3000` with a seeded dev database       |
+| iOS                | `apps/ios/Packages/WorkModeCore/Tests/**` and the app's XCTest targets                 | XCTest (`make -C apps/ios test`)      | Simulator only; `MockRestrictionProvider` instead of Screen Time |
 
 The pure state-machine fixtures in `docs/fixtures/workmode-cases.json` are run by both the TypeScript
 unit tests (`packages/shared`) and XCTest, so the server and the phone cannot disagree about Work Mode
@@ -77,11 +77,11 @@ Packages: `cd packages/shared && pnpm typecheck && pnpm lint && pnpm test` (same
 
 `setup.ts` installs fresh test doubles before each test:
 
-| Double | Purpose |
-| --- | --- |
+| Double              | Purpose                                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `MockEmailProvider` | captures every email; read tokens with `lastEmailToken(email, "/verify-email" \| "/reset-password" \| "/accept-invite")` or inspect `testEmails().sent` |
-| `MemoryRateLimiter` | rate-limit counters start empty in every test |
-| `InProcessEventBus` | subscribe with `getEventBus().subscribe(orgId, handler)` to assert realtime events |
+| `MemoryRateLimiter` | rate-limit counters start empty in every test                                                                                                           |
+| `InProcessEventBus` | subscribe with `getEventBus().subscribe(orgId, handler)` to assert realtime events                                                                      |
 
 It also forces `REQUIRE_EMAIL_VERIFICATION=false`; a test that needs it on sets
 `process.env.REQUIRE_EMAIL_VERIFICATION = "true"` and calls `resetEnvCache()`.
@@ -94,18 +94,18 @@ those tasks run detached: `callRoute` awaits them (`settleBackgroundTasks()`) be
 
 ### Helpers (`test/helpers`, import from `"../helpers"`)
 
-| Helper | What it does |
-| --- | --- |
-| `callRoute(handler, { method, path, body, query, params, jar, cookies, headers, csrf, origin, ip })` | Calls a route export (e.g. `POST` from `@/app/api/auth/login/route`) with a real `NextRequest`, like a browser: cookies from the jar, `Origin: APP_URL` and `x-csrf-token` on mutating requests (disable with `csrf: false` / `origin: null` to test the protections), `params` passed as Next 15's `Promise`, client IP via `ip` (`x-forwarded-for`). Waits for background tasks, then returns `{ status, headers, body, setCookies, cookies }` and applies `Set-Cookie` to the jar. |
-| `CookieJar` | Minimal browser cookie store (`get`, `set`, `delete`, `clone`, `apply`). |
-| `createTestUser({ email?, name?, password?, verified? })` | Creates a manager (argon2id hash; verified by default) → `{ user, password }`. |
-| `createTestOrg({ owner?, name?, timezone?, firstLocationName? })` | Creates an organisation through the real service (OWNER membership, ACTIVE join code) → `{ organisation, owner, ownerPassword, membership, joinCode }`. |
-| `addMember(organisationId, user, role)` | Adds a membership directly. |
-| `loginAs(user, { organisationId? })` | Real session row + signed CSRF token, returned as a `CookieJar` (no argon2, no rate limits). Pre-selects an organisation when given. |
-| `createTestDevice(organisationId, { isActive? })` | Employee + mobile user + link + device → `{ employee, mobileUser, device }`. Pair with `issueMobileTokens(device)`. |
-| `lastEmailToken`, `testEmails` | Read captured emails. |
-| `registerTenantIsolationCase`, `runTenantIsolationCase`, `defineTenantIsolationSuite`, `createTenantFixture` | Tenant-isolation matrix (below). |
-| `truncateAllTables()` | Empties every table in the test database (guarded). |
+| Helper                                                                                                       | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `callRoute(handler, { method, path, body, query, params, jar, cookies, headers, csrf, origin, ip })`         | Calls a route export (e.g. `POST` from `@/app/api/auth/login/route`) with a real `NextRequest`, like a browser: cookies from the jar, `Origin: APP_URL` and `x-csrf-token` on mutating requests (disable with `csrf: false` / `origin: null` to test the protections), `params` passed as Next 15's `Promise`, client IP via `ip` (`x-forwarded-for`). Waits for background tasks, then returns `{ status, headers, body, setCookies, cookies }` and applies `Set-Cookie` to the jar. |
+| `CookieJar`                                                                                                  | Minimal browser cookie store (`get`, `set`, `delete`, `clone`, `apply`).                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `createTestUser({ email?, name?, password?, verified? })`                                                    | Creates a manager (argon2id hash; verified by default) → `{ user, password }`.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `createTestOrg({ owner?, name?, timezone?, firstLocationName? })`                                            | Creates an organisation through the real service (OWNER membership, ACTIVE join code) → `{ organisation, owner, ownerPassword, membership, joinCode }`.                                                                                                                                                                                                                                                                                                                               |
+| `addMember(organisationId, user, role)`                                                                      | Adds a membership directly.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `loginAs(user, { organisationId? })`                                                                         | Real session row + signed CSRF token, returned as a `CookieJar` (no argon2, no rate limits). Pre-selects an organisation when given.                                                                                                                                                                                                                                                                                                                                                  |
+| `createTestDevice(organisationId, { isActive? })`                                                            | Employee + mobile user + link + device → `{ employee, mobileUser, device }`. Pair with `issueMobileTokens(device)`.                                                                                                                                                                                                                                                                                                                                                                   |
+| `lastEmailToken`, `testEmails`                                                                               | Read captured emails.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `registerTenantIsolationCase`, `runTenantIsolationCase`, `defineTenantIsolationSuite`, `createTenantFixture` | Tenant-isolation matrix (below).                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `truncateAllTables()`                                                                                        | Empties every table in the test database (guarded).                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 Middleware does not run under `callRoute` (it is an edge concern covered by `src/middleware.test.ts`); the
 handler-level CSRF and Origin checks do run.
@@ -121,7 +121,10 @@ describe("GET /api/organisations/current", () => {
   it("returns the caller's organisation", async () => {
     const org = await createTestOrg();
     const jar = await loginAs(org.owner, { organisationId: org.organisation.id });
-    const res = await callRoute<{ organisation: { id: string } }>(GET, { path: "/api/organisations/current", jar });
+    const res = await callRoute<{ organisation: { id: string } }>(GET, {
+      path: "/api/organisations/current",
+      jar,
+    });
     expect(res.status).toBe(200);
     expect(res.body.organisation.id).toBe(org.organisation.id);
   });
@@ -162,10 +165,12 @@ registerTenantIsolationCase({
       body: { jobTitle: "Hijacked" },
     };
   },
-  expectStatus: 404,            // default; may be an array, e.g. [403, 404]
-  expectCode: "NOT_FOUND",      // optional
+  expectStatus: 404, // default; may be an array, e.g. [403, 404]
+  expectCode: "NOT_FOUND", // optional
   verify: async (_orgA, orgB) => {
-    const rows = await prisma.employee.findMany({ where: { organisationId: orgB.organisation.id } });
+    const rows = await prisma.employee.findMany({
+      where: { organisationId: orgB.organisation.id },
+    });
     expect(rows.every((e) => e.jobTitle !== "Hijacked")).toBe(true);
   },
 });

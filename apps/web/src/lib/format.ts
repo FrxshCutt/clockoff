@@ -30,19 +30,26 @@ export const DATE_FORMAT_LABELS: Record<DateFormat, { label: string; example: st
   YMD: { label: "Year-month-day", example: "2026-12-31" },
 };
 
-function dateParts(date: Date, timeZone: string | undefined): { year: string; month: string; day: string } {
+function dateParts(
+  date: Date,
+  timeZone: string | undefined,
+): { year: string; month: string; day: string } {
   const parts = new Intl.DateTimeFormat(LOCALE, {
     timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(date);
-  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
   return { year: get("year"), month: get("month"), day: get("day") };
 }
 
 /** Numeric date in the organisation's preferred order, e.g. `06/10/2026`, `10/06/2026` or `2026-10-06`. */
-export function formatDate(value: DateInput | null | undefined, options: DateDisplayOptions = {}): string {
+export function formatDate(
+  value: DateInput | null | undefined,
+  options: DateDisplayOptions = {},
+): string {
   const date = toDate(value);
   if (!date) return "—";
   const { year, month, day } = dateParts(date, options.timeZone);
@@ -58,7 +65,10 @@ export function formatDate(value: DateInput | null | undefined, options: DateDis
 }
 
 /** Time of day, e.g. `14:05` or `2:05 pm`. */
-export function formatTime(value: DateInput | null | undefined, options: DateDisplayOptions = {}): string {
+export function formatTime(
+  value: DateInput | null | undefined,
+  options: DateDisplayOptions = {},
+): string {
   const date = toDate(value);
   if (!date) return "—";
   return new Intl.DateTimeFormat(LOCALE, {
@@ -70,14 +80,20 @@ export function formatTime(value: DateInput | null | undefined, options: DateDis
 }
 
 /** `06/10/2026, 14:05` (date order and clock per options). */
-export function formatDateTime(value: DateInput | null | undefined, options: DateDisplayOptions = {}): string {
+export function formatDateTime(
+  value: DateInput | null | undefined,
+  options: DateDisplayOptions = {},
+): string {
   const date = toDate(value);
   if (!date) return "—";
   return `${formatDate(date, options)}, ${formatTime(date, options)}`;
 }
 
 /** Long, unambiguous form for tooltips: `Tuesday 6 October 2026, 14:05:09 BST`. */
-export function formatDateTimeLong(value: DateInput | null | undefined, options: { timeZone?: string } = {}): string {
+export function formatDateTimeLong(
+  value: DateInput | null | undefined,
+  options: { timeZone?: string } = {},
+): string {
   const date = toDate(value);
   if (!date) return "—";
   return new Intl.DateTimeFormat(LOCALE, {
@@ -107,7 +123,10 @@ const RELATIVE_UNITS: ReadonlyArray<{ unit: Intl.RelativeTimeFormatUnit; ms: num
  * `just now`, `5 minutes ago`, `in 2 hours`, `yesterday`, `3 weeks ago`… Differences under 45 seconds in
  * either direction read as "just now".
  */
-export function formatRelativeTime(value: DateInput | null | undefined, now: DateInput = Date.now()): string {
+export function formatRelativeTime(
+  value: DateInput | null | undefined,
+  now: DateInput = Date.now(),
+): string {
   const date = toDate(value);
   const reference = toDate(now);
   if (!date || !reference) return "—";
@@ -137,7 +156,11 @@ export function formatNumber(value: number): string {
 }
 
 /** `formatCount(1, "employee")` → `1 employee`; `formatCount(3, "employee")` → `3 employees`. */
-export function formatCount(count: number, singular: string, plural: string = `${singular}s`): string {
+export function formatCount(
+  count: number,
+  singular: string,
+  plural: string = `${singular}s`,
+): string {
   return `${formatNumber(count)} ${count === 1 ? singular : plural}`;
 }
 
@@ -160,7 +183,10 @@ export function getInitials(name: string | null | undefined): string {
 export function formatTimeZoneOffset(timeZone: string, at: DateInput = Date.now()): string {
   const date = toDate(at) ?? new Date();
   try {
-    const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" }).formatToParts(date);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      timeZoneName: "shortOffset",
+    }).formatToParts(date);
     const value = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
     // ICU versions differ on a zero offset ("GMT" vs "GMT+0"); normalise so labels are stable everywhere.
     return /^(GMT|UTC)([+-]0{1,2}(:00)?)?$/.test(value) ? "GMT" : value;

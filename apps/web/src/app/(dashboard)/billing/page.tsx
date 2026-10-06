@@ -7,7 +7,10 @@ export const metadata: Metadata = { title: "Billing" };
 export default function BillingPage() {
   return (
     <>
-      <PageHeader title="Billing" description="Your plan, what's included and how much of it you're using." />
+      <PageHeader
+        title="Billing"
+        description="Your plan, what's included and how much of it you're using."
+      />
       <BillingOverview />
     </>
   );

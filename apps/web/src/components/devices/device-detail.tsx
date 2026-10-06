@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { PERMISSION_STATE_GUIDANCE, SELECTION_STATE_GUIDANCE } from "@/components/employees/employee-view-model";
+import {
+  PERMISSION_STATE_GUIDANCE,
+  SELECTION_STATE_GUIDANCE,
+} from "@/components/employees/employee-view-model";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
@@ -50,9 +53,13 @@ function Facts({ items }: { items: readonly Fact[] }) {
     <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
       {items.map((item) => (
         <div key={item.label} className="min-w-0 space-y-1">
-          <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{item.label}</dt>
+          <dt className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            {item.label}
+          </dt>
           <dd className="text-sm">{item.value}</dd>
-          {item.hint ? <dd className="text-muted-foreground text-xs text-pretty">{item.hint}</dd> : null}
+          {item.hint ? (
+            <dd className="text-muted-foreground text-xs text-pretty">{item.hint}</dd>
+          ) : null}
         </div>
       ))}
     </dl>
@@ -121,20 +128,26 @@ export function DeviceDetail({ id }: { id: string }) {
     return (
       <>
         <PageHeader title="Device" eyebrow={<BackLink href={ROUTES.devices}>Devices</BackLink>} />
-        <ErrorState title="Couldn't load this device" error={query.error} onRetry={() => void query.refetch()} isRetrying={query.isRefetching} />
+        <ErrorState
+          title="Couldn't load this device"
+          error={query.error}
+          onRetry={() => void query.refetch()}
+          isRetrying={query.isRefetching}
+        />
       </>
     );
   }
 
   // `query.data` (not the `data` alias above) so the pending/error checks narrow it to the loaded shape.
-  const { device, employee } = query.data;
+  const { device, employee, status } = query.data;
   const timeZone = organisation.data?.organisation.timezone;
   const dateFormat = organisation.data?.organisation.dateFormat;
   const employeeName = `${employee.firstName} ${employee.lastName}`.trim();
   const permission = PERMISSION_STATE_GUIDANCE[device.permissionState];
   const selection = SELECTION_STATE_GUIDANCE[device.selectionState];
   const clock = describeClockSkew(device.lastClockSkewSeconds);
-  const when = (value: string | null) => (value ? formatDateTime(value, { timeZone, dateFormat }) : "—");
+  const when = (value: string | null) =>
+    value ? formatDateTime(value, { timeZone, dateFormat }) : "—";
 
   const confirmDeactivate = async () => {
     try {
@@ -154,7 +167,10 @@ export function DeviceDetail({ id }: { id: string }) {
         title={title ?? "Device"}
         description={
           <>
-            <Link href={routeFor.employee(employee.id)} className="text-primary font-medium underline-offset-4 hover:underline">
+            <Link
+              href={routeFor.employee(employee.id)}
+              className="text-primary font-medium underline-offset-4 hover:underline"
+            >
               {employeeName}
             </Link>
             {employee.jobTitle ? ` · ${employee.jobTitle}` : ""}
@@ -163,13 +179,17 @@ export function DeviceDetail({ id }: { id: string }) {
         }
         actions={
           <>
+            {status ? <StatusBadge kind="deviceStatus" value={status.badge} /> : null}
             <StatusBadge kind="workModeState" value={device.restrictionEngineState} />
             {device.isActive ? (
               <TonedBadge tone="success" description="The phone syncs and enforces Work Mode.">
                 Active
               </TonedBadge>
             ) : (
-              <TonedBadge tone="neutral" description="Deactivated: the phone no longer syncs and must join again.">
+              <TonedBadge
+                tone="neutral"
+                description="Deactivated: the phone no longer syncs and must join again."
+              >
                 Deactivated
               </TonedBadge>
             )}
@@ -189,7 +209,10 @@ export function DeviceDetail({ id }: { id: string }) {
               >
                 <div className="space-y-2">
                   <Label htmlFor={reasonId}>
-                    Reason <span className="text-muted-foreground font-normal">(optional, kept in the audit log)</span>
+                    Reason{" "}
+                    <span className="text-muted-foreground font-normal">
+                      (optional, kept in the audit log)
+                    </span>
                   </Label>
                   <Textarea
                     id={reasonId}
@@ -209,8 +232,9 @@ export function DeviceDetail({ id }: { id: string }) {
       <div className="space-y-6">
         {!device.isActive ? (
           <InlineAlert variant="warning" title="This device is deactivated">
-            Deactivated <RelativeTime value={device.deactivatedAt} fallback="earlier" timeZone={timeZone} />. It no longer syncs; the employee must
-            join again from the Work Mode app to reconnect.
+            Deactivated{" "}
+            <RelativeTime value={device.deactivatedAt} fallback="earlier" timeZone={timeZone} />. It
+            no longer syncs; the employee must join again from the Work Mode app to reconnect.
           </InlineAlert>
         ) : null}
 
@@ -238,7 +262,13 @@ export function DeviceDetail({ id }: { id: string }) {
                 },
                 {
                   label: "Engine state",
-                  value: <StatusBadge kind="workModeState" value={device.restrictionEngineState} size="sm" />,
+                  value: (
+                    <StatusBadge
+                      kind="workModeState"
+                      value={device.restrictionEngineState}
+                      size="sm"
+                    />
+                  ),
                   hint: "The on-device Work Mode state as last reported.",
                 },
               ]}
@@ -248,15 +278,54 @@ export function DeviceDetail({ id }: { id: string }) {
           <SectionCard title="Connection" description="How recently the phone checked in.">
             <Facts
               items={[
-                { label: "Last seen", value: <RelativeTime value={device.lastSeenAt} fallback="Never" timeZone={timeZone} />, hint: when(device.lastSeenAt) },
+                {
+                  label: "Status",
+                  value: status ? (
+                    <StatusBadge kind="deviceStatus" value={status.badge} size="sm" />
+                  ) : (
+                    "Not evaluated"
+                  ),
+                  hint:
+                    status?.reason ??
+                    (status
+                      ? undefined
+                      : "No live status for a deactivated device or an inactive employee."),
+                },
+                {
+                  label: "Last seen",
+                  value: (
+                    <RelativeTime value={device.lastSeenAt} fallback="Never" timeZone={timeZone} />
+                  ),
+                  hint: when(device.lastSeenAt),
+                },
                 {
                   label: "Last device sync",
-                  value: <RelativeTime value={device.lastDeviceSyncAt} fallback="Never" timeZone={timeZone} />,
+                  value: (
+                    <RelativeTime
+                      value={device.lastDeviceSyncAt}
+                      fallback="Never"
+                      timeZone={timeZone}
+                    />
+                  ),
                   hint: when(device.lastDeviceSyncAt),
                 },
-                { label: "Device clock", value: clock ?? "Not reported", hint: clock && clock !== "In sync" ? "Ask the employee to enable automatic date and time." : undefined },
-                { label: "Push notifications", value: device.hasPushToken ? "Registered" : "Not registered", hint: "Only whether a token exists; the token itself is never shown." },
-                { label: "Time zone", value: device.timezone ? formatTimeZoneLabel(device.timezone) : "—" },
+                {
+                  label: "Device clock",
+                  value: clock ?? "Not reported",
+                  hint:
+                    clock && clock !== "In sync"
+                      ? "Ask the employee to enable automatic date and time."
+                      : undefined,
+                },
+                {
+                  label: "Push notifications",
+                  value: device.hasPushToken ? "Registered" : "Not registered",
+                  hint: "Only whether a token exists; the token itself is never shown.",
+                },
+                {
+                  label: "Time zone",
+                  value: device.timezone ? formatTimeZoneLabel(device.timezone) : "—",
+                },
               ]}
             />
           </SectionCard>
@@ -267,13 +336,25 @@ export function DeviceDetail({ id }: { id: string }) {
                 { label: "Work Policy", value: describePolicyVersion(device) },
                 {
                   label: "Last policy sync",
-                  value: <RelativeTime value={device.lastPolicySyncAt} fallback="Never" timeZone={timeZone} />,
+                  value: (
+                    <RelativeTime
+                      value={device.lastPolicySyncAt}
+                      fallback="Never"
+                      timeZone={timeZone}
+                    />
+                  ),
                   hint: when(device.lastPolicySyncAt),
                 },
                 { label: "Schedule version", value: device.scheduleVersion },
                 {
                   label: "Last schedule sync",
-                  value: <RelativeTime value={device.lastScheduleSyncAt} fallback="Never" timeZone={timeZone} />,
+                  value: (
+                    <RelativeTime
+                      value={device.lastScheduleSyncAt}
+                      fallback="Never"
+                      timeZone={timeZone}
+                    />
+                  ),
                   hint: when(device.lastScheduleSyncAt),
                 },
               ]}
@@ -283,20 +364,26 @@ export function DeviceDetail({ id }: { id: string }) {
           <SectionCard title="Device" description="App and operating system.">
             <Facts
               items={[
-                { label: "Platform", value: device.platform === "IOS" ? "iPhone (iOS)" : device.platform },
+                {
+                  label: "Platform",
+                  value: device.platform === "IOS" ? "iPhone (iOS)" : device.platform,
+                },
                 { label: "Model", value: device.deviceModel ?? "—" },
                 { label: "App version", value: describeAppVersion(device) },
                 { label: "Operating system", value: describeOs(device) },
                 { label: "Joined", value: when(device.createdAt) },
-                ...(device.deactivatedAt ? [{ label: "Deactivated", value: when(device.deactivatedAt) }] : []),
+                ...(device.deactivatedAt
+                  ? [{ label: "Deactivated", value: when(device.deactivatedAt) }]
+                  : []),
               ]}
             />
           </SectionCard>
         </div>
 
         <InlineAlert variant="info" title={PRIVACY_PRINCIPLE}>
-          This page shows operational signals only. Work Mode never receives which apps the employee selected, their messages,
-          photos, browsing, notifications, location or anything else on the phone.
+          This page shows operational signals only. Work Mode never receives which apps the employee
+          selected, their messages, photos, browsing, notifications, location or anything else on
+          the phone.
         </InlineAlert>
       </div>
     </>

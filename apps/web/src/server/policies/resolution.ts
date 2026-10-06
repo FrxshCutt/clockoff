@@ -88,7 +88,12 @@ function toResolvedFrom(
 
 function toWorkPolicySummary(
   policy: ResolutionPolicyRow | null,
-  version: { versionId: string | null; versionNumber: number | null; publishedAt: Date | null; restrictionConfig: RestrictionConfig | null },
+  version: {
+    versionId: string | null;
+    versionNumber: number | null;
+    publishedAt: Date | null;
+    restrictionConfig: RestrictionConfig | null;
+  },
 ): ResolvedWorkPolicySummary | null {
   if (policy === null) return null;
   const current =
@@ -101,7 +106,9 @@ function toWorkPolicySummary(
           id: version.versionId,
           versionNumber: version.versionNumber,
           restrictionConfig: version.restrictionConfig,
-          breakBehaviourDefault: readBreakBehaviourDefault(policy.currentVersion.breakBehaviourDefault),
+          breakBehaviourDefault: readBreakBehaviourDefault(
+            policy.currentVersion.breakBehaviourDefault,
+          ),
           publishedAt: version.publishedAt,
         }
       : null;
@@ -111,7 +118,8 @@ function toWorkPolicySummary(
 /**
  * Resolve Work Policy and Break Policy for many employees of one organisation with a fixed number of
  * queries (one per assignment table, one per policy table). Employees that do not belong to the
- * organisation are silently absent from the result. Pure resolution per employee, O(assignments) each.
+ * organisation, or are soft-deleted, are silently absent from the result. Pure resolution per employee,
+ * O(assignments) each.
  */
 export async function resolveForEmployees(
   organisationId: string,
@@ -163,7 +171,9 @@ export async function resolveForEmployees(
     if (raw.work.resolvedFrom) scopes.push(raw.work.resolvedFrom);
     if (raw.breaks.resolvedFrom) scopes.push(raw.breaks.resolvedFrom);
   }
-  const names = scopes.length ? await loadScopeNames(organisationId, scopes) : new Map<string, string>();
+  const names = scopes.length
+    ? await loadScopeNames(organisationId, scopes)
+    : new Map<string, string>();
 
   for (const raw of raws) {
     const breakPolicy = raw.breaks.policy
@@ -267,7 +277,9 @@ export async function employeesResolvingToPolicy(
   now: Date = new Date(),
 ): Promise<string[]> {
   const resolutions = await resolveForEmployees(organisationId, employeeIds, now);
-  return [...resolutions.values()].filter((r) => r.policy?.id === policyId).map((r) => r.employeeId);
+  return [...resolutions.values()]
+    .filter((r) => r.policy?.id === policyId)
+    .map((r) => r.employeeId);
 }
 
 /** Ids of the employees (from `employeeIds`) whose resolved Break Policy is `breakPolicyId`. */

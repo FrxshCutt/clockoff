@@ -4,7 +4,8 @@ import { BrandLogo } from "@/components/brand";
 import { SITE } from "@/config/site";
 import { FOOTER_GROUPS, MARKETING_ROUTES } from "./marketing-content";
 
-const linkClass = "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm outline-none underline-offset-4 hover:underline focus-visible:ring-[3px]";
+const linkClass =
+  "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm outline-none underline-offset-4 hover:underline focus-visible:ring-[3px]";
 
 /** Public site footer: brand and privacy line, link groups, copyright. Server component. */
 export function MarketingFooter() {
@@ -12,7 +13,11 @@ export function MarketingFooter() {
     <footer className="bg-muted/30 border-t">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div className="space-y-4">
-          <Link href={MARKETING_ROUTES.home} className="inline-block rounded-md" aria-label={`${SITE.name} home`}>
+          <Link
+            href={MARKETING_ROUTES.home}
+            className="inline-block rounded-md"
+            aria-label={`${SITE.name} home`}
+          >
             <BrandLogo />
           </Link>
           <p className="text-muted-foreground max-w-xs text-sm">{SITE.description}</p>

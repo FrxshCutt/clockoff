@@ -4,7 +4,11 @@ import { expect } from "vitest";
 import { POST as bulkRoute } from "@/app/api/shifts/bulk/route";
 import { POST as cancelRoute } from "@/app/api/shifts/[id]/cancel/route";
 import { POST as duplicateRoute } from "@/app/api/shifts/[id]/duplicate/route";
-import { DELETE as deleteRoute, GET as getRoute, PATCH as patchRoute } from "@/app/api/shifts/[id]/route";
+import {
+  DELETE as deleteRoute,
+  GET as getRoute,
+  PATCH as patchRoute,
+} from "@/app/api/shifts/[id]/route";
 import { GET as listRoute, POST as createRoute } from "@/app/api/shifts/route";
 import { registerTenantIsolationCase } from "../../helpers/tenantIsolation";
 
@@ -70,7 +74,12 @@ registerTenantIsolationCase({
   name: "DELETE /api/shifts/:id of another tenant",
   build: async (_a, b) => {
     const { shift } = await createShiftInOrg(b.organisation.id);
-    return { handler: deleteRoute, method: "DELETE", path: `/api/shifts/${shift.id}`, params: { id: shift.id } };
+    return {
+      handler: deleteRoute,
+      method: "DELETE",
+      path: `/api/shifts/${shift.id}`,
+      params: { id: shift.id },
+    };
   },
   expectCode: "NOT_FOUND",
   verify: (_a, b) => expectShiftUnchanged(b.organisation.id),
@@ -125,7 +134,9 @@ registerTenantIsolationCase({
   expectCode: "EMPLOYEE_NOT_FOUND",
   verify: async (a, b) => {
     expect(
-      await prisma.shift.count({ where: { organisationId: { in: [a.organisation.id, b.organisation.id] } } }),
+      await prisma.shift.count({
+        where: { organisationId: { in: [a.organisation.id, b.organisation.id] } },
+      }),
     ).toBe(0);
   },
 });
@@ -134,7 +145,9 @@ registerTenantIsolationCase({
   name: "POST /api/shifts with another tenant's location",
   build: async (a, b) => {
     const employee = await createEmployeeInOrg(a.organisation.id);
-    const location = await prisma.location.create({ data: { organisationId: b.organisation.id, name: "B site" } });
+    const location = await prisma.location.create({
+      data: { organisationId: b.organisation.id, name: "B site" },
+    });
     return {
       handler: createRoute,
       method: "POST",
@@ -151,7 +164,9 @@ registerTenantIsolationCase({
   expectCode: "NOT_FOUND",
   verify: async (a, b) => {
     expect(
-      await prisma.shift.count({ where: { organisationId: { in: [a.organisation.id, b.organisation.id] } } }),
+      await prisma.shift.count({
+        where: { organisationId: { in: [a.organisation.id, b.organisation.id] } },
+      }),
     ).toBe(0);
   },
 });
@@ -160,7 +175,9 @@ registerTenantIsolationCase({
   name: "PATCH /api/shifts/:id moving own shift to another tenant's location",
   build: async (a, b) => {
     const { shift } = await createShiftInOrg(a.organisation.id);
-    const location = await prisma.location.create({ data: { organisationId: b.organisation.id, name: "B site" } });
+    const location = await prisma.location.create({
+      data: { organisationId: b.organisation.id, name: "B site" },
+    });
     return {
       handler: patchRoute,
       method: "PATCH",
@@ -171,7 +188,9 @@ registerTenantIsolationCase({
   },
   expectCode: "NOT_FOUND",
   verify: async (a) => {
-    const row = await prisma.shift.findFirstOrThrow({ where: { organisationId: a.organisation.id } });
+    const row = await prisma.shift.findFirstOrThrow({
+      where: { organisationId: a.organisation.id },
+    });
     expect(row.locationId).toBeNull();
     expect(row.version).toBe(1);
   },
