@@ -1,0 +1,12 @@
+# Build output (Makefile uses build/DerivedData and build/ReleaseDerivedData)
+build/
+DerivedData/
+*.xcresult
+# Per-developer overrides: team id (Signing.local), Debug API URL / mock toggle (Local)
+Config/Local.xcconfig
+Config/Signing.local.xcconfig
+# Xcode user state
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+Packages/WorkModeCore/.build/

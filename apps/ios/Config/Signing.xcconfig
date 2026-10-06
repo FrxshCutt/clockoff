@@ -1,0 +1,22 @@
+// Signing.xcconfig — bundle identifiers, App Group and team for every target and configuration.
+//
+// DEVELOPMENT_TEAM is intentionally blank: no signing identity exists on the build machine, and simulator
+// builds/tests run with CODE_SIGNING_ALLOWED=NO (see Makefile). To build for a device or archive, put your
+// Apple Developer Team ID in the git-ignored Config/Signing.local.xcconfig (applies to Debug AND Release):
+//     DEVELOPMENT_TEAM = ABCDE12345
+// The Family Controls capability must be approved by Apple for the bundle ids below (docs/IOS_SETUP.md).
+
+DEVELOPMENT_TEAM =
+CODE_SIGN_STYLE = Automatic
+
+WORKMODE_APP_BUNDLE_ID = com.workmode.app
+WORKMODE_MONITOR_BUNDLE_ID = com.workmode.app.devicemonitor
+WORKMODE_SHIELD_CONFIG_BUNDLE_ID = com.workmode.app.shieldconfig
+WORKMODE_SHIELD_ACTION_BUNDLE_ID = com.workmode.app.shieldaction
+WORKMODE_TESTS_BUNDLE_ID = com.workmode.app.tests
+
+// Must match WorkModeCore `AppGroup.identifier` and every *.entitlements file.
+WORKMODE_APP_GROUP = group.com.workmode.app.shared
+
+// Optional, git-ignored: DEVELOPMENT_TEAM (and, for a personal team, bundle id overrides).
+#include? "Signing.local.xcconfig"

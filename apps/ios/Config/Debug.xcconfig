@@ -1,0 +1,27 @@
+// Debug.xcconfig — local development.
+#include "Base.xcconfig"
+
+// The mock restriction provider is compiled ONLY when DEBUG_MOCK_RESTRICTIONS is defined. It is defined for
+// Debug, so simulator runs (where Screen Time does not work) are fully usable. To exercise the real
+// Screen Time provider in a Debug build on a device, override in Config/Local.xcconfig:
+//     WORKMODE_MOCK_RESTRICTIONS_CONDITION =
+WORKMODE_MOCK_RESTRICTIONS_CONDITION = DEBUG_MOCK_RESTRICTIONS
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(WORKMODE_MOCK_RESTRICTIONS_CONDITION)
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+GCC_OPTIMIZATION_LEVEL = 0
+ONLY_ACTIVE_ARCH = YES
+ENABLE_TESTABILITY = YES
+DEBUG_INFORMATION_FORMAT = dwarf
+// The hosted unit tests resolve WorkModeCore symbols from the app binary: keep unused ones.
+DEAD_CODE_STRIPPING = NO
+
+// Local API (the Next.js dev server). `//` starts a comment in xcconfig, hence `/$()/`.
+// From a device use your Mac's Bonjour name, e.g. http:/$()/my-mac.local:3000 (docs/IOS_SETUP.md).
+API_BASE_URL = http:/$()/localhost:3000
+// Plain HTTP to local hosts is allowed in Debug only (a build phase adds NSAllowsLocalNetworking).
+WORKMODE_ALLOW_LOCAL_HTTP = YES
+WORKMODE_PUSH_ENVIRONMENT = sandbox
+
+// Optional, git-ignored Debug overrides (API_BASE_URL for a device, WORKMODE_MOCK_RESTRICTIONS_CONDITION).
+// DEVELOPMENT_TEAM goes in Config/Signing.local.xcconfig so Release picks it up too.
+#include? "Local.xcconfig"
