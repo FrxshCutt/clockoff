@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { BreakRulesView } from "@/components/breakPolicies/break-policies-list";
 
 export const metadata: Metadata = { title: "Break Rules" };
 
 export default function BreakRulesPage() {
-  return (
-    <PlaceholderPage
-      title="Break Rules"
-      description="How long breaks last, how often they can be taken and what relaxes during them."
-      emptyState="breakRules"
-    />
-  );
+  return <BreakRulesView />;
 }

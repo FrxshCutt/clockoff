@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BackLink, PlaceholderPage } from "@/components/placeholder-page";
-import { ROUTES, isResourceId } from "@/config/navigation";
+import { EmployeeDetailPage as EmployeeDetailView } from "@/components/employees/employee-detail-page";
+import { isResourceId } from "@/config/navigation";
 
 export const metadata: Metadata = { title: "Employee" };
 
-export default async function EmployeeDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/** /employees/[id]?tab=overview|schedule|policy|activity|invites|overrides. Non-UUID ids 404 without calling the API. */
+export default async function EmployeeDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: SearchParams;
+}) {
+  const [{ id }, raw] = await Promise.all([params, searchParams]);
   if (!isResourceId(id)) notFound();
-  return (
-    <PlaceholderPage
-      title="Employee"
-      emptyState="employeeDetail"
-      eyebrow={<BackLink href={ROUTES.employees}>Employees</BackLink>}
-      inProgress
-    />
-  );
+  const tab = Array.isArray(raw.tab) ? raw.tab[0] : raw.tab;
+  return <EmployeeDetailView key={`${id}:${tab ?? ""}`} id={id} initialTab={tab} />;
 }

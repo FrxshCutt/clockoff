@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { BackLink, PlaceholderPage } from "@/components/placeholder-page";
-import { ROUTES } from "@/config/navigation";
+import { ImportWizard } from "@/components/imports/import-wizard";
+import { isResourceId } from "@/config/navigation";
 
 export const metadata: Metadata = { title: "Import schedule" };
 
-export default function ScheduleImportPage() {
-  return (
-    <PlaceholderPage
-      title="Import schedule"
-      description="Upload a CSV from your rota software. You'll map columns and review every row before anything is saved."
-      emptyState="scheduleImport"
-      eyebrow={<BackLink href={ROUTES.schedule}>Schedule</BackLink>}
-    />
-  );
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/** /schedule/import?import=<id> resumes an import that was started earlier; anything else starts fresh. */
+export default async function ScheduleImportPage({ searchParams }: { searchParams: SearchParams }) {
+  const raw = await searchParams;
+  const candidate = Array.isArray(raw.import) ? raw.import[0] : raw.import;
+  return <ImportWizard initialImportId={isResourceId(candidate) ? candidate : null} />;
 }
