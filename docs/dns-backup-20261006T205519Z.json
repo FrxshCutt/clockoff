@@ -1,0 +1,114 @@
+{
+  "exported_at": "2026-10-06T20:55:20.674Z",
+  "source": "Cloudflare API GET /zones/{zone_id}/dns_records",
+  "zone": {
+    "id": "e2bcea4df92e1b74449156c648c2cd78",
+    "name": "clockoff.online",
+    "status": "active",
+    "name_servers": [
+      "lola.ns.cloudflare.com",
+      "thaddeus.ns.cloudflare.com"
+    ]
+  },
+  "record_count": 6,
+  "records": [
+    {
+      "id": "8ad886fe8288bec7dd15142d02ab52cd",
+      "name": "autodiscover.clockoff.online",
+      "type": "CNAME",
+      "content": "adsredir.ionos.info",
+      "proxiable": true,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {
+        "flatten_cname": false
+      },
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.257774Z",
+      "modified_on": "2026-10-06T20:44:56.131019Z"
+    },
+    {
+      "id": "27cf52ea5edb01085516007ecd529278",
+      "name": "_dmarc.clockoff.online",
+      "type": "CNAME",
+      "content": "dmarc.ionos.co.uk",
+      "proxiable": true,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {
+        "flatten_cname": false
+      },
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.289965Z",
+      "modified_on": "2026-10-06T20:44:55.390842Z"
+    },
+    {
+      "id": "1bf2f3e68fbd17151fbdfc25e8441ae9",
+      "name": "_domainconnect.clockoff.online",
+      "type": "CNAME",
+      "content": "_domainconnect.ionos.com",
+      "proxiable": true,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {
+        "flatten_cname": false
+      },
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.269344Z",
+      "modified_on": "2026-10-06T20:44:54.653166Z"
+    },
+    {
+      "id": "cfee9e7616402d38405fcf9b515e1e33",
+      "name": "clockoff.online",
+      "type": "MX",
+      "content": "mx01.ionos.co.uk",
+      "priority": 10,
+      "proxiable": false,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {},
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.246417Z",
+      "modified_on": "2026-10-06T20:43:10.246417Z"
+    },
+    {
+      "id": "43084eca7986cd4c8fb47bcf2fb26fe4",
+      "name": "clockoff.online",
+      "type": "MX",
+      "content": "mx00.ionos.co.uk",
+      "priority": 10,
+      "proxiable": false,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {},
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.222026Z",
+      "modified_on": "2026-10-06T20:43:10.222026Z"
+    },
+    {
+      "id": "e0dd59af993608d5bdc4b01912b59c4d",
+      "name": "clockoff.online",
+      "type": "TXT",
+      "content": "\"v=spf1 include:_spf-eu.ionos.com ~all\"",
+      "proxiable": false,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {},
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2026-10-06T20:43:10.201299Z",
+      "modified_on": "2026-10-06T20:43:10.201299Z"
+    }
+  ]
+}
