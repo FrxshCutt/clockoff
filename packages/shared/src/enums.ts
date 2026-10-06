@@ -153,6 +153,8 @@ export const ACTIVITY_EVENT_TYPES = [
   "OVERRIDE_EXPIRED",
   "INTEGRATION_ERROR",
   "IMPORT_COMPLETED",
+  /** §6.1: policy resolution was ambiguous (e.g. multiple team assignments) — operational warning only. */
+  "POLICY_RESOLUTION_WARNING",
 ] as const;
 export type ActivityEventType = (typeof ACTIVITY_EVENT_TYPES)[number];
 

@@ -1,0 +1,164 @@
+# Security
+
+This document describes Work Mode's threat model, the controls that address it (mapped to the §13
+security checklist of the product spec), where each control lives in the code, and which automated test
+proves it. It covers the web app / API (`apps/web`). The iOS app's on-device controls are described in
+`docs/PRIVACY.md` and `docs/IOS_SETUP.md`.
+
+> Reporting a vulnerability: email the maintainers rather than opening a public issue. Do not include
+> real customer data in reports.
+
+## 1. Assets
+
+| Asset | Where | Why it matters |
+| --- | --- | --- |
+| Manager accounts (email, argon2id hash) | `users` | Account takeover gives access to an organisation's staff list, rota and policies. |
+| Manager sessions, CSRF tokens | `sessions` (sha256 only), `wm_session` / `wm_csrf` cookies | Bearer credentials for the dashboard. |
+| Tenant data (employees, shifts, policies, devices, audit log) | every table with `organisation_id` | Must never cross organisations. |
+| Employee device credentials (access JWT, refresh tokens) | `refresh_tokens` (sha256 only), iOS keychain | Let a phone read its schedule and report status. |
+| Single-use tokens (email verification, password reset, manager invites) | sha256 in their tables; raw value only in the email | Each one is a short-lived credential. |
+| Secrets (`SESSION_SECRET`, `MOBILE_JWT_SECRET`, `INTEGRATION_ENCRYPTION_KEY`, `CRON_SECRET`, APNs key) | environment only | Compromise breaks the corresponding control. |
+| Push tokens, integration credentials | AES-256-GCM ciphertext in the database | Third-party credentials held on behalf of customers. |
+
+## 2. Threat model
+
+Adversaries considered:
+
+1. **Anonymous internet attacker** — credential stuffing, password guessing, account enumeration, token
+   guessing, injection, oversized payloads, DoS of auth endpoints.
+2. **Malicious website visited by a signed-in manager** — CSRF, clickjacking, login CSRF.
+3. **Manager of organisation A** — horizontal privilege escalation into organisation B (IDOR, forged
+   `wm_org` cookie, foreign ids in bodies or params); vertical escalation inside A (a MANAGER acting as
+   ADMIN/OWNER, an ADMIN granting OWNER, removing the last owner).
+4. **Holder of a leaked token** — replayed refresh token, reused reset / verification / invite link, an
+   invite link used to log in as someone else.
+5. **Compromised employee device or stolen access token** — limited to that device's own employee and
+   organisation; revocable by the manager.
+6. **Operator mistakes** — secrets in logs, PII in logs, tests run against a real database, debug tooling
+   enabled in production.
+
+Out of scope for the MVP (documented risks): a compromised server or database host, a malicious platform
+operator, browser extensions on the manager's machine, and distributed attacks large enough to need an
+edge WAF.
+
+## 3. Controls (§13 checklist)
+
+Each row names the implementation and the automated test that proves it. Paths are relative to
+`apps/web` unless stated.
+
+### 3.1 Authentication (manager, first-party — D-007)
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Passwords hashed with argon2id, m=19456 KiB, t=2, p=1 (OWASP); transparent rehash when parameters change | `src/lib/password.ts` (`hashPassword`, `verifyPassword`, `needsRehash`); rehash on login in `src/server/auth/service.ts` | `src/lib/password.test.ts`; `test/integration/auth.test.ts` asserts the PHC prefix |
+| Password policy: ≥10 chars, a letter and a digit, ≤200 chars | `passwordSchema` in `packages/validation/src/common.ts` | `auth.test.ts` "validates the body with the shared schema" |
+| Login does not reveal whether an email exists: same error, same status, constant-time (unknown emails verify against a dummy argon2id hash of a discarded random secret) | `loginManager`, `DUMMY_PASSWORD_HASH` | `auth.test.ts` "rejects a wrong password and an unknown email with the same error"; `password.test.ts` (dummy matches nothing) |
+| Forgot-password always answers 200 with the same body and cookies, in the same time: the request path does one lookup by email for every address; token issuance and the email for an existing account run after the response (`runAfterResponse`, Next `after()`) | `requestPasswordReset`, `src/server/background/runAfterResponse.ts` | `auth.test.ts` "always answers 200 and only emails existing accounts", "issues the reset token and email after the response …"; `runAfterResponse.test.ts` |
+| Register does not reveal whether an email exists: new and existing addresses get the same `201` body; argon2 hashing runs first in both branches; emails go out after the response. With `REQUIRE_EMAIL_VERIFICATION=true` (production default) registration never creates a session, so cookies are identical too — the manager verifies, then signs in. The owner of an existing account is emailed "you already have an account" (no token) and nothing about the account changes | `registerManager`, `accountExistsEmail` | `auth.test.ts` "answers a registration for an existing email like a new one …", "register creates no session, answers new and existing emails identically …" |
+| Registering, like signing in, ends the browser's previous session | `registerManager` | `auth.test.ts` "registering ends the browser's previous session" |
+| Sessions: 32 random bytes, only sha256 stored, httpOnly + SameSite=Lax + Secure (production / https) cookie `wm_session`, `SESSION_TTL_DAYS` sliding expiry (extended when < 50 % remains, cookies re-issued with a fresh Max-Age), revocable | `src/server/auth/sessions.ts`, `src/lib/cookies.ts` | `auth.test.ts` (hash at rest, cookie flags, sliding, expiry, logout revocation); `src/lib/cookies.test.ts` |
+| Session rotation on every sign-in (login, register, reset, invite accept); previous session revoked | `signIn`, `loginManager` | `auth.test.ts` "rotates the session on login and revokes the previous one" |
+| Password change requires the current password and revokes the user's other sessions; password reset revokes all sessions | `changePassword`, `resetPassword` | `auth.test.ts` "change password …", "resets the password …" |
+| Email verification (24 h, single use); `REQUIRE_EMAIL_VERIFICATION=true` makes org-scoped routes return `EMAIL_NOT_VERIFIED` (403) while auth routes keep working. Defaults to `true` when `NODE_ENV=production` unless set explicitly | `verifyEmail`, `createHandler` `emailVerification` policy, `elevateToManagerContext` | `auth.test.ts` "REQUIRE_EMAIL_VERIFICATION …"; `src/lib/env.test.ts` |
+| Reset / verification / invite tokens: 32 random bytes, sha256 at rest, expiring (1 h / 24 h / 7 d), consumed with compare-and-set so they work exactly once; issuing a new one invalidates the previous | `src/lib/tokens.ts`, `src/server/auth/service.ts`, `src/server/organisations/members.ts` | `auth.test.ts` (reuse, stale token after re-issue, expiry), `organisations.test.ts` (invite reuse, rotation, expiry) |
+| Invite links are not login links: accepting for an existing account requires being signed in as it or its password | `acceptManagerInvite` | `organisations.test.ts` "an existing account must prove ownership …" |
+
+### 3.2 CSRF, clickjacking and browser hardening
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Layer 1 — Origin check: every non-GET `/api/*` request must carry `Origin` equal to the `APP_URL` origin, or no Origin with `Sec-Fetch-Site: same-origin` (the opaque `Origin: null` is a mismatch). `/api/mobile/**` and `/api/jobs/**` are exempt (bearer-token clients). Fails closed when `APP_URL` is unset | `src/middleware.ts`, `src/server/http/originCheck.ts` | `src/middleware.test.ts`, `src/server/http/originCheck.test.ts` |
+| Layer 2 — double-submit token: `wm_csrf` cookie (readable by JS, HMAC-signed with `SESSION_SECRET` so a sibling sub-domain cannot plant one) must equal the `x-csrf-token` header on every mutating cookie-authenticated request; the handler also re-checks a present Origin (the opaque `null` origin included). For `user` / `manager` routes this cannot be switched off: `createHandler({ csrf: false })` throws at definition time | `src/server/auth/csrf.ts`, `src/lib/crypto.ts` (`createCsrfToken`, `verifyCsrfPair`), `createHandler` | `auth.test.ts` "CSRF" block (missing header, mismatch, forged unsigned cookie, foreign origin); `src/server/auth/csrf.test.ts`; `src/lib/crypto.test.ts`; `apiHandler.test.ts` "refuses to disable CSRF …" |
+| Public mutating routes (login, register, reset, invite accept…) reject a foreign or `null` Origin in the handler too, behind the middleware; `/api/mobile/**` and `/api/jobs/**` paths and the bearer-authenticated `mobile` / `cron` modes are never CSRF-checked (`csrf: true` on them throws at definition time) | `createHandler`, `assertAllowedOrigin` | `apiHandler.test.ts` "public mutating routes reject a foreign …", "mobile mode never asks for a CSRF token …"; `auth.test.ts` "login rejects a foreign Origin …" |
+| CSRF token issued on login/register and re-issued by `GET /api/auth/me` when missing | `signIn`, `getCurrentUser` | `auth.test.ts` "GET /api/auth/me re-issues a missing CSRF cookie" |
+| Login CSRF / cross-site logout | Origin check (login is public); logout requires the double-submit token | `middleware.test.ts`; `src/app/api/auth/logout/route.ts` (`csrf: true`) |
+| Security headers on pages and API: CSP (`default-src 'self'`, inline styles allowed for Next/Tailwind, `frame-ancestors 'none'`, `object-src 'none'`, eval only in development), HSTS (production), `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` (keeps `?token=` links out of cross-site referrers), minimal `Permissions-Policy` | `src/server/http/securityHeaders.ts`, `src/middleware.ts` | `securityHeaders.test.ts`, `middleware.test.ts` |
+| API responses are `Cache-Control: no-store` | `json()` in `src/server/http/responses.ts` | `responses.test.ts` |
+
+### 3.3 Authorisation and tenant isolation
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| `organisationId` always comes from the verified membership (manager) or device row (mobile), never from request input. A forged / stale `wm_org` cookie degrades to the caller's own first membership | `getCurrentManagerContext`, `resolveOrganisationSelection` in `src/server/tenancy/context.ts` | `organisations.test.ts` "a member of org B cannot select or read org A" |
+| Switching organisation requires membership; non-members get `NOT_FOUND` (existence is not revealed) | `switchOrganisation` | same test + tenant matrix |
+| Resources of another tenant answer `404`, never `403` and never data | repositories query by `(id, organisationId)` | **Tenant-isolation matrix**: `test/integration/tenant-isolation.test.ts` runs every case in `test/integration/tenantCases/*.ts`; every new endpoint must add one (see `docs/TESTING.md`) |
+| Role-based permissions (`OWNER` ⊃ `ADMIN` ⊃ `MANAGER`), checked by `createHandler({ permission })` / `requirePermission` | `packages/shared/src/permissions.ts`, `src/server/tenancy/context.ts` | `organisations.test.ts` (MANAGER cannot PATCH the org or invite) |
+| Nobody grants a role above their own; only OWNERs grant/change/remove OWNER; the last OWNER cannot be demoted or removed (`LAST_OWNER`), with owner rows locked (`SELECT … FOR UPDATE`) so concurrent requests cannot race past the rule | `src/server/organisations/members.ts`, `lockOwnerMemberships` | `organisations.test.ts` "last-owner protection" incl. the concurrent-demotion test |
+| Device tokens are scoped to one device / employee / organisation; claims must match the device row; inactive devices are rejected (`DEVICE_INACTIVE`) | `getCurrentDeviceContext` | `test/integration/mobileAuth.test.ts` |
+
+### 3.4 Mobile (device) credentials
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Access token: HS256 JWT, `kid` = `MOBILE_JWT_KEY_ID`, `iss` `workmode`, `aud` `workmode-mobile`, 15 min (`MOBILE_ACCESS_TOKEN_TTL_SECONDS`). Verification pins `algorithms: ["HS256"]` (`alg: none`, HS512 … rejected), checks issuer and audience, and requires `exp`, `iat` and `sub` (jose only checks `exp` when present, so a token without it would otherwise never expire); unknown `kid`, expiry, tampering and missing device claims are rejected | `src/server/mobileAuth/tokens.ts` | `src/server/mobileAuth/tokens.test.ts` |
+| Refresh token: 32 random bytes, sha256 at rest, rotated on every use (compare-and-set on `replacedById`), grouped by `familyId`; presenting a rotated or revoked token — or two concurrent uses of one token — revokes the whole family (`TOKEN_REUSED`). Rotation applies the same usability rule as access tokens: inactive device, deactivated / deleted employee or deleted organisation → `DEVICE_INACTIVE` / `UNAUTHENTICATED` | `rotateRefreshToken`, `revokeRefreshTokenFamily`, `assertDeviceUsable` (`src/server/mobileAuth/deviceUsable.ts`) | `mobileAuth.test.ts` "issue → … → reuse detection", "concurrent use …", "refresh fails once the employee is deactivated …" |
+| Deactivation / unlink revokes all device refresh tokens | `revokeDeviceTokens` | `mobileAuth.test.ts` |
+| Key rotation: bump `MOBILE_JWT_KEY_ID` with the new secret; old access tokens fail closed and devices refresh | `verifyMobileAccessToken` | `tokens.test.ts` ("Unknown signing key") |
+
+### 3.5 Abuse and input handling
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Rate limits (sliding window): login 10 / 15 min per IP+email and 100 / 15 min per IP across emails (credential stuffing); register 5 / h per IP; forgot 5 / h; reset and verify 20 / h; resend 5 / h; change-password 10 / 15 min; invite accept 10 / h; invite lookup 30 / h; member invites 30 / h. `RATE_LIMITED` (429) with `Retry-After`. Presets for the mobile join / refresh and employee invites are exported for those endpoints | `src/server/rateLimit/*`, `RATE_LIMITS` | `src/server/rateLimit/MemoryRateLimiter.test.ts`, `apiHandler.test.ts`, `auth.test.ts` "rate limits login attempts …", "login is also limited per IP across emails" |
+| Client IP for rate limits: the `X-Forwarded-For` entry `TRUSTED_PROXY_HOPS` (default 1) positions from the right, i.e. the address our own proxy saw; client-supplied entries further left are ignored, so a caller cannot pick their own bucket | `getClientIp` in `src/lib/request.ts` | `src/lib/request.test.ts` |
+| Every request body / query / params validated with Zod (strict schemas reject unknown keys) → `VALIDATION_ERROR` with flattened issues (`details.source` = `body` / `query` / `params`). Only validated input reaches an implementation: without a schema the `params` / `query` / `body` argument is `undefined` | `createHandler` | `apiHandler.test.ts` ("only validated input reaches the implementation", "validates the query string …"), `auth.test.ts` |
+| JSON only (`415` otherwise), body cap 1 MiB by default (`413`), malformed JSON → `400` | `readJsonBody` in `createHandler` | `apiHandler.test.ts` |
+| SQL injection: Prisma parameterised queries only; the two raw queries use tagged templates (parameterised) | `src/server/organisations/repository.ts`, health route | code review |
+| Errors never leak internals: unknown errors become `INTERNAL_ERROR` with only the request id; details are logged server-side. A thrown object that merely calls itself `AppError` is only trusted with a known code and a 4xx/5xx status | `handleError` / `asAppError` in `createHandler` | `apiHandler.test.ts` "maps AppError, Prisma and unknown errors …", "an error that merely calls itself AppError …" |
+| HTML email templates escape user-controlled values | `src/server/email/templates.ts` | `src/server/email/email.test.ts` |
+
+### 3.6 Secrets, cryptography and logging
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Environment validated once with readable errors; production refuses `DEV_TOOLS_ENABLED=true` and short `CRON_SECRET`, warns on console email / non-https `APP_URL` | `src/lib/env.ts` | `src/lib/env.test.ts` |
+| AES-256-GCM for data at rest (`iv(12) | tag(16) | ciphertext`, fresh IV per message, tamper-evident) keyed by `INTEGRATION_ENCRYPTION_KEY` | `src/lib/crypto.ts` | `src/lib/crypto.test.ts` |
+| Constant-time comparisons for secrets (CSRF, cron secret) | `constantTimeEqual` | `crypto.test.ts` |
+| Structured logs (pino) redact passwords, tokens, cookies, authorization headers, emails, names and phone numbers up to three levels deep; request logs carry the request id and a path with token-like segments replaced by `:redacted` (query strings are never logged); services log ids, never PII. Logged errors keep only the first line of the message (a `PrismaClientValidationError` prints argument values — emails — after it) and only the `at …` stack frames | `src/lib/logger.ts` (`errorSummary`, `stackFrames`), `redactPathForLog` | `src/lib/logger.test.ts`, `apiHandler.test.ts` |
+| The console email provider prints messages (links included) so developers can click them — outside production only. With `NODE_ENV=production` it logs the subject alone (no recipient, no body) | `src/server/email/ConsoleEmailProvider.ts`, `createEmailProvider` | `src/server/email/email.test.ts` |
+| APNs provider tokens: ES256 JWT from the `.p8` key, refreshed every 50 min; push payloads carry operational data only | `src/server/push/ApnsPushProvider.ts` | `src/server/push/push.test.ts` (local HTTP/2 server, no network) |
+| Scheduler endpoint authenticated with `CRON_SECRET` bearer | `createHandler({ auth: "cron" })` | `apiHandler.test.ts` |
+
+### 3.7 Accountability
+
+| Control | Implementation | Tested by |
+| --- | --- | --- |
+| Manager mutations write `AuditLog` (actor, action, entity, before/after snapshot, IP, user agent) in the same transaction as the change | `src/server/audit/audit.ts`; used by organisation and member services | `test/integration/activityAudit.test.ts`, `organisations.test.ts` |
+| Operational activity events are idempotent per device (`(deviceId, clientEventId)`) and only fan out to the owning organisation's realtime subscribers | `src/server/activity/recordActivity.ts`, `src/server/events/*` | `activityAudit.test.ts`, `src/server/events/events.test.ts`, `src/server/realtime/sse.test.ts` |
+
+### 3.8 Test-environment safety
+
+The integration suite refuses to start unless `TEST_DATABASE_URL` names a database whose name ends in
+`_test` and that differs from `DATABASE_URL` (host, port and name compared). Before dropping anything the
+global setup also checks `current_database()` on the open connection. It then points the app's Prisma
+client at that database before anything imports it, and serialises concurrent runs with an advisory lock
+so one run never resets the schema under another. Tested by `test/integration/harness.test.ts`; see
+`docs/TESTING.md`.
+
+## 4. Known limitations and follow-ups
+
+- **Rate limiting is per process.** `RATE_LIMIT_BACKEND=memory` is correct for a single instance. The
+  Redis backend is not implemented; selecting it (`RATE_LIMIT_BACKEND=redis` with `REDIS_URL`) throws at
+  startup instead of silently degrading. Adding it needs a Redis client dependency (e.g. `ioredis`) and a
+  sliding-window Lua script behind the existing `RateLimiter` interface.
+- **Client IP comes from `X-Forwarded-For` (or `X-Real-IP` when there is none).** The entry
+  `TRUSTED_PROXY_HOPS` from the right is used, so set it to the number of proxies that append to the
+  header (1 for a single reverse proxy / load balancer). Without any proxy header (bare `next start`) all
+  clients share one rate-limit bucket.
+- **Event bus is in-process.** Multi-instance deployments need a shared pub/sub implementation of
+  `EventBus` (SSE is only a cache-invalidation hint, never the source of truth).
+- **SMTP is not implemented.** `EMAIL_PROVIDER=smtp` validates its settings but `send` throws until an SMTP
+  client (e.g. `nodemailer`) is added; production must not run with the console provider.
+- **CSP allows `'unsafe-inline'` scripts** because the App Router injects inline bootstrap scripts. The
+  nonce form (`buildContentSecurityPolicy({ nonce })`) is ready; adopting it requires the root layout to
+  read a per-request nonce.
+- **Register enumeration resistance depends on `REQUIRE_EMAIL_VERIFICATION`.** When it is `false`
+  (the development default) a NEW account is signed in at once, so the presence of a session cookie
+  reveals that the address was new; body and status still match. Production defaults to `true`. With it
+  on, the remaining difference is a few database writes on the request path (account + verification
+  token), far below the argon2 cost both branches pay, behind a 5 / h per-IP limit.
+- **CSRF tokens are signed but not bound to the session.** A token is a valid double-submit value for
+  any session. This matters only to an attacker who can both write cookies for the app's host and send
+  a same-origin request, which the Origin check (layer 1) already excludes.
+- **Email delivery is deferred** for register and forgot-password (`after()`): a delivery failure is
+  logged, not reported to the caller (by design: the response must not depend on it).

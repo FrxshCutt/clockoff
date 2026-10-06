@@ -244,6 +244,7 @@ enum ActivityEventType {
   OVERRIDE_EXPIRED
   INTEGRATION_ERROR
   IMPORT_COMPLETED
+  POLICY_RESOLUTION_WARNING
 }
 
 enum NotificationRecipientType {

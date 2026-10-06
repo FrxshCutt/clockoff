@@ -1,11 +1,13 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 // Two projects: `unit` (pure TS, fast, no DB) and `integration` (route handlers + services against
-// TEST_DATABASE_URL). Both share the `@/` alias.
+// TEST_DATABASE_URL, which the global setup resets). Both share the `@/` alias.
+//
+// No @vitejs/plugin-react: suites run in the node environment and only need esbuild's JSX transform.
+// (plugin-react 6 requires Vite 8; Vitest 3 resolves Vite 7.)
 export default defineConfig({
-  plugins: [react()],
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "src") },
   },

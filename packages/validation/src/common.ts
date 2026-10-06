@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidTimeZone } from "@workmode/shared/time/time";
 
 /** Reusable primitives shared by every API schema. */
 export const uuidSchema = z.uuid();
@@ -19,18 +20,13 @@ export const isoDateTimeSchema = z
   .refine((s) => !Number.isNaN(Date.parse(s)), { message: "Invalid date-time" })
   .refine((s) => /(Z|[+-]\d{2}:?\d{2})$/.test(s), { message: "Date-time must include a timezone offset" });
 
-/** IANA timezone identifier, validated with Intl. */
-export const timezoneSchema = z.string().refine(
-  (tz) => {
-    try {
-      new Intl.DateTimeFormat("en-GB", { timeZone: tz });
-      return true;
-    } catch {
-      return false;
-    }
-  },
-  { message: "Invalid IANA timezone" },
-);
+/**
+ * IANA timezone identifier. Delegates to the shared time helpers so the API never accepts a zone the
+ * domain logic would later reject (e.g. fixed offsets like "+01:00", which Intl accepts).
+ */
+export const timezoneSchema = z
+  .string()
+  .refine((tz) => isValidTimeZone(tz), { message: "Invalid IANA timezone" });
 
 /**
  * Password policy: 10+ chars, at least one letter and one digit. Length is the primary defence; the

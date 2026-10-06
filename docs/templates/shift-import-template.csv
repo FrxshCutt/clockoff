@@ -1,0 +1,4 @@
+employee_name,employee_id,email,date,start_time,end_time,location,department,role,break_minutes
+Jane Smith,E1042,jane.smith@example.com,2030-03-05,09:00,17:00,High Street,Front of house,Barista,30
+"Smith, John",E1043,,2030-03-05,2pm,10pm,High Street,Kitchen,Chef,
+,E1044,amira.khan@example.com,2030-03-06,07:30,15:30,Station Road,,Supervisor,45
