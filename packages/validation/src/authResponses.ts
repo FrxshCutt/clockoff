@@ -64,12 +64,17 @@ export type CurrentUserResponse = z.infer<typeof currentUserResponseSchema>;
 
 export const HEALTH_STATUSES = ["ok", "degraded"] as const;
 export const DATABASE_HEALTH_STATUSES = ["ok", "unreachable"] as const;
+export const MIGRATION_HEALTH_STATUSES = ["up_to_date", "pending", "failed", "unknown"] as const;
 
-/** `GET /api/health` — 200 when the database answers, 503 (same shape) when it does not. */
+/**
+ * `GET /api/health` — 200 when the database answers and every migration is applied; 503 (same shape)
+ * when the database is unreachable or migrations are pending/failed.
+ */
 export const healthResponseSchema = z
   .object({
     status: z.enum(HEALTH_STATUSES),
     database: z.enum(DATABASE_HEALTH_STATUSES),
+    migrations: z.enum(MIGRATION_HEALTH_STATUSES),
     time: instantSchema,
   })
   .meta({ id: "HealthResponse" });

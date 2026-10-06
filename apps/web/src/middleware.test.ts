@@ -77,3 +77,102 @@ describe("middleware", () => {
     expect(matcher.test("/logo.svg")).toBe(false);
   });
 });
+
+describe("middleware with hostname routing on", () => {
+  const ROUTING = {
+    HOST_ROUTING: "on",
+    APP_URL: "https://app.example.com",
+    MARKETING_URL: "https://example.com",
+  };
+
+  function withEnv<T>(vars: Record<string, string>, fn: () => T): T {
+    const saved = Object.fromEntries(Object.keys(vars).map((k) => [k, process.env[k]]));
+    Object.assign(process.env, vars);
+    try {
+      return fn();
+    } finally {
+      for (const [k, v] of Object.entries(saved)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  }
+
+  function hostReq(url: string, init: { method?: string; headers?: Record<string, string> } = {}) {
+    const u = new URL(url);
+    return new NextRequest(u, {
+      method: init.method ?? "GET",
+      headers: { host: u.host, ...init.headers },
+    });
+  }
+
+  it("redirects dashboard pages on the apex to the app host, with security headers", () => {
+    const res = withEnv(ROUTING, () =>
+      middleware(hostReq("https://example.com/login?next=%2Foverview")),
+    );
+    expect(res.status).toBe(308);
+    expect(res.headers.get("location")).toBe("https://app.example.com/login?next=%2Foverview");
+    expect(res.headers.get("x-frame-options")).toBe("DENY");
+  });
+
+  it("serves marketing pages on the apex and redirects www to the apex", () => {
+    const apex = withEnv(ROUTING, () => middleware(hostReq("https://example.com/pricing")));
+    expect(apex.headers.get("location")).toBeNull();
+    const www = withEnv(ROUTING, () => middleware(hostReq("https://www.example.com/")));
+    expect(www.status).toBe(308);
+    expect(www.headers.get("location")).toBe("https://example.com/");
+  });
+
+  it("404s app APIs on the apex", async () => {
+    const res = withEnv(ROUTING, () =>
+      middleware(
+        hostReq("https://example.com/api/auth/login", {
+          method: "POST",
+          headers: { origin: "https://example.com" },
+        }),
+      ),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: { code: "NOT_FOUND", message: "Not found" } });
+  });
+
+  it("accepts a demo request posted from the marketing origin, but not from elsewhere", () => {
+    const ok = withEnv(ROUTING, () =>
+      middleware(
+        hostReq("https://example.com/api/request-demo", {
+          method: "POST",
+          headers: { origin: "https://example.com" },
+        }),
+      ),
+    );
+    expect(ok.status).toBe(200);
+    const evil = withEnv(ROUTING, () =>
+      middleware(
+        hostReq("https://example.com/api/request-demo", {
+          method: "POST",
+          headers: { origin: "https://evil.example" },
+        }),
+      ),
+    );
+    expect(evil.status).toBe(403);
+    const crossHost = withEnv(ROUTING, () =>
+      middleware(
+        hostReq("https://app.example.com/api/auth/login", {
+          method: "POST",
+          headers: { origin: "https://example.com" },
+        }),
+      ),
+    );
+    expect(crossHost.status).toBe(403);
+  });
+
+  it("sends the app root to /overview and leaves preview hosts alone", () => {
+    const root = withEnv(ROUTING, () => middleware(hostReq("https://app.example.com/")));
+    expect(root.status).toBe(307);
+    expect(root.headers.get("location")).toBe("https://app.example.com/overview");
+    const preview = withEnv(ROUTING, () =>
+      middleware(hostReq("https://workmode-abc123.vercel.app/login")),
+    );
+    expect(preview.headers.get("location")).toBeNull();
+  });
+});

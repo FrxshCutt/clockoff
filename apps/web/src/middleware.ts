@@ -1,4 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  allowedOriginForRequest,
+  readHostRoutingConfig,
+  routeByHost,
+} from "@/server/http/hostRouting";
 import { checkRequestOrigin } from "@/server/http/originCheck";
 import { applySecurityHeaders } from "@/server/http/securityHeaders";
 
@@ -11,7 +16,9 @@ import { applySecurityHeaders } from "@/server/http/securityHeaders";
  *    exempt (bearer-token clients, not browsers). The double-submit token (layer 2) is checked by the
  *    handler wrapper;
  * 3. sets security headers (CSP, HSTS in production, X-Frame-Options, nosniff, Referrer-Policy,
- *    Permissions-Policy) on the response.
+ *    Permissions-Policy) on the response;
+ * 4. when `HOST_ROUTING=on`, routes by hostname: the marketing site on `MARKETING_URL` (+ www), the
+ *    dashboard and APIs on `APP_URL` (server/http/hostRouting.ts). Other hosts are untouched.
  *
  * Edge runtime: no Node APIs and no `env()` (secrets are not needed here); `APP_URL` is read directly.
  */
@@ -43,9 +50,23 @@ function finalise(response: NextResponse, requestId: string): NextResponse {
 export function middleware(req: NextRequest): NextResponse {
   const requestId = resolveRequestId(req);
   const pathname = req.nextUrl.pathname;
+  const host = req.headers.get("host");
+  const routing = readHostRoutingConfig(process.env);
+
+  const decision = routeByHost(routing, { host, pathname, search: req.nextUrl.search });
+  if (decision.action === "redirect") {
+    return finalise(NextResponse.redirect(decision.location, decision.status), requestId);
+  }
+  if (decision.action === "not_found") {
+    const response = NextResponse.json(
+      { error: { code: "NOT_FOUND", message: "Not found" } },
+      { status: 404, headers: { "cache-control": "no-store" } },
+    );
+    return finalise(response, requestId);
+  }
 
   if (pathname.startsWith("/api/")) {
-    const origin = allowedOrigin();
+    const origin = allowedOriginForRequest(routing, allowedOrigin(), { host, pathname });
     // Fail closed: without a configured APP_URL no mutating browser request can be verified.
     const verdict = checkRequestOrigin({
       method: req.method,

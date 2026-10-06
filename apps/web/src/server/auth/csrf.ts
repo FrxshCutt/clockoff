@@ -3,6 +3,7 @@ import { CSRF_COOKIE, csrfCookie } from "@/lib/cookies";
 import { createCsrfToken, isValidCsrfToken, verifyCsrfPair } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { CSRF_HEADER, getCookie, isMutatingMethod } from "@/lib/request";
+import { allowedOriginForRequest, readHostRoutingConfig } from "@/server/http/hostRouting";
 
 /**
  * CSRF protection for cookie-authenticated (manager) requests:
@@ -19,7 +20,13 @@ import { CSRF_HEADER, getCookie, isMutatingMethod } from "@/lib/request";
  */
 export function assertAllowedOrigin(req: Request): void {
   const origin = req.headers.get("origin");
-  if (origin !== null && origin !== env().APP_ORIGIN) {
+  if (origin === null) return;
+  // With hostname routing on, the marketing host's own APIs accept its origin (server/http/hostRouting.ts).
+  const allowed = allowedOriginForRequest(readHostRoutingConfig(process.env), env().APP_ORIGIN, {
+    host: req.headers.get("host"),
+    pathname: new URL(req.url).pathname,
+  });
+  if (origin !== allowed) {
     throw new AppError("CSRF_FAILED", "Request origin is not allowed");
   }
 }

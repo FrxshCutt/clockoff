@@ -134,11 +134,15 @@ describe("audit with empty snapshots", () => {
 });
 
 describe("GET /api/health", () => {
-  it("reports database reachability", async () => {
-    const res = await callRoute<{ status: string; database: string }>(healthRoute, {
-      path: "/api/health",
-    });
+  it("reports database reachability and that every migration is applied", async () => {
+    const res = await callRoute<{ status: string; database: string; migrations: string }>(
+      healthRoute,
+      {
+        path: "/api/health",
+      },
+    );
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ status: "ok", database: "ok" });
+    expect(res.body).toMatchObject({ status: "ok", database: "ok", migrations: "up_to_date" });
+    expect(Object.keys(res.body).sort()).toEqual(["database", "migrations", "status", "time"]);
   });
 });

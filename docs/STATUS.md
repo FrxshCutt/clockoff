@@ -83,6 +83,19 @@ break, returns at break end and lifts at shift end.
   the phone always requires the employee's own selection, so the flag does not change device behaviour.
 - **iOS Background Modes** includes `processing`, which is not used yet; consider removing it before App Review.
 
+## Deployment
+
+**Not deployed yet.** The repository is prepared for Vercel + Neon (runbook: `docs/DEPLOYMENT.md`):
+
+- Hostname routing for `DOMAIN`/`www` (marketing) and `app.DOMAIN` (dashboard + APIs) behind `HOST_ROUTING=on`.
+- `apps/web/vercel.json` (pnpm install, `build:vercel` runs `prisma generate`, London region); the production
+  build was verified with an empty environment.
+- `GET /api/jobs/tick` for Vercel Cron; `/api/health` reports database and migration status.
+- The demo seed refuses production and non-local databases unless `ALLOW_SEED=true`.
+- `apps/web/.env.production.example` documents every production variable.
+
+Waiting on credentials in `.env.deploy` (domain, Vercel token, Neon key or connection strings, DNS token).
+
 ## Where to look next
 
 - Decisions and assumptions: `docs/DECISIONS.md`

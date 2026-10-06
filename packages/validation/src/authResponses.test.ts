@@ -50,6 +50,7 @@ describe("auth responses", () => {
       healthResponseSchema.safeParse({
         status: "degraded",
         database: "unreachable",
+        migrations: "unknown",
         time: "2026-10-06T10:00:00.000Z",
       }).success,
     ).toBe(true);

@@ -22414,6 +22414,15 @@
               "unreachable"
             ]
           },
+          "migrations": {
+            "type": "string",
+            "enum": [
+              "up_to_date",
+              "pending",
+              "failed",
+              "unknown"
+            ]
+          },
           "time": {
             "type": "string",
             "format": "date-time",
@@ -22423,6 +22432,7 @@
         "required": [
           "status",
           "database",
+          "migrations",
           "time"
         ]
       },

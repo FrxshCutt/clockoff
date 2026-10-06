@@ -9,8 +9,12 @@ export const maxDuration = 300;
  * `POST /api/jobs/tick` (cron: `Authorization: Bearer <CRON_SECRET>`) → `{ ok, report }`. Runs one Work
  * Mode tick for an external scheduler; idempotent and safe alongside the node-cron runner
  * (docs/WORK_MODE_SERVER_JOB.md). Not part of the public OpenAPI document (internal endpoint).
+ *
+ * `GET` is the same handler for Vercel Cron, which calls the path with GET and sends
+ * `Authorization: Bearer <CRON_SECRET>` when the project has a `CRON_SECRET` variable.
  */
 export const POST = createHandler({ auth: "cron" }, async ({ log }) => ({
   ok: true as const,
   report: await runWorkModeTick(new Date(), { log }),
 }));
+export const GET = POST;

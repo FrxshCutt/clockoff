@@ -15,6 +15,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!**/.env.production.example
 
 # logs
 *.log
@@ -50,3 +51,6 @@ apps/ios/**/.swiftpm/xcode/package.xcworkspace/xcuserdata/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# deployment credentials (local only)
+.env.deploy
