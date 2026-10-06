@@ -33,11 +33,10 @@ final class ShieldActionExtension: ShieldActionDelegate {
                 logger.error("App Group unavailable: cannot record the status request")
             }
             return .close
-        case .firstSecondarySubmenuItemPressed, .secondSecondarySubmenuItemPressed, .thirdSecondarySubmenuItemPressed:
-            // Work Mode's shield has no submenu; treat any submenu tap like the primary button.
-            return .close
-        @unknown default:
-            logger.info("unknown shield action")
+        default:
+            // Work Mode's shield has no submenu. Newer SDKs add submenu actions (absent from older SDKs such as
+            // the Xcode 26.3 CI image), so they are handled here rather than by name: any of them closes.
+            logger.info("other shield action")
             return .close
         }
     }
