@@ -6,6 +6,8 @@
 #   make build-release   Release build for the simulator, then Scripts/verify-release.sh: fails if the
 #                        mock provider, DEBUG/DEBUG_MOCK_RESTRICTIONS or the Debug-only ATS keys reach
 #                        Release, or a target's bundle id / App Group / Family Controls entitlement is wrong
+#   make sync-fixtures   copy docs/fixtures/workmode-cases.json into the WorkModeCore test bundle (the engine
+#                        fixture test fails when the copy is stale)
 #   make clean           remove build output
 #
 # Simulator builds are unsigned (no signing identity is needed). Device builds need DEVELOPMENT_TEAM in the
@@ -30,7 +32,14 @@ XCODEBUILD = set -o pipefail && xcodebuild -project $(PROJECT) -scheme $(SCHEME)
 
 RELEASE_APP = $(RELEASE_DATA)/Build/Products/Release-iphonesimulator/WorkModeApp.app
 
-.PHONY: generate build test build-release clean check-project
+FIXTURE_SRC   := ../../docs/fixtures/workmode-cases.json
+FIXTURE_DST   := Packages/WorkModeCore/Tests/WorkModeCoreTests/Fixtures/workmode-cases.json
+
+.PHONY: generate build test build-release sync-fixtures clean check-project
+
+sync-fixtures:
+	cp "$(FIXTURE_SRC)" "$(FIXTURE_DST)"
+	@echo "copied $(FIXTURE_SRC) -> $(FIXTURE_DST)"
 
 generate:
 	xcodegen generate --spec project.yml

@@ -4,6 +4,8 @@ import path from "node:path";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { PathnameContext, SearchParamsContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { EMPTY_STATES, type EmptyStateKey } from "./emptyStates";
 import { AUTH_ROUTES, NAV_ITEMS, ROUTES, routeFor } from "./navigation";
@@ -18,7 +20,7 @@ const SAMPLE_ID = "0b7c2d1e-5a4f-4c3b-9d2e-1f0a9b8c7d6e";
 
 /** Route pattern → the route group that owns it. Detail routes use Next's `[id]` segment. */
 function pageFileFor(route: string): string {
-  if (route === ROUTES.home) return path.join(APP_DIR, "page.tsx");
+  if (route === ROUTES.home) return path.join(APP_DIR, "(marketing)", "page.tsx");
   const group = AUTH_ROUTES.includes(route) ? "(auth)" : "(dashboard)";
   return path.join(APP_DIR, group, ...route.split("/").filter(Boolean), "page.tsx");
 }
@@ -32,23 +34,26 @@ const DETAIL_ROUTES = [
 
 /** Dashboard routes → the empty state their placeholder shows (null: the page has a real body already). */
 const DASHBOARD_PAGES: Record<string, EmptyStateKey | null> = {
-  [ROUTES.overview]: "overview",
-  [ROUTES.employees]: "employees",
-  "/employees/[id]": "employeeDetail",
-  [ROUTES.schedule]: "schedule",
-  [ROUTES.scheduleImport]: "scheduleImport",
-  [ROUTES.policies]: "policies",
-  [ROUTES.policyNew]: "policyNew",
-  "/policies/[id]": "policyDetail",
-  [ROUTES.breakRules]: "breakRules",
-  [ROUTES.breakRuleNew]: "breakRuleNew",
-  "/break-rules/[id]": "breakRuleDetail",
-  [ROUTES.integrations]: "integrations",
-  [ROUTES.activity]: "activity",
-  [ROUTES.locations]: "locations",
-  [ROUTES.devices]: "devices",
-  "/devices/[id]": "deviceDetail",
-  [ROUTES.auditLogs]: "auditLogs",
+  // Every dashboard page now has a real body (data-driven empty states render only after a fetch), so the
+  // bare-render contract is: exactly one <h1>, no "undefined" text. Set a key to an EmptyStateKey only for a
+  // placeholder page.
+  [ROUTES.overview]: null,
+  [ROUTES.employees]: null,
+  "/employees/[id]": null,
+  [ROUTES.schedule]: null,
+  [ROUTES.scheduleImport]: null,
+  [ROUTES.policies]: null,
+  [ROUTES.policyNew]: null,
+  "/policies/[id]": null,
+  [ROUTES.breakRules]: null,
+  [ROUTES.breakRuleNew]: null,
+  "/break-rules/[id]": null,
+  [ROUTES.integrations]: null,
+  [ROUTES.activity]: null,
+  [ROUTES.locations]: null,
+  [ROUTES.devices]: null,
+  "/devices/[id]": null,
+  [ROUTES.auditLogs]: null,
   [ROUTES.settings]: null,
   [ROUTES.billing]: null,
   [ROUTES.help]: null,
@@ -64,14 +69,32 @@ async function loadPage(route: string): Promise<PageModule> {
   return (await import(/* @vite-ignore */ pageFileFor(route))) as PageModule;
 }
 
+/** Pages call useRouter()/usePathname()/useSearchParams(); outside Next these need their contexts mounted. */
+const stubRouter: AppRouterInstance = {
+  back: () => undefined,
+  forward: () => undefined,
+  refresh: () => undefined,
+  hmrRefresh: () => undefined,
+  push: () => undefined,
+  replace: () => undefined,
+  prefetch: () => undefined,
+};
+
 async function renderPage(route: string, id = SAMPLE_ID): Promise<string> {
   const { default: Page } = await loadPage(route);
   const element = await Page({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const pathname = route.replace("[id]", id);
   return renderToStaticMarkup(
-    <QueryClientProvider client={client}>
-      <TooltipProvider>{element}</TooltipProvider>
-    </QueryClientProvider>,
+    <AppRouterContext.Provider value={stubRouter}>
+      <PathnameContext.Provider value={pathname}>
+        <SearchParamsContext.Provider value={new URLSearchParams()}>
+          <QueryClientProvider client={client}>
+            <TooltipProvider>{element}</TooltipProvider>
+          </QueryClientProvider>
+        </SearchParamsContext.Provider>
+      </PathnameContext.Provider>
+    </AppRouterContext.Provider>,
   );
 }
 
@@ -101,7 +124,10 @@ describe("route coverage", () => {
 describe("dashboard pages", () => {
   it.each(Object.entries(DASHBOARD_PAGES))("%s renders one <h1> and its empty state", async (route, emptyState) => {
     const html = await renderPage(route);
-    expect(html.match(/<h1[\s>]/g)?.length, route).toBe(1);
+    const headings = html.match(/<h1[\s>]/g)?.length ?? 0;
+    // Detail pages title themselves after the record loads (a bare render shows their skeleton frame).
+    if (DETAIL_ROUTES.includes(route)) expect(headings, route).toBeLessThanOrEqual(1);
+    else expect(headings, route).toBe(1);
     expect(html).not.toMatch(/>undefined</);
     if (emptyState) expect(html).toContain(EMPTY_STATES[emptyState].title.replace(/'/g, "&#x27;"));
   });

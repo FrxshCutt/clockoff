@@ -75,6 +75,9 @@ targets:
     dependencies:
       - package: WorkModeCore
         product: WorkModeCore
+      # Shared ManagedSettings/FamilyControls adapter (also linked by the DeviceActivityMonitor extension).
+      - package: WorkModeCore
+        product: WorkModeScreenTime
       - target: WorkModeDeviceActivityMonitor
       - target: WorkModeShieldConfiguration
       - target: WorkModeShieldAction
@@ -129,6 +132,8 @@ targets:
     dependencies:
       - package: WorkModeCore
         product: WorkModeCore
+      - package: WorkModeCore
+        product: WorkModeScreenTime
 
   WorkModeShieldConfiguration:
     type: app-extension
@@ -229,6 +234,7 @@ schemes:
       targets:
         - name: WorkModeAppTests
         - package: WorkModeCore/WorkModeCoreTests
+        - package: WorkModeCore/WorkModeScreenTimeTests
     profile:
       config: Release
     analyze:

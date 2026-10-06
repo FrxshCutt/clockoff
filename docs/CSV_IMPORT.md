@@ -446,4 +446,31 @@ checked on every test run.
 
 ## Wizard
 
-_To be documented with the web import wizard (upload → mapping → options → review → import)._
+The web wizard drives the endpoints below (`apps/web/src/server/imports`). Every route is scoped to the
+manager's organisation through the session; reads need `schedule:read`, writes `imports:write`. The file is
+read once, at upload: every later step works from the rows stored then, so a committed import is fully
+reproducible from the database.
+
+| Step | Request | Result |
+| --- | --- | --- |
+| 1. Upload | `POST /api/imports` — `multipart/form-data` with `file` (≤ 5 MB; `.csv`, `.txt` or `.tsv`; type `text/csv`, `application/csv`, `application/vnd.ms-excel`, `text/plain` or none) plus optional `dateFormat`, `timezone`, `locationId` fields | `201 { import, suggestion, sampleRows }`. The import is `UPLOADED`; every data row is stored (`raw` cells, status `ERROR` as a placeholder, structural `INVALID_CSV` problems). `suggestion` = `suggestMapping(headers)`: `mapping`, `confidence` and `needsConfirmation` — generic headers (`ID`, `Name`, `Day`, `In`, `Out`, …), partial matches and contested fields that the wizard must make the manager confirm. Options default to the organisation's date format and timezone (the location's timezone when `locationId` is given). Errors: `UNSUPPORTED_MEDIA_TYPE` 415 (not multipart / not a CSV type), `PAYLOAD_TOO_LARGE` 413, `INVALID_CSV` 400 (`details.problems`, incl. `TOO_MANY_ROWS` above 5,000 data rows), `NOT_FOUND` 404 for a `locationId` outside the organisation. |
+| 2. Map | `POST /api/imports/:id/mapping { mapping, options? }` | `200 { import, suggestion }`, status `MAPPED`. Keys must be headers of the file (`VALIDATION_ERROR`), each field at most once, and date, start time, end time plus one of employee ID / email / name must be mapped — otherwise `IMPORT_MAPPING_INCOMPLETE` with the `MappingCheck` as `details`. `options.dateFormat` / `timezone` / `locationId` (the location applied to rows with an empty location cell; `null` clears it) merge into the stored options. Headers longer than 200 characters cannot be mapped and are left out of the mapping. Allowed while `UPLOADED`, `MAPPED` or `VALIDATED` (counts reset; validate again). |
+| 3. Validate | `POST /api/imports/:id/validate {}` | `200 { import, summary }`, status `VALIDATED`. Runs `normaliseRows` (stored date format / timezone / default location), `matchRows` against the organisation's ACTIVE employees, then `validateRows` against live shifts of those employees in the file's window (not cancelled, not deleted) and the organisation's location names (`SHIFT_IN_PAST` uses the current time), and persists `parsed`, `problems`, `status` and `matchedEmployeeId` on every row plus the counts on the import. Re-runnable and idempotent. `IMPORT_MAPPING_INCOMPLETE` while still `UPLOADED`; `IMPORT_INVALID_STATE` once committed. |
+| 4. Review | `GET /api/imports/:id` · `GET /api/imports/:id/rows?status&page&pageSize` · `GET /api/imports/:id/errors.csv` | The import (with the suggestion repeated until committed), rows in file order (`raw`, `parsed`, `problems`, `matchedEmployee`, `createEmployee`, `createdShiftId`) and `toErrorsCsv` over every row with a problem as a `text/csv` attachment named `<file>-errors.csv`. |
+| 5. Fix rows | `PATCH /api/imports/:id/rows/:rowId` with exactly one of `{ matchedEmployeeId }` (pin an active employee of the organisation — `EMPLOYEE_NOT_FOUND` otherwise; `null` returns the row to automatic matching), `{ createEmployee: { firstName, lastName, email?, externalEmployeeId?, jobTitle?, primaryLocationId? } }` (creates the employee immediately through the employees service — requires `employees:write` — and pins them), `{ skip: true \| false }`, `{ locationAction: "CREATE" \| "IGNORE" }` (creates the row's unknown location in the organisation, or imports the row without a location) | `200 { row, summary }`. Requires status `VALIDATED`. The decision is stored with the row and the whole import is re-validated, so a sibling that overlapped a now-skipped row becomes importable and every earlier fix survives later validations. |
+| 6. Commit | `POST /api/imports/:id/commit { includeWarnings?: true, skipErrors?: false }` | `200 { import, shiftsCreated, employeesCreated, rowsSkipped }`, status `IMPORTED`. `IMPORT_HAS_ERRORS` 409 (`details.errorCount`) while `ERROR` rows remain unless `skipErrors` (they stay `ERROR`; nothing is created for them); `WARNING` rows are imported unless `includeWarnings: false` (then `SKIPPED`); `IMPORT_INVALID_STATE` when nothing would be created. One transaction creates a `Shift` per row — `source: CSV_IMPORT`, the row's instants and timezone, the location matched by name unless ignored — and marks the row `IMPORTED` with `createdShiftId`; `IMPORT_COMPLETED` is recorded (counts only), `SCHEDULE_CHANGED` is published per employee so devices re-sync, and `import.completed` goes to the dashboard stream. |
+
+Also: `GET /api/imports?status&page&pageSize` lists an organisation's imports, newest first.
+
+Notes:
+
+- `break_minutes` becomes one scheduled break of that length centred in the shift
+  (`offsetMinutesFromStart = floor((shift minutes − break) / 2)`); none is created when it does not fit.
+- `department` and `role` are informational: they stay on the row's `parsed` data and are never written to
+  the shift.
+- `skippedCount` on the import is derived (`rowCount − valid − warning − error − imported`) once validated;
+  `summary.readyToCommit` is true for a `VALIDATED` import with no `ERROR` rows and at least one importable row.
+- Row decisions are stored under a private `resolution` key inside `ShiftImportRow.parsed` (never returned by
+  the API).
+- Commit trusts the last validation; shifts created by other means in between are not re-checked — re-run
+  validate first if the wizard was left open for a long time.

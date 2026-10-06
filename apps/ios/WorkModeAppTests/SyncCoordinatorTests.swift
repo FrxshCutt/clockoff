@@ -13,7 +13,7 @@ final class SyncCoordinatorTests: XCTestCase {
         env.api.meHandler = { Fixtures.me }
     }
 
-    private var shiftActivityName: String { ActivityPlanner.shiftActivityPrefix + Fixtures.shift.id }
+    private var shiftActivityName: String { ActivityNaming.shift(shiftId: Fixtures.shift.id, version: Fixtures.shift.version) }
 
     func testFirstSyncCachesSchedulesEnforcesAndReports() async throws {
         try await env.authoriseAndSelect()
@@ -89,7 +89,7 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertFalse(outcome.policyChanged)
         XCTAssertTrue(outcome.scheduleChanged)
         XCTAssertTrue(outcome.activitiesRescheduled)
-        XCTAssertEqual(env.provider.scheduledActivities.map(\.name), [shiftActivityName, ActivityPlanner.shiftActivityPrefix + tomorrow.id])
+        XCTAssertEqual(env.provider.scheduledActivities.map(\.name), [shiftActivityName, ActivityNaming.shift(shiftId: tomorrow.id, version: tomorrow.version)])
         XCTAssertEqual(env.api.postedEvents.filter { $0.type == .scheduleSynced }.count, 2)
         XCTAssertEqual(env.api.postedEvents.filter { $0.type == .policySynced }.count, 1)
         XCTAssertEqual(env.api.postedEvents.last(where: { $0.type == .scheduleSynced })?.metadata?.scheduleVersion, 2)

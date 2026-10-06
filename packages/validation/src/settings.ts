@@ -42,6 +42,26 @@ const limitValueSchema = z
   .union([z.int().min(0), z.literal("UNLIMITED")])
   .meta({ id: "PlanLimitValue", description: "A count, or UNLIMITED." });
 
+/** One plan of the catalogue (`PLAN_CONFIG` in @workmode/shared/plans) as shown on the billing page. */
+export const planCatalogEntrySchema = z
+  .object({
+    id: planSchema,
+    name: z.string(),
+    priceLabel: z.string(),
+    limits: z.object({
+      employees: limitValueSchema,
+      locations: limitValueSchema,
+      integrations: limitValueSchema,
+      analytics: z.boolean(),
+      auditLogRetentionDays: z.int().min(0),
+    }),
+    features: z.array(z.string()),
+    /** True for the organisation's current plan. */
+    isCurrent: z.boolean(),
+  })
+  .meta({ id: "PlanCatalogEntry" });
+export type PlanCatalogEntry = z.infer<typeof planCatalogEntrySchema>;
+
 /** `GET /api/settings/billing` — read-only plan information; there is no in-app checkout in the MVP. */
 export const billingResponseSchema = z
   .object({
@@ -62,6 +82,8 @@ export const billingResponseSchema = z
     trialEndsAt: nullableInstantSchema,
     /** Where an OWNER manages the subscription; null until billing is wired up. */
     manageUrl: z.url().nullable(),
+    /** Every plan, in upgrade order, so the billing page can compare them. */
+    plans: z.array(planCatalogEntrySchema).optional(),
   })
   .meta({ id: "BillingResponse" });
 export type BillingResponse = z.infer<typeof billingResponseSchema>;

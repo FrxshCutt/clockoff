@@ -1,0 +1,4157 @@
+[
+  {
+    "name": "canonical-0844-off-shift",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 08:44:59 is one second before the 15-minute pre-shift window.",
+    "input": {
+      "now": "2026-01-12T08:44:59.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T08:45:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "canonical-0845-starting-soon",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 08:45 opens the pre-shift window (inclusive).",
+    "input": {
+      "now": "2026-01-12T08:45:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "canonical-0859-starting-soon",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 08:59 is still SHIFT_STARTING_SOON; restrictions are not active yet.",
+    "input": {
+      "now": "2026-01-12T08:59:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "canonical-0859-59-999-starting-soon-last-ms",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 08:59:59.999 is the last instant before the shift start: still SHIFT_STARTING_SOON ([start, end) is half-open).",
+    "input": {
+      "now": "2026-01-12T08:59:59.999Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "canonical-0900-working",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 09:00 is the shift start (inclusive): WORKING, next change is the break start.",
+    "input": {
+      "now": "2026-01-12T09:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T10:15:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "canonical-1015-on-break",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 10:15 the break starts: ON_BREAK with every category lifted.",
+    "input": {
+      "now": "2026-01-12T10:15:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-1",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "canonical-1029-59-999-on-break-last-ms",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 10:29:59.999 is the last instant of the break (plannedEndsAt > now): still ON_BREAK.",
+    "input": {
+      "now": "2026-01-12T10:29:59.999Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-1",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "canonical-1030-break-expired",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 10:30 the break's plannedEndsAt is reached; the row is still ACTIVE but is treated as EXPIRED → WORKING.",
+    "input": {
+      "now": "2026-01-12T10:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "canonical-1455-shift-ending",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 14:55 opens the 5-minute SHIFT_ENDING window (inclusive); restrictions stay on.",
+    "input": {
+      "now": "2026-01-12T14:55:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "canonical-1456-shift-ending",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 14:56 is inside the SHIFT_ENDING window.",
+    "input": {
+      "now": "2026-01-12T14:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "canonical-1459-59-999-shift-ending-last-ms",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 14:59:59.999 is the last instant of the shift: still SHIFT_ENDING.",
+    "input": {
+      "now": "2026-01-12T14:59:59.999Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "canonical-1500-off-shift",
+    "description": "Canonical day (Europe/London in January = UTC): shift 09:00–15:00, a 15-minute RELAX_ALL break started 10:15 and never closed by the device. 15:00 is the shift end (exclusive): OFF_SHIFT and no future shift, so nextTransitionAt is null.",
+    "input": {
+      "now": "2026-01-12T15:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null,
+      "upcomingShiftId": null
+    }
+  },
+  {
+    "name": "break-ended-early-by-employee",
+    "description": "Shift 09:00–15:00; a break 10:15–10:30 was ended by the employee at 10:20 (status ENDED). At 10:22 the employee is WORKING.",
+    "input": {
+      "now": "2026-01-12T10:22:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-2",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": "2026-01-12T10:20:00.000Z",
+          "status": "ENDED",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "break-ended-row-evaluated-before-its-end",
+    "description": "The same ENDED row (10:15, ended 10:20) evaluated at 10:18: a session counts during [startedAt, min(plannedEndsAt, endedAt)) whatever its status, so past instants (replays) still see the break.",
+    "input": {
+      "now": "2026-01-12T10:18:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-2",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": "2026-01-12T10:20:00.000Z",
+          "status": "ENDED",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-2",
+      "nextTransitionAt": "2026-01-12T10:20:00.000Z"
+    }
+  },
+  {
+    "name": "break-active-row-with-endedat",
+    "description": "An ACTIVE row that already carries endedAt 10:20 (status not yet flipped to ENDED) ends at its endedAt: at 10:19 still ON_BREAK, and 10:20 is the next change.",
+    "input": {
+      "now": "2026-01-12T10:19:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-active-ended",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": "2026-01-12T10:20:00.000Z",
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-active-ended",
+      "nextTransitionAt": "2026-01-12T10:20:00.000Z",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "break-ended-late-capped-at-planned-end",
+    "description": "An ENDED row whose endedAt (10:40) was reported after its plannedEndsAt (10:30): the planned end still caps the break (plannedEndsAt ≤ now → expired), so at 10:35 the employee is WORKING.",
+    "input": {
+      "now": "2026-01-12T10:35:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late-report",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": "2026-01-12T10:40:00.000Z",
+          "status": "ENDED",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "break-ended-without-endedat-ignored",
+    "description": "An ENDED row with no endedAt has no usable window and is ignored: WORKING.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-bad",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ENDED",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "break-of-unknown-shift-ignored",
+    "description": "An ACTIVE break whose shiftId is not one of the supplied (effective) shifts is ignored.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-orphan",
+          "shiftId": "shift-elsewhere",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "break-of-cancelled-shift-ignored",
+    "description": "A running break whose shift is CANCELLED is ignored even though a SCHEDULED shift covers the same time: WORKING.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-cancelled",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "CANCELLED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-cancelled",
+          "shiftId": "shift-cancelled",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z"
+    }
+  },
+  {
+    "name": "break-keep-restrictions",
+    "description": "A break whose policy snapshot is KEEP_RESTRICTIONS: ON_BREAK but the WORK restriction stays fully active.",
+    "input": {
+      "now": "2026-01-12T11:05:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-keep",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T11:00:00.000Z",
+          "plannedEndsAt": "2026-01-12T11:15:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "KEEP_RESTRICTIONS",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-keep",
+      "nextTransitionAt": "2026-01-12T11:15:00.000Z"
+    }
+  },
+  {
+    "name": "break-relax-categories",
+    "description": "RELAX_CATEGORIES break with a messy stored JSON list (duplicate, unknown entry, non-canonical order): only the known categories are lifted, in canonical order, and the rest stay enforced.",
+    "input": {
+      "now": "2026-01-12T12:05:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-cat",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T12:00:00.000Z",
+          "plannedEndsAt": "2026-01-12T12:15:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_CATEGORIES",
+          "relaxedCategories": [
+            "GAMES",
+            "SOCIAL_MEDIA",
+            "NOT_A_CATEGORY",
+            "GAMES"
+          ]
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-cat",
+      "nextTransitionAt": "2026-01-12T12:15:00.000Z",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES"
+      ]
+    }
+  },
+  {
+    "name": "break-relax-categories-empty-list",
+    "description": "RELAX_CATEGORIES with an empty list lifts nothing: ON_BREAK with the WORK restriction (same as breakRestrictionForSession).",
+    "input": {
+      "now": "2026-01-12T12:05:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-empty",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T12:00:00.000Z",
+          "plannedEndsAt": "2026-01-12T12:15:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_CATEGORIES",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-empty",
+      "nextTransitionAt": "2026-01-12T12:15:00.000Z"
+    }
+  },
+  {
+    "name": "break-relax-categories-every-category",
+    "description": "RELAX_CATEGORIES listing every category: BREAK_RELAXED with nothing left enforced (restrictionsShouldBeActive false), same as RELAX_ALL for the device.",
+    "input": {
+      "now": "2026-01-12T12:05:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-all-cats",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T12:00:00.000Z",
+          "plannedEndsAt": "2026-01-12T12:15:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_CATEGORIES",
+          "relaxedCategories": [
+            "OTHER_SELECTED",
+            "DATING",
+            "SHOPPING",
+            "VIDEO",
+            "STREAMING",
+            "ENTERTAINMENT",
+            "GAMES",
+            "SOCIAL_MEDIA"
+          ]
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-all-cats",
+      "nextTransitionAt": "2026-01-12T12:15:00.000Z",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "break-expires-inside-shift-ending-window",
+    "description": "Break 14:45–14:57 expires inside the 14:55–15:00 SHIFT_ENDING window: at 14:57 the state is SHIFT_ENDING (not WORKING); next change is the shift end.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late-short",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T14:45:00.000Z",
+          "plannedEndsAt": "2026-01-12T14:57:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "overnight-2150-starting-soon",
+    "description": "Overnight shift 22:00 → 06:00 the next day. 21:50 is inside the pre-shift window.",
+    "input": {
+      "now": "2026-01-12T21:50:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-night",
+          "startsAt": "2026-01-12T22:00:00.000Z",
+          "endsAt": "2026-01-13T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T22:00:00.000Z",
+      "upcomingShiftId": "shift-night"
+    }
+  },
+  {
+    "name": "overnight-0200-working",
+    "description": "Overnight shift 22:00 → 06:00: at 02:00 after midnight the employee is WORKING; the next change is SHIFT_ENDING at 05:55.",
+    "input": {
+      "now": "2026-01-13T02:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-night",
+          "startsAt": "2026-01-12T22:00:00.000Z",
+          "endsAt": "2026-01-13T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-night",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-13T05:55:00.000Z"
+    }
+  },
+  {
+    "name": "overnight-0557-shift-ending",
+    "description": "Overnight shift 22:00 → 06:00: 05:57 is inside the SHIFT_ENDING window.",
+    "input": {
+      "now": "2026-01-13T05:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-night",
+          "startsAt": "2026-01-12T22:00:00.000Z",
+          "endsAt": "2026-01-13T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-night",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-13T06:00:00.000Z"
+    }
+  },
+  {
+    "name": "dst-spring-forward-starting-soon",
+    "description": "Europe/London spring-forward night: shift 22:00 GMT Sat → 06:00 BST Sun (7 real hours). 21:45 local is SHIFT_STARTING_SOON.",
+    "input": {
+      "now": "2026-03-28T21:45:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-spring",
+          "startsAt": "2026-03-28T22:00:00.000Z",
+          "endsAt": "2026-03-29T05:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-03-28T22:00:00.000Z",
+      "upcomingShiftId": "shift-spring"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-03-28T22:00:00.000Z",
+        "local": "2026-03-28T22:00"
+      },
+      {
+        "utc": "2026-03-29T05:00:00.000Z",
+        "local": "2026-03-29T06:00"
+      },
+      {
+        "utc": "2026-03-28T21:45:00.000Z",
+        "local": "2026-03-28T21:45"
+      }
+    ]
+  },
+  {
+    "name": "dst-spring-forward-0230-local",
+    "description": "Spring-forward night: 01:30Z is 02:30 BST (local 01:00–02:00 never happened). WORKING; the next change is SHIFT_ENDING at 05:55 BST = 04:55Z, not a wall-clock-naive 05:55Z.",
+    "input": {
+      "now": "2026-03-29T01:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-spring",
+          "startsAt": "2026-03-28T22:00:00.000Z",
+          "endsAt": "2026-03-29T05:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-spring",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-03-29T04:55:00.000Z"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-03-28T22:00:00.000Z",
+        "local": "2026-03-28T22:00"
+      },
+      {
+        "utc": "2026-03-29T05:00:00.000Z",
+        "local": "2026-03-29T06:00"
+      },
+      {
+        "utc": "2026-03-29T01:30:00.000Z",
+        "local": "2026-03-29T02:30"
+      },
+      {
+        "utc": "2026-03-29T04:55:00.000Z",
+        "local": "2026-03-29T05:55"
+      }
+    ]
+  },
+  {
+    "name": "dst-spring-forward-shift-ending",
+    "description": "Spring-forward night: 04:56Z is 05:56 BST, inside SHIFT_ENDING; the shift ends at 06:00 BST = 05:00Z.",
+    "input": {
+      "now": "2026-03-29T04:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-spring",
+          "startsAt": "2026-03-28T22:00:00.000Z",
+          "endsAt": "2026-03-29T05:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-spring",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-03-29T05:00:00.000Z"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-03-28T22:00:00.000Z",
+        "local": "2026-03-28T22:00"
+      },
+      {
+        "utc": "2026-03-29T05:00:00.000Z",
+        "local": "2026-03-29T06:00"
+      },
+      {
+        "utc": "2026-03-29T04:56:00.000Z",
+        "local": "2026-03-29T05:56"
+      }
+    ]
+  },
+  {
+    "name": "dst-fall-back-first-0130",
+    "description": "Europe/London fall-back night: shift 22:00 BST Sat → 06:00 GMT Sun (9 real hours). 00:30Z is the FIRST 01:30 local (BST): WORKING.",
+    "input": {
+      "now": "2026-10-25T00:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-fall",
+          "startsAt": "2026-10-24T21:00:00.000Z",
+          "endsAt": "2026-10-25T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-fall",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-10-25T05:55:00.000Z"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-10-24T21:00:00.000Z",
+        "local": "2026-10-24T22:00"
+      },
+      {
+        "utc": "2026-10-25T06:00:00.000Z",
+        "local": "2026-10-25T06:00"
+      },
+      {
+        "utc": "2026-10-25T00:30:00.000Z",
+        "local": "2026-10-25T01:30"
+      }
+    ]
+  },
+  {
+    "name": "dst-fall-back-second-0130",
+    "description": "Fall-back night: 01:30Z is the SECOND 01:30 local (GMT): still WORKING, same next transition.",
+    "input": {
+      "now": "2026-10-25T01:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-fall",
+          "startsAt": "2026-10-24T21:00:00.000Z",
+          "endsAt": "2026-10-25T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-fall",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-10-25T05:55:00.000Z"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-10-24T21:00:00.000Z",
+        "local": "2026-10-24T22:00"
+      },
+      {
+        "utc": "2026-10-25T06:00:00.000Z",
+        "local": "2026-10-25T06:00"
+      },
+      {
+        "utc": "2026-10-25T01:30:00.000Z",
+        "local": "2026-10-25T01:30"
+      }
+    ]
+  },
+  {
+    "name": "dst-fall-back-shift-ending",
+    "description": "Fall-back night: 05:55Z = 05:55 GMT opens SHIFT_ENDING; the shift ends at 06:00Z.",
+    "input": {
+      "now": "2026-10-25T05:55:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-fall",
+          "startsAt": "2026-10-24T21:00:00.000Z",
+          "endsAt": "2026-10-25T06:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-fall",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-10-25T06:00:00.000Z"
+    },
+    "wallClock": [
+      {
+        "utc": "2026-10-24T21:00:00.000Z",
+        "local": "2026-10-24T22:00"
+      },
+      {
+        "utc": "2026-10-25T06:00:00.000Z",
+        "local": "2026-10-25T06:00"
+      }
+    ]
+  },
+  {
+    "name": "b2b-1256-no-shift-ending",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. 12:56 would be SHIFT_ENDING for the first shift alone; merged it is WORKING and the next change is 16:55.",
+    "input": {
+      "now": "2026-01-12T12:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-am",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-1259-shifts-out-of-order",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. Shifts supplied in reverse order; 12:59 is WORKING on the first shift.",
+    "input": {
+      "now": "2026-01-12T12:59:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-am",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-1300",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. 13:00: the active shift becomes the second one, nothing else changes.",
+    "input": {
+      "now": "2026-01-12T13:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-pm",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-1301",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. 13:01: WORKING on the second shift.",
+    "input": {
+      "now": "2026-01-12T13:01:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-pm",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-1655-shift-ending",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. 16:55: SHIFT_ENDING applies only to the end of the merged interval.",
+    "input": {
+      "now": "2026-01-12T16:55:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-pm",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T17:00:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-break-ends-at-own-shift-end",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. A break of the first shift planned 12:50–13:05 is still running at 12:59; its own shift ends at 13:00, which is the next change (only the relaxation ends there, not Work Mode).",
+    "input": {
+      "now": "2026-01-12T12:59:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-b2b",
+          "shiftId": "shift-am",
+          "startedAt": "2026-01-12T12:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T13:05:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-am",
+      "activeBreakId": "break-b2b",
+      "nextTransitionAt": "2026-01-12T13:00:00.000Z"
+    }
+  },
+  {
+    "name": "b2b-break-across-boundary",
+    "description": "Back-to-back shifts 09:00–13:00 and 13:00–17:00 merge into one working interval 09:00–17:00: restrictions never flap at 13:00. A break of the first shift (12:50–13:05, e.g. the shift was shortened after the break began) is terminated by its own shift's end at 13:00 — shift end always terminates a break, the same bound breaks/ applies — so at 13:02 the employee is WORKING on the second shift. Work Mode itself never stopped.",
+    "input": {
+      "now": "2026-01-12T13:02:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-b2b",
+          "shiftId": "shift-am",
+          "startedAt": "2026-01-12T12:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T13:05:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-pm",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "overlapping-shifts-union",
+    "description": "Overlapping shifts 09:00–13:00 and 12:00–17:00 form one interval 09:00–17:00; at 12:30 the earliest-starting covering shift is active.",
+    "input": {
+      "now": "2026-01-12T12:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-a",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-b",
+          "startsAt": "2026-01-12T12:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-a",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "overlapping-shift-contained",
+    "description": "A short shift 12:00–13:00 contained in 09:00–17:00 does not create a SHIFT_ENDING at 12:55: at 12:58 WORKING on the earliest-starting covering shift; next change 16:55.",
+    "input": {
+      "now": "2026-01-12T12:58:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-long",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-inner",
+          "startsAt": "2026-01-12T12:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-long",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T16:55:00.000Z"
+    }
+  },
+  {
+    "name": "overlap-break-ends-at-own-shift-end",
+    "description": "A break of the contained shift 12:00–13:00 (inside 09:00–17:00) planned 12:50–13:10 ends at its own shift's end, 13:00 — shift end always terminates a break — while Work Mode continues in the merged interval. At 12:55 the active shift is the earliest-starting covering one.",
+    "input": {
+      "now": "2026-01-12T12:55:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-long",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-inner",
+          "startsAt": "2026-01-12T12:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-inner",
+          "shiftId": "shift-inner",
+          "startedAt": "2026-01-12T12:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T13:10:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-long",
+      "activeBreakId": "break-inner",
+      "nextTransitionAt": "2026-01-12T13:00:00.000Z"
+    }
+  },
+  {
+    "name": "gap-between-shifts-starting-soon",
+    "description": "Shifts 09:00–12:00 and 12:10–15:00 are NOT adjacent. At 12:00 the first has ended and the second is imminent.",
+    "input": {
+      "now": "2026-01-12T12:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-a",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T12:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-b",
+          "startsAt": "2026-01-12T12:10:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:10:00.000Z",
+      "upcomingShiftId": "shift-b"
+    }
+  },
+  {
+    "name": "gap-between-shifts-shift-ending",
+    "description": "Shifts 09:00–12:00 and 12:10–15:00: at 11:57 the first shift is ending; next change at 12:00.",
+    "input": {
+      "now": "2026-01-12T11:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-a",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T12:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-b",
+          "startsAt": "2026-01-12T12:10:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-a",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z"
+    }
+  },
+  {
+    "name": "precedence-working-over-next-shift-starting-soon",
+    "description": "Shifts 09:00–12:00 and 12:05–15:00 (5-minute gap). At 11:52 the next shift's pre-shift window (from 11:50) is open, but WORKING outranks SHIFT_STARTING_SOON while the first shift is in progress; next change is SHIFT_ENDING at 11:55.",
+    "input": {
+      "now": "2026-01-12T11:52:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-a",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T12:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-b",
+          "startsAt": "2026-01-12T12:05:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-a",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:55:00.000Z",
+      "upcomingShiftId": "shift-b"
+    }
+  },
+  {
+    "name": "short-shift-shift-ending-throughout",
+    "description": "A 3-minute shift 09:00–09:03 is shorter than the 5-minute ending window: SHIFT_ENDING from its first instant.",
+    "input": {
+      "now": "2026-01-12T09:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-short",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T09:03:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-short",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:03:00.000Z"
+    }
+  },
+  {
+    "name": "break-crosses-shift-end-during",
+    "description": "Break 14:50–15:10 on a shift ending 15:00 (e.g. the shift was shortened mid-break). At 14:57 ON_BREAK beats SHIFT_ENDING; the shift end at 15:00 terminates the break.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T14:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T15:10:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-late",
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "break-crosses-shift-end-after",
+    "description": "Same break at 15:00: the shift end terminated it even though plannedEndsAt (15:10) is in the future.",
+    "input": {
+      "now": "2026-01-12T15:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T14:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T15:10:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null
+    }
+  },
+  {
+    "name": "exempt-temporarily-during-shift",
+    "description": "EXEMPT_TEMPORARILY 10:00–12:00 during the shift: MANAGER_OVERRIDE, restrictions NONE until it expires.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "exempt-temporarily-precedes-break",
+    "description": "EXEMPT_TEMPORARILY beats a running RELAX_ALL break. The break session keeps running underneath (still reported) and its expiry at 10:30 is the next change.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-1",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "exempt-temporarily-ends-while-break-runs",
+    "description": "EXEMPT_TEMPORARILY 10:00–10:20 expires while break-1 (10:15–10:30) is still running: at 10:20 the employee is ON_BREAK with the break relaxation, not WORKING.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-exempt-short",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T10:20:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-1",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "exempt-temporarily-before-shift",
+    "description": "EXEMPT_TEMPORARILY 08:00–10:00 applies from the pre-shift window: at 08:50 MANAGER_OVERRIDE; entering the shift at 09:00 is the next change.",
+    "input": {
+      "now": "2026-01-12T08:50:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-early",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T08:00:00.000Z",
+          "expiresAt": "2026-01-12T10:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "activeOverrideId": "ov-early",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "override-not-yet-started",
+    "description": "An EXEMPT_TEMPORARILY override 12:00–13:00 has not started at 11:00: WORKING, next change at its start.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-later",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T12:00:00.000Z",
+          "expiresAt": "2026-01-12T13:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "override-starts-exactly-now",
+    "description": "An override is active on [startsAt, min(expiresAt, revokedAt)): at exactly 10:00 the EXEMPT_TEMPORARILY 10:00–12:00 applies.",
+    "input": {
+      "now": "2026-01-12T10:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "override-expires-exactly-now",
+    "description": "At exactly its expiresAt (12:00) the EXEMPT_TEMPORARILY 10:00–12:00 no longer applies: WORKING.",
+    "input": {
+      "now": "2026-01-12T12:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "override-revoked-exactly-now",
+    "description": "At exactly its revokedAt (10:30) the EXEMPT_TEMPORARILY 10:00–14:00 no longer applies; its later expiry at 14:00 changes nothing.",
+    "input": {
+      "now": "2026-01-12T10:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-revoked",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T14:00:00.000Z",
+          "revokedAt": "2026-01-12T10:30:00.000Z",
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "end-work-mode-early",
+    "description": "END_WORK_MODE_EARLY from 13:00 until the shift end: MANAGER_OVERRIDE; the 14:55 warning is suppressed and the next change is the shift end.",
+    "input": {
+      "now": "2026-01-12T13:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-end",
+          "type": "END_WORK_MODE_EARLY",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "expiresAt": "2026-01-12T15:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-end"
+    }
+  },
+  {
+    "name": "end-work-mode-early-in-shift-ending-window",
+    "description": "END_WORK_MODE_EARLY 14:56–15:00: MANAGER_OVERRIDE beats SHIFT_ENDING at 14:57; override expiry and shift end coincide at 15:00.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-end",
+          "type": "END_WORK_MODE_EARLY",
+          "startsAt": "2026-01-12T14:56:00.000Z",
+          "expiresAt": "2026-01-12T15:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-end"
+    }
+  },
+  {
+    "name": "emergency-outranks-other-lifting-overrides",
+    "description": "EXEMPT_TEMPORARILY 10:00–12:00, an org-wide EMERGENCY_POLICY_OVERRIDE 10:30–11:30 and END_WORK_MODE_EARLY 10:45–15:00 all active at 11:00: EMERGENCY_POLICY_OVERRIDE ranks first. When it expires at 11:30 the reported override changes, so that is the next change.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        },
+        {
+          "id": "ov-emergency",
+          "type": "EMERGENCY_POLICY_OVERRIDE",
+          "startsAt": "2026-01-12T10:30:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": null,
+          "payload": {}
+        },
+        {
+          "id": "ov-end",
+          "type": "END_WORK_MODE_EARLY",
+          "startsAt": "2026-01-12T10:45:00.000Z",
+          "expiresAt": "2026-01-12T15:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:30:00.000Z",
+      "activeOverrideId": "ov-emergency"
+    }
+  },
+  {
+    "name": "end-work-mode-early-outranks-exempt",
+    "description": "Same rows at 11:30: END_WORK_MODE_EARLY outranks EXEMPT_TEMPORARILY. The exemption's expiry at 12:00 changes nothing and 14:55 is masked, so the next change is the shift end at 15:00.",
+    "input": {
+      "now": "2026-01-12T11:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        },
+        {
+          "id": "ov-emergency",
+          "type": "EMERGENCY_POLICY_OVERRIDE",
+          "startsAt": "2026-01-12T10:30:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": null,
+          "payload": {}
+        },
+        {
+          "id": "ov-end",
+          "type": "END_WORK_MODE_EARLY",
+          "startsAt": "2026-01-12T10:45:00.000Z",
+          "expiresAt": "2026-01-12T15:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-end"
+    }
+  },
+  {
+    "name": "emergency-policy-override-org-wide",
+    "description": "Org-wide EMERGENCY_POLICY_OVERRIDE (employeeId null) 10:00–18:00 applies to every employee: MANAGER_OVERRIDE; off shift it no longer matters, so the next change is the shift end.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-emergency",
+          "type": "EMERGENCY_POLICY_OVERRIDE",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T18:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": null,
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-emergency"
+    }
+  },
+  {
+    "name": "temporary-exception-relax-categories",
+    "description": "TEMPORARY_EXCEPTION 11:00–11:30 with a RELAX_CATEGORIES payload: state stays WORKING, restriction BREAK_RELAXED for the listed categories only.",
+    "input": {
+      "now": "2026-01-12T11:10:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T11:00:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "RELAX_CATEGORIES",
+            "relaxedCategories": [
+              "VIDEO",
+              "SOCIAL_MEDIA"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:30:00.000Z",
+      "activeOverrideId": "ov-temp",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "VIDEO"
+      ]
+    }
+  },
+  {
+    "name": "temporary-exception-default-relax-all",
+    "description": "TEMPORARY_EXCEPTION with an empty payload defaults to RELAX_ALL: WORKING, BREAK_RELAXED, nothing enforced.",
+    "input": {
+      "now": "2026-01-12T11:10:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T11:00:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:30:00.000Z",
+      "activeOverrideId": "ov-temp",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "temporary-exception-during-shift-ending",
+    "description": "TEMPORARY_EXCEPTION 14:50–15:30 (RELAX_ALL) inside the SHIFT_ENDING window: state SHIFT_ENDING, restriction BREAK_RELAXED.",
+    "input": {
+      "now": "2026-01-12T14:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T14:50:00.000Z",
+          "expiresAt": "2026-01-12T15:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "RELAX_ALL"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-temp"
+    }
+  },
+  {
+    "name": "temporary-exception-keep-restrictions-no-effect",
+    "description": "TEMPORARY_EXCEPTION whose payload is KEEP_RESTRICTIONS relaxes nothing, so it does not change the output and is not reported.",
+    "input": {
+      "now": "2026-01-12T11:10:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T11:00:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "KEEP_RESTRICTIONS"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "temporary-exception-no-op-does-not-mask-another",
+    "description": "A KEEP_RESTRICTIONS exception 10:00–12:00 relaxes nothing, so it does not mask a RELAX_CATEGORIES [GAMES] exception 11:00–11:30 that started later: WORKING with GAMES lifted until 11:30.",
+    "input": {
+      "now": "2026-01-12T11:10:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-keep",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "KEEP_RESTRICTIONS"
+          }
+        },
+        {
+          "id": "ov-games",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T11:00:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "RELAX_CATEGORIES",
+            "relaxedCategories": [
+              "GAMES"
+            ]
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:30:00.000Z",
+      "activeOverrideId": "ov-games",
+      "liftedCategories": [
+        "GAMES"
+      ]
+    }
+  },
+  {
+    "name": "break-beats-temporary-exception",
+    "description": "A KEEP_RESTRICTIONS break 10:15–10:30 runs inside a RELAX_ALL exception 10:00–11:00: ON_BREAK outranks the exception, so the break's snapshot applies (WORK) and the exception is not reported. Its relaxation resumes when the break ends at 10:30.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-keep",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "KEEP_RESTRICTIONS",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T11:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "RELAX_ALL"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "ON_BREAK",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-keep",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "temporary-exception-resumes-after-break",
+    "description": "Same rows at 10:30: the break has expired and the exception's RELAX_ALL applies again until it expires at 11:00.",
+    "input": {
+      "now": "2026-01-12T10:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-keep",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "KEEP_RESTRICTIONS",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T11:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {
+            "restrictionBehaviour": "RELAX_ALL"
+          }
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:00:00.000Z",
+      "activeOverrideId": "ov-temp",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "temporary-exception-ignored-before-shift",
+    "description": "A RELAX_ALL exception 08:30–10:00 has no effect while the shift is only imminent (nothing is enforced yet): SHIFT_STARTING_SOON, not reported; the shift start at 09:00 is the next change.",
+    "input": {
+      "now": "2026-01-12T08:50:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T08:30:00.000Z",
+          "expiresAt": "2026-01-12T10:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "activeOverrideId": null,
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "temporary-exception-applies-at-shift-start",
+    "description": "Same rows at 09:00: the shift starts with the exception's relaxation (WORKING, BREAK_RELAXED) until it expires at 10:00.",
+    "input": {
+      "now": "2026-01-12T09:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T08:30:00.000Z",
+          "expiresAt": "2026-01-12T10:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T10:00:00.000Z",
+      "activeOverrideId": "ov-temp",
+      "liftedCategories": [
+        "SOCIAL_MEDIA",
+        "GAMES",
+        "ENTERTAINMENT",
+        "STREAMING",
+        "VIDEO",
+        "SHOPPING",
+        "DATING",
+        "OTHER_SELECTED"
+      ]
+    }
+  },
+  {
+    "name": "lifting-override-beats-temporary-exception",
+    "description": "TEMPORARY_EXCEPTION 10:00–12:00 and EXEMPT_TEMPORARILY 11:00–11:30 overlap: the exemption wins; at 11:30 the exception's relaxation resumes.",
+    "input": {
+      "now": "2026-01-12T11:15:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-temp",
+          "type": "TEMPORARY_EXCEPTION",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        },
+        {
+          "id": "ov-exempt-short",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T11:00:00.000Z",
+          "expiresAt": "2026-01-12T11:30:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T11:30:00.000Z",
+      "activeOverrideId": "ov-exempt-short"
+    }
+  },
+  {
+    "name": "expired-override-ignored",
+    "description": "EXEMPT_TEMPORARILY 08:00–10:00 has expired by 11:00: WORKING.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-old",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T08:00:00.000Z",
+          "expiresAt": "2026-01-12T10:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "revoked-override-ignored",
+    "description": "EXEMPT_TEMPORARILY 10:00–14:00 revoked at 10:30: WORKING at 11:00.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-revoked",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T14:00:00.000Z",
+          "revokedAt": "2026-01-12T10:30:00.000Z",
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "override-for-other-employee-ignored",
+    "description": "An EXEMPT_TEMPORARILY override scoped to another employee is ignored when employeeId is supplied.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-other",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-2",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "WORKING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T14:55:00.000Z",
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "override-applies-when-employee-id-omitted",
+    "description": "Without input.employeeId every supplied override applies, including one scoped to another employee (callers pre-filter by employee): MANAGER_OVERRIDE until 12:00.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": null,
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-other",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-2",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z",
+      "activeOverrideId": "ov-other"
+    }
+  },
+  {
+    "name": "override-off-shift-ignored",
+    "description": "An override active while the employee is off shift does not surface: OFF_SHIFT.",
+    "input": {
+      "now": "2026-01-12T16:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-evening",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T16:00:00.000Z",
+          "expiresAt": "2026-01-12T18:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null,
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "permission-denied-during-shift",
+    "description": "Screen Time permission DENIED during the shift: PERMISSION_ERROR dominates; the intended restriction (WORK) is still reported. The output does not change at 14:55 (SHIFT_ENDING is masked by PERMISSION_ERROR), so the next real change is the shift end.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "permission-denied-at-pre-shift-window-start",
+    "description": "Permission DENIED at exactly 08:45, the first instant of the pre-shift window: the shift is imminent, so PERMISSION_ERROR (with no restriction intended yet). At 09:00 the intended restriction becomes WORK.",
+    "input": {
+      "now": "2026-01-12T08:45:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "permission-denied-dominates-shift-ending",
+    "description": "Permission DENIED at 14:57: PERMISSION_ERROR dominates SHIFT_ENDING; the intended WORK restriction is still reported.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "permission-denied-at-shift-end",
+    "description": "Permission DENIED at exactly 15:00: the shift is over (end-exclusive) and nothing is imminent, so OFF_SHIFT.",
+    "input": {
+      "now": "2026-01-12T15:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null,
+      "upcomingShiftId": null
+    }
+  },
+  {
+    "name": "permission-denied-off-shift",
+    "description": "Permission DENIED while off shift (07:00, shift at 09:00): OFF_SHIFT; the problem surfaces when the pre-shift window opens at 08:45.",
+    "input": {
+      "now": "2026-01-12T07:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T08:45:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "permission-not-determined-10-min-before-shift",
+    "description": "Permission NOT_DETERMINED 10 minutes before the shift (imminent): PERMISSION_ERROR with no restriction intended yet.",
+    "input": {
+      "now": "2026-01-12T08:50:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "NOT_DETERMINED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  },
+  {
+    "name": "permission-unknown-just-outside-window",
+    "description": "Permission UNKNOWN at 08:44, one minute before the pre-shift window: still OFF_SHIFT.",
+    "input": {
+      "now": "2026-01-12T08:44:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "UNKNOWN",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T08:45:00.000Z"
+    }
+  },
+  {
+    "name": "permission-unknown-during-shift",
+    "description": "Permission UNKNOWN during the shift is not APPROVED: PERMISSION_ERROR with the intended WORK restriction; SHIFT_ENDING is masked, so the next change is the shift end.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "UNKNOWN",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "permission-revoked-during-break",
+    "description": "Permission REVOKED during a RELAX_ALL break: PERMISSION_ERROR; the break is still reported and its expiry is the next change.",
+    "input": {
+      "now": "2026-01-12T10:20:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "REVOKED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-1",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T10:15:00.000Z",
+          "plannedEndsAt": "2026-01-12T10:30:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": []
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "BREAK_RELAXED",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-1",
+      "nextTransitionAt": "2026-01-12T10:30:00.000Z"
+    }
+  },
+  {
+    "name": "permission-denied-dominates-override",
+    "description": "Permission DENIED while EXEMPT_TEMPORARILY is active: PERMISSION_ERROR dominates MANAGER_OVERRIDE.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T10:00:00.000Z",
+          "expiresAt": "2026-01-12T12:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T12:00:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "precedence-permission-over-override-break-and-shift-ending",
+    "description": "Everything at once at 14:57 — permission DENIED, EXEMPT_TEMPORARILY 14:00–16:00 active, a break 14:50–15:10 running, inside the SHIFT_ENDING window: PERMISSION_ERROR wins, the intended restriction is the override's NONE, the break is still reported, and the shift end at 15:00 is the next change.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "DENIED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T14:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T15:10:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T14:00:00.000Z",
+          "expiresAt": "2026-01-12T16:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "PERMISSION_ERROR",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-late",
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "precedence-override-over-break-and-shift-ending",
+    "description": "Same rows with permission APPROVED: MANAGER_OVERRIDE beats ON_BREAK and SHIFT_ENDING; the break keeps running underneath and is reported.",
+    "input": {
+      "now": "2026-01-12T14:57:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [
+        {
+          "id": "break-late",
+          "shiftId": "shift-day",
+          "startedAt": "2026-01-12T14:50:00.000Z",
+          "plannedEndsAt": "2026-01-12T15:10:00.000Z",
+          "endedAt": null,
+          "status": "ACTIVE",
+          "restrictionBehaviour": "RELAX_ALL",
+          "relaxedCategories": []
+        }
+      ],
+      "overrides": [
+        {
+          "id": "ov-exempt",
+          "type": "EXEMPT_TEMPORARILY",
+          "startsAt": "2026-01-12T14:00:00.000Z",
+          "expiresAt": "2026-01-12T16:00:00.000Z",
+          "revokedAt": null,
+          "employeeId": "emp-1",
+          "payload": {}
+        }
+      ]
+    },
+    "expected": {
+      "state": "MANAGER_OVERRIDE",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": "shift-day",
+      "activeBreakId": "break-late",
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z",
+      "activeOverrideId": "ov-exempt"
+    }
+  },
+  {
+    "name": "cancelled-shift-ignored",
+    "description": "The only shift is CANCELLED: OFF_SHIFT, nothing upcoming.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "CANCELLED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null
+    }
+  },
+  {
+    "name": "completed-shift-ignored",
+    "description": "Status COMPLETED is not SCHEDULED and is ignored.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "COMPLETED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null
+    }
+  },
+  {
+    "name": "soft-deleted-shift-ignored",
+    "description": "Today's shift is soft-deleted (deletedAt set, status still SCHEDULED): ignored. Tomorrow's shift drives nextTransitionAt.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": "2026-01-11T12:00:00.000Z"
+        },
+        {
+          "id": "shift-tomorrow",
+          "startsAt": "2026-01-13T09:00:00.000Z",
+          "endsAt": "2026-01-13T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-13T08:45:00.000Z",
+      "upcomingShiftId": "shift-tomorrow"
+    }
+  },
+  {
+    "name": "cancelled-shift-does-not-merge",
+    "description": "09:00–13:00 SCHEDULED followed by a CANCELLED 13:00–17:00: no merge, so 12:56 is SHIFT_ENDING.",
+    "input": {
+      "now": "2026-01-12T12:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "CANCELLED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-am",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T13:00:00.000Z"
+    }
+  },
+  {
+    "name": "soft-deleted-shift-does-not-merge",
+    "description": "09:00–13:00 SCHEDULED followed by a soft-deleted 13:00–17:00 (deletedAt set, status still SCHEDULED): no merge, so 12:56 is SHIFT_ENDING and 13:00 ends Work Mode.",
+    "input": {
+      "now": "2026-01-12T12:56:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-am",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T13:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        },
+        {
+          "id": "shift-pm",
+          "startsAt": "2026-01-12T13:00:00.000Z",
+          "endsAt": "2026-01-12T17:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": "2026-01-12T08:00:00.000Z"
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-am",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T13:00:00.000Z",
+      "upcomingShiftId": null
+    }
+  },
+  {
+    "name": "zero-length-shift-ignored",
+    "description": "A shift whose end equals its start cannot be worked and is ignored.",
+    "input": {
+      "now": "2026-01-12T09:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-zero",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T09:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null
+    }
+  },
+  {
+    "name": "no-shifts",
+    "description": "No shifts at all: OFF_SHIFT with nextTransitionAt null.",
+    "input": {
+      "now": "2026-01-12T11:00:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [],
+      "breakSessions": [],
+      "overrides": []
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": null,
+      "upcomingShiftId": null,
+      "activeOverrideId": null
+    }
+  },
+  {
+    "name": "custom-warning-minutes-starting-soon",
+    "description": "preShiftWarningMinutes 30: 08:30 opens SHIFT_STARTING_SOON.",
+    "input": {
+      "now": "2026-01-12T08:30:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [],
+      "options": {
+        "preShiftWarningMinutes": 30,
+        "shiftEndingWarningMinutes": 10
+      }
+    },
+    "expected": {
+      "state": "SHIFT_STARTING_SOON",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z"
+    }
+  },
+  {
+    "name": "custom-warning-minutes-shift-ending",
+    "description": "shiftEndingWarningMinutes 10: 14:50 opens SHIFT_ENDING.",
+    "input": {
+      "now": "2026-01-12T14:50:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [],
+      "options": {
+        "preShiftWarningMinutes": 30,
+        "shiftEndingWarningMinutes": 10
+      }
+    },
+    "expected": {
+      "state": "SHIFT_ENDING",
+      "effectiveRestriction": "WORK",
+      "restrictionsShouldBeActive": true,
+      "activeShiftId": "shift-day",
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T15:00:00.000Z"
+    }
+  },
+  {
+    "name": "custom-warning-minutes-before-window",
+    "description": "preShiftWarningMinutes 30: 08:29 is OFF_SHIFT, next change 08:30.",
+    "input": {
+      "now": "2026-01-12T08:29:00.000Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [],
+      "options": {
+        "preShiftWarningMinutes": 30,
+        "shiftEndingWarningMinutes": 10
+      }
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T08:30:00.000Z"
+    }
+  },
+  {
+    "name": "pre-shift-warning-zero-straight-to-working",
+    "description": "preShiftWarningMinutes 0: there is no SHIFT_STARTING_SOON window, so 08:59:59.999 is OFF_SHIFT and the next change is the shift start itself.",
+    "input": {
+      "now": "2026-01-12T08:59:59.999Z",
+      "timezone": "Europe/London",
+      "permissionState": "APPROVED",
+      "employeeId": "emp-1",
+      "shifts": [
+        {
+          "id": "shift-day",
+          "startsAt": "2026-01-12T09:00:00.000Z",
+          "endsAt": "2026-01-12T15:00:00.000Z",
+          "status": "SCHEDULED",
+          "version": 1,
+          "deletedAt": null
+        }
+      ],
+      "breakSessions": [],
+      "overrides": [],
+      "options": {
+        "preShiftWarningMinutes": 0,
+        "shiftEndingWarningMinutes": 5
+      }
+    },
+    "expected": {
+      "state": "OFF_SHIFT",
+      "effectiveRestriction": "NONE",
+      "restrictionsShouldBeActive": false,
+      "activeShiftId": null,
+      "activeBreakId": null,
+      "nextTransitionAt": "2026-01-12T09:00:00.000Z",
+      "upcomingShiftId": "shift-day"
+    }
+  }
+]

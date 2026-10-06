@@ -1,24 +1,30 @@
 "use client";
 
-import { CircleCheck, Circle, X } from "lucide-react";
+import { CircleCheck, Circle, PartyPopper, X } from "lucide-react";
 import Link from "next/link";
 import { ErrorState } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
-import { useDismissOnboarding, useOnboarding } from "@/hooks/use-organisation";
+import { usePermission } from "@/hooks/use-current-user";
+import { useDismissOnboarding } from "@/hooks/use-organisation";
+import { useOnboardingProgress } from "@/hooks/useOnboarding";
 import { hasErrorCode } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 /**
- * "Get set up" checklist from `GET /api/organisations/current/onboarding`. Hidden once complete or dismissed,
- * and silently absent while the endpoint is unavailable.
+ * "Get set up" checklist from `GET /api/organisations/current/onboarding`: each step links to the page that
+ * completes it. Once every step is done the card turns into an "all set" note that owners/admins dismiss
+ * (`POST …/onboarding/dismiss`, `org:manage`); it stays hidden after dismissal and is silently absent while
+ * the endpoint is unavailable.
  */
 export function OnboardingChecklist() {
-  const { data, isPending, isError, error, refetch, isRefetching } = useOnboarding();
+  const { query, progress } = useOnboardingProgress();
+  const { data, isPending, isError, error, refetch, isRefetching } = query;
   const dismiss = useDismissOnboarding();
   const toastError = useApiErrorToast();
+  const canDismiss = usePermission("org:manage");
 
   if (isPending) {
     return (
@@ -46,10 +52,43 @@ export function OnboardingChecklist() {
       />
     );
   }
-  if (data.complete || data.dismissedAt || data.totalCount === 0) return null;
+  if (!progress || data.dismissedAt || progress.totalCount === 0) return null;
 
-  const percent = Math.round((data.completedCount / data.totalCount) * 100);
-  const nextStep = data.items.find((item) => !item.done);
+  const allDone = data.complete || progress.allDone;
+  const onDismiss = () =>
+    dismiss.mutate(undefined, { onError: (err) => toastError(err, { title: "Couldn't dismiss the checklist" }) });
+
+  if (allDone) {
+    // Nothing left to do. Only roles that can dismiss see the note; for others it would linger forever.
+    if (!canDismiss) return null;
+    return (
+      <section
+        aria-labelledby="onboarding-title"
+        className="bg-card flex flex-col gap-4 rounded-xl border p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:p-6"
+      >
+        <div className="flex items-start gap-4">
+          <span
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+            aria-hidden="true"
+          >
+            <PartyPopper className="size-5" />
+          </span>
+          <div className="space-y-1">
+            <h2 id="onboarding-title" className="font-semibold">
+              You&apos;re all set
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Every setup step is complete. Work Mode will switch on automatically during your employees&apos; shifts.
+            </p>
+          </div>
+        </div>
+        <Button type="button" variant="outline" size="sm" disabled={dismiss.isPending} onClick={onDismiss}>
+          <X aria-hidden="true" />
+          Dismiss checklist
+        </Button>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="onboarding-title" className="bg-card relative overflow-hidden rounded-xl border shadow-xs">
@@ -61,22 +100,24 @@ export function OnboardingChecklist() {
               Get your team set up
             </h2>
             <p className="text-muted-foreground text-sm">
-              {data.completedCount} of {data.totalCount} steps complete
-              {nextStep ? <> · Next: {nextStep.label}</> : null}
+              {progress.completedCount} of {progress.totalCount} steps complete
+              {progress.nextStep ? <> · Next: {progress.nextStep.label}</> : null}
             </p>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Dismiss setup checklist"
-            disabled={dismiss.isPending}
-            onClick={() => dismiss.mutate(undefined, { onError: (err) => toastError(err, { title: "Couldn't dismiss the checklist" }) })}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          {canDismiss ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Dismiss setup checklist"
+              disabled={dismiss.isPending}
+              onClick={onDismiss}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          ) : null}
         </div>
-        <Progress value={percent} aria-label={`Setup ${percent}% complete`} className="h-2" />
+        <Progress value={progress.percent} aria-label={`Setup ${progress.percent}% complete`} className="h-2" />
         <ol className="grid gap-2 sm:grid-cols-2">
           {data.items.map((item) => (
             <li key={item.key}>

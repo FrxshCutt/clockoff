@@ -284,10 +284,28 @@ describe("mobile request validation", () => {
     });
     expect(parsed.companyCode).toBe("BREW-4821");
     expect(parsed.inviteCode).toBe("K7PQ2M");
+    // Codes are read off posters and typed on phones: separators and spaces are optional on input and
+    // iOS smart punctuation is tolerated; the parsed value is always canonical.
+    for (const typed of ["BREW4821", "brew 4821", "brew\u20144821", "Brew_4821"]) {
+      expect(
+        joinLookupSchema.parse({ companyCode: typed, firstName: "Jane", lastName: "Smith" })
+          .companyCode,
+      ).toBe("BREW-4821");
+    }
     expect(
-      joinLookupSchema.safeParse({ companyCode: "BREW4821", firstName: "Jane", lastName: "Smith" })
-        .success,
-    ).toBe(false);
+      joinLookupSchema.parse({
+        companyCode: "BREW-4821",
+        firstName: "Jane",
+        lastName: "Smith",
+        inviteCode: "k7p-q2m",
+      }).inviteCode,
+    ).toBe("K7PQ2M");
+    for (const bad of ["BREW", "BREW-48", "4821", ""]) {
+      expect(
+        joinLookupSchema.safeParse({ companyCode: bad, firstName: "Jane", lastName: "Smith" })
+          .success,
+      ).toBe(false);
+    }
   });
 
   it("requires a generic device model and the IOS platform", () => {

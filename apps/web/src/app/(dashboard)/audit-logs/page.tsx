@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { AuditLogsPage as AuditLogsView } from "@/components/activity/audit-logs-page";
 
 export const metadata: Metadata = { title: "Audit Log" };
 
-export default function AuditLogsPage() {
-  return (
-    <PlaceholderPage
-      title="Audit Log"
-      description="A record of changes made by managers in this organisation."
-      emptyState="auditLogs"
-    />
-  );
+/** `/audit-logs` — owners and admins only (`audit:read`); other roles see an explanation. */
+export default function Page() {
+  return <AuditLogsView />;
 }

@@ -12,6 +12,10 @@ export const REALTIME_EVENT_TYPES = [
   "policy.changed",
   "override.changed",
   "import.completed",
+  /** Override lifecycle events consumed by the device push bridge (payload: overrideId, type, employeeId|null). */
+  "OVERRIDE_CREATED",
+  "OVERRIDE_REVOKED",
+  "OVERRIDE_EXPIRED",
 ] as const;
 export type KnownRealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number];
 

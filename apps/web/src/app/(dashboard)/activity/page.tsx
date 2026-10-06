@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { ActivityPage as ActivityView } from "@/components/activity/activity-page";
 
 export const metadata: Metadata = { title: "Activity" };
 
-export default function ActivityPage() {
-  return (
-    <PlaceholderPage
-      title="Activity"
-      description="A timeline of joins, setup, Work Mode and breaks across your organisation."
-      emptyState="activity"
-    />
-  );
+/**
+ * `/activity?tab=activity|compliance&employee=&type=&range=&from=&to=&location=&filter=&q=&page=`. The
+ * client view reads and writes the search params itself, behind its own Suspense boundary.
+ */
+export default function Page() {
+  return <ActivityView />;
 }

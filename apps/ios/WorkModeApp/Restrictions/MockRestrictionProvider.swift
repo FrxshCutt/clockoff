@@ -9,7 +9,7 @@
 import Foundation
 import WorkModeCore
 
-final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProviding, SelectionConfiguring {
+final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProviding, SelectionConfiguring, BreakScheduling, RestrictionAuthorizationObserving {
     enum AuthorizationOutcome: Equatable {
         case approve
         case deny
@@ -37,6 +37,7 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
     private enum Keys {
         static let authorization = "mock.restrictions.authorization"
         static let selection = "mock.restrictions.selection"
+        static let breakKeptSelection = "mock.restrictions.selection.breakKept"
     }
 
     private let lock = NSRecursiveLock()
@@ -46,6 +47,9 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
     private var _authorizationOutcome: AuthorizationOutcome
     private var _authorizationStatus: RestrictionAuthorizationStatus
     private var _selection: SelectionCounts?
+    private var _breakKeptSelection: SelectionCounts?
+    private var _scheduledBreaks: [ActivityPlan] = []
+    private var _statusChangeHandler: ((RestrictionAuthorizationStatus) -> Void)?
     private var _appliedWorkPlans: [RestrictionPlan] = []
     private var _appliedBreaks: [AppliedBreak] = []
     private var _scheduledActivities: [ActivityPlan] = []
@@ -63,6 +67,7 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         _authorizationOutcome = authorizationOutcome
         _authorizationStatus = store.string(forKey: Keys.authorization).flatMap(RestrictionAuthorizationStatus.init(rawValue:)) ?? .notDetermined
         _selection = store.decodable(SelectionCounts.self, forKey: Keys.selection)
+        _breakKeptSelection = store.decodable(SelectionCounts.self, forKey: Keys.breakKeptSelection)
     }
 
     // MARK: Inspection (tests, debug UI)
@@ -75,6 +80,9 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
     var appliedWorkPlans: [RestrictionPlan] { locked { _appliedWorkPlans } }
     var appliedBreaks: [AppliedBreak] { locked { _appliedBreaks } }
     var scheduledActivities: [ActivityPlan] { locked { _scheduledActivities } }
+    /// Break activities registered through `scheduleBreak` (also present in `scheduledActivities`).
+    var scheduledBreakActivities: [ActivityPlan] { locked { _scheduledBreaks } }
+    var breakKeptSelectionCounts: SelectionCounts? { locked { _breakKeptSelection } }
     var clearCount: Int { locked { _clearCount } }
     var cancelCount: Int { locked { _cancelCount } }
     var activeRestriction: ActiveRestriction { locked { _activeRestriction } }
@@ -157,6 +165,41 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         }
     }
 
+    // MARK: BreakScheduling
+
+    @discardableResult
+    func scheduleBreak(clientBreakId: String, shiftId: String, startedAt: Date, plannedEndsAt: Date) throws -> ActivityPlan {
+        try locked {
+            guard _authorizationStatus == .approved else { throw RestrictionProviderError.notAuthorized }
+            let plan = BreakActivitySchedule.make(clientBreakId: clientBreakId, shiftId: shiftId, startedAt: startedAt, plannedEndsAt: plannedEndsAt, timeZone: .current)
+            _scheduledActivities.removeAll { $0.name == plan.name }
+            _scheduledBreaks.removeAll { $0.name == plan.name }
+            guard _scheduledActivities.count < ActivityPlanner.maxActivities else {
+                throw RestrictionProviderError.schedulingFailed("\(plan.name) would exceed the limit of \(ActivityPlanner.maxActivities) activities")
+            }
+            _scheduledActivities.append(plan)
+            _scheduledBreaks.append(plan)
+            appendLog("schedule break activity \(plan.name) until \(WorkModeDateCoding.format(plan.intervalEnd ?? plannedEndsAt))")
+            return plan
+        }
+    }
+
+    func cancelBreakActivity(clientBreakId: String) {
+        locked {
+            let name = ActivityNaming.breakActivity(clientBreakId: clientBreakId)
+            _scheduledActivities.removeAll { $0.name == name }
+            _scheduledBreaks.removeAll { $0.name == name }
+            appendLog("cancel break activity \(name)")
+        }
+    }
+
+    // MARK: RestrictionAuthorizationObserving
+
+    var onAuthorizationStatusChange: ((RestrictionAuthorizationStatus) -> Void)? {
+        get { locked { _statusChangeHandler } }
+        set { locked { _statusChangeHandler = newValue } }
+    }
+
     func currentEngineState() -> RestrictionEngineState {
         locked {
             guard _authorizationStatus == .approved else {
@@ -186,6 +229,20 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         return selectionCounts()
     }
 
+    func configureSelection(kind: SelectionKind) throws -> SelectionCounts {
+        switch kind {
+        case .work:
+            return try configureSelection()
+        case .breakKept:
+            locked {
+                _breakKeptSelection = SelectionCounts(categories: 1, applications: 1, webDomains: 0)
+                try? store.setEncodable(_breakKeptSelection, forKey: Keys.breakKeptSelection)
+                appendLog("breakKept selection configured (simulated)")
+            }
+            return breakKeptSelectionCounts ?? .zero
+        }
+    }
+
     // MARK: Simulation controls
 
     func simulateSelection(_ counts: SelectionCounts) {
@@ -204,8 +261,13 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         }
     }
 
-    /// Simulates the employee turning Screen Time access off in Settings.
+    /// Simulates the employee turning Screen Time access off in Settings. Like iOS, this also drops any shields
+    /// the app had applied.
     func simulateRevocation() {
+        locked {
+            _activeRestriction = .none
+            _lastChange = now()
+        }
         setAuthorization(.denied)
     }
 
@@ -214,10 +276,13 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         locked {
             _authorizationStatus = .notDetermined
             _selection = nil
+            _breakKeptSelection = nil
             _activeRestriction = .none
             _scheduledActivities = []
+            _scheduledBreaks = []
             store.removeValue(forKey: Keys.authorization)
             store.removeValue(forKey: Keys.selection)
+            store.removeValue(forKey: Keys.breakKeptSelection)
             appendLog("reset")
         }
     }
@@ -225,11 +290,17 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
     // MARK: Private
 
     private func setAuthorization(_ status: RestrictionAuthorizationStatus) {
-        locked {
+        let changed: Bool = locked {
+            let changed = _authorizationStatus != status
             _authorizationStatus = status
             store.set(status.rawValue, forKey: Keys.authorization)
             appendLog("authorization → \(status.rawValue)")
+            return changed
         }
+        guard changed else { return }
+        onAuthorizationStatusChange?(status)
+        NotificationCenter.default.post(name: .workModeAuthorizationStatusDidChange, object: nil,
+                                        userInfo: [RestrictionAuthorizationNotification.statusKey: status.rawValue])
     }
 
     private func requireReady() throws {

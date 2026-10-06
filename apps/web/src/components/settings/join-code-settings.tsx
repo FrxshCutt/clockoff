@@ -1,38 +1,105 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
+import type { JoinCode } from "@workmode/validation/organisation";
 import { KeyRound, RefreshCw, ShieldOff } from "lucide-react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
+import { DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
 import { CardSkeleton } from "@/components/loading-skeletons";
 import { SectionCard } from "@/components/section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
 import { usePermission } from "@/hooks/use-current-user";
-import { useCurrentOrganisation, useRegenerateJoinCode, useRevokeJoinCode } from "@/hooks/use-organisation";
+import { useCurrentOrganisation } from "@/hooks/use-organisation";
+import { formatDateTime } from "@/lib/format";
+import { useJoinCode, useRegenerateCompanyCode, useRevokeCompanyCode } from "./use-join-code";
 
 /**
- * Settings → Join code. Shows the ACTIVE company join code (from `GET /api/organisations/current`) and lets
- * owners/admins regenerate or revoke it (`POST /api/organisations/current/join-code/regenerate|revoke`).
+ * Settings → Join code. Shows the ACTIVE company join code and its history (`GET
+ * /api/organisations/current/join-code`) and lets owners/admins regenerate or revoke it (`POST
+ * …/join-code/regenerate|revoke`). Until the history endpoint is deployed, the active code comes from
+ * `GET /api/organisations/current` and the history table says so.
  */
 export function JoinCodeSettings() {
-  const { data, isPending, isError, error, refetch, isRefetching } = useCurrentOrganisation();
+  const organisation = useCurrentOrganisation();
+  const joinCode = useJoinCode();
   const canManage = usePermission("org:manage");
-  const regenerate = useRegenerateJoinCode();
-  const revoke = useRevokeJoinCode();
+  const regenerate = useRegenerateCompanyCode();
+  const revoke = useRevokeCompanyCode();
   const toastError = useApiErrorToast();
 
-  if (isPending) return <CardSkeleton lines={4} />;
-  if (isError) {
+  const dateOptions = { timeZone: organisation.data?.organisation.timezone, dateFormat: organisation.data?.organisation.dateFormat };
+
+  const columns = useMemo<ColumnDef<JoinCode>[]>(
+    () => [
+      {
+        accessorKey: "code",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Code" />,
+        cell: ({ row }) => <span className="font-mono font-medium tracking-wider">{row.original.code}</span>,
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+        cell: ({ row }) =>
+          row.original.status === "ACTIVE" ? (
+            <Badge>Active</Badge>
+          ) : (
+            <Badge variant="secondary">Revoked</Badge>
+          ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {formatDateTime(row.original.createdAt, dateOptions)}
+            {row.original.createdBy ? <span className="text-muted-foreground"> by {row.original.createdBy.name}</span> : null}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "revokedAt",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Revoked" />,
+        sortUndefined: "last",
+        cell: ({ row }) =>
+          row.original.revokedAt ? (
+            <span className="text-sm">{formatDateTime(row.original.revokedAt, dateOptions)}</span>
+          ) : (
+            <span className="text-muted-foreground text-sm">—</span>
+          ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dateOptions is derived from these two values
+    [dateOptions.timeZone, dateOptions.dateFormat],
+  );
+
+  if (organisation.isPending || joinCode.isPending) return <CardSkeleton lines={4} />;
+  if (organisation.isError) {
     return (
-      <ErrorState title="Couldn't load the join code" error={error} onRetry={() => void refetch()} isRetrying={isRefetching} />
+      <ErrorState
+        title="Couldn't load the join code"
+        error={organisation.error}
+        onRetry={() => void organisation.refetch()}
+        isRetrying={organisation.isRefetching}
+      />
+    );
+  }
+  if (joinCode.isError) {
+    return (
+      <ErrorState title="Couldn't load the join code" error={joinCode.error} onRetry={() => void joinCode.refetch()} isRetrying={joinCode.isRefetching} />
     );
   }
 
-  const code = data.joinCode;
+  const history = joinCode.data.available ? joinCode.data.data : null;
+  const code = history ? (history.current?.code ?? null) : organisation.data.joinCode;
+  const rows: JoinCode[] = history ? [...(history.current ? [history.current] : []), ...history.history] : [];
 
   // ConfirmDialog keeps itself open when onConfirm rejects, so errors are toasted and rethrown.
   const runRegenerate = async () => {
@@ -83,7 +150,7 @@ export function JoinCodeSettings() {
               <div className="flex flex-wrap gap-2">
                 <ConfirmDialog
                   title="Create a new join code?"
-                  description="The current code stops working immediately. Employees who have already joined stay connected; anyone still joining will need the new code."
+                  description="Employees who haven't joined yet will need the new code. The current code stops working immediately; anyone already connected stays connected."
                   confirmLabel="Create new code"
                   onConfirm={runRegenerate}
                   trigger={
@@ -131,6 +198,34 @@ export function JoinCodeSettings() {
           />
         )}
       </SectionCard>
+
+      <SectionCard
+        title="Code history"
+        description="Every code this organisation has had. Revoked codes can't be used to join."
+        flush
+        contentClassName="px-4 py-4 sm:px-6"
+      >
+        {history ? (
+          <DataTable
+            label="Join code history"
+            columns={columns}
+            data={rows}
+            getRowId={(row) => row.id}
+            initialSorting={[{ id: "createdAt", desc: true }]}
+            paginate={rows.length > 10}
+            initialPageSize={10}
+            stickyHeader={false}
+            emptyState={
+              <EmptyState icon={KeyRound} title="No codes yet" description="Create a join code and it will appear here." size="sm" bordered={false} headingLevel={3} />
+            }
+          />
+        ) : (
+          <InlineAlert variant="info" title="Code history isn't available yet">
+            Previous codes will be listed here once the join-code history endpoint is live. The current code above is up to date.
+          </InlineAlert>
+        )}
+      </SectionCard>
+
       <SectionCard title="How joining works">
         <ol className="text-muted-foreground list-decimal space-y-2 pl-5 text-sm">
           <li>Add the employee in Employees, with the name they&apos;ll type in the app.</li>

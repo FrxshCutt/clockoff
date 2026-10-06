@@ -16,7 +16,7 @@ import {
   shiftStatusSchema,
   workModeStateSchema,
 } from "./enumSchemas";
-import { restrictionConfigSchema } from "./policies";
+import { breakBehaviourDefaultSchema, restrictionConfigSchema } from "./policies";
 import {
   companyCodeSchema,
   emptyBodySchema,
@@ -268,6 +268,8 @@ export const mobileResolvedPolicySchema = z
     policy: z.object({ id: uuidSchema, name: z.string() }),
     version: z.object({ id: uuidSchema, versionNumber: z.int().min(1) }),
     restrictionConfig: restrictionConfigSchema,
+    /** Break behaviour of this version, applied when no Break Policy resolves (`PolicyVersion.breakBehaviourDefault`). */
+    breakBehaviourDefault: breakBehaviourDefaultSchema.optional(),
   })
   .meta({ id: "MobileResolvedPolicy" });
 export type MobileResolvedPolicy = z.infer<typeof mobileResolvedPolicySchema>;
@@ -430,6 +432,8 @@ export const deviceStateResponseSchema = z
     /** device − server, whole seconds (positive = device clock ahead). */
     clockSkewSeconds: z.int(),
     expectedState: expectedStateSchema,
+    /** True when |clockSkewSeconds| exceeds the attention threshold (300 s); the app should ask the employee to enable "Set Automatically". */
+    clockSkewExceeded: z.boolean().optional(),
   })
   .meta({ id: "DeviceStateResponse" });
 export type DeviceStateResponse = z.infer<typeof deviceStateResponseSchema>;
@@ -505,7 +509,12 @@ export const mobileStartBreakSchema = z
   .object({
     clientBreakId: uuidSchema,
     shiftId: uuidSchema,
-    /** Device time of the tap; the server starts the break at its own clock and reports skew. */
+    /**
+     * Device time of the tap. The break starts at `min(receivedAt, requestedAt − device skew)` on the SERVER
+     * clock (`breakStartInstant`, docs/BREAK_RULES.md): online that is the receive time minus latency; for a
+     * break started offline it is the moment the employee tapped, so the rules are evaluated and the break
+     * counted where it really happened. It is never later than the receive time.
+     */
     requestedAt: isoDateTimeSchema,
     /** Defaults to the policy's maxBreakDurationMinutes. */
     requestedDurationMinutes: z.int().min(1).max(MOBILE_LIMITS.maxRequestedBreakMinutes).optional(),

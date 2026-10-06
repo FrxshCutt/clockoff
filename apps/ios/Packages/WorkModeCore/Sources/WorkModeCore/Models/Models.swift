@@ -236,6 +236,9 @@ public struct Shift: Codable, Equatable, Sendable, Identifiable {
     /// Per-shift version; changes whenever the shift is edited.
     public var version: Int
     public var scheduledBreaks: [ScheduledBreak]
+    /// Soft-deletion instant. The API never sends deleted shifts; the field exists so the engine can be fed
+    /// the shared fixtures (`WorkModeShiftLike.deletedAt`) and ignores such rows exactly like the TS machine.
+    public var deletedAt: Date?
 
     public init(
         id: String,
@@ -246,7 +249,8 @@ public struct Shift: Codable, Equatable, Sendable, Identifiable {
         location: NamedRef? = nil,
         notes: String? = nil,
         version: Int = 1,
-        scheduledBreaks: [ScheduledBreak] = []
+        scheduledBreaks: [ScheduledBreak] = [],
+        deletedAt: Date? = nil
     ) {
         self.id = id
         self.startsAt = startsAt
@@ -257,10 +261,11 @@ public struct Shift: Codable, Equatable, Sendable, Identifiable {
         self.notes = notes
         self.version = version
         self.scheduledBreaks = scheduledBreaks
+        self.deletedAt = deletedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, startsAt, endsAt, timezone, status, location, notes, version, scheduledBreaks
+        case id, startsAt, endsAt, timezone, status, location, notes, version, scheduledBreaks, deletedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -274,10 +279,12 @@ public struct Shift: Codable, Equatable, Sendable, Identifiable {
         notes = try c.decodeIfPresent(String.self, forKey: .notes)
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         scheduledBreaks = try c.decodeIfPresent([ScheduledBreak].self, forKey: .scheduledBreaks) ?? []
+        deletedAt = try c.decodeIfPresent(Date.self, forKey: .deletedAt)
     }
 
-    /// SCHEDULED shifts with a positive length are the only ones Work Mode acts on (§6.2).
+    /// SCHEDULED, non-deleted shifts with a positive length are the only ones Work Mode acts on (§6.2).
     public var isEffective: Bool {
+        guard deletedAt == nil else { return false }
         switch status {
         case .scheduled:
             return endsAt > startsAt
@@ -369,21 +376,52 @@ public struct BreakBehaviourSnapshot: Codable, Equatable, Sendable {
 }
 
 /// `MobileActiveOverride` — a manager override currently (or soon) affecting this employee. The server
-/// sends only overrides applicable to this employee that have not been revoked.
+/// sends only overrides applicable to this employee that have not been revoked; `revokedAt` and
+/// `employeeId` exist for parity with the shared state machine's `WorkModeOverrideLike` (fixtures, replay).
 public struct ActiveOverride: Codable, Equatable, Sendable, Identifiable {
     public var id: String
     public var type: OverrideType
     public var startsAt: Date
     public var expiresAt: Date
-    /// Relaxation applied while a TEMPORARY_EXCEPTION is active; nil for other types.
+    /// Relaxation applied while a TEMPORARY_EXCEPTION is active; nil for other types (= RELAX_ALL default).
     public var breakBehaviour: BreakBehaviourSnapshot?
+    /// Revocation instant: the override stops applying at `min(expiresAt, revokedAt)`.
+    public var revokedAt: Date?
+    /// Employee the override is scoped to; nil for an organisation-wide override.
+    public var employeeId: String?
 
-    public init(id: String, type: OverrideType, startsAt: Date, expiresAt: Date, breakBehaviour: BreakBehaviourSnapshot? = nil) {
+    public init(
+        id: String,
+        type: OverrideType,
+        startsAt: Date,
+        expiresAt: Date,
+        breakBehaviour: BreakBehaviourSnapshot? = nil,
+        revokedAt: Date? = nil,
+        employeeId: String? = nil
+    ) {
         self.id = id
         self.type = type
         self.startsAt = startsAt
         self.expiresAt = expiresAt
         self.breakBehaviour = breakBehaviour
+        self.revokedAt = revokedAt
+        self.employeeId = employeeId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, type, startsAt, expiresAt, breakBehaviour, revokedAt, employeeId
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        type = try c.decode(OverrideType.self, forKey: .type)
+        startsAt = try c.decode(Date.self, forKey: .startsAt)
+        expiresAt = try c.decode(Date.self, forKey: .expiresAt)
+        // Parsed defensively like the TS machine's override payload: an unreadable behaviour means RELAX_ALL.
+        breakBehaviour = try? c.decodeIfPresent(BreakBehaviourSnapshot.self, forKey: .breakBehaviour)
+        revokedAt = try c.decodeIfPresent(Date.self, forKey: .revokedAt)
+        employeeId = try c.decodeIfPresent(String.self, forKey: .employeeId)
     }
 }
 

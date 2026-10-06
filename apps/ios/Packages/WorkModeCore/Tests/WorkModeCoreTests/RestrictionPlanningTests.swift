@@ -57,7 +57,7 @@ final class RestrictionPlanningTests: XCTestCase {
         let entries = ActivityPlanner().plan(now: iso("2026-10-06T09:00:00Z"), shifts: shifts, activeBreak: nil,
                                              policy: try Fixture.policy(), breakPolicy: nil, timeZone: london,
                                              options: WorkModeEngineOptions(preShiftWarningMinutes: 10))
-        XCTAssertEqual(entries.map(\.activity.name), ["wm.shift.a", "wm.shift.night"])
+        XCTAssertEqual(entries.map(\.activity.name), ["shift-a-v2", "shift-night-v1"], "merged a+b: version is the sum of the merged shifts' versions")
         let first = try XCTUnwrap(entries.first)
         XCTAssertEqual(first.activity.kind, .shift)
         XCTAssertEqual(first.activity.warningMinutes, 10)
@@ -75,15 +75,18 @@ final class RestrictionPlanningTests: XCTestCase {
                                              shifts: [Fixture.shift("a", "2026-10-06T08:00:00Z", "2026-10-06T16:00:00Z")],
                                              activeBreak: session, policy: try Fixture.policy(), breakPolicy: nil,
                                              timeZone: london, options: WorkModeEngineOptions())
-        XCTAssertEqual(entries.map(\.activity.name), ["wm.break.b1", "wm.shift.a"])
+        XCTAssertEqual(entries.map(\.activity.name), ["break-c", "shift-a-v1"])
         let breakEntry = entries[0]
         XCTAssertEqual(breakEntry.activity.kind, .break)
         XCTAssertEqual(breakEntry.activity.plannedEnd, iso("2026-10-06T11:10:00Z"))
         XCTAssertEqual(breakEntry.activity.endComponents.resolvedDate(), iso("2026-10-06T11:15:00Z"), "stretched to the 15-minute minimum")
         XCTAssertEqual(breakEntry.breakBehaviour, .relaxCategories(kept: [.socialMedia, .streaming]))
+        XCTAssertEqual(breakEntry.clientBreakId, "c")
+        XCTAssertEqual(entries[1].version, 1)
+        XCTAssertEqual(entries[1].shiftIds, ["a"])
     }
 
-    func testPlannerCapsAtTwentyActivitiesAndNeedsAPolicy() throws {
+    func testPlannerCapsAtEighteenShiftActivitiesAndNeedsAPolicy() throws {
         let start = iso("2026-10-06T08:00:00Z")
         let shifts = (0..<30).map { i -> Shift in
             let s = start.addingTimeInterval(TimeInterval(i) * 4 * 3600)
@@ -91,8 +94,24 @@ final class RestrictionPlanningTests: XCTestCase {
         }
         let planner = ActivityPlanner()
         let entries = planner.plan(now: start, shifts: shifts, activeBreak: nil, policy: try Fixture.policy(), breakPolicy: nil, timeZone: london, options: WorkModeEngineOptions())
-        XCTAssertEqual(entries.count, ActivityPlanner.maxActivities)
+        XCTAssertEqual(entries.count, ActivityPlanner.maxShiftActivities, "18 shift activities; 2 slots are kept for breaks")
+        XCTAssertLessThanOrEqual(entries.count, ActivityPlanner.maxActivities)
         XCTAssertTrue(planner.plan(now: start, shifts: shifts, activeBreak: nil, policy: nil, breakPolicy: nil, timeZone: london, options: WorkModeEngineOptions()).isEmpty)
+    }
+
+    func testPlannerSkipsShortAndEndedIntervals() throws {
+        let shifts = [
+            Fixture.shift("short", "2026-10-06T10:00:00Z", "2026-10-06T10:10:00Z"),
+            Fixture.shift("ended", "2026-10-06T06:00:00Z", "2026-10-06T08:59:00Z"),
+            Fixture.shift("ok", "2026-10-06T12:00:00Z", "2026-10-06T12:15:00Z"),
+        ]
+        let entries = ActivityPlanner().plan(now: iso("2026-10-06T09:00:00Z"), shifts: shifts, activeBreak: nil, policy: try Fixture.policy(),
+                                             breakPolicy: nil, timeZone: london, options: WorkModeEngineOptions())
+        XCTAssertEqual(entries.map(\.shiftId), ["ok"], "under 15 minutes and already ended intervals are not registered")
+        let planned = PlansFile(generatedAt: iso("2026-10-06T09:00:00Z"), organisationName: "Org", entries: entries)
+        XCTAssertEqual(planned.activities.map(\.name), ["shift-ok-v1"])
+        XCTAssertEqual(planned.shiftEntries(covering: iso("2026-10-06T12:05:00Z")).map(\.shiftId), ["ok"])
+        XCTAssertTrue(planned.shiftEntries(covering: iso("2026-10-06T12:15:00Z")).isEmpty, "end-exclusive")
     }
 
     func testReconcilerActions() throws {

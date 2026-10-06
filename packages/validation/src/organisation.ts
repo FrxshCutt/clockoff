@@ -8,7 +8,7 @@ import {
   planSchema,
   roleSchema,
 } from "./enumSchemas";
-import { instantSchema, nullableInstantSchema } from "./primitives";
+import { instantSchema, nullableInstantSchema, okResponseSchema } from "./primitives";
 import { namedRefSchema } from "./refs";
 
 // ── Organisation ────────────────────────────────────────────────────────────
@@ -310,3 +310,29 @@ export const joinCodeResponseSchema = z
   })
   .meta({ id: "JoinCodeResponse" });
 export type JoinCodeResponse = z.infer<typeof joinCodeResponseSchema>;
+
+// ── Demo requests (marketing site) ──────────────────────────────────────────
+
+/**
+ * `POST /api/request-demo` (public, rate limited per IP). `website` is a honeypot: real visitors never see
+ * the field, so a non-empty value marks a bot and the request is accepted but not stored.
+ */
+export const requestDemoSchema = z
+  .object({
+    name: nonEmptyString(120),
+    email: emailSchema,
+    company: nonEmptyString(160),
+    /** Free text such as "10-25", "50+" (the form offers a fixed set of bands). */
+    teamSize: z.string().trim().max(40).optional(),
+    message: z.string().trim().max(2000).optional(),
+    /** Where the request came from (page or campaign), e.g. `pricing`. */
+    source: z.string().trim().max(100).optional(),
+    /** Honeypot — must stay empty. */
+    website: z.string().max(200).optional(),
+  })
+  .strict();
+export type RequestDemoInput = z.infer<typeof requestDemoSchema>;
+
+/** Always `{ ok: true }`: the response never reveals whether the request was stored. */
+export const requestDemoResponseSchema = okResponseSchema;
+export type RequestDemoResponse = z.infer<typeof requestDemoResponseSchema>;

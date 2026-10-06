@@ -67,6 +67,10 @@
       "description": "Organisation structure."
     },
     {
+      "name": "Marketing",
+      "description": "Public marketing-site endpoints (no authentication)."
+    },
+    {
       "name": "Members",
       "description": "Managers of the organisation and their invites."
     },
@@ -7116,6 +7120,10 @@
                   "includeWarnings": {
                     "default": true,
                     "type": "boolean"
+                  },
+                  "skipErrors": {
+                    "default": false,
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -10822,9 +10830,10 @@
                 "type": "object",
                 "properties": {
                   "companyCode": {
+                    "description": "Company join code, WORD-#### (case-insensitive; spaces and separators are ignored, e.g. brew4821)",
                     "type": "string",
-                    "pattern": "^[A-Z]{3,8}-\\d{4}$",
-                    "description": "Company join code, WORD-#### (case-insensitive)"
+                    "minLength": 1,
+                    "maxLength": 32
                   },
                   "employeeId": {
                     "type": "string",
@@ -10841,9 +10850,10 @@
                     "maxLength": 100
                   },
                   "inviteCode": {
+                    "description": "Per-employee invite code (case-insensitive; separators are ignored)",
                     "type": "string",
-                    "pattern": "^[A-Z0-9-]{4,16}$",
-                    "description": "Per-employee invite code (case-insensitive)"
+                    "minLength": 1,
+                    "maxLength": 32
                   },
                   "device": {
                     "$ref": "#/components/schemas/MobileDeviceInfo"
@@ -10989,9 +10999,10 @@
                 "type": "object",
                 "properties": {
                   "companyCode": {
+                    "description": "Company join code, WORD-#### (case-insensitive; spaces and separators are ignored, e.g. brew4821)",
                     "type": "string",
-                    "pattern": "^[A-Z]{3,8}-\\d{4}$",
-                    "description": "Company join code, WORD-#### (case-insensitive)"
+                    "minLength": 1,
+                    "maxLength": 32
                   },
                   "firstName": {
                     "type": "string",
@@ -11004,9 +11015,10 @@
                     "maxLength": 100
                   },
                   "inviteCode": {
+                    "description": "Per-employee invite code (case-insensitive; separators are ignored)",
                     "type": "string",
-                    "pattern": "^[A-Z0-9-]{4,16}$",
-                    "description": "Per-employee invite code (case-insensitive)"
+                    "minLength": 1,
+                    "maxLength": 32
                   }
                 },
                 "required": [
@@ -16271,6 +16283,144 @@
         "x-auth": "manager"
       }
     },
+    "/api/request-demo": {
+      "post": {
+        "operationId": "postRequestDemo",
+        "summary": "Request a demo (marketing site)",
+        "description": "Public lead capture for the marketing site. Rate limited (5 per hour per IP), Origin-checked, and the optional `website` honeypot field must stay empty.",
+        "tags": [
+          "Marketing"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "format": "email"
+                  },
+                  "company": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "teamSize": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "source": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "website": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "company"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: VALIDATION_ERROR",
+            "x-error-codes": [
+              "VALIDATION_ERROR"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Error: PAYLOAD_TOO_LARGE",
+            "x-error-codes": [
+              "PAYLOAD_TOO_LARGE"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Error: UNSUPPORTED_MEDIA_TYPE",
+            "x-error-codes": [
+              "UNSUPPORTED_MEDIA_TYPE"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: RATE_LIMITED",
+            "x-error-codes": [
+              "RATE_LIMITED"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error: INTERNAL_ERROR",
+            "x-error-codes": [
+              "INTERNAL_ERROR"
+            ],
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-auth": "public"
+      }
+    },
     "/api/settings": {
       "get": {
         "operationId": "getSettings",
@@ -16600,7 +16750,7 @@
           {
             "name": "from",
             "in": "query",
-            "required": true,
+            "required": false,
             "description": "ISO-8601 instant with a timezone offset (Z or ±hh:mm)",
             "schema": {
               "type": "string",
@@ -16611,7 +16761,7 @@
           {
             "name": "to",
             "in": "query",
-            "required": true,
+            "required": false,
             "description": "ISO-8601 instant with a timezone offset (Z or ±hh:mm)",
             "schema": {
               "type": "string",
@@ -17199,6 +17349,16 @@
                   "expectedVersion": {
                     "type": "integer",
                     "minimum": 1
+                  },
+                  "applyTo": {
+                    "type": "string",
+                    "enum": [
+                      "THIS",
+                      "THIS_AND_FUTURE"
+                    ]
+                  },
+                  "allowOverlap": {
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false
@@ -18390,6 +18550,9 @@
                       "format": "uuid"
                     },
                     "uniqueItems": true
+                  },
+                  "replace": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -19055,6 +19218,12 @@
                 "type": "null"
               }
             ]
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanCatalogEntry"
+            }
           }
         },
         "required": [
@@ -20514,6 +20683,9 @@
           "recurrence": {
             "$ref": "#/components/schemas/ShiftRecurrence"
           },
+          "allowOverlap": {
+            "type": "boolean"
+          },
           "startsAt": {
             "type": "string",
             "format": "date-time",
@@ -20564,6 +20736,9 @@
           "recurrence": {
             "$ref": "#/components/schemas/ShiftRecurrence"
           },
+          "allowOverlap": {
+            "type": "boolean"
+          },
           "date": {
             "type": "string",
             "format": "date",
@@ -20607,10 +20782,24 @@
             "items": {
               "$ref": "#/components/schemas/Shift"
             }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftWarning"
+            }
+          },
+          "skippedOccurrences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SkippedOccurrence"
+            }
           }
         },
         "required": [
-          "shifts"
+          "shifts",
+          "warnings",
+          "skippedOccurrences"
         ]
       },
       "CurrentOrganisationResponse": {
@@ -20913,6 +21102,9 @@
           },
           "expectedState": {
             "$ref": "#/components/schemas/ExpectedState"
+          },
+          "clockSkewExceeded": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -21155,6 +21347,16 @@
           },
           "employee": {
             "$ref": "#/components/schemas/EmployeeSummary"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -22186,6 +22388,13 @@
           "break_minutes"
         ]
       },
+      "ImportLocationAction": {
+        "type": "string",
+        "enum": [
+          "CREATE",
+          "IGNORE"
+        ]
+      },
       "ImportOptions": {
         "type": "object",
         "properties": {
@@ -22279,6 +22488,9 @@
         "properties": {
           "import": {
             "$ref": "#/components/schemas/ShiftImport"
+          },
+          "suggestion": {
+            "$ref": "#/components/schemas/MappingSuggestion"
           }
         },
         "required": [
@@ -23349,6 +23561,26 @@
             "type": "integer",
             "minimum": 0
           },
+          "policyAssignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "breakPolicyAssignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -23943,6 +24175,9 @@
           },
           "restrictionConfig": {
             "$ref": "#/components/schemas/RestrictionConfig"
+          },
+          "breakBehaviourDefault": {
+            "$ref": "#/components/schemas/BreakBehaviourDefault"
           }
         },
         "required": [
@@ -24963,6 +25198,65 @@
           "ENTERPRISE"
         ]
       },
+      "PlanCatalogEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Plan"
+          },
+          "name": {
+            "type": "string"
+          },
+          "priceLabel": {
+            "type": "string"
+          },
+          "limits": {
+            "type": "object",
+            "properties": {
+              "employees": {
+                "$ref": "#/components/schemas/PlanLimitValue"
+              },
+              "locations": {
+                "$ref": "#/components/schemas/PlanLimitValue"
+              },
+              "integrations": {
+                "$ref": "#/components/schemas/PlanLimitValue"
+              },
+              "analytics": {
+                "type": "boolean"
+              },
+              "auditLogRetentionDays": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "employees",
+              "locations",
+              "integrations",
+              "analytics",
+              "auditLogRetentionDays"
+            ]
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isCurrent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "priceLabel",
+          "limits",
+          "features",
+          "isCurrent"
+        ]
+      },
       "PlanLimitValue": {
         "anyOf": [
           {
@@ -25485,6 +25779,49 @@
         ],
         "additionalProperties": false
       },
+      "ScopeAssignment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/NamedRef"
+          },
+          "effectiveFrom": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO-8601 instant in UTC (e.g. 2026-10-05T09:00:00.000Z)"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effectiveTo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "description": "ISO-8601 instant in UTC (e.g. 2026-10-05T09:00:00.000Z)"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "policy",
+          "effectiveFrom",
+          "effectiveTo"
+        ],
+        "description": "The policy assignment currently in force for a location or team scope."
+      },
       "SelectionCounts": {
         "type": "object",
         "properties": {
@@ -25620,6 +25957,27 @@
               "$ref": "#/components/schemas/ScheduledBreak"
             }
           },
+          "isOvernight": {
+            "type": "boolean"
+          },
+          "localDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Calendar date (YYYY-MM-DD), interpreted in the relevant timezone"
+          },
+          "localStartTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "Wall-clock time, HH:mm (24-hour)"
+          },
+          "localEndTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "Wall-clock time, HH:mm (24-hour)"
+          },
+          "displayRange": {
+            "type": "string"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -25647,6 +26005,11 @@
           "parentRecurrenceId",
           "version",
           "scheduledBreaks",
+          "isOvernight",
+          "localDate",
+          "localStartTime",
+          "localEndTime",
+          "displayRange",
           "createdAt",
           "updatedAt"
         ]
@@ -25836,6 +26199,12 @@
         "properties": {
           "shift": {
             "$ref": "#/components/schemas/Shift"
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShiftWarning"
+            }
           }
         },
         "required": [
@@ -25901,6 +26270,48 @@
           "location"
         ]
       },
+      "ShiftWarning": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "SkippedOccurrence": {
+        "type": "object",
+        "properties": {
+          "startsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 instant in UTC (e.g. 2026-10-05T09:00:00.000Z)"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 instant in UTC (e.g. 2026-10-05T09:00:00.000Z)"
+          },
+          "conflictingShiftIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "startsAt",
+          "endsAt",
+          "conflictingShiftIds"
+        ]
+      },
       "SseEvent": {
         "type": "object",
         "properties": {
@@ -25914,7 +26325,10 @@
               "shift.changed",
               "policy.changed",
               "override.changed",
-              "import.completed"
+              "import.completed",
+              "OVERRIDE_CREATED",
+              "OVERRIDE_REVOKED",
+              "OVERRIDE_EXPIRED"
             ]
           },
           "organisationId": {
@@ -26078,6 +26492,26 @@
             "type": "integer",
             "minimum": 0
           },
+          "policyAssignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "breakPolicyAssignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeAssignment"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -26218,6 +26652,18 @@
             },
             "required": [
               "skip"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "locationAction": {
+                "$ref": "#/components/schemas/ImportLocationAction"
+              }
+            },
+            "required": [
+              "locationAction"
             ],
             "additionalProperties": false
           }

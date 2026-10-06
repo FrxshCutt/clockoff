@@ -1,7 +1,32 @@
 import { z } from "zod";
 import { nonEmptyString, optionalString, timezoneSchema, uuidSchema } from "./common";
-import { instantSchema, patchStringSchema, uuidListSchema } from "./primitives";
+import {
+  instantSchema,
+  nullableInstantSchema,
+  patchStringSchema,
+  uuidListSchema,
+} from "./primitives";
 import { namedRefSchema } from "./refs";
+
+// ── Scope assignments (shared by locations and teams) ───────────────────────
+
+/**
+ * The assignment currently in force for a location or team scope (§6.1: at most one per scope). `policy`
+ * is the Work Policy for `policyAssignment` and the Break Policy for `breakPolicyAssignment`.
+ */
+export const scopeAssignmentSchema = z
+  .object({
+    /** PolicyAssignment / BreakPolicyAssignment id. */
+    id: uuidSchema,
+    policy: namedRefSchema,
+    effectiveFrom: nullableInstantSchema,
+    effectiveTo: nullableInstantSchema,
+  })
+  .meta({
+    id: "ScopeAssignment",
+    description: "The policy assignment currently in force for a location or team scope.",
+  });
+export type ScopeAssignment = z.infer<typeof scopeAssignmentSchema>;
 
 // ── Locations ───────────────────────────────────────────────────────────────
 
@@ -14,6 +39,10 @@ export const locationSchema = z
     address: z.string().nullable(),
     employeeCount: z.int().min(0),
     teamCount: z.int().min(0),
+    /** Active Work Policy assignment for this location (LOCATION scope), null when none. */
+    policyAssignment: scopeAssignmentSchema.nullable().optional(),
+    /** Active Break Policy assignment for this location, null when none. */
+    breakPolicyAssignment: scopeAssignmentSchema.nullable().optional(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })
@@ -85,6 +114,10 @@ export const teamSchema = z
     name: z.string(),
     location: namedRefSchema.nullable(),
     memberCount: z.int().min(0),
+    /** Active Work Policy assignment for this team (TEAM scope), null when none. */
+    policyAssignment: scopeAssignmentSchema.nullable().optional(),
+    /** Active Break Policy assignment for this team, null when none. */
+    breakPolicyAssignment: scopeAssignmentSchema.nullable().optional(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })
@@ -108,9 +141,16 @@ export const updateTeamSchema = z
   .strict();
 export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
 
-/** `POST /api/teams/:id/members` — adds the given employees to the team (idempotent). */
+/**
+ * `POST /api/teams/:id/members` — adds the given employees to the team (idempotent). With `replace: true`
+ * the list becomes the team's whole membership (employees not listed are removed).
+ */
 export const addTeamMembersSchema = z
-  .object({ employeeIds: uuidListSchema({ min: 1, max: TEAM_LIMITS.maxMembersPerRequest }) })
+  .object({
+    employeeIds: uuidListSchema({ min: 1, max: TEAM_LIMITS.maxMembersPerRequest }),
+    /** Replace the membership set instead of adding to it. Default false. */
+    replace: z.boolean().optional(),
+  })
   .strict();
 export type AddTeamMembersInput = z.infer<typeof addTeamMembersSchema>;
 

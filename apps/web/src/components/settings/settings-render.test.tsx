@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import type { CurrentOrganisation, MembersList } from "@/hooks/api-shapes";
 import type { CurrentUser } from "@/hooks/use-current-user";
 import type { Availability } from "@/hooks/use-settings";
+import type { JoinCodeState } from "./use-join-code";
 import { queryKeys } from "@/lib/query-client";
 import { JoinCodeSettings } from "./join-code-settings";
 import { MembersSettings } from "./members-settings";
@@ -84,19 +85,47 @@ describe("Settings → Organisation", () => {
   });
 });
 
+const JOIN_CODES: JoinCodeState = {
+  available: true,
+  data: {
+    current: {
+      id: "c2",
+      code: "HARB42",
+      status: "ACTIVE",
+      createdBy: { id: "u1", name: "Ada Lovelace" },
+      createdAt: "2026-10-03T09:00:00Z",
+      revokedAt: null,
+    },
+    history: [
+      { id: "c1", code: "BREW-4821", status: "REVOKED", createdBy: null, createdAt: "2026-10-01T09:00:00Z", revokedAt: "2026-10-03T09:00:00Z" },
+    ],
+  },
+};
+
 describe("Settings → Join code", () => {
-  it("shows the code with copy, regenerate and revoke for owners", () => {
-    const html = render(<JoinCodeSettings />, "OWNER");
+  it("shows the code with copy, regenerate, revoke and the history for owners", () => {
+    const html = render(<JoinCodeSettings />, "OWNER", (client) => client.setQueryData(queryKeys.joinCode, JOIN_CODES));
     expect(html).toContain("HARB42");
     expect(html).toMatch(/<button[^>]*title="Copy join code"[^>]*>[\s\S]*?Copy</);
     expect(html).toContain("Regenerate");
     expect(html).toContain("Revoke");
+    expect(html).toContain("BREW-4821");
+    expect(html).toContain("Revoked");
+    expect(html).toContain("by Ada Lovelace");
   });
 
   it("hides management actions from managers", () => {
-    const html = render(<JoinCodeSettings />, "MANAGER");
+    const html = render(<JoinCodeSettings />, "MANAGER", (client) => client.setQueryData(queryKeys.joinCode, JOIN_CODES));
     expect(html).toContain("HARB42");
     expect(html).not.toContain("Regenerate");
+  });
+
+  it("falls back to the organisation's active code while the history endpoint is unavailable", () => {
+    const html = render(<JoinCodeSettings />, "OWNER", (client) =>
+      client.setQueryData<JoinCodeState>(queryKeys.joinCode, { available: false, data: null }),
+    );
+    expect(html).toContain("HARB42");
+    expect(html).toContain("Code history isn&#x27;t available yet");
   });
 });
 

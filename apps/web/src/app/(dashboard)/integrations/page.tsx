@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { IntegrationsList } from "@/components/integrations/integrations-list";
+import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Integrations" };
 
 export default function IntegrationsPage() {
   return (
-    <PlaceholderPage
-      title="Integrations"
-      description="Connect your rota software to keep shifts in sync automatically."
-      emptyState="integrations"
-    />
+    <>
+      <PageHeader
+        title="Integrations"
+        description="Connect your rota software to keep shifts in sync automatically. Providers are coming soon; CSV import works today."
+      />
+      <IntegrationsList />
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { ErrorState } from "@/components/error-state";
 import { FullPageShellSkeleton } from "@/components/loading-skeletons";
 import { InlineAlert } from "@/components/inline-alert";
+import { RealtimeProvider } from "@/components/realtime";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ROUTES, loginRedirectUrl } from "@/config/navigation";
 import { useResendVerification, useSwitchOrganisation } from "@/hooks/use-auth";
@@ -95,7 +96,7 @@ export function DashboardShell({ children, defaultSidebarOpen = true }: { childr
         <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {me.user.emailVerified ? null : <VerifyEmailBanner email={me.user.email} />}
-            {children}
+            <RealtimeProvider>{children}</RealtimeProvider>
           </div>
         </main>
       </div>

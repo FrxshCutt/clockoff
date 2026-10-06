@@ -140,7 +140,11 @@ export const createImportResponseSchema = z
 export type CreateImportResponse = z.infer<typeof createImportResponseSchema>;
 
 export const importResponseSchema = z
-  .object({ import: shiftImportSchema })
+  .object({
+    import: shiftImportSchema,
+    /** The upload-time mapping suggestion, repeated while the import has not been committed. */
+    suggestion: mappingSuggestionSchema.optional(),
+  })
   .meta({ id: "ImportResponse" });
 export type ImportResponse = z.infer<typeof importResponseSchema>;
 
@@ -292,15 +296,24 @@ export const importCreateEmployeeSchema = z
   })
   .strict();
 
+export const IMPORT_LOCATION_ACTIONS = ["CREATE", "IGNORE"] as const;
+export type ImportLocationAction = (typeof IMPORT_LOCATION_ACTIONS)[number];
+export const importLocationActionSchema = z
+  .enum(IMPORT_LOCATION_ACTIONS)
+  .meta({ id: "ImportLocationAction" });
+
 /**
  * `PATCH /api/imports/:id/rows/:rowId` — exactly one resolution: match an existing employee (`null`
- * clears the match), create a new employee at commit, or skip / un-skip the row. The row is re-validated.
+ * clears the match), create a new employee (created immediately and matched to the row), skip / un-skip
+ * the row, or resolve an UNKNOWN_LOCATION (`CREATE` the location, or `IGNORE` it and import the row
+ * without a location). The row is re-validated.
  */
 export const updateImportRowSchema = z
   .union([
     z.object({ matchedEmployeeId: uuidSchema.nullable() }).strict(),
     z.object({ createEmployee: importCreateEmployeeSchema }).strict(),
     z.object({ skip: z.boolean() }).strict(),
+    z.object({ locationAction: importLocationActionSchema }).strict(),
   ])
   .meta({ id: "UpdateImportRowInput" });
 export type UpdateImportRowInput = z.infer<typeof updateImportRowSchema>;
@@ -314,9 +327,15 @@ export type ImportRowResponse = z.infer<typeof importRowResponseSchema>;
 
 /**
  * `POST /api/imports/:id/commit`. Rows with ERROR status block the commit (IMPORT_HAS_ERRORS) unless
- * skipped; WARNING rows are imported unless `includeWarnings` is false (then they are skipped).
+ * skipped or `skipErrors` is true (then they are left as ERROR and not imported); WARNING rows are
+ * imported unless `includeWarnings` is false (then they are skipped).
  */
-export const commitImportSchema = z.object({ includeWarnings: z.boolean().default(true) }).strict();
+export const commitImportSchema = z
+  .object({
+    includeWarnings: z.boolean().default(true),
+    skipErrors: z.boolean().default(false),
+  })
+  .strict();
 export type CommitImportInput = z.infer<typeof commitImportSchema>;
 
 export const commitImportResponseSchema = z

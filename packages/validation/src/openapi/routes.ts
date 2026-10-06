@@ -168,6 +168,8 @@ import {
   resendManagerInviteSchema,
   updateMemberRoleSchema,
   updateOrganisationSchema,
+  requestDemoSchema,
+  requestDemoResponseSchema,
 } from "../organisation";
 import {
   createOverrideSchema,
@@ -1929,6 +1931,19 @@ defineRoute({
   auth: "mobile",
   request: { body: pushTokenSchema },
   responses: { 200: okResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/request-demo",
+  summary: "Request a demo (marketing site)",
+  description:
+    "Public lead capture for the marketing site. Rate limited (5 per hour per IP), Origin-checked, and the optional `website` honeypot field must stay empty.",
+  tags: ["Marketing"],
+  auth: "public",
+  request: { body: requestDemoSchema },
+  responses: { 200: requestDemoResponseSchema },
+  errors: ["RATE_LIMITED"],
 });
 
 /** Every registered route (re-exported for the generator and tests). */

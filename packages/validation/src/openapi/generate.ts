@@ -65,6 +65,7 @@ export const TAG_DESCRIPTIONS: Readonly<Record<string, string>> = {
   Invites: "Employee invites and join instructions.",
   "Join code": "Company join code used by the iOS app.",
   Locations: "Organisation structure.",
+  Marketing: "Public marketing-site endpoints (no authentication).",
   Members: "Managers of the organisation and their invites.",
   Mobile: "iOS app API (/api/mobile/v1). Strict request schemas: unknown fields are rejected.",
   Notifications: "In-app notifications for the signed-in manager.",

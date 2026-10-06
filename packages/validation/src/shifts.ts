@@ -88,6 +88,11 @@ const shiftCommonShape = {
     .max(SHIFT_LIMITS.maxScheduledBreaks)
     .optional(),
   recurrence: shiftRecurrenceSchema.optional(),
+  /**
+   * Skip the SHIFT_OVERLAP check for this shift (and, with a recurrence, its occurrences). Adjacent shifts
+   * never count as overlapping; this is for genuinely double-booked employees.
+   */
+  allowOverlap: z.boolean().optional(),
 };
 
 /** Local wall-clock form. `endTime <= startTime` means the shift ends the next day (overnight). */
@@ -133,6 +138,16 @@ export function isInstantShiftInput(input: CreateShiftInput): input is CreateShi
 
 // ── Update / actions ────────────────────────────────────────────────────────
 
+export const SHIFT_UPDATE_SCOPES = ["THIS", "THIS_AND_FUTURE"] as const;
+export type ShiftUpdateScope = (typeof SHIFT_UPDATE_SCOPES)[number];
+export const shiftUpdateScopeSchema = z.enum(SHIFT_UPDATE_SCOPES).meta({ id: "ShiftUpdateScope" });
+
+/** `details` of a SHIFT_OVERLAP error: the scheduled shifts the new times collide with. */
+export const shiftOverlapDetailsSchema = z
+  .object({ conflictingShiftIds: z.array(uuidSchema) })
+  .meta({ id: "ShiftOverlapDetails" });
+export type ShiftOverlapDetails = z.infer<typeof shiftOverlapDetailsSchema>;
+
 /** `PATCH /api/shifts/:id` — any subset; local-time and instant fields cannot be mixed. */
 export const updateShiftSchema = z
   .object({
@@ -151,6 +166,14 @@ export const updateShiftSchema = z
       .optional(),
     /** Optimistic concurrency: the `version` the client last saw. CONFLICT when it moved on. */
     expectedVersion: z.int().min(1).optional(),
+    /**
+     * For a shift that belongs to a recurring series: `THIS` (default) changes only this shift;
+     * `THIS_AND_FUTURE` applies the same change to this shift and every later scheduled occurrence of the
+     * series (times keep each occurrence's own date). Ignored for shifts outside a series.
+     */
+    applyTo: z.enum(SHIFT_UPDATE_SCOPES).optional(),
+    /** Skip the SHIFT_OVERLAP check for the new times. */
+    allowOverlap: z.boolean().optional(),
   })
   .strict()
   .superRefine((v, ctx) => {
@@ -184,17 +207,22 @@ export type CancelShiftInput = z.infer<typeof cancelShiftSchema>;
 
 // ── Queries ─────────────────────────────────────────────────────────────────
 
-/** `GET /api/shifts?from&to...` — `from`/`to` are instants; the range may not exceed `maxQueryRangeDays`. */
+/**
+ * `GET /api/shifts?from&to...` — `from`/`to` are instants; the range may not exceed `maxQueryRangeDays`.
+ * Both default to the current week in the organisation's timezone (`weekStartsOn` setting); when only one
+ * is given the other is seven days away from it.
+ */
 export const shiftQuerySchema = z
   .object({
-    from: isoDateTimeSchema,
-    to: isoDateTimeSchema,
+    from: isoDateTimeSchema.optional(),
+    to: isoDateTimeSchema.optional(),
     employeeId: uuidSchema.optional(),
     locationId: uuidSchema.optional(),
     teamId: uuidSchema.optional(),
     status: queryListSchema(shiftStatusSchema).optional(),
   })
   .superRefine((v, ctx) => {
+    if (v.from === undefined || v.to === undefined) return;
     const from = Date.parse(v.from);
     const to = Date.parse(v.to);
     if (to <= from) {
@@ -237,6 +265,15 @@ export const shiftSchema = z
     parentRecurrenceId: uuidSchema.nullable(),
     version: z.int().min(1),
     scheduledBreaks: z.array(scheduledBreakSchema),
+    /** True when the shift ends on a later local day than it starts (in `timezone`). */
+    isOvernight: z.boolean(),
+    /** Local calendar date the shift starts on, in `timezone` (YYYY-MM-DD). */
+    localDate: localDateSchema,
+    /** Local wall-clock start / end in `timezone` (HH:mm). */
+    localStartTime: localTimeSchema,
+    localEndTime: localTimeSchema,
+    /** Human-readable range in `timezone`, e.g. `Tue 6 Oct, 09:00–15:00` or `Sat 24 Oct, 22:00–06:00 (+1)`. */
+    displayRange: z.string(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })
@@ -248,12 +285,46 @@ export const listShiftsResponseSchema = z
   .meta({ id: "ListShiftsResponse" });
 export type ListShiftsResponse = z.infer<typeof listShiftsResponseSchema>;
 
-export const shiftResponseSchema = z.object({ shift: shiftSchema }).meta({ id: "ShiftResponse" });
+/**
+ * DST normalisation codes from `buildShiftInstants` / `expandShiftSeries` (`START_NONEXISTENT_LOCAL_TIME_SHIFTED`,
+ * `END_AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE`, …) plus scheduled-break advisories
+ * (`SCHEDULED_BREAK_BEFORE_MIN_START`, `SCHEDULED_BREAK_GAP_TOO_SHORT`, `SCHEDULED_BREAK_TOO_LONG`,
+ * `SCHEDULED_BREAKS_EXCEED_LIMIT`, `SCHEDULED_BREAKS_EXCEED_TOTAL`, `SCHEDULED_BREAKS_NOT_ALLOWED`).
+ */
+export const shiftWarningSchema = z
+  .object({ code: z.string(), message: z.string() })
+  .meta({ id: "ShiftWarning" });
+export type ShiftWarning = z.infer<typeof shiftWarningSchema>;
+
+export const shiftResponseSchema = z
+  .object({
+    shift: shiftSchema,
+    /** Present on create/update responses when the times were normalised or breaks look unachievable. */
+    warnings: z.array(shiftWarningSchema).optional(),
+  })
+  .meta({ id: "ShiftResponse" });
 export type ShiftResponse = z.infer<typeof shiftResponseSchema>;
 
-/** `POST /api/shifts` — with a recurrence several shifts are created; the first is the anchor. */
+/** An occurrence of a recurring series that was NOT created because it overlapped an existing shift. */
+export const skippedOccurrenceSchema = z
+  .object({
+    startsAt: instantSchema,
+    endsAt: instantSchema,
+    conflictingShiftIds: z.array(uuidSchema),
+  })
+  .meta({ id: "SkippedOccurrence" });
+export type SkippedOccurrence = z.infer<typeof skippedOccurrenceSchema>;
+
+/**
+ * `POST /api/shifts` — with a recurrence several shifts are created; the first is the anchor. Occurrences
+ * beyond the materialisation horizon (8 weeks) are created later by the recurrence job.
+ */
 export const createShiftResponseSchema = z
-  .object({ shifts: z.array(shiftSchema).min(1) })
+  .object({
+    shifts: z.array(shiftSchema).min(1),
+    warnings: z.array(shiftWarningSchema),
+    skippedOccurrences: z.array(skippedOccurrenceSchema),
+  })
   .meta({ id: "CreateShiftResponse" });
 export type CreateShiftResponse = z.infer<typeof createShiftResponseSchema>;
 

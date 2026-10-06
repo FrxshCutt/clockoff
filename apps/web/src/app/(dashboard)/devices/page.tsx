@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "@/components/placeholder-page";
+import { DevicesPage as DevicesView } from "@/components/devices/devices-page";
 
 export const metadata: Metadata = { title: "Devices" };
 
-export default function DevicesPage() {
-  return (
-    <PlaceholderPage
-      title="Devices"
-      description="Phones connected to Work Mode, with Screen Time permission and sync status."
-      emptyState="devices"
-    />
-  );
+/**
+ * `/devices?active=&permission=&employee=&location=&page=&pageSize=` — filters live in the URL and are read
+ * by the client view behind its own Suspense boundary.
+ */
+export default function Page() {
+  return <DevicesView />;
 }

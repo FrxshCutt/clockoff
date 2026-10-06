@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  isValidJoinCodeFormat,
+  normaliseInviteCode,
+  normaliseJoinCode,
+} from "@workmode/shared/joinCode";
 import { uuidSchema } from "./common";
 import { apiErrorCodeSchema } from "./enumSchemas";
 
@@ -95,21 +100,47 @@ export function uuidListSchema(options: { min?: number; max: number }) {
     .meta({ uniqueItems: true });
 }
 
-/** Company join code, `WORD-####` (e.g. `BREW-4821`). Case-insensitive on input, normalised to upper case. */
+const COMPANY_CODE_PATTERN = /^[A-Z]{3,8}-\d{4}$/;
+
+/**
+ * Canonicalise a typed company code: `normaliseJoinCode` turns `brew4821`, `brew 4821`, `BREW_4821` and
+ * iOS smart-punctuation dashes (`brew—4821`) into `BREW-4821`. Input it cannot canonicalise (other word
+ * lengths) falls back to upper case with whitespace removed, so everything the strict pattern accepted
+ * before is still accepted.
+ */
+function canonicalCompanyCode(value: string): string {
+  const normalised = normaliseJoinCode(value);
+  return isValidJoinCodeFormat(normalised) ? normalised : value.toUpperCase().replace(/\s+/g, "");
+}
+
+/**
+ * Company join code, `WORD-####` (e.g. `BREW-4821`). Case-insensitive; separators and spaces are
+ * ignored on input and the parsed value is always canonical (`BREW-4821`).
+ */
 export const companyCodeSchema = z
   .string()
   .trim()
-  .toUpperCase()
-  .regex(/^[A-Z]{3,8}-\d{4}$/, "Company code looks like BREW-4821")
-  .meta({ description: "Company join code, WORD-#### (case-insensitive)" });
+  .min(1, "Company code is required")
+  .max(32, "Company code looks like BREW-4821")
+  .transform(canonicalCompanyCode)
+  .pipe(z.string().regex(COMPANY_CODE_PATTERN, "Company code looks like BREW-4821"))
+  .meta({
+    description:
+      "Company join code, WORD-#### (case-insensitive; spaces and separators are ignored, e.g. brew4821)",
+  });
 
-/** Per-employee invite code shown in the manager's invite instructions. */
+/**
+ * Per-employee invite code shown in the manager's invite instructions. Case-insensitive; separators are
+ * dropped on input (`k7p-q2m` → `K7PQ2M`).
+ */
 export const inviteCodeSchema = z
   .string()
   .trim()
-  .toUpperCase()
-  .regex(/^[A-Z0-9-]{4,16}$/, "Invalid invite code")
-  .meta({ description: "Per-employee invite code (case-insensitive)" });
+  .min(1, "Invite code is required")
+  .max(32, "Invalid invite code")
+  .transform(normaliseInviteCode)
+  .pipe(z.string().regex(/^[A-Z0-9]{4,16}$/, "Invalid invite code"))
+  .meta({ description: "Per-employee invite code (case-insensitive; separators are ignored)" });
 
 export const phoneSchema = z
   .string()

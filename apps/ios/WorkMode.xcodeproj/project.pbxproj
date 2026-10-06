@@ -10,6 +10,7 @@
 		001C16C7F85697802BCCA0C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49F451144DF65861D8ACB3F2 /* Assets.xcassets */; };
 		024C8341016B969AD49F970A /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F21A3D97846FF0F13C976E9A /* DeviceActivityMonitorExtension.swift */; };
 		08C29EFFD8A64C65010C1F6B /* WorkModeShieldAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3864CA1693DC56B8DCAB6447 /* WorkModeShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		14E20193D463652310CD080B /* ScreenTimeSelectionPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2266E1CCCB2F8765B8DAD4 /* ScreenTimeSelectionPicker.swift */; };
 		14E8DF4283169365377CCCA4 /* AppleScreenTimeRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B32CF8982B2CB7B6D6E3FE1 /* AppleScreenTimeRestrictionProvider.swift */; };
 		1E6320622DEA9C1AC1ABDA70 /* OnboardingViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2A0B2E0684C0C127B2C659 /* OnboardingViewModelTests.swift */; };
 		232D7345D18341CD514685FE /* AppRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D87923A7900F93B2E12E940 /* AppRuntime.swift */; };
@@ -22,10 +23,13 @@
 		4968BFDB33570EC4609C5001 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D89844369EC97B120FDC8C86 /* AppModel.swift */; };
 		4B8AD324F2ADABBE37DB591C /* ScreenTimeSetupViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FFD5C3B35EB6F2FCADA91B6 /* ScreenTimeSetupViews.swift */; };
 		4C5923E9E827F7BA103E5F88 /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDD1E3865BC4005BC9F0BE /* TimeFormatting.swift */; };
+		4CC27A58C6C881D8C6DEA5A9 /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = B7C52FB68DC2131061D3EC12 /* WorkModeScreenTime */; };
 		5087D2F959C59E489D1E4DAD /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D3A9F34CD6F80DD21CC03D9 /* SyncCoordinator.swift */; };
 		53BF2F9D5EC9ADDB87E35611 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B12A8941BEA8BD45F6B65D /* Components.swift */; };
 		595986AE979C4D4611F0EFD8 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC7169A0315E662466CB86C /* ScheduleView.swift */; };
+		5E7DF33A0858806ADFF09EF1 /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = 70F417C4C11FF4976A9933E6 /* WorkModeScreenTime */; };
 		62E92AF80F04990166F2C4AC /* WorkModeDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B33B68CC4BC8841D92A6EB84 /* WorkModeDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		67DBE13090CEAF440BC90AF0 /* WorkModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2059AF63DD1CE35C771D0EC0 /* WorkModeController.swift */; };
 		849830F38DE9175CBBD5EA59 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0777DBE51D635D61A17527E /* HomeView.swift */; };
 		884B20F637A45D7E0FBA787A /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 504FB3E25A5AD08F32BC9D05 /* WorkModeCore */; };
 		8C7231A9BEB9FFA05B35B93C /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AF305EB0B88F223AB7F388 /* DeviceInfo.swift */; };
@@ -42,10 +46,14 @@
 		AF5AD4D0CA4801C1A787449F /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C846F95592EC04645B4A02 /* TestDoubles.swift */; };
 		BF61922D8107336D545EB3FD /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18250009CFBEC62630CF76BD /* WorkModeCore */; };
 		C3429B0692CAE1DBC32C58FE /* HomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54809CD0B61CF86C4455FC83 /* HomeCard.swift */; };
+		C4420E9DA39CB1C82F061232 /* UIWorkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47633D2D3B9FB103E8F3BDCD /* UIWorkState.swift */; };
 		C70A8E834D87145B8491D2BC /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6607BD63EA21C1F33CFE4414 /* OnboardingViewModel.swift */; };
 		CB1C8C893F679EE8CB73BA19 /* MockRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F1BB9B32404E537E22FA78 /* MockRestrictionProvider.swift */; };
+		D338F8BE3CB04B95B7F8CFDD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9AEB5AFC1813A6FC1511543D /* Assets.xcassets */; };
 		D608597588AB9A94ECBD8F06 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEBAF4AF26202921BFC68AA3 /* DependencyContainer.swift */; };
+		DC39EE710EA39555C5382601 /* WorkModeControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791C6CEE3739A3B5328D5BBB /* WorkModeControllerTests.swift */; };
 		E027F37F29634B2DFE1E15D9 /* ShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01395D4385DEDF75C244662 /* ShieldActionExtension.swift */; };
+		E91C5D3C2E1A5AEB46F56D97 /* BreakStarting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 539FB04E256FDC37F6A3FD2A /* BreakStarting.swift */; };
 		F7E4BB09B40658ABD3A0A1D4 /* PrivacyStatements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767EF8BE878D0B126F5D6F3B /* PrivacyStatements.swift */; };
 		FE47B657121836C3E6104E9D /* MockRestrictionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0607DC151086E372A68185 /* MockRestrictionProviderTests.swift */; };
 		FFADA60265DC647472D85D41 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745EE28480421F1D6F47330C /* AppConfiguration.swift */; };
@@ -104,6 +112,7 @@
 		0CA6C03999E5EC0171B0777B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1A2AE986E8B383D7527732F1 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
 		1D1941149C0946528C63366F /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		2059AF63DD1CE35C771D0EC0 /* WorkModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeController.swift; sourceTree = "<group>"; };
 		21B12A8941BEA8BD45F6B65D /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		223894B331F708FC65AD2087 /* WorkModeShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkModeShieldConfiguration.entitlements; sourceTree = "<group>"; };
 		298F3B53ADBA693F6A7DA96A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -112,8 +121,10 @@
 		3864CA1693DC56B8DCAB6447 /* WorkModeShieldAction.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WorkModeShieldAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3966B33C96DB49C708A3B07E /* JoinErrorMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinErrorMessages.swift; sourceTree = "<group>"; };
 		3D3A9F34CD6F80DD21CC03D9 /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		47633D2D3B9FB103E8F3BDCD /* UIWorkState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIWorkState.swift; sourceTree = "<group>"; };
 		49F451144DF65861D8ACB3F2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4D87923A7900F93B2E12E940 /* AppRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRuntime.swift; sourceTree = "<group>"; };
+		539FB04E256FDC37F6A3FD2A /* BreakStarting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakStarting.swift; sourceTree = "<group>"; };
 		54809CD0B61CF86C4455FC83 /* HomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCard.swift; sourceTree = "<group>"; };
 		57D406E9FA4D204B8674F1AA /* WorkModeShieldAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkModeShieldAction.entitlements; sourceTree = "<group>"; };
 		6607BD63EA21C1F33CFE4414 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
@@ -123,12 +134,15 @@
 		745EE28480421F1D6F47330C /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		767EF8BE878D0B126F5D6F3B /* PrivacyStatements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatements.swift; sourceTree = "<group>"; };
 		775AF78487E346E4AAABF7A9 /* SimulatorTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorTokenStore.swift; sourceTree = "<group>"; };
+		791C6CEE3739A3B5328D5BBB /* WorkModeControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeControllerTests.swift; sourceTree = "<group>"; };
 		7A9F50B50A505CACCC736942 /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
 		7C166D30E6F631E05F8F557F /* WorkModeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeApp.swift; sourceTree = "<group>"; };
 		8FFD5C3B35EB6F2FCADA91B6 /* ScreenTimeSetupViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSetupViews.swift; sourceTree = "<group>"; };
 		907ABE4F87F72FF1C3D4DCF6 /* RestrictionProviderSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestrictionProviderSupport.swift; sourceTree = "<group>"; };
+		9AEB5AFC1813A6FC1511543D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9D2A0B2E0684C0C127B2C659 /* OnboardingViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModelTests.swift; sourceTree = "<group>"; };
 		9ED1EB29A1F82AB211F24538 /* KeychainTokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStoreTests.swift; sourceTree = "<group>"; };
+		AB2266E1CCCB2F8765B8DAD4 /* ScreenTimeSelectionPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSelectionPicker.swift; sourceTree = "<group>"; };
 		AEBAF4AF26202921BFC68AA3 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
 		AF7644E247111FEA094AFEF5 /* WorkModeApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WorkModeApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B234E30FD4D3F396D0231CA2 /* WorkModeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkModeApp.entitlements; sourceTree = "<group>"; };
@@ -174,6 +188,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				48BB234F0B8CDA80CAAF34AA /* WorkModeCore in Frameworks */,
+				4CC27A58C6C881D8C6DEA5A9 /* WorkModeScreenTime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,6 +197,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				884B20F637A45D7E0FBA787A /* WorkModeCore in Frameworks */,
+				5E7DF33A0858806ADFF09EF1 /* WorkModeScreenTime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +210,14 @@
 				FDC7169A0315E662466CB86C /* ScheduleView.swift */,
 			);
 			path = Schedule;
+			sourceTree = "<group>";
+		};
+		16536805AF5658CB90ED5A52 /* WorkMode */ = {
+			isa = PBXGroup;
+			children = (
+				791C6CEE3739A3B5328D5BBB /* WorkModeControllerTests.swift */,
+			);
+			path = WorkMode;
 			sourceTree = "<group>";
 		};
 		1F586A71316BD755B5589676 /* Home */ = {
@@ -217,6 +241,7 @@
 				0B758144E142B53C04C86FA2 /* Schedule */,
 				E561EB908FA05AC0CEB4A17F /* Settings */,
 				91574ADF1F53BB64F1326436 /* Sync */,
+				5C145016448C6A6D85BF68A6 /* WorkMode */,
 				2B329624EBD1A38AF35A3CAF /* Info.plist */,
 				B234E30FD4D3F396D0231CA2 /* WorkModeApp.entitlements */,
 			);
@@ -243,6 +268,14 @@
 			path = Onboarding;
 			sourceTree = "<group>";
 		};
+		3EA42BB662FC4213E1E849B6 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9AEB5AFC1813A6FC1511543D /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		54A8A79E4B2CF49CDF05AC7C /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -253,6 +286,16 @@
 				6EA5849F59BC62B440E9079B /* WorkModeShieldConfiguration.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5C145016448C6A6D85BF68A6 /* WorkMode */ = {
+			isa = PBXGroup;
+			children = (
+				539FB04E256FDC37F6A3FD2A /* BreakStarting.swift */,
+				47633D2D3B9FB103E8F3BDCD /* UIWorkState.swift */,
+				2059AF63DD1CE35C771D0EC0 /* WorkModeController.swift */,
+			);
+			path = WorkMode;
 			sourceTree = "<group>";
 		};
 		60C2D3BF73428893BF2E18A8 = {
@@ -275,6 +318,7 @@
 				0B32CF8982B2CB7B6D6E3FE1 /* AppleScreenTimeRestrictionProvider.swift */,
 				C0F1BB9B32404E537E22FA78 /* MockRestrictionProvider.swift */,
 				907ABE4F87F72FF1C3D4DCF6 /* RestrictionProviderSupport.swift */,
+				AB2266E1CCCB2F8765B8DAD4 /* ScreenTimeSelectionPicker.swift */,
 			);
 			path = Restrictions;
 			sourceTree = "<group>";
@@ -319,6 +363,7 @@
 		99E83482F231376D84CDB95C /* WorkModeShieldConfiguration */ = {
 			isa = PBXGroup;
 			children = (
+				3EA42BB662FC4213E1E849B6 /* Resources */,
 				BB32372059FFB1ACB3D777CC /* Info.plist */,
 				1A2AE986E8B383D7527732F1 /* ShieldConfigurationExtension.swift */,
 				223894B331F708FC65AD2087 /* WorkModeShieldConfiguration.entitlements */,
@@ -329,6 +374,7 @@
 		BE6B3CE89480032734FD7C07 /* WorkModeAppTests */ = {
 			isa = PBXGroup;
 			children = (
+				16536805AF5658CB90ED5A52 /* WorkMode */,
 				7A9F50B50A505CACCC736942 /* AppModelTests.swift */,
 				9ED1EB29A1F82AB211F24538 /* KeychainTokenStoreTests.swift */,
 				FB0607DC151086E372A68185 /* MockRestrictionProviderTests.swift */,
@@ -408,6 +454,7 @@
 			buildConfigurationList = 0BA72710DB8E339A4CC695F1 /* Build configuration list for PBXNativeTarget "WorkModeShieldConfiguration" */;
 			buildPhases = (
 				CD63C2EBDF8F993BB1EC138D /* Sources */,
+				7D03F94C1BEFEEA84069F6F2 /* Resources */,
 				1C33727C8EEF96E8637A2416 /* Frameworks */,
 			);
 			buildRules = (
@@ -436,6 +483,7 @@
 			name = WorkModeDeviceActivityMonitor;
 			packageProductDependencies = (
 				504FB3E25A5AD08F32BC9D05 /* WorkModeCore */,
+				70F417C4C11FF4976A9933E6 /* WorkModeScreenTime */,
 			);
 			productName = WorkModeDeviceActivityMonitor;
 			productReference = B33B68CC4BC8841D92A6EB84 /* WorkModeDeviceActivityMonitor.appex */;
@@ -479,6 +527,7 @@
 			name = WorkModeApp;
 			packageProductDependencies = (
 				B414AD8AB2B5A1BEB24F8C2D /* WorkModeCore */,
+				B7C52FB68DC2131061D3EC12 /* WorkModeScreenTime */,
 			);
 			productName = WorkModeApp;
 			productReference = AF7644E247111FEA094AFEF5 /* WorkModeApp.app */;
@@ -550,6 +599,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7D03F94C1BEFEEA84069F6F2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D338F8BE3CB04B95B7F8CFDD /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -594,6 +651,7 @@
 				1E6320622DEA9C1AC1ABDA70 /* OnboardingViewModelTests.swift in Sources */,
 				A86BC2B1C199A9AC14C8F98E /* SyncCoordinatorTests.swift in Sources */,
 				AF5AD4D0CA4801C1A787449F /* TestDoubles.swift in Sources */,
+				DC39EE710EA39555C5382601 /* WorkModeControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -623,6 +681,7 @@
 				232D7345D18341CD514685FE /* AppRuntime.swift in Sources */,
 				14E8DF4283169365377CCCA4 /* AppleScreenTimeRestrictionProvider.swift in Sources */,
 				AC0D1036B74322D4A829D309 /* BackgroundRefresh.swift in Sources */,
+				E91C5D3C2E1A5AEB46F56D97 /* BreakStarting.swift in Sources */,
 				53BF2F9D5EC9ADDB87E35611 /* Components.swift in Sources */,
 				D608597588AB9A94ECBD8F06 /* DependencyContainer.swift in Sources */,
 				8C7231A9BEB9FFA05B35B93C /* DeviceInfo.swift in Sources */,
@@ -636,12 +695,15 @@
 				F7E4BB09B40658ABD3A0A1D4 /* PrivacyStatements.swift in Sources */,
 				9A3A42A97A41067F976A6CC5 /* RestrictionProviderSupport.swift in Sources */,
 				595986AE979C4D4611F0EFD8 /* ScheduleView.swift in Sources */,
+				14E20193D463652310CD080B /* ScreenTimeSelectionPicker.swift in Sources */,
 				4B8AD324F2ADABBE37DB591C /* ScreenTimeSetupViews.swift in Sources */,
 				251DB57C092BD83843EDDA1E /* SettingsView.swift in Sources */,
 				A87B8BB5090F6CF65E784CB6 /* SimulatorTokenStore.swift in Sources */,
 				5087D2F959C59E489D1E4DAD /* SyncCoordinator.swift in Sources */,
 				4C5923E9E827F7BA103E5F88 /* TimeFormatting.swift in Sources */,
+				C4420E9DA39CB1C82F061232 /* UIWorkState.swift in Sources */,
 				44DBE8C2F2FD0F481BFFD252 /* WorkModeApp.swift in Sources */,
+				67DBE13090CEAF440BC90AF0 /* WorkModeController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1034,6 +1096,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = WorkModeCore;
 		};
+		70F417C4C11FF4976A9933E6 /* WorkModeScreenTime */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeScreenTime;
+		};
 		92986A9E9E79E7328C587B0E /* WorkModeCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WorkModeCore;
@@ -1041,6 +1107,10 @@
 		B414AD8AB2B5A1BEB24F8C2D /* WorkModeCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WorkModeCore;
+		};
+		B7C52FB68DC2131061D3EC12 /* WorkModeScreenTime */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeScreenTime;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

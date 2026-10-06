@@ -179,11 +179,11 @@ Apple's Screen Time frameworks do not work in the simulator. To keep the simulat
     `e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.workmode.app.refresh"]`.
 
 On a real device (iOS 16.4+), a Release build or a Debug build with the mock condition switched off uses
-`AppleScreenTimeRestrictionProvider`. **Current stage:** that provider performs real authorisation
-(`AuthorizationCenter.requestAuthorization(for: .individual)`), clears shields and stops monitoring. It
-throws `RestrictionProviderError.notImplemented` for applying shields and scheduling activities, and it has
-no app picker yet. The app reports that state honestly as "needs attention"; it never claims enforcement it
-cannot do. The Screen Time stage fills these in (see below).
+`AppleScreenTimeRestrictionProvider`. That provider performs real authorisation (`AuthorizationCenter.requestAuthorization(for: .individual)`),
+persists the employee's `FamilyActivitySelection` on-device, applies `ManagedSettingsStore` shields, schedules
+`DeviceActivity` intervals for upcoming shifts and breaks, and the DeviceActivityMonitor extension enforces them
+even when the app is closed. The full design, Apple limits and the manual device test script are in
+`docs/SCREEN_TIME_IMPLEMENTATION.md`.
 
 ## Pointing a device at a local API
 

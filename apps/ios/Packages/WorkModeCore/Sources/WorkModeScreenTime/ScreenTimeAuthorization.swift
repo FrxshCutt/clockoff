@@ -1,0 +1,20 @@
+import FamilyControls
+import Foundation
+import WorkModeCore
+
+extension RestrictionAuthorizationStatus {
+    /// Maps FamilyControls' `AuthorizationStatus` onto Work Mode's three states. `approvedWithDataAccess`
+    /// counts as approved; a value this build does not know is treated as not determined (never as approved).
+    public init(_ status: AuthorizationStatus) {
+        switch status {
+        case .notDetermined:
+            self = .notDetermined
+        case .approved:
+            self = .approved
+        case .denied:
+            self = .denied
+        @unknown default:
+            self = .notDetermined
+        }
+    }
+}

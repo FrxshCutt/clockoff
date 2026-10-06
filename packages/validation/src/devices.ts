@@ -13,7 +13,7 @@ import {
   queryBooleanSchema,
   queryListSchema,
 } from "./primitives";
-import { employeeSummarySchema } from "./refs";
+import { deviceStatusSchema, employeeSummarySchema } from "./refs";
 
 /** Counts only — never tokens, bundle identifiers or domains (§12). Shared by the device report and the summary. */
 export const selectionCountsSchema = z
@@ -75,7 +75,12 @@ export const deviceQuerySchema = offsetPaginationQuerySchema.extend({
 export type DeviceQuery = z.infer<typeof deviceQuerySchema>;
 
 export const deviceWithEmployeeSchema = z
-  .object({ device: deviceSummarySchema, employee: employeeSummarySchema })
+  .object({
+    device: deviceSummarySchema,
+    employee: employeeSummarySchema,
+    /** Derived §9 badge (`deriveDeviceStatus`); null when not applicable (deactivated / inactive employee). */
+    status: deviceStatusSchema.nullable().optional(),
+  })
   .meta({ id: "DeviceWithEmployee" });
 export type DeviceWithEmployee = z.infer<typeof deviceWithEmployeeSchema>;
 

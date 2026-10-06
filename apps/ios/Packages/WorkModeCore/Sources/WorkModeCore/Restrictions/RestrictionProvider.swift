@@ -111,7 +111,7 @@ public struct ActivityPlan: Codable, Equatable, Sendable {
         case `break`
     }
 
-    /// DeviceActivityName raw value, e.g. `wm.shift.<shiftId>`; also the key into plans.json.
+    /// DeviceActivityName raw value (`ActivityNaming`), e.g. `shift-<shiftId>-v<version>`; also the key into plans.json.
     public var name: String
     public var shiftId: String
     public var startComponents: DateComponents
@@ -130,6 +130,10 @@ public struct ActivityPlan: Codable, Equatable, Sendable {
         self.kind = kind
         self.plannedEnd = plannedEnd
     }
+
+    /// The registered interval as instants (first occurrence for an ambiguous fall-back wall clock).
+    public var intervalStart: Date? { startComponents.resolvedDate() }
+    public var intervalEnd: Date? { endComponents.resolvedDate() }
 }
 
 /// Where the provider's view of the engine state came from.
@@ -207,4 +211,94 @@ public protocol RestrictionProvider: AnyObject {
 /// `RestrictionProvider` so the §8.3 protocol stays exactly as specified.
 public protocol SelectionCountsProviding: AnyObject {
     func selectionCounts() -> SelectionCounts
+}
+
+/// Registers the DeviceActivity interval that ends a break even when the app is closed (one activity per
+/// break, `ActivityNaming.breakActivity`). Apple's 15-minute minimum is honoured by stretching the interval;
+/// the true `plannedEndsAt` lives in plans.json (`BreakActivitySchedule`).
+public protocol BreakScheduling: AnyObject {
+    /// Replaces any activity registered for `clientBreakId`. Returns the schedule actually registered. The
+    /// caller writes the matching `plans.json` entry BEFORE calling this, so the monitor extension always finds it.
+    @discardableResult
+    func scheduleBreak(clientBreakId: String, shiftId: String, startedAt: Date, plannedEndsAt: Date) throws -> ActivityPlan
+    /// Stops monitoring the break's activity (ended early, or ended by the shift end). Never fails.
+    func cancelBreakActivity(clientBreakId: String)
+}
+
+/// Lets the app observe Screen Time authorisation changes (approval revoked in Settings › Screen Time).
+public protocol RestrictionAuthorizationObserving: AnyObject {
+    /// Called on an arbitrary thread whenever the authorisation status changes.
+    var onAuthorizationStatusChange: ((RestrictionAuthorizationStatus) -> Void)? { get set }
+}
+
+extension Notification.Name {
+    /// Posted (on an arbitrary thread) by a `RestrictionProvider` when Screen Time authorisation changes, with
+    /// `RestrictionAuthorizationNotification.statusKey` → `RestrictionAuthorizationStatus.rawValue` in `userInfo`.
+    /// On a revocation the provider has already cleared both shield stores and recorded PERMISSION_ERROR; the
+    /// app reconciles, reports to the server and shows "Action Required".
+    public static let workModeAuthorizationStatusDidChange = Notification.Name("com.workmode.authorizationStatusDidChange")
+}
+
+public enum RestrictionAuthorizationNotification {
+    public static let statusKey = "status"
+
+    public static func status(from notification: Notification) -> RestrictionAuthorizationStatus? {
+        (notification.userInfo?[statusKey] as? String).flatMap(RestrictionAuthorizationStatus.init(rawValue:))
+    }
+}
+
+/// Counts of an on-device selection (`FamilyActivitySelection`), the only thing about it that ever leaves the
+/// phone. Opaque tokens are never readable by the app, let alone sent anywhere (§12).
+public struct SelectionSummary: Codable, Equatable, Sendable {
+    public var categoryCount: Int
+    public var applicationCount: Int
+    public var webDomainCount: Int
+
+    public init(categoryCount: Int, applicationCount: Int, webDomainCount: Int) {
+        self.categoryCount = categoryCount
+        self.applicationCount = applicationCount
+        self.webDomainCount = webDomainCount
+    }
+
+    public static let empty = SelectionSummary(categoryCount: 0, applicationCount: 0, webDomainCount: 0)
+
+    public var total: Int { categoryCount + applicationCount + webDomainCount }
+    public var isEmpty: Bool { total == 0 }
+
+    /// The `/device/state` representation.
+    public var counts: SelectionCounts {
+        SelectionCounts(categories: categoryCount, applications: applicationCount, webDomains: webDomainCount)
+    }
+}
+
+/// Builds the DeviceActivity schedule for a break: `intervalStart` = `startedAt` floored to the minute,
+/// `intervalEnd` = max(`plannedEndsAt`, `startedAt` + 15 min) rounded UP to the minute so Apple accepts it and
+/// the interval never ends before the true end; `plannedEnd` keeps the exact `plannedEndsAt`.
+public enum BreakActivitySchedule {
+    public static let minimumIntervalMinutes = 15
+
+    /// `date` floored to the start of its minute.
+    public static func floorToMinute(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: (date.timeIntervalSince1970 / 60).rounded(.down) * 60)
+    }
+
+    /// `date` rounded up to the next whole minute (unchanged when already on one).
+    public static func ceilToMinute(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: (date.timeIntervalSince1970 / 60).rounded(.up) * 60)
+    }
+
+    public static func make(clientBreakId: String, shiftId: String, startedAt: Date, plannedEndsAt: Date, timeZone: TimeZone) -> ActivityPlan {
+        let flooredStart = floorToMinute(startedAt)
+        let minimumEnd = flooredStart.addingTimeInterval(TimeInterval(minimumIntervalMinutes * 60))
+        let end = ceilToMinute(max(plannedEndsAt, minimumEnd))
+        return ActivityPlan(
+            name: ActivityNaming.breakActivity(clientBreakId: clientBreakId),
+            shiftId: shiftId,
+            startComponents: deviceComponents(for: flooredStart, in: timeZone),
+            endComponents: deviceComponents(for: end, in: timeZone),
+            warningMinutes: 0,
+            kind: .break,
+            plannedEnd: plannedEndsAt
+        )
+    }
 }
