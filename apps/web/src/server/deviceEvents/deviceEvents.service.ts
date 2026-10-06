@@ -143,6 +143,66 @@ async function ownedIds(
   return { shifts: new Set(shifts.map((s) => s.id)), sessions: new Set(sessions.map((s) => s.id)) };
 }
 
+/**
+ * Facts the server records on its own that the iOS app ALSO queues in its outbox: `/device/state` records the
+ * permission / selection transitions it observes, `GET /sync` the policy / schedule version a device receives,
+ * and onboarding, repair and every app sync queue the same events. Transition families: PERMISSION_GRANTED and
+ * PERMISSION_NEEDS_ATTENTION end each other's episode; SELECTION_CONFIGURED has no recorded opposite.
+ */
+const TRANSITION_FAMILIES: Partial<
+  Record<DeviceReportableEventType, readonly DeviceReportableEventType[]>
+> = {
+  PERMISSION_GRANTED: ["PERMISSION_GRANTED", "PERMISSION_NEEDS_ATTENTION"],
+  PERMISSION_NEEDS_ATTENTION: ["PERMISSION_GRANTED", "PERMISSION_NEEDS_ATTENTION"],
+  SELECTION_CONFIGURED: ["SELECTION_CONFIGURED"],
+};
+const SYNC_VERSION_KEYS: Partial<
+  Record<DeviceReportableEventType, "policyVersion" | "scheduleVersion">
+> = {
+  POLICY_SYNCED: "policyVersion",
+  SCHEDULE_SYNCED: "scheduleVersion",
+};
+
+/**
+ * The device's copy of a fact the feed already holds for this device (from either side) is a duplicate: a
+ * transition when the latest event of its family is the same type (the state has not changed since), a sync
+ * event when the latest one of its type carries the same version. Keeps the feed at one row per fact whichever
+ * copy arrives first (`reportDeviceState` applies the mirror-image check).
+ */
+async function deviceFactAlreadyRecorded(
+  organisationId: string,
+  employeeId: string,
+  deviceId: string,
+  type: DeviceReportableEventType,
+  metadata: DeviceEventMetadata | undefined,
+  db: Db,
+): Promise<boolean> {
+  const family = TRANSITION_FAMILIES[type];
+  if (family) {
+    const latest = await db.activityEvent.findFirst({
+      where: { organisationId, employeeId, deviceId, type: { in: [...family] } },
+      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+      select: { type: true },
+    });
+    return latest?.type === type;
+  }
+  const versionKey = SYNC_VERSION_KEYS[type];
+  const version = versionKey ? metadata?.[versionKey] : undefined;
+  if (!versionKey || version === undefined) return false;
+  const latest = await db.activityEvent.findFirst({
+    where: { organisationId, employeeId, deviceId, type },
+    orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+    select: { metadata: true },
+  });
+  const recorded = latest?.metadata;
+  return (
+    recorded !== null &&
+    typeof recorded === "object" &&
+    !Array.isArray(recorded) &&
+    recorded[versionKey] === version
+  );
+}
+
 /** A break event the server already recorded for the same session (from /breaks/start|end) is a duplicate. */
 async function serverAlreadyRecordedBreakEvent(
   organisationId: string,
@@ -198,16 +258,24 @@ export async function ingestDeviceEvents(
     }
     const state = reportedStateForEvent(event.type, event.metadata);
     if (
-      await serverAlreadyRecordedBreakEvent(
+      (await serverAlreadyRecordedBreakEvent(
         organisationId,
         employeeId,
         event.type,
         event.metadata,
         prisma,
-      )
+      )) ||
+      (await deviceFactAlreadyRecorded(
+        organisationId,
+        employeeId,
+        ctx.device.id,
+        event.type,
+        event.metadata,
+        prisma,
+      ))
     ) {
-      // The feed already has this break event (from /breaks/start|end), but the phone is telling us its engine
-      // state for the first time — that report is what confirms the break on the dashboard badge.
+      // The feed already has this event (from /breaks/start|end, /device/state or GET /sync), but the phone is
+      // telling us its engine state for the first time — that report is what confirms a break on the badge.
       duplicates += 1;
       latestReport = laterReport(latestReport, state, occurredAt);
       continue;

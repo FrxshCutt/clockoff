@@ -360,8 +360,14 @@ describe("runWorkModeTick", () => {
     const manager = await createTestUser({ name: "Plain Manager" });
     await addMember(org.organisation.id, manager.user, "MANAGER");
 
+    // The tick covers every organisation in the shared test database (other files leave flagged employees
+    // with shifts today behind), so the report counts are lower bounds; this organisation's rows are exact.
+    const digestRows = () =>
+      prisma.notification.count({
+        where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE },
+      });
     const report = await runWorkModeTick(now);
-    expect(report.digestsSent).toBe(1);
+    expect(report.digestsSent).toBeGreaterThanOrEqual(1);
     const notifications = await prisma.notification.findMany({
       where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE },
     });
@@ -372,20 +378,21 @@ describe("runWorkModeTick", () => {
     expect((notifications[0]!.metadata as { employeeIds: string[] }).employeeIds).toEqual([
       employee.id,
     ]);
-    const emails = testEmails().sent.filter((m) => m.subject.includes("attention"));
+    const members = [org.owner.email, admin.user.email, manager.user.email].map((e) =>
+      e.toLowerCase(),
+    );
+    const emails = testEmails().sent.filter(
+      (m) => m.subject.includes("attention") && members.includes(m.to.toLowerCase()),
+    );
     expect(emails.map((m) => m.to.toLowerCase())).toEqual([org.owner.email.toLowerCase()]);
     expect(emails[0]!.text).toContain("Permissions missing");
 
-    const again = await runWorkModeTick(new Date(now.getTime() + 10 * MINUTE));
-    expect(again.digestsSent).toBe(0);
-    expect(
-      await prisma.notification.count({
-        where: { organisationId: org.organisation.id, type: DIGEST_NOTIFICATION_TYPE },
-      }),
-    ).toBe(2);
+    await runWorkModeTick(new Date(now.getTime() + 10 * MINUTE));
+    expect(await digestRows()).toBe(2);
 
     const later = await runWorkModeTick(new Date(now.getTime() + 61 * MINUTE));
-    expect(later.digestsSent).toBe(1);
+    expect(later.digestsSent).toBeGreaterThanOrEqual(1);
+    expect(await digestRows()).toBe(4);
   });
 
   it("records POLICY_RESOLUTION_WARNING for ambiguous team assignments once per day", async () => {

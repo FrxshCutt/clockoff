@@ -92,7 +92,14 @@ export const REALTIME_INVALIDATIONS: Partial<
 > = {
   "activity.recorded": [activityKeys.all, complianceKeys.all, employeeKeys.all],
   "employee.work_state.changed": [complianceKeys.all, employeeKeys.all, activityKeys.all],
-  "device.status.changed": [complianceKeys.all, deviceKeys.all, employeeKeys.all],
+  // Joining / leaving / deactivating a phone also moves the overview's setup checklist ("Employees connect
+  // their phones", "Go live"), which no manager action on that page would refresh.
+  "device.status.changed": [
+    complianceKeys.all,
+    deviceKeys.all,
+    employeeKeys.all,
+    queryKeys.onboarding,
+  ],
   "notification.created": [queryKeys.notifications],
   "shift.changed": [scheduleKeys.shiftsRoot, complianceKeys.all, employeeKeys.all],
   "policy.changed": [

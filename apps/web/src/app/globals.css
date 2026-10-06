@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Playwright specs and their screenshots hold no class names; scanning them would also make every
+   screenshot written during an e2e run trigger a dev rebuild (and a Fast Refresh) mid-test. */
+@source not "../../e2e";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

@@ -37,6 +37,34 @@ function isSelectionConfigured(prev: SelectionState, next: SelectionState): bool
 }
 
 /**
+ * The app also queues PERMISSION_GRANTED / PERMISSION_NEEDS_ATTENTION / SELECTION_CONFIGURED in its outbox, and
+ * a sync flushes the outbox BEFORE checking in. The previous report still showed the old state, so an event of
+ * this type that the device itself sent (clientEventId set) for an instant after that report (device clock,
+ * corrected by the known skew) is the transition this report reveals: the feed already has it.
+ */
+async function deviceAlreadyReportedTransition(
+  device: DeviceContext["device"],
+  type: "PERMISSION_GRANTED" | "PERMISSION_NEEDS_ATTENTION" | "SELECTION_CONFIGURED",
+  db: Db = prisma,
+): Promise<boolean> {
+  const previousReportAt = device.lastDeviceSyncAt;
+  const skewMs = (device.lastClockSkewSeconds ?? 0) * 1_000;
+  const existing = await db.activityEvent.findFirst({
+    where: {
+      organisationId: device.organisationId,
+      deviceId: device.id,
+      type,
+      clientEventId: { not: null },
+      ...(previousReportAt
+        ? { occurredAt: { gt: new Date(previousReportAt.getTime() + skewMs) } }
+        : {}),
+    },
+    select: { id: true },
+  });
+  return existing !== null;
+}
+
+/**
  * Store a device report on the work-state row: the report wins the displayed `state` (source DEVICE_REPORT)
  * until the server detects the next expected transition. Only reports newer than the stored one are applied.
  */
@@ -106,7 +134,8 @@ export async function reportDeviceState(
     lastClockSkewSeconds: clockSkewSeconds,
   });
 
-  // Transitions only — the periodic check-in must not flood the feed.
+  // Transitions only — the periodic check-in must not flood the feed — and only once: not when the device's own
+  // event for the same transition was flushed first (`deviceAlreadyReportedTransition`).
   const base = {
     organisationId,
     employeeId,
@@ -115,22 +144,29 @@ export async function reportDeviceState(
     occurredAt: now,
   };
   if (isPermissionGranted(previous.permissionState, input.permissionState)) {
-    await recordActivity({
-      ...base,
-      type: "PERMISSION_GRANTED",
-      metadata: { permissionState: input.permissionState },
-    });
+    if (!(await deviceAlreadyReportedTransition(previous, "PERMISSION_GRANTED"))) {
+      await recordActivity({
+        ...base,
+        type: "PERMISSION_GRANTED",
+        metadata: { permissionState: input.permissionState },
+      });
+    }
   } else if (isPermissionLost(previous.permissionState, input.permissionState)) {
-    await recordActivity({
-      ...base,
-      type: "PERMISSION_NEEDS_ATTENTION",
-      metadata: {
-        permissionState: input.permissionState,
-        previousPermissionState: previous.permissionState,
-      },
-    });
+    if (!(await deviceAlreadyReportedTransition(previous, "PERMISSION_NEEDS_ATTENTION"))) {
+      await recordActivity({
+        ...base,
+        type: "PERMISSION_NEEDS_ATTENTION",
+        metadata: {
+          permissionState: input.permissionState,
+          previousPermissionState: previous.permissionState,
+        },
+      });
+    }
   }
-  if (isSelectionConfigured(previous.selectionState, input.selectionState)) {
+  if (
+    isSelectionConfigured(previous.selectionState, input.selectionState) &&
+    !(await deviceAlreadyReportedTransition(previous, "SELECTION_CONFIGURED"))
+  ) {
     await recordActivity({
       ...base,
       type: "SELECTION_CONFIGURED",

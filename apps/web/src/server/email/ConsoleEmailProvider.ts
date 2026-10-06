@@ -8,6 +8,52 @@ export interface ConsoleEmailProviderOptions {
    * credentials.
    */
   suppressContent?: boolean;
+  /**
+   * Also keep the last {@link DEV_OUTBOX_SIZE} messages in an in-memory ring buffer, read by the
+   * development-only `GET /api/dev/last-email` (Playwright reads verification links from it). Only
+   * `createEmailProvider()` turns this on, and only when `DEV_TOOLS_ENABLED` is set outside production.
+   * Ignored when `suppressContent` is set.
+   */
+  recordOutbox?: boolean;
+}
+
+/** A message kept in the development outbox. */
+export interface DevOutboxEntry extends EmailMessage {
+  sentAt: string;
+}
+
+/** Ring-buffer capacity: enough for a test run, small enough that nothing piles up in a long dev session. */
+export const DEV_OUTBOX_SIZE = 50;
+
+declare global {
+  var __workmodeDevOutbox: DevOutboxEntry[] | undefined;
+}
+
+/** Process-wide (on globalThis so Next dev HMR and separate route bundles share one buffer). */
+function devOutbox(): DevOutboxEntry[] {
+  if (!globalThis.__workmodeDevOutbox) globalThis.__workmodeDevOutbox = [];
+  return globalThis.__workmodeDevOutbox;
+}
+
+function recordInDevOutbox(message: EmailMessage, now: Date = new Date()): void {
+  const outbox = devOutbox();
+  outbox.push({ ...message, sentAt: now.toISOString() });
+  if (outbox.length > DEV_OUTBOX_SIZE) outbox.splice(0, outbox.length - DEV_OUTBOX_SIZE);
+}
+
+/** Most recent outbox message to `to` (case-insensitive), or undefined. Development tooling only. */
+export function lastDevOutboxEmail(to: string): DevOutboxEntry | undefined {
+  const wanted = to.trim().toLowerCase();
+  const outbox = devOutbox();
+  for (let i = outbox.length - 1; i >= 0; i -= 1) {
+    if (outbox[i]!.to.toLowerCase() === wanted) return outbox[i];
+  }
+  return undefined;
+}
+
+/** Empty the development outbox (tests). */
+export function clearDevOutbox(): void {
+  devOutbox().length = 0;
 }
 
 /**
@@ -30,6 +76,7 @@ export class ConsoleEmailProvider implements EmailProvider {
       );
       return;
     }
+    if (this.options.recordOutbox) recordInDevOutbox(message);
     const block = [
       "",
       "┌──────────────────────────── EMAIL (console provider) ────────────────────────────",

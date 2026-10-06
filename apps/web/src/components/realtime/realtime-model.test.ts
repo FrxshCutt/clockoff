@@ -122,7 +122,7 @@ describe("invalidation table", () => {
       expect.arrayContaining([activityKeys.all, complianceKeys.all]),
     );
     expect(invalidationKeysFor("device.status.changed")).toEqual(
-      expect.arrayContaining([complianceKeys.all]),
+      expect.arrayContaining([complianceKeys.all, queryKeys.onboarding]),
     );
     expect(invalidationKeysFor("override.changed")).toEqual(
       expect.arrayContaining([["org", "overrides"]]),

@@ -610,6 +610,62 @@ describe("POST /api/mobile/v1/events (break events the server already holds)", (
   });
 });
 
+describe("transition events reported by both /device/state and the app's outbox", () => {
+  it("records each permission / selection transition once, whichever copy arrives first, and a new episode again", async () => {
+    const org = await createTestOrg();
+    const { device, employee } = await createTestDevice(org.organisation.id);
+    const count = (
+      type: "PERMISSION_GRANTED" | "PERMISSION_NEEDS_ATTENTION" | "SELECTION_CONFIGURED",
+    ) => prisma.activityEvent.count({ where: { employeeId: employee.id, type } });
+    const report = async (overrides: Record<string, unknown>) => {
+      const current = await prisma.device.findUniqueOrThrow({ where: { id: device.id } });
+      const res = await callRoute(deviceStateRoute, {
+        method: "POST",
+        path: "/api/mobile/v1/device/state",
+        headers: await bearer(current),
+        body: deviceReport(overrides),
+      });
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+    };
+    const flush = async (...types: string[]) => {
+      const res = await callRoute(eventsRoute, {
+        method: "POST",
+        path: "/api/mobile/v1/events",
+        headers: await bearer(device),
+        body: {
+          events: types.map((type) => ({
+            clientEventId: randomUUID(),
+            type,
+            occurredAt: new Date().toISOString(),
+          })),
+        },
+      });
+      return deviceEventsResponseSchema.parse(res.body);
+    };
+
+    // Joined, nothing granted yet.
+    await report({ permissionState: "NOT_DETERMINED", selectionState: "NONE" });
+    // The app's SyncCoordinator flushes the outbox BEFORE checking in: its events are recorded…
+    expect(await flush("PERMISSION_GRANTED", "SELECTION_CONFIGURED")).toMatchObject({
+      accepted: 2,
+      duplicates: 0,
+    });
+    // …and the check-in that reveals the same transitions does not record them again.
+    await report({});
+    expect(await count("PERMISSION_GRANTED")).toBe(1);
+    expect(await count("SELECTION_CONFIGURED")).toBe(1);
+
+    // Revoked in Settings: the check-in records it first, the app's own copy is a duplicate.
+    await report({ permissionState: "REVOKED" });
+    expect(await flush("PERMISSION_NEEDS_ATTENTION")).toMatchObject({ accepted: 0, duplicates: 1 });
+    expect(await count("PERMISSION_NEEDS_ATTENTION")).toBe(1);
+    // Granted again: a new episode, recorded once more.
+    await report({});
+    expect(await flush("PERMISSION_GRANTED")).toMatchObject({ accepted: 0, duplicates: 1 });
+    expect(await count("PERMISSION_GRANTED")).toBe(2);
+  });
+});
+
 describe("POST /api/mobile/v1/device/push-token", () => {
   it("stores the token encrypted (never in clear) and rejects non-hex tokens", async () => {
     const org = await createTestOrg();

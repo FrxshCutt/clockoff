@@ -112,7 +112,12 @@ defaults to 1 day back / 14 days ahead (≤ 62 days).
 
 - `POST /api/mobile/v1/events` — each event carries a device-generated `clientEventId` (UUID); re-sending is
   safe and is counted in `duplicates`. At most 200 events per request; individually refused events are listed
-  in `rejected` with an error code while the rest are accepted.
+  in `rejected` with an error code while the rest are accepted. Facts the server records itself are also
+  counted in `duplicates` when the device reports them too, so the feed shows each once whichever copy
+  arrives first: break events of a session `/breaks/*` or the job already recorded, permission / selection
+  transitions `/device/state` already recorded (and `/device/state` skips a transition the device's own
+  event already reported since its previous check-in), and `POLICY_SYNCED` / `SCHEDULE_SYNCED` for the
+  version `GET /sync` already recorded for this device.
 - `POST /api/mobile/v1/breaks/start` is idempotent on `clientBreakId`; a retry returns the same break.
   `POST /api/mobile/v1/breaks/:id/end` on an already-ended break returns it unchanged.
 - `PATCH /api/shifts/:id` accepts `expectedVersion`; if the shift changed since, the response is
@@ -165,7 +170,10 @@ that are limited carry `x-rate-limit` with the preset name (`apps/web/src/server
 
 Internal endpoints are deliberately left out of `openapi.json`: `POST /api/jobs/tick` (external cron,
 `Authorization: Bearer <CRON_SECRET>`, see ARCHITECTURE.md) and the development-only `/api/dev/*` helpers
-(`DEV_TOOLS_ENABLED`). Integration OAuth callbacks arrive with the Phase 2 providers (INTEGRATIONS.md).
+(`DEV_TOOLS_ENABLED`, never in production): `GET /api/dev/last-email?to=<address>` →
+`{ email: { to, subject, text, sentAt } }`, the last message the console email provider sent to that address
+(404 when there is none, or when dev tools are off). Integration OAuth callbacks arrive with the Phase 2
+providers (INTEGRATIONS.md).
 
 ## Realtime
 

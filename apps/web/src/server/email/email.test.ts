@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEnvCache } from "@/lib/env";
 import { logger } from "@/lib/logger";
-import { ConsoleEmailProvider } from "./ConsoleEmailProvider";
+import {
+  ConsoleEmailProvider,
+  DEV_OUTBOX_SIZE,
+  clearDevOutbox,
+  lastDevOutboxEmail,
+} from "./ConsoleEmailProvider";
 import { MockEmailProvider } from "./MockEmailProvider";
 import { SmtpEmailProvider } from "./SmtpEmailProvider";
 import {
@@ -16,7 +21,9 @@ import {
 
 afterEach(() => {
   setEmailProviderForTesting(undefined);
+  clearDevOutbox();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   delete process.env.EMAIL_PROVIDER;
   resetEnvCache();
 });
@@ -150,5 +157,56 @@ describe("providers", () => {
     setEmailProviderForTesting(mock);
     expect(await sendEmailSafely({ to: "a@x.test", subject: "s", text: "t" })).toBe(true);
     expect(mock.sent).toHaveLength(1);
+  });
+});
+
+describe("development outbox (GET /api/dev/last-email)", () => {
+  it("keeps the latest message per recipient (case-insensitive) when recordOutbox is on", async () => {
+    vi.spyOn(logger, "info").mockImplementation(() => undefined);
+    const provider = new ConsoleEmailProvider({ recordOutbox: true });
+    await provider.send({ to: "Sam@x.test", subject: "first", text: "1" });
+    await provider.send({ to: "other@x.test", subject: "other", text: "o" });
+    await provider.send({ to: "sam@x.test", subject: "second", text: "2" });
+    const last = lastDevOutboxEmail(" SAM@x.test ");
+    expect(last).toMatchObject({ to: "sam@x.test", subject: "second", text: "2" });
+    expect(Number.isNaN(Date.parse(last!.sentAt))).toBe(false);
+    expect(lastDevOutboxEmail("nobody@x.test")).toBeUndefined();
+  });
+
+  it("is a bounded ring buffer", async () => {
+    vi.spyOn(logger, "info").mockImplementation(() => undefined);
+    const provider = new ConsoleEmailProvider({ recordOutbox: true });
+    await provider.send({ to: "first@x.test", subject: "s", text: "t" });
+    for (let i = 0; i < DEV_OUTBOX_SIZE; i += 1) {
+      await provider.send({ to: `n${i}@x.test`, subject: "s", text: "t" });
+    }
+    expect(lastDevOutboxEmail("first@x.test")).toBeUndefined();
+    expect(lastDevOutboxEmail(`n${DEV_OUTBOX_SIZE - 1}@x.test`)).toBeDefined();
+  });
+
+  it("records nothing by default or when content is suppressed (production)", async () => {
+    vi.spyOn(logger, "info").mockImplementation(() => undefined);
+    vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+    await new ConsoleEmailProvider().send({ to: "a@x.test", subject: "s", text: "t" });
+    await new ConsoleEmailProvider({ suppressContent: true, recordOutbox: true }).send({
+      to: "a@x.test",
+      subject: "s",
+      text: "t",
+    });
+    expect(lastDevOutboxEmail("a@x.test")).toBeUndefined();
+  });
+
+  it("createEmailProvider records only when DEV_TOOLS_ENABLED is on", async () => {
+    vi.spyOn(logger, "info").mockImplementation(() => undefined);
+    process.env.EMAIL_PROVIDER = "console";
+    vi.stubEnv("DEV_TOOLS_ENABLED", "false");
+    resetEnvCache();
+    await createEmailProvider().send({ to: "off@x.test", subject: "s", text: "t" });
+    expect(lastDevOutboxEmail("off@x.test")).toBeUndefined();
+
+    vi.stubEnv("DEV_TOOLS_ENABLED", "true");
+    resetEnvCache();
+    await createEmailProvider().send({ to: "on@x.test", subject: "s", text: "t" });
+    expect(lastDevOutboxEmail("on@x.test")?.subject).toBe("s");
   });
 });

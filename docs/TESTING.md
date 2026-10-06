@@ -188,6 +188,30 @@ response inside `verify`.
 `/api/health`). Seed the dev database first (`pnpm db:seed`). In CI the smoke run is optional because it
 needs a seeded database and a long-running server. E2E tests must never point at the test database.
 
+```bash
+cd apps/web && npx playwright test          # or: pnpm --filter @workmode/web test:e2e
+```
+
+`e2e/manager-journey.spec.ts` walks the manager journey in Chromium: register → verify email → create an
+organisation (Europe/London) → publish a Work Policy and make it the default → default Break Rules from the
+"Standard Break" preset → add an employee, create a link invite and check the instructions → add a shift →
+the overview's awaiting-setup panel → then plays the phone through the real mobile API (`join/lookup`,
+`join/confirm`, `sync`, `device/state`, `events`) and expects the open overview to follow along through the
+realtime stream (no reload) and the activity feed to show the device's event. Each run creates its own
+manager and organisation (`E2E Coffee <runId>`) in the dev database.
+
+- **Verification links** come from `GET /api/dev/last-email?to=<address>`, a development-only route that
+  reads an in-memory ring buffer the console email provider keeps when `DEV_TOOLS_ENABLED=true` (404 when
+  dev tools are off or `NODE_ENV=production`; see SECURITY.md §3.6). The root `.env` needs
+  `EMAIL_PROVIDER=console` and `DEV_TOOLS_ENABLED=true`.
+- **Rate limits**: each run registers once and calls the mobile join endpoints twice, from one IP. The
+  in-memory limiter allows 5 registrations and 10 join calls per hour, so after five runs against the same
+  dev server restart it (the counters live in the process).
+- **Screenshots** of the overview, employee detail and schedule land in `apps/web/e2e/screenshots/`
+  (gitignored). `globals.css` excludes `e2e/` from Tailwind's sources (`@source not`); otherwise every file
+  written there makes the dev server rebuild CSS and Fast Refresh the page in the middle of the run.
+- First runs are slow while `next dev` compiles each route on demand; the test allows 5 minutes.
+
 ## iOS
 
 `make -C apps/ios test` builds and runs XCTest on the simulator. Screen Time APIs are unavailable there, so

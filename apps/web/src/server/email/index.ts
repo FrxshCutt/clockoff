@@ -4,8 +4,13 @@ import { ConsoleEmailProvider } from "./ConsoleEmailProvider";
 import type { EmailMessage, EmailProvider } from "./EmailProvider";
 import { SmtpEmailProvider } from "./SmtpEmailProvider";
 
-export { ConsoleEmailProvider } from "./ConsoleEmailProvider";
-export type { ConsoleEmailProviderOptions } from "./ConsoleEmailProvider";
+export {
+  ConsoleEmailProvider,
+  DEV_OUTBOX_SIZE,
+  clearDevOutbox,
+  lastDevOutboxEmail,
+} from "./ConsoleEmailProvider";
+export type { ConsoleEmailProviderOptions, DevOutboxEntry } from "./ConsoleEmailProvider";
 export { MockEmailProvider } from "./MockEmailProvider";
 export { SmtpEmailProvider } from "./SmtpEmailProvider";
 export type { EmailContent, EmailMessage, EmailProvider } from "./EmailProvider";
@@ -16,7 +21,11 @@ export function createEmailProvider(): EmailProvider {
   const e = env();
   switch (e.EMAIL_PROVIDER) {
     case "console":
-      return new ConsoleEmailProvider({ suppressContent: e.isProduction });
+      return new ConsoleEmailProvider({
+        suppressContent: e.isProduction,
+        // Feeds the development-only GET /api/dev/last-email (never in production: env() refuses it there).
+        recordOutbox: e.DEV_TOOLS_ENABLED && !e.isProduction,
+      });
     case "smtp":
       return new SmtpEmailProvider({
         host: e.SMTP_HOST,

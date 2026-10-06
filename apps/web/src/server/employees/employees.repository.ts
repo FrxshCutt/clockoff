@@ -326,6 +326,11 @@ export interface NextShiftRow {
 /**
  * The earliest SCHEDULED shift per employee that has not ended yet (the one in progress while on shift).
  * `DISTINCT ON` walks the `(organisation_id, employee_id, starts_at)` index once per employee.
+ *
+ * The ids travel as ONE array parameter (`= ANY($n::uuid[])`), not as nested `Prisma.join` / `Prisma.sql`
+ * fragments: under `next dev` the client cached on `globalThis` can come from an earlier evaluation of the
+ * bundled Prisma runtime, which does not recognise fragments built by the current one and sends them as a
+ * jsonb value (`operator does not exist: uuid = jsonb`).
  */
 export async function findNextShiftsForEmployees(
   organisationId: string,
@@ -334,7 +339,7 @@ export async function findNextShiftsForEmployees(
   db: Db = prisma,
 ): Promise<NextShiftRow[]> {
   if (employeeIds.length === 0) return [];
-  const ids = Prisma.join(employeeIds.map((id) => Prisma.sql`${id}::uuid`));
+  const ids = [...employeeIds];
   return db.$queryRaw<NextShiftRow[]>`
     SELECT DISTINCT ON (s.employee_id)
       s.id,
@@ -348,7 +353,7 @@ export async function findNextShiftsForEmployees(
     FROM shifts s
     LEFT JOIN locations l ON l.id = s.location_id
     WHERE s.organisation_id = ${organisationId}::uuid
-      AND s.employee_id IN (${ids})
+      AND s.employee_id = ANY(${ids}::uuid[])
       AND s.deleted_at IS NULL
       AND s.status = 'SCHEDULED'
       AND s.ends_at > ${now}::timestamptz
