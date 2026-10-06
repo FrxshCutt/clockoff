@@ -53,3 +53,16 @@ No code-signing identity exists on the build machine, so real-device runs are do
 
 ## D-010 — Prisma config via `prisma.config.ts`, migrations committed, `db push` never used
 `package.json#prisma` is deprecated; `prisma.config.ts` (`defineConfig`) holds schema path and seed command.
+
+## D-011 — Parallel build with strict file ownership
+The MVP is built by several engineers (agents) working concurrently in one working tree. Each owns a
+disjoint set of paths; nobody edits package manifests, the Prisma schema, migrations or shared configs
+except the integrator. API contracts live in `packages/validation` and are written before handlers and UI,
+so API, UI and iOS work proceed in parallel against the same schemas. Every module is built, then reviewed
+by a second engineer who fixes defects directly. The integrator runs the full gates between phases and
+commits.
+
+## D-012 — Playwright smoke runs against `pnpm dev`
+`apps/web/playwright.config.ts` reuses a running dev server on :3000 or starts one. Chromium was
+installed locally with `npx playwright install chromium`. In CI the smoke test is optional (see TESTING.md)
+because it needs a seeded database and a long-running server.
