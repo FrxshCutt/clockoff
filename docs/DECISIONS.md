@@ -123,4 +123,40 @@ minute schedules work on every Netlify plan, unlike Vercel Hobby). IONOS keeps a
 MX/SPF/DMARC email records are untouched; the apex uses Netlify's load-balancer A record (75.2.60.5) because
 IONOS has no ALIAS/ANAME record type, and the IONOS parking AAAA record must be removed. Builds always run on
 Netlify's Linux image (Git-triggered) because the Prisma engine and argon2 are native modules. The Vercel
-configuration from the first deployment attempt was removed.
+configuration from the first deployment attempt was removed. Superseded for DNS by D-020: the zone moved
+to Cloudflare on 2026-10-06; the hosting, database and build choices above still apply.
+
+## D-020 — DNS moved to Cloudflare (API-managed); email via a Resend sending subdomain
+
+The owner moved authoritative DNS for `clockoff.online` from IONOS to a Cloudflare zone (free plan). The
+registrar and the email mailbox stay at IONOS. The `.online` registry now delegates to `lola.ns.cloudflare.com`
+and `thaddeus.ns.cloudflare.com`. Before the move the owner deleted the IONOS parking A and AAAA records on the
+apex.
+
+Decision:
+
+- Every record change goes through the Cloudflare API. Nobody edits records by hand. The token is scoped to
+  Zone → DNS → Edit on `clockoff.online` and is kept in the local gitignored `.env.deploy` (`DNS_API_TOKEN`,
+  with `DNS_ZONE_ID` and `DNS_PROVIDER=cloudflare`). It is a deploy-time credential: it is not set on Netlify and
+  the app never reads it.
+- Every record we create is **DNS only** (`proxied: false`). Cloudflare proxying breaks Netlify's Let's Encrypt
+  issuance and mail lookups.
+- The MX records and the apex SPF TXT are never modified or deleted. The other IONOS records (`_dmarc`,
+  `autodiscover`, `_domainconnect`) are kept.
+- Before any destructive call, the full record set is saved to `docs/dns-backup-<UTC timestamp>.json` and
+  committed. The first backup is `docs/dns-backup-20261006T205519Z.json` (6 records, verbatim API export,
+  excluded from Prettier so it stays byte-for-byte).
+- The apex keeps Netlify's load-balancer A record `75.2.60.5`. Cloudflare could flatten a CNAME at the apex, but
+  the owner specified an A record and it is Netlify's documented value.
+- Email uses Resend's sending subdomain: SPF (MX + TXT) on `send.clockoff.online`, the `rsend` CNAME, and DKIM on
+  `resend._domainkey`. Resend does not need SPF at the apex, so the apex SPF (IONOS only) is not merged or
+  changed.
+- DMARC is unchanged. Resend's required records include no DMARC record, and the existing `_dmarc` CNAME to
+  IONOS (`p=none`) satisfies its recommendation.
+
+Consequences: DNS changes are scripted, every created record carries a Cloudflare comment describing it, and
+the zone can be restored from a committed backup. Seven records were added (apex A, `www` and `app` CNAMEs,
+four Resend records); the six IONOS records were re-read afterwards and are byte-identical, so IONOS mail is
+unaffected. Netlify renews the certificate for all three hostnames only while their records stay DNS only and
+point at Netlify. The Cloudflare token is one more credential to rotate. If the owner wants DMARC aggregate
+reports, the `_dmarc` CNAME is replaced by one TXT record with `rua`; a second `_dmarc` record is never added.
