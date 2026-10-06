@@ -78,3 +78,39 @@ commits.
 `apps/web/playwright.config.ts` reuses a running dev server on :3000 or starts one. Chromium was
 installed locally with `npx playwright install chromium`. In CI the smoke test is optional (see TESTING.md)
 because it needs a seeded database and a long-running server.
+
+## D-013 — Register never reveals whether an email exists
+
+`POST /api/auth/register` returns the same 201 body for new and existing addresses and pays the argon2 cost in
+both branches; the owner of an existing account gets an "you already have an account" email. With
+`REQUIRE_EMAIL_VERIFICATION=true` (the production default) registration never creates a session, so cookies are
+identical too.
+
+## D-014 — Organisation structure is edited by OWNER/ADMIN (`org:manage`)
+
+Locations, departments and teams are created/edited/deleted with `org:manage` (as in the route map); managers can
+read structure and manage team membership (`employees:write`). The spec's MANAGER role writes employees,
+schedules, imports and overrides, not the organisation's shape.
+
+## D-015 — `GET /sync.policyVersion` is the PolicyVersion UUID
+
+The device compares the UUID of the policy version it applied (`Device.policyVersionId` is a foreign key). A
+composite "policy + break policy" string is recorded in `POLICY_SYNCED` metadata for diagnostics; break-policy
+changes are detected through the schedule/policy bundle diff and the push bridge.
+
+## D-016 — Device and server may both record the same fact; the feed keeps one
+
+Permission, selection, sync and break facts can be reported by the phone (outbox) and observed by the server
+(device-state reports, sync, the job). The ingest path treats the second copy as a duplicate so the activity feed
+shows each fact once, in either order.
+
+## D-017 — Spec correction: Europe/London's spring-forward gap
+
+The spec's example "02:30 on 2026-03-29 is nonexistent in Europe/London" is wrong: London's gap that night is
+01:00–01:59. The time helpers and tests use the real gap (01:30 → 02:30) and America/New_York's 02:30 → 03:30.
+
+## D-018 — `@prisma/client` is a direct dependency of `apps/web`
+
+With pnpm, Next could not resolve `@prisma/client` from the web app, so `serverExternalPackages` was ignored
+and the client was bundled in `next dev`, where a cached client outlived module reloads and broke nested
+`Prisma.sql` fragments. Declaring the dependency fixes the root cause.

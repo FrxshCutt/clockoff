@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		001C16C7F85697802BCCA0C8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 49F451144DF65861D8ACB3F2 /* Assets.xcassets */; };
 		024C8341016B969AD49F970A /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F21A3D97846FF0F13C976E9A /* DeviceActivityMonitorExtension.swift */; };
+		05F062DBDFAB37CAB154EB8C /* SelectionCountsText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11DBB2DEF7D8C8D313692B7D /* SelectionCountsText.swift */; };
 		07A83DD6C700FC82048047B5 /* SetupRepairView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DABD4B16F23E1120A99B1E6 /* SetupRepairView.swift */; };
 		08C29EFFD8A64C65010C1F6B /* WorkModeShieldAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3864CA1693DC56B8DCAB6447 /* WorkModeShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		08D8FBEF308A5BC74550A83B /* NotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC80F59AAAC21C07DAB90A16 /* NotificationPlanner.swift */; };
@@ -64,6 +65,7 @@
 		AF5AD4D0CA4801C1A787449F /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C846F95592EC04645B4A02 /* TestDoubles.swift */; };
 		BF61922D8107336D545EB3FD /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 18250009CFBEC62630CF76BD /* WorkModeCore */; };
 		C4420E9DA39CB1C82F061232 /* UIWorkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47633D2D3B9FB103E8F3BDCD /* UIWorkState.swift */; };
+		C5CEA30353C20F2E5CAC72DF /* CopyFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74936A8DE6424CA70ADB464A /* CopyFormattingTests.swift */; };
 		C659C7907CE5F823A5E8A16D /* LocalNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559F28630D49EE1BE61473D4 /* LocalNotificationScheduler.swift */; };
 		C90785F165A300F74DC3C4BC /* BreakSessionMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C77AB8559336F687D7C0D39 /* BreakSessionMerge.swift */; };
 		CB1C8C893F679EE8CB73BA19 /* MockRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F1BB9B32404E537E22FA78 /* MockRestrictionProvider.swift */; };
@@ -131,6 +133,7 @@
 		0B32CF8982B2CB7B6D6E3FE1 /* AppleScreenTimeRestrictionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScreenTimeRestrictionProvider.swift; sourceTree = "<group>"; };
 		0BDDD1E3865BC4005BC9F0BE /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
 		0CA6C03999E5EC0171B0777B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		11DBB2DEF7D8C8D313692B7D /* SelectionCountsText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCountsText.swift; sourceTree = "<group>"; };
 		13AAFD50446D75D4B940B889 /* SelectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionStatus.swift; sourceTree = "<group>"; };
 		13E9B067D47C9A4755B78A65 /* NotificationPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlannerTests.swift; sourceTree = "<group>"; };
 		173B5128E9B6D3D8DB331473 /* BreakReplayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakReplayerTests.swift; sourceTree = "<group>"; };
@@ -164,6 +167,7 @@
 		6EA5849F59BC62B440E9079B /* WorkModeShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WorkModeShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F13DFEC32DA91059F4D8678 /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
 		745EE28480421F1D6F47330C /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		74936A8DE6424CA70ADB464A /* CopyFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyFormattingTests.swift; sourceTree = "<group>"; };
 		775AF78487E346E4AAABF7A9 /* SimulatorTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorTokenStore.swift; sourceTree = "<group>"; };
 		7843530B4BD9A5DF76516429 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		791C6CEE3739A3B5328D5BBB /* WorkModeControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeControllerTests.swift; sourceTree = "<group>"; };
@@ -247,6 +251,7 @@
 		14FEA298F2805586F97CBCDB /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				74936A8DE6424CA70ADB464A /* CopyFormattingTests.swift */,
 				32BA149BE096819C8E8E57A4 /* HomeCardModelTests.swift */,
 				0AF8C888B45C0BAC302B55A2 /* OnboardingResumeTests.swift */,
 				28CF82801472386CBAA80EDE /* PrivacyParityTests.swift */,
@@ -513,6 +518,7 @@
 			isa = PBXGroup;
 			children = (
 				21B12A8941BEA8BD45F6B65D /* Components.swift */,
+				11DBB2DEF7D8C8D313692B7D /* SelectionCountsText.swift */,
 				0BDDD1E3865BC4005BC9F0BE /* TimeFormatting.swift */,
 			);
 			path = Components;
@@ -756,6 +762,7 @@
 				9C10A6131D94C7D994C1D377 /* AppModelTests.swift in Sources */,
 				D06ACBC9FC1056B5E2788851 /* BreakReplayerTests.swift in Sources */,
 				7247A74C39764763438080FC /* BreakSessionMergeTests.swift in Sources */,
+				C5CEA30353C20F2E5CAC72DF /* CopyFormattingTests.swift in Sources */,
 				0B3A628BE37B099DFE218898 /* HomeCardModelTests.swift in Sources */,
 				ADB347CBFEC80E96178567E9 /* KeychainTokenStoreTests.swift in Sources */,
 				FE47B657121836C3E6104E9D /* MockRestrictionProviderTests.swift in Sources */,
@@ -821,6 +828,7 @@
 				43DCBE0A7AA65868C726D24C /* ScheduleViewModel.swift in Sources */,
 				14E20193D463652310CD080B /* ScreenTimeSelectionPicker.swift in Sources */,
 				7E19A13D15CDD77080F3CCA4 /* ScreenTimeSetupViews.swift in Sources */,
+				05F062DBDFAB37CAB154EB8C /* SelectionCountsText.swift in Sources */,
 				EC3AD73F02BFFD916BCE6617 /* SelectionStatus.swift in Sources */,
 				6A6D9896942F8C70274C603B /* SettingsView.swift in Sources */,
 				07A83DD6C700FC82048047B5 /* SetupRepairView.swift in Sources */,

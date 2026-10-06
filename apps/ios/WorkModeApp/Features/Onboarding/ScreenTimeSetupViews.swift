@@ -139,7 +139,7 @@ struct ChooseAppsView: View {
         Group {
             if model.hasSelection {
                 let counts = model.selectionCounts
-                Label("\(counts.categories) categories, \(counts.applications) apps and \(counts.webDomains) websites selected", systemImage: "checkmark.circle.fill")
+                Label("\(SelectionCountsText.describe(counts)) selected", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
                 Label("Nothing selected yet", systemImage: "circle.dashed")
@@ -153,7 +153,7 @@ struct ChooseAppsView: View {
         Group {
             if model.hasBreakKeptSelection {
                 let counts = model.breakKeptSelectionCounts
-                Label("\(counts.categories) categories, \(counts.applications) apps and \(counts.webDomains) websites stay blocked on breaks", systemImage: "checkmark.circle.fill")
+                Label("\(SelectionCountsText.describe(counts)) stay blocked on breaks", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
                 Label("Not chosen yet", systemImage: "circle.dashed")

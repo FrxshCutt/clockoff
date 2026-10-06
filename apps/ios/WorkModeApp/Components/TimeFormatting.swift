@@ -40,10 +40,13 @@ struct TimeFormatting {
         "\(clock(start)) – \(clock(end))"
     }
 
+    /// "just now" within a minute either side (sub-second clock jitter otherwise reads "in 0 seconds"),
+    /// then "5 minutes ago", "2 hours ago", …
     func relative(_ date: Date) -> String {
+        if abs(date.timeIntervalSince(now)) < 60 { return "just now" }
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
-        return formatter.localizedString(for: date, relativeTo: now)
+        return formatter.localizedString(for: min(date, now), relativeTo: now)
     }
 
     func dateTime(_ date: Date) -> String {
