@@ -20,4 +20,4 @@ ENABLE_BITCODE = NO
 // API_BASE_URL (the mobile API root, ending in /api/mobile/v1) is set per configuration (Debug/Release)
 // and exposed only in the app's Info.plist; the extensions never call the API.
 // APNs environment reported with the push token (POST /device/push-token).
-WORKMODE_PUSH_ENVIRONMENT = sandbox
+CLOCKOFF_PUSH_ENVIRONMENT = sandbox

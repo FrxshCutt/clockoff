@@ -1,6 +1,6 @@
 import Foundation
 
-/// ISO-8601 instant parsing/formatting shared by every Work Mode JSON payload.
+/// ISO-8601 instant parsing/formatting shared by every ClockOff JSON payload.
 ///
 /// The API emits UTC instants with millisecond precision (`2026-10-05T09:00:00.000Z`) but older payloads,
 /// fixtures and hand-written requests may omit the fractional part, carry an offset (`+01:00`) or more than
@@ -53,7 +53,7 @@ public enum WorkModeDateCoding {
 }
 
 extension JSONDecoder {
-    /// Decoder for every Work Mode payload: camelCase keys (as the API sends them) and ISO-8601 instants
+    /// Decoder for every ClockOff payload: camelCase keys (as the API sends them) and ISO-8601 instants
     /// with or without fractional seconds.
     public static var workMode: JSONDecoder {
         let decoder = JSONDecoder()
@@ -73,7 +73,7 @@ extension JSONDecoder {
 }
 
 extension JSONEncoder {
-    /// Encoder for every Work Mode payload: camelCase keys, canonical UTC instants, sorted keys (stable
+    /// Encoder for every ClockOff payload: camelCase keys, canonical UTC instants, sorted keys (stable
     /// output for files in the App Group container and for tests). Nil optionals are omitted.
     public static var workMode: JSONEncoder {
         let encoder = JSONEncoder()

@@ -1,0 +1,1258 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0247C21604788BFFF9B29486 /* ShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A50D3A354023B4383E13ECD /* ShieldActionExtension.swift */; };
+		02CFF3F167B9D46FB5A7D1FF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2264E4B96531EB4FD96E5070 /* Assets.xcassets */; };
+		0963B369B7AD28F0580EA233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC02DA508EF702B815898D6 /* OnboardingViewModel.swift */; };
+		0AF40D8F95844A83202C6ED7 /* WorkModeControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A70A4AF11BB1A6FBF9EB25B /* WorkModeControllerTests.swift */; };
+		0AFC37DBE058FD257441A706 /* ScreenTimeSetupViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17FDE319A5FE94E9AE5F15AD /* ScreenTimeSetupViews.swift */; };
+		0ED25C6400A82CBD19242C56 /* ScreenTimeSelectionPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6002B88C1340B8F7FF0E0005 /* ScreenTimeSelectionPicker.swift */; };
+		11038520EE938CC52C868CE4 /* SyncMetadataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2100F2807159607CBAB6D340 /* SyncMetadataStore.swift */; };
+		12576D34F875B9BFDFB31939 /* BreakReplayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCADA1C1600F50F852CF72F8 /* BreakReplayer.swift */; };
+		1F0DEEC8928D173F7415D56E /* BreakStarting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41082C40D06489E3345AF431 /* BreakStarting.swift */; };
+		1F391D2ABCDA7D760BEF4397 /* UIWorkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14913B6E29D19ED67699B7BF /* UIWorkState.swift */; };
+		20335E503E6CF3DAF9FE9F5A /* WorkModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53ED6C8346BD70192BE03148 /* WorkModeController.swift */; };
+		24B5C2604DCA9AEE08C9C1D3 /* SimulatorTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42379DED5EC45B1BCAAFF6B3 /* SimulatorTokenStore.swift */; };
+		250D13E7FE6887455CFBC61A /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0753D1CA1162834FD7BABA9D /* WorkModeCore */; };
+		2896287F261E02989C20C5F3 /* LocalNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429E5761DA40F9DD51FF5875 /* LocalNotificationScheduler.swift */; };
+		28A0494FB0AB6AB0349A3675 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E32ACB8A7FC30B53D2C7BA /* AppModel.swift */; };
+		2B45D879C3B13033DAE0A9DB /* OnboardingResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39617ECBDD64BBE6D22370F /* OnboardingResume.swift */; };
+		2DF71BF8CCAC02126D1FD3C5 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC7E41D6E2A0E1CBFC44D82E /* AppModelTests.swift */; };
+		2EB0452894121A2A3CF13D30 /* BreakSessionMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A925DD1A28206BC4DAFD115 /* BreakSessionMergeTests.swift */; };
+		2EDB5D157724F28B22B629E9 /* ConnectivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1CD88B37B1D9DC5D169A6B9 /* ConnectivityMonitor.swift */; };
+		330CA6E7B324C9430E185964 /* SyncStalenessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C17B92FC8223A4FABA18A21 /* SyncStalenessTests.swift */; };
+		38105BD7DF3BEDE1790B5D02 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 238D3362DD934F027619BF63 /* HomeView.swift */; };
+		3A1773C0DA491AF39B1A2F81 /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA717BFB1CB6E7224E5BD55F /* TestDoubles.swift */; };
+		3BD90A03E906AA3B1AC68E2F /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46DF428FB0549DF771A4E5A0 /* TimeFormatting.swift */; };
+		3CEB6E771DB42F4AA7D6BC15 /* BreakReplayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1FA1171B8F1D84C912FAC2 /* BreakReplayerTests.swift */; };
+		3F39FF263565FA26C24870CD /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41AEC95F1507ACB05261E87 /* ScheduleView.swift */; };
+		424CD00894BBE945796901F1 /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */; };
+		450B48276CA99BB35098D547 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 70322A8087EB2EF9D543FF8F /* WorkModeCore */; };
+		4B7E248673601C9EE481372A /* ClockOffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1D7F1D09745DB048ABDE76 /* ClockOffApp.swift */; };
+		4BE6393049614F528E493E5C /* MockRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F40837D5C2B884F4C144DB /* MockRestrictionProvider.swift */; };
+		503B6983EFBDE922E7C52A69 /* PrivacyParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649AC669F3EA07C8F948D67B /* PrivacyParityTests.swift */; };
+		50FAA4420AAFBE01DCECAE7E /* AppConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC71C3443121FBBB50D552D /* AppConfigurationTests.swift */; };
+		5810523C430F451862F17046 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92E6E33D2C1D25B6DC8DBD7F /* AppConfiguration.swift */; };
+		58E01E021479196CEF97D6CA /* BackgroundRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A2609F345DF5678743154A /* BackgroundRefresh.swift */; };
+		595E002E2B97877F5B0B5C42 /* SelectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33F6E182FFE641D129430B72 /* SelectionStatus.swift */; };
+		598DBFF684ECA00B01F93326 /* NotificationPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F0DA89EBA44E728FD569F5 /* NotificationPlannerTests.swift */; };
+		5CCA8F80AA6F4901716E3B80 /* PrivacyStatements.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8795793BBB9483BB71D47C /* PrivacyStatements.swift */; };
+		5CEA2146751ED27777D3D8CF /* OnboardingViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8849CC67267BEB0778269E55 /* OnboardingViewModelTests.swift */; };
+		62924EC0893B704EB50CF3A3 /* ClockOffShieldAction.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 83EEC96B871EBADC2AAC48DB /* ClockOffShieldAction.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		65232D42F38FF0A70A5C36D6 /* ScheduleViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5B22018BF89A0ABB446851 /* ScheduleViewModelTests.swift */; };
+		6926B4B7FB05481ABC0F275F /* HomeCardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB4F0C127BA81CCE99CFD440 /* HomeCardModel.swift */; };
+		69324AFBC2CE8D2D2C8BCCA7 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DA2AC478C9277128EA1D18 /* DeviceActivityMonitorExtension.swift */; };
+		6AD2DB5F873FC9FD1D853694 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B80D0136CC1A389721E664B /* SettingsView.swift */; };
+		6DAD5A89FE042DDCE26768F8 /* OnboardingProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37335AF1F6F45C22629E9E9F /* OnboardingProgressStore.swift */; };
+		711AE973B26435A7E2587E62 /* MockRestrictionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99B35A9055483580F2BB074 /* MockRestrictionProviderTests.swift */; };
+		7349F229507AD8E8DEBF85E9 /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE22350F9953B717E363791 /* SyncCoordinator.swift */; };
+		7B7943CC289015527D62E70C /* JoinErrorMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB7115C8A7EF8FD1E9A0490 /* JoinErrorMessages.swift */; };
+		7D4803D978C2EBA68C0A7543 /* SyncCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B443A3E6DDA676EC2E40D0 /* SyncCoordinatorTests.swift */; };
+		7F3D7FC450848F6166AC3498 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 379433806F1C5C600419A883 /* WorkModeCore */; };
+		830C794FC6D1F2B2D9AD37F9 /* ScheduleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CB3A3D113AE5A4D13CB3FB /* ScheduleViewModel.swift */; };
+		84C40CBAF1AC2073CD9FD3DA /* ClockOffShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		8642FD568D9F29D8E983F471 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAE702F0526B1C26CBA40B8 /* AppDelegate.swift */; };
+		96121854AEDBBBB171465AF3 /* AppleScreenTimeRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 820A41BD8FEE4E93E2821ABC /* AppleScreenTimeRestrictionProvider.swift */; };
+		9753E5FF3FA4595C8586C752 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F51F6D0F9723E9FC81A0B35F /* Assets.xcassets */; };
+		9927A7379F602087878FDBF1 /* DeviceStateReportBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 639882AC96B856862AF497C0 /* DeviceStateReportBuilder.swift */; };
+		9DA5A3DEEF222A5C1335CFCB /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACFB2EDB5E15706F7DF94BBE /* ShieldConfigurationExtension.swift */; };
+		A1009D0E9943057FCA84C654 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100C84C23758E07CF7DBA2C5 /* OnboardingFlowView.swift */; };
+		A9C8E57B215BDFBA6EFF8834 /* HomeCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31623D1F2A916D8372EB0D75 /* HomeCardModelTests.swift */; };
+		AA8E3C393DB4B342B38100F5 /* NotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C57AC01D963631B0DD65F7B /* NotificationPlanner.swift */; };
+		B733B21CC869C6EA1A00B264 /* AppRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6C68269E6EE9636C18754D /* AppRuntime.swift */; };
+		C41C227D6755C101003B901C /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = 3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */; };
+		C4E1FD2F7C57DC821F17209A /* BreakSessionMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57B3331C647B8B08EA23F5C9 /* BreakSessionMerge.swift */; };
+		C602F19FDF1E23CE13D103CE /* OnboardingResumeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6695A4BBE919A32C53EAF61B /* OnboardingResumeTests.swift */; };
+		C94A8F10D03D3C61D289E847 /* SyncStaleness.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF950740FB463335C3EB0D26 /* SyncStaleness.swift */; };
+		CB57095C663F39834E1FD579 /* CopyFormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770CAC623A190B85C845F5A3 /* CopyFormattingTests.swift */; };
+		CD91F859E6EB4D23CB34A88C /* RestrictionProviderSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = F141AC3D6322DC31A706FBB1 /* RestrictionProviderSupport.swift */; };
+		D3DCE53B43A54E66CE94906A /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD082A23BCC0908945C895D /* DependencyContainer.swift */; };
+		D75A57AD73F92F1D0BCC3A66 /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE18006533B22F1F7CF0C3 /* DeviceInfo.swift */; };
+		DDA568BDCCAEE9E3111239DA /* SelectionCountsText.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC853CAD27D9AEB1B751F613 /* SelectionCountsText.swift */; };
+		DF0F97FB0F19B498637B230A /* ClockOffDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DF9EF76EF83F0A6388402E59 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4F4074585205C997C69445A0 /* WorkModeCore */; };
+		F0F3E818EE89CC9CD3483C62 /* KeychainTokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD2E079A1F45BD204C49477 /* KeychainTokenStoreTests.swift */; };
+		F1F90F0FF764FD884E60911F /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C40F97DE9F2EEC869FE036F /* Components.swift */; };
+		F9C3ACE8A7FC959554FF2F05 /* SetupRepairView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A761FBDA1A734B559F39BA39 /* SetupRepairView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		82293B30D206E1B908894CD4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 799D25834F4ABCAB1C8BC5E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7AA5B89247F173B97D7DF5AB;
+			remoteInfo = ClockOffDeviceActivityMonitor;
+		};
+		8C8394D47BD9CDFF163DDF72 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 799D25834F4ABCAB1C8BC5E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4460A375A16CD1695557F642;
+			remoteInfo = ClockOffShieldConfiguration;
+		};
+		988E5515509F2B5D83208EE5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 799D25834F4ABCAB1C8BC5E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7573814C60D584583672C228;
+			remoteInfo = ClockOffApp;
+		};
+		B3A32D4737119FD68445210F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 799D25834F4ABCAB1C8BC5E5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B8023D91C385C873C5CF40CD;
+			remoteInfo = ClockOffShieldAction;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8206794DFB2DC588EB1289B3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DF0F97FB0F19B498637B230A /* ClockOffDeviceActivityMonitor.appex in Embed Foundation Extensions */,
+				84C40CBAF1AC2073CD9FD3DA /* ClockOffShieldConfiguration.appex in Embed Foundation Extensions */,
+				62924EC0893B704EB50CF3A3 /* ClockOffShieldAction.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		04ABF226014B201794E52308 /* ClockOffShieldAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClockOffShieldAction.entitlements; sourceTree = "<group>"; };
+		0F20D4C9D2E06E7A9719B91E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		100C84C23758E07CF7DBA2C5 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		14913B6E29D19ED67699B7BF /* UIWorkState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIWorkState.swift; sourceTree = "<group>"; };
+		17FDE319A5FE94E9AE5F15AD /* ScreenTimeSetupViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSetupViews.swift; sourceTree = "<group>"; };
+		1C57AC01D963631B0DD65F7B /* NotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlanner.swift; sourceTree = "<group>"; };
+		1FD082A23BCC0908945C895D /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		2100F2807159607CBAB6D340 /* SyncMetadataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetadataStore.swift; sourceTree = "<group>"; };
+		2264E4B96531EB4FD96E5070 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		238D3362DD934F027619BF63 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		24E32ACB8A7FC30B53D2C7BA /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		2DCE18006533B22F1F7CF0C3 /* DeviceInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceInfo.swift; sourceTree = "<group>"; };
+		31623D1F2A916D8372EB0D75 /* HomeCardModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCardModelTests.swift; sourceTree = "<group>"; };
+		33F6E182FFE641D129430B72 /* SelectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionStatus.swift; sourceTree = "<group>"; };
+		37335AF1F6F45C22629E9E9F /* OnboardingProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgressStore.swift; sourceTree = "<group>"; };
+		3C40F97DE9F2EEC869FE036F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		41082C40D06489E3345AF431 /* BreakStarting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakStarting.swift; sourceTree = "<group>"; };
+		42379DED5EC45B1BCAAFF6B3 /* SimulatorTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorTokenStore.swift; sourceTree = "<group>"; };
+		429E5761DA40F9DD51FF5875 /* LocalNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotificationScheduler.swift; sourceTree = "<group>"; };
+		42B443A3E6DDA676EC2E40D0 /* SyncCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinatorTests.swift; sourceTree = "<group>"; };
+		46DF428FB0549DF771A4E5A0 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
+		4DB7115C8A7EF8FD1E9A0490 /* JoinErrorMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinErrorMessages.swift; sourceTree = "<group>"; };
+		51F40837D5C2B884F4C144DB /* MockRestrictionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRestrictionProvider.swift; sourceTree = "<group>"; };
+		53ED6C8346BD70192BE03148 /* WorkModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeController.swift; sourceTree = "<group>"; };
+		57B3331C647B8B08EA23F5C9 /* BreakSessionMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakSessionMerge.swift; sourceTree = "<group>"; };
+		5B80D0136CC1A389721E664B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5E5B22018BF89A0ABB446851 /* ScheduleViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleViewModelTests.swift; sourceTree = "<group>"; };
+		6002B88C1340B8F7FF0E0005 /* ScreenTimeSelectionPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSelectionPicker.swift; sourceTree = "<group>"; };
+		632C97B428013C1086CC7383 /* ClockOffApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClockOffApp.entitlements; sourceTree = "<group>"; };
+		639882AC96B856862AF497C0 /* DeviceStateReportBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceStateReportBuilder.swift; sourceTree = "<group>"; };
+		649AC669F3EA07C8F948D67B /* PrivacyParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyParityTests.swift; sourceTree = "<group>"; };
+		6695A4BBE919A32C53EAF61B /* OnboardingResumeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingResumeTests.swift; sourceTree = "<group>"; };
+		6AAE702F0526B1C26CBA40B8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		6B1FA1171B8F1D84C912FAC2 /* BreakReplayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakReplayerTests.swift; sourceTree = "<group>"; };
+		6C17B92FC8223A4FABA18A21 /* SyncStalenessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStalenessTests.swift; sourceTree = "<group>"; };
+		6D6C68269E6EE9636C18754D /* AppRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRuntime.swift; sourceTree = "<group>"; };
+		6DE6F355323DD09BF6D86DC0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		770CAC623A190B85C845F5A3 /* CopyFormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyFormattingTests.swift; sourceTree = "<group>"; };
+		79DE942EA2EEFC57158A7053 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7A925DD1A28206BC4DAFD115 /* BreakSessionMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakSessionMergeTests.swift; sourceTree = "<group>"; };
+		7BE22350F9953B717E363791 /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		7C3B4B833A06FA9526644C6F /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		7DD2E079A1F45BD204C49477 /* KeychainTokenStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTokenStoreTests.swift; sourceTree = "<group>"; };
+		820A41BD8FEE4E93E2821ABC /* AppleScreenTimeRestrictionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScreenTimeRestrictionProvider.swift; sourceTree = "<group>"; };
+		83CB3A3D113AE5A4D13CB3FB /* ScheduleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleViewModel.swift; sourceTree = "<group>"; };
+		83EEC96B871EBADC2AAC48DB /* ClockOffShieldAction.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ClockOffShieldAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8849CC67267BEB0778269E55 /* OnboardingViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModelTests.swift; sourceTree = "<group>"; };
+		8A50D3A354023B4383E13ECD /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldActionExtension.swift; sourceTree = "<group>"; };
+		8A70A4AF11BB1A6FBF9EB25B /* WorkModeControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeControllerTests.swift; sourceTree = "<group>"; };
+		92E6E33D2C1D25B6DC8DBD7F /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
+		95F0DA89EBA44E728FD569F5 /* NotificationPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlannerTests.swift; sourceTree = "<group>"; };
+		96A859DB657AF5B16409AB12 /* WorkModeCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WorkModeCore; path = Packages/WorkModeCore; sourceTree = SOURCE_ROOT; };
+		9BBC3D8A5585F70969050362 /* ClockOffShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClockOffShieldConfiguration.entitlements; sourceTree = "<group>"; };
+		9C1D7F1D09745DB048ABDE76 /* ClockOffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockOffApp.swift; sourceTree = "<group>"; };
+		9E350CA577C6E533AE5815FD /* ClockOffAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ClockOffAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ClockOffDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9FC71C3443121FBBB50D552D /* AppConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigurationTests.swift; sourceTree = "<group>"; };
+		A1CD88B37B1D9DC5D169A6B9 /* ConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityMonitor.swift; sourceTree = "<group>"; };
+		A761FBDA1A734B559F39BA39 /* SetupRepairView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupRepairView.swift; sourceTree = "<group>"; };
+		A99B35A9055483580F2BB074 /* MockRestrictionProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRestrictionProviderTests.swift; sourceTree = "<group>"; };
+		ACFB2EDB5E15706F7DF94BBE /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
+		AF950740FB463335C3EB0D26 /* SyncStaleness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStaleness.swift; sourceTree = "<group>"; };
+		BC7E41D6E2A0E1CBFC44D82E /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		BC853CAD27D9AEB1B751F613 /* SelectionCountsText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionCountsText.swift; sourceTree = "<group>"; };
+		C0DA2AC478C9277128EA1D18 /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
+		C4A2609F345DF5678743154A /* BackgroundRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRefresh.swift; sourceTree = "<group>"; };
+		CB4F0C127BA81CCE99CFD440 /* HomeCardModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeCardModel.swift; sourceTree = "<group>"; };
+		CCC02DA508EF702B815898D6 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		CE8795793BBB9483BB71D47C /* PrivacyStatements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatements.swift; sourceTree = "<group>"; };
+		D39617ECBDD64BBE6D22370F /* OnboardingResume.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingResume.swift; sourceTree = "<group>"; };
+		DA717BFB1CB6E7224E5BD55F /* TestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDoubles.swift; sourceTree = "<group>"; };
+		DBB2DCD3259F589E47EBE719 /* ClockOffDeviceActivityMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClockOffDeviceActivityMonitor.entitlements; sourceTree = "<group>"; };
+		DCADA1C1600F50F852CF72F8 /* BreakReplayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakReplayer.swift; sourceTree = "<group>"; };
+		E41AEC95F1507ACB05261E87 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		E5227BF44538BDC036CC8FD9 /* ClockOffApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ClockOffApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ClockOffShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F141AC3D6322DC31A706FBB1 /* RestrictionProviderSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestrictionProviderSupport.swift; sourceTree = "<group>"; };
+		F2D3B032765C60195EC00636 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		F51F6D0F9723E9FC81A0B35F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F9EE1617145D3CE503935765 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		011A50F7811349A9348992FA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				250D13E7FE6887455CFBC61A /* WorkModeCore in Frameworks */,
+				C41C227D6755C101003B901C /* WorkModeScreenTime in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		02F79113A0F347E0C852125B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				450B48276CA99BB35098D547 /* WorkModeCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9D6A3F2AFB56B95BD92BB388 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF9EF76EF83F0A6388402E59 /* WorkModeCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB5E4CA5858C2B506D67937F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F3D7FC450848F6166AC3498 /* WorkModeCore in Frameworks */,
+				424CD00894BBE945796901F1 /* WorkModeScreenTime in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		09BA25E622B7ED6FC3D50CD3 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				6B1FA1171B8F1D84C912FAC2 /* BreakReplayerTests.swift */,
+				7A925DD1A28206BC4DAFD115 /* BreakSessionMergeTests.swift */,
+				6C17B92FC8223A4FABA18A21 /* SyncStalenessTests.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		0AD9384090EA6F4E00E8DD38 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				92E6E33D2C1D25B6DC8DBD7F /* AppConfiguration.swift */,
+				6AAE702F0526B1C26CBA40B8 /* AppDelegate.swift */,
+				24E32ACB8A7FC30B53D2C7BA /* AppModel.swift */,
+				6D6C68269E6EE9636C18754D /* AppRuntime.swift */,
+				C4A2609F345DF5678743154A /* BackgroundRefresh.swift */,
+				9C1D7F1D09745DB048ABDE76 /* ClockOffApp.swift */,
+				1FD082A23BCC0908945C895D /* DependencyContainer.swift */,
+				2DCE18006533B22F1F7CF0C3 /* DeviceInfo.swift */,
+				42379DED5EC45B1BCAAFF6B3 /* SimulatorTokenStore.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		0C81C6CFE86EFCBE4462A8C9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E5227BF44538BDC036CC8FD9 /* ClockOffApp.app */,
+				9E350CA577C6E533AE5815FD /* ClockOffAppTests.xctest */,
+				9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */,
+				83EEC96B871EBADC2AAC48DB /* ClockOffShieldAction.appex */,
+				ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		12445A075BE667C1EB5837D2 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				429E5761DA40F9DD51FF5875 /* LocalNotificationScheduler.swift */,
+				1C57AC01D963631B0DD65F7B /* NotificationPlanner.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		20A4168916A38F70E3A33211 /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				E41AEC95F1507ACB05261E87 /* ScheduleView.swift */,
+				83CB3A3D113AE5A4D13CB3FB /* ScheduleViewModel.swift */,
+			);
+			path = Schedule;
+			sourceTree = "<group>";
+		};
+		3D0033F10FDB56DFD7476A6A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2264E4B96531EB4FD96E5070 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		48FD757CDA1AD0B0F8E04C78 /* ClockOffApp */ = {
+			isa = PBXGroup;
+			children = (
+				0AD9384090EA6F4E00E8DD38 /* App */,
+				CB62AE9863166F79BEDD91F4 /* Components */,
+				CE83C30E8F9FED0405862545 /* Features */,
+				12445A075BE667C1EB5837D2 /* Notifications */,
+				FAB8DACFE948964B2E2084AE /* Persistence */,
+				3D0033F10FDB56DFD7476A6A /* Resources */,
+				D91A16DD7DD2BE3FFD0FF6BE /* Restrictions */,
+				EA5BA4BF646F31542EA4DBBB /* Sync */,
+				78475CFC6EC322A2155511D4 /* WorkMode */,
+				632C97B428013C1086CC7383 /* ClockOffApp.entitlements */,
+				79DE942EA2EEFC57158A7053 /* Info.plist */,
+			);
+			path = ClockOffApp;
+			sourceTree = "<group>";
+		};
+		5358665D77EDF72828BD26DB /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				4DB7115C8A7EF8FD1E9A0490 /* JoinErrorMessages.swift */,
+				100C84C23758E07CF7DBA2C5 /* OnboardingFlowView.swift */,
+				D39617ECBDD64BBE6D22370F /* OnboardingResume.swift */,
+				CCC02DA508EF702B815898D6 /* OnboardingViewModel.swift */,
+				17FDE319A5FE94E9AE5F15AD /* ScreenTimeSetupViews.swift */,
+				A761FBDA1A734B559F39BA39 /* SetupRepairView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		5D9A63A9CAA3533600495768 /* ClockOffShieldAction */ = {
+			isa = PBXGroup;
+			children = (
+				04ABF226014B201794E52308 /* ClockOffShieldAction.entitlements */,
+				F9EE1617145D3CE503935765 /* Info.plist */,
+				8A50D3A354023B4383E13ECD /* ShieldActionExtension.swift */,
+			);
+			path = ClockOffShieldAction;
+			sourceTree = "<group>";
+		};
+		745005A6678EC5B84680C95C /* ClockOffAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				B3F53B1F8D4DE8D7FBA75D8A /* Features */,
+				DFEEBABD1D27F262D76D91E9 /* Notifications */,
+				09BA25E622B7ED6FC3D50CD3 /* Sync */,
+				C5EC156C2150EF493EC2F374 /* WorkMode */,
+				9FC71C3443121FBBB50D552D /* AppConfigurationTests.swift */,
+				BC7E41D6E2A0E1CBFC44D82E /* AppModelTests.swift */,
+				7DD2E079A1F45BD204C49477 /* KeychainTokenStoreTests.swift */,
+				A99B35A9055483580F2BB074 /* MockRestrictionProviderTests.swift */,
+				8849CC67267BEB0778269E55 /* OnboardingViewModelTests.swift */,
+				42B443A3E6DDA676EC2E40D0 /* SyncCoordinatorTests.swift */,
+				DA717BFB1CB6E7224E5BD55F /* TestDoubles.swift */,
+			);
+			path = ClockOffAppTests;
+			sourceTree = "<group>";
+		};
+		78475CFC6EC322A2155511D4 /* WorkMode */ = {
+			isa = PBXGroup;
+			children = (
+				41082C40D06489E3345AF431 /* BreakStarting.swift */,
+				14913B6E29D19ED67699B7BF /* UIWorkState.swift */,
+				53ED6C8346BD70192BE03148 /* WorkModeController.swift */,
+			);
+			path = WorkMode;
+			sourceTree = "<group>";
+		};
+		80103257A5B4BED1A882322F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				96A859DB657AF5B16409AB12 /* WorkModeCore */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		834FCE171E02F9E7F340C278 /* ClockOffShieldConfiguration */ = {
+			isa = PBXGroup;
+			children = (
+				F21BD9110C05A314A9475779 /* Resources */,
+				9BBC3D8A5585F70969050362 /* ClockOffShieldConfiguration.entitlements */,
+				0F20D4C9D2E06E7A9719B91E /* Info.plist */,
+				ACFB2EDB5E15706F7DF94BBE /* ShieldConfigurationExtension.swift */,
+			);
+			path = ClockOffShieldConfiguration;
+			sourceTree = "<group>";
+		};
+		84143C072939EE0DD21A850D /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				CE8795793BBB9483BB71D47C /* PrivacyStatements.swift */,
+				5B80D0136CC1A389721E664B /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		B3F53B1F8D4DE8D7FBA75D8A /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				770CAC623A190B85C845F5A3 /* CopyFormattingTests.swift */,
+				31623D1F2A916D8372EB0D75 /* HomeCardModelTests.swift */,
+				6695A4BBE919A32C53EAF61B /* OnboardingResumeTests.swift */,
+				649AC669F3EA07C8F948D67B /* PrivacyParityTests.swift */,
+				5E5B22018BF89A0ABB446851 /* ScheduleViewModelTests.swift */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		BB8B5833A38FC85774B1D10A /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				CB4F0C127BA81CCE99CFD440 /* HomeCardModel.swift */,
+				238D3362DD934F027619BF63 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		C05BF81A214C17662E6EAD7E = {
+			isa = PBXGroup;
+			children = (
+				48FD757CDA1AD0B0F8E04C78 /* ClockOffApp */,
+				745005A6678EC5B84680C95C /* ClockOffAppTests */,
+				CACF7064C0BF94260E46480D /* ClockOffDeviceActivityMonitor */,
+				5D9A63A9CAA3533600495768 /* ClockOffShieldAction */,
+				834FCE171E02F9E7F340C278 /* ClockOffShieldConfiguration */,
+				FB4A918B37F13BC2A5CF5922 /* Config */,
+				80103257A5B4BED1A882322F /* Packages */,
+				0C81C6CFE86EFCBE4462A8C9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C5EC156C2150EF493EC2F374 /* WorkMode */ = {
+			isa = PBXGroup;
+			children = (
+				8A70A4AF11BB1A6FBF9EB25B /* WorkModeControllerTests.swift */,
+			);
+			path = WorkMode;
+			sourceTree = "<group>";
+		};
+		CACF7064C0BF94260E46480D /* ClockOffDeviceActivityMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				DBB2DCD3259F589E47EBE719 /* ClockOffDeviceActivityMonitor.entitlements */,
+				C0DA2AC478C9277128EA1D18 /* DeviceActivityMonitorExtension.swift */,
+				6DE6F355323DD09BF6D86DC0 /* Info.plist */,
+			);
+			path = ClockOffDeviceActivityMonitor;
+			sourceTree = "<group>";
+		};
+		CB62AE9863166F79BEDD91F4 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				3C40F97DE9F2EEC869FE036F /* Components.swift */,
+				BC853CAD27D9AEB1B751F613 /* SelectionCountsText.swift */,
+				46DF428FB0549DF771A4E5A0 /* TimeFormatting.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		CE83C30E8F9FED0405862545 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				BB8B5833A38FC85774B1D10A /* Home */,
+				5358665D77EDF72828BD26DB /* Onboarding */,
+				20A4168916A38F70E3A33211 /* Schedule */,
+				84143C072939EE0DD21A850D /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		D91A16DD7DD2BE3FFD0FF6BE /* Restrictions */ = {
+			isa = PBXGroup;
+			children = (
+				820A41BD8FEE4E93E2821ABC /* AppleScreenTimeRestrictionProvider.swift */,
+				51F40837D5C2B884F4C144DB /* MockRestrictionProvider.swift */,
+				F141AC3D6322DC31A706FBB1 /* RestrictionProviderSupport.swift */,
+				6002B88C1340B8F7FF0E0005 /* ScreenTimeSelectionPicker.swift */,
+			);
+			path = Restrictions;
+			sourceTree = "<group>";
+		};
+		DFEEBABD1D27F262D76D91E9 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				95F0DA89EBA44E728FD569F5 /* NotificationPlannerTests.swift */,
+			);
+			path = Notifications;
+			sourceTree = "<group>";
+		};
+		EA5BA4BF646F31542EA4DBBB /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				DCADA1C1600F50F852CF72F8 /* BreakReplayer.swift */,
+				57B3331C647B8B08EA23F5C9 /* BreakSessionMerge.swift */,
+				A1CD88B37B1D9DC5D169A6B9 /* ConnectivityMonitor.swift */,
+				639882AC96B856862AF497C0 /* DeviceStateReportBuilder.swift */,
+				7BE22350F9953B717E363791 /* SyncCoordinator.swift */,
+				AF950740FB463335C3EB0D26 /* SyncStaleness.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		F21BD9110C05A314A9475779 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F51F6D0F9723E9FC81A0B35F /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		FAB8DACFE948964B2E2084AE /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				37335AF1F6F45C22629E9E9F /* OnboardingProgressStore.swift */,
+				33F6E182FFE641D129430B72 /* SelectionStatus.swift */,
+				2100F2807159607CBAB6D340 /* SyncMetadataStore.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
+		FB4A918B37F13BC2A5CF5922 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				F2D3B032765C60195EC00636 /* Debug.xcconfig */,
+				7C3B4B833A06FA9526644C6F /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		199227143A4DEB1294B8EA79 /* ClockOffAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC0DA06D0415497F1616376A /* Build configuration list for PBXNativeTarget "ClockOffAppTests" */;
+			buildPhases = (
+				A9FAB1151FCF1C454B15EB3C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				58CD7ABDA20B7F42DB523C5E /* PBXTargetDependency */,
+			);
+			name = ClockOffAppTests;
+			packageProductDependencies = (
+			);
+			productName = ClockOffAppTests;
+			productReference = 9E350CA577C6E533AE5815FD /* ClockOffAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4460A375A16CD1695557F642 /* ClockOffShieldConfiguration */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B759DFA1A9342109F2273C7 /* Build configuration list for PBXNativeTarget "ClockOffShieldConfiguration" */;
+			buildPhases = (
+				0B67F2111FD1C823A12B77DC /* Sources */,
+				5E8EB7E02EE15D73D9656F99 /* Resources */,
+				9D6A3F2AFB56B95BD92BB388 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClockOffShieldConfiguration;
+			packageProductDependencies = (
+				4F4074585205C997C69445A0 /* WorkModeCore */,
+			);
+			productName = ClockOffShieldConfiguration;
+			productReference = ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		7573814C60D584583672C228 /* ClockOffApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6F5EA2FAF013EA7CA337DBA1 /* Build configuration list for PBXNativeTarget "ClockOffApp" */;
+			buildPhases = (
+				6A964C157CB209AB74F1088D /* Sources */,
+				62702EE8B540624EE383EF33 /* Resources */,
+				FB5E4CA5858C2B506D67937F /* Frameworks */,
+				8206794DFB2DC588EB1289B3 /* Embed Foundation Extensions */,
+				0D27025AF4078861F6567999 /* Debug-only local HTTP (ATS) */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0CD1A90E457CD62A6050BC37 /* PBXTargetDependency */,
+				5FBB8C70A7708A358464F05F /* PBXTargetDependency */,
+				C840C171FAC47E609D76848D /* PBXTargetDependency */,
+			);
+			name = ClockOffApp;
+			packageProductDependencies = (
+				379433806F1C5C600419A883 /* WorkModeCore */,
+				AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */,
+			);
+			productName = ClockOffApp;
+			productReference = E5227BF44538BDC036CC8FD9 /* ClockOffApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7AA5B89247F173B97D7DF5AB /* ClockOffDeviceActivityMonitor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3D1E14488A3C181A247B829 /* Build configuration list for PBXNativeTarget "ClockOffDeviceActivityMonitor" */;
+			buildPhases = (
+				221E06BD90E23B138F828C3B /* Sources */,
+				011A50F7811349A9348992FA /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClockOffDeviceActivityMonitor;
+			packageProductDependencies = (
+				0753D1CA1162834FD7BABA9D /* WorkModeCore */,
+				3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */,
+			);
+			productName = ClockOffDeviceActivityMonitor;
+			productReference = 9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B8023D91C385C873C5CF40CD /* ClockOffShieldAction */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A4EEA2E31820E5E3A45FC0C7 /* Build configuration list for PBXNativeTarget "ClockOffShieldAction" */;
+			buildPhases = (
+				444257B545251067FD8D939E /* Sources */,
+				02F79113A0F347E0C852125B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClockOffShieldAction;
+			packageProductDependencies = (
+				70322A8087EB2EF9D543FF8F /* WorkModeCore */,
+			);
+			productName = ClockOffShieldAction;
+			productReference = 83EEC96B871EBADC2AAC48DB /* ClockOffShieldAction.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		799D25834F4ABCAB1C8BC5E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					199227143A4DEB1294B8EA79 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					4460A375A16CD1695557F642 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					7573814C60D584583672C228 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					7AA5B89247F173B97D7DF5AB = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					B8023D91C385C873C5CF40CD = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 81566CFAA0188E07D1D2B50F /* Build configuration list for PBXProject "ClockOff" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C05BF81A214C17662E6EAD7E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				14185C39986034ACED33D37E /* XCLocalSwiftPackageReference "Packages/WorkModeCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0C81C6CFE86EFCBE4462A8C9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7573814C60D584583672C228 /* ClockOffApp */,
+				7AA5B89247F173B97D7DF5AB /* ClockOffDeviceActivityMonitor */,
+				4460A375A16CD1695557F642 /* ClockOffShieldConfiguration */,
+				B8023D91C385C873C5CF40CD /* ClockOffShieldAction */,
+				199227143A4DEB1294B8EA79 /* ClockOffAppTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5E8EB7E02EE15D73D9656F99 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9753E5FF3FA4595C8586C752 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		62702EE8B540624EE383EF33 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				02CFF3F167B9D46FB5A7D1FF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0D27025AF4078861F6567999 /* Debug-only local HTTP (ATS) */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Debug-only local HTTP (ATS)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nPLIST=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n/usr/libexec/PlistBuddy -c \"Delete :NSAppTransportSecurity:NSAllowsLocalNetworking\" \"$PLIST\" >/dev/null 2>&1 || true\n/usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST\" >/dev/null 2>&1 || true\nif [ \"${CLOCKOFF_ALLOW_LOCAL_HTTP:-NO}\" = \"YES\" ]; then\n  /usr/libexec/PlistBuddy -c \"Add :NSAppTransportSecurity dict\" \"$PLIST\" >/dev/null 2>&1 || true\n  /usr/libexec/PlistBuddy -c \"Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true\" \"$PLIST\"\n  /usr/libexec/PlistBuddy -c \"Add :NSLocalNetworkUsageDescription string 'Development builds only: lets ClockOff reach the test server on your local network.'\" \"$PLIST\"\n  echo \"note: local development HTTP enabled (${CONFIGURATION})\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0B67F2111FD1C823A12B77DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9DA5A3DEEF222A5C1335CFCB /* ShieldConfigurationExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		221E06BD90E23B138F828C3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				69324AFBC2CE8D2D2C8BCCA7 /* DeviceActivityMonitorExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		444257B545251067FD8D939E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0247C21604788BFFF9B29486 /* ShieldActionExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A964C157CB209AB74F1088D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5810523C430F451862F17046 /* AppConfiguration.swift in Sources */,
+				8642FD568D9F29D8E983F471 /* AppDelegate.swift in Sources */,
+				28A0494FB0AB6AB0349A3675 /* AppModel.swift in Sources */,
+				B733B21CC869C6EA1A00B264 /* AppRuntime.swift in Sources */,
+				96121854AEDBBBB171465AF3 /* AppleScreenTimeRestrictionProvider.swift in Sources */,
+				58E01E021479196CEF97D6CA /* BackgroundRefresh.swift in Sources */,
+				12576D34F875B9BFDFB31939 /* BreakReplayer.swift in Sources */,
+				C4E1FD2F7C57DC821F17209A /* BreakSessionMerge.swift in Sources */,
+				1F0DEEC8928D173F7415D56E /* BreakStarting.swift in Sources */,
+				4B7E248673601C9EE481372A /* ClockOffApp.swift in Sources */,
+				F1F90F0FF764FD884E60911F /* Components.swift in Sources */,
+				2EDB5D157724F28B22B629E9 /* ConnectivityMonitor.swift in Sources */,
+				D3DCE53B43A54E66CE94906A /* DependencyContainer.swift in Sources */,
+				D75A57AD73F92F1D0BCC3A66 /* DeviceInfo.swift in Sources */,
+				9927A7379F602087878FDBF1 /* DeviceStateReportBuilder.swift in Sources */,
+				6926B4B7FB05481ABC0F275F /* HomeCardModel.swift in Sources */,
+				38105BD7DF3BEDE1790B5D02 /* HomeView.swift in Sources */,
+				7B7943CC289015527D62E70C /* JoinErrorMessages.swift in Sources */,
+				2896287F261E02989C20C5F3 /* LocalNotificationScheduler.swift in Sources */,
+				4BE6393049614F528E493E5C /* MockRestrictionProvider.swift in Sources */,
+				AA8E3C393DB4B342B38100F5 /* NotificationPlanner.swift in Sources */,
+				A1009D0E9943057FCA84C654 /* OnboardingFlowView.swift in Sources */,
+				6DAD5A89FE042DDCE26768F8 /* OnboardingProgressStore.swift in Sources */,
+				2B45D879C3B13033DAE0A9DB /* OnboardingResume.swift in Sources */,
+				0963B369B7AD28F0580EA233 /* OnboardingViewModel.swift in Sources */,
+				5CCA8F80AA6F4901716E3B80 /* PrivacyStatements.swift in Sources */,
+				CD91F859E6EB4D23CB34A88C /* RestrictionProviderSupport.swift in Sources */,
+				3F39FF263565FA26C24870CD /* ScheduleView.swift in Sources */,
+				830C794FC6D1F2B2D9AD37F9 /* ScheduleViewModel.swift in Sources */,
+				0ED25C6400A82CBD19242C56 /* ScreenTimeSelectionPicker.swift in Sources */,
+				0AFC37DBE058FD257441A706 /* ScreenTimeSetupViews.swift in Sources */,
+				DDA568BDCCAEE9E3111239DA /* SelectionCountsText.swift in Sources */,
+				595E002E2B97877F5B0B5C42 /* SelectionStatus.swift in Sources */,
+				6AD2DB5F873FC9FD1D853694 /* SettingsView.swift in Sources */,
+				F9C3ACE8A7FC959554FF2F05 /* SetupRepairView.swift in Sources */,
+				24B5C2604DCA9AEE08C9C1D3 /* SimulatorTokenStore.swift in Sources */,
+				7349F229507AD8E8DEBF85E9 /* SyncCoordinator.swift in Sources */,
+				11038520EE938CC52C868CE4 /* SyncMetadataStore.swift in Sources */,
+				C94A8F10D03D3C61D289E847 /* SyncStaleness.swift in Sources */,
+				3BD90A03E906AA3B1AC68E2F /* TimeFormatting.swift in Sources */,
+				1F391D2ABCDA7D760BEF4397 /* UIWorkState.swift in Sources */,
+				20335E503E6CF3DAF9FE9F5A /* WorkModeController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9FAB1151FCF1C454B15EB3C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50FAA4420AAFBE01DCECAE7E /* AppConfigurationTests.swift in Sources */,
+				2DF71BF8CCAC02126D1FD3C5 /* AppModelTests.swift in Sources */,
+				3CEB6E771DB42F4AA7D6BC15 /* BreakReplayerTests.swift in Sources */,
+				2EB0452894121A2A3CF13D30 /* BreakSessionMergeTests.swift in Sources */,
+				CB57095C663F39834E1FD579 /* CopyFormattingTests.swift in Sources */,
+				A9C8E57B215BDFBA6EFF8834 /* HomeCardModelTests.swift in Sources */,
+				F0F3E818EE89CC9CD3483C62 /* KeychainTokenStoreTests.swift in Sources */,
+				711AE973B26435A7E2587E62 /* MockRestrictionProviderTests.swift in Sources */,
+				598DBFF684ECA00B01F93326 /* NotificationPlannerTests.swift in Sources */,
+				C602F19FDF1E23CE13D103CE /* OnboardingResumeTests.swift in Sources */,
+				5CEA2146751ED27777D3D8CF /* OnboardingViewModelTests.swift in Sources */,
+				503B6983EFBDE922E7C52A69 /* PrivacyParityTests.swift in Sources */,
+				65232D42F38FF0A70A5C36D6 /* ScheduleViewModelTests.swift in Sources */,
+				7D4803D978C2EBA68C0A7543 /* SyncCoordinatorTests.swift in Sources */,
+				330CA6E7B324C9430E185964 /* SyncStalenessTests.swift in Sources */,
+				3A1773C0DA491AF39B1A2F81 /* TestDoubles.swift in Sources */,
+				0AF40D8F95844A83202C6ED7 /* WorkModeControllerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0CD1A90E457CD62A6050BC37 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7AA5B89247F173B97D7DF5AB /* ClockOffDeviceActivityMonitor */;
+			targetProxy = 82293B30D206E1B908894CD4 /* PBXContainerItemProxy */;
+		};
+		58CD7ABDA20B7F42DB523C5E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7573814C60D584583672C228 /* ClockOffApp */;
+			targetProxy = 988E5515509F2B5D83208EE5 /* PBXContainerItemProxy */;
+		};
+		5FBB8C70A7708A358464F05F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4460A375A16CD1695557F642 /* ClockOffShieldConfiguration */;
+			targetProxy = 8C8394D47BD9CDFF163DDF72 /* PBXContainerItemProxy */;
+		};
+		C840C171FAC47E609D76848D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B8023D91C385C873C5CF40CD /* ClockOffShieldAction */;
+			targetProxy = B3A32D4737119FD68445210F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		155E3EA351F3C5EF3D25E112 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffDeviceActivityMonitor/ClockOffDeviceActivityMonitor.entitlements;
+				INFOPLIST_FILE = ClockOffDeviceActivityMonitor/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_MONITOR_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffDeviceActivityMonitor;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		1F2C9F4AA9BA29254B2EFE63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffShieldAction/ClockOffShieldAction.entitlements;
+				INFOPLIST_FILE = ClockOffShieldAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_SHIELD_ACTION_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffShieldAction;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		46BD5DC29AD23A3109E57DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffShieldConfiguration/ClockOffShieldConfiguration.entitlements;
+				INFOPLIST_FILE = ClockOffShieldConfiguration/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_SHIELD_CONFIG_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffShieldConfiguration;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		50C5E067DADA809EA895D9E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffShieldConfiguration/ClockOffShieldConfiguration.entitlements;
+				INFOPLIST_FILE = ClockOffShieldConfiguration/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_SHIELD_CONFIG_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffShieldConfiguration;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		5B8D070E38FB8A2D84219595 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClockOffApp/ClockOffApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = ClockOffApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_APP_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffApp;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		73F10D538FFCA9C08540B2D2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ClockOffApp/ClockOffApp.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = ClockOffApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_APP_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffApp;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		743507B72BAEE96662965062 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffDeviceActivityMonitor/ClockOffDeviceActivityMonitor.entitlements;
+				INFOPLIST_FILE = ClockOffDeviceActivityMonitor/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_MONITOR_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffDeviceActivityMonitor;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		8C1E81F093E73328D523531F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		9B12E4C59759BE3881EC5DB1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_TESTS_BUNDLE_ID)";
+				SDKROOT = iphoneos;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClockOffApp.app/ClockOffApp";
+			};
+			name = Release;
+		};
+		AD95F123062B17F3EEC3D26B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		DE13B96D712AD86CFA7643D4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7C3B4B833A06FA9526644C6F /* Release.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ClockOffShieldAction/ClockOffShieldAction.entitlements;
+				INFOPLIST_FILE = ClockOffShieldAction/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_SHIELD_ACTION_BUNDLE_ID)";
+				PRODUCT_NAME = ClockOffShieldAction;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		E64C6F9487423F46084669D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F2D3B032765C60195EC00636 /* Debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(CLOCKOFF_TESTS_BUNDLE_ID)";
+				SDKROOT = iphoneos;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ClockOffApp.app/ClockOffApp";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6B759DFA1A9342109F2273C7 /* Build configuration list for PBXNativeTarget "ClockOffShieldConfiguration" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				50C5E067DADA809EA895D9E0 /* Debug */,
+				46BD5DC29AD23A3109E57DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6F5EA2FAF013EA7CA337DBA1 /* Build configuration list for PBXNativeTarget "ClockOffApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B8D070E38FB8A2D84219595 /* Debug */,
+				73F10D538FFCA9C08540B2D2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		81566CFAA0188E07D1D2B50F /* Build configuration list for PBXProject "ClockOff" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD95F123062B17F3EEC3D26B /* Debug */,
+				8C1E81F093E73328D523531F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A4EEA2E31820E5E3A45FC0C7 /* Build configuration list for PBXNativeTarget "ClockOffShieldAction" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F2C9F4AA9BA29254B2EFE63 /* Debug */,
+				DE13B96D712AD86CFA7643D4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B3D1E14488A3C181A247B829 /* Build configuration list for PBXNativeTarget "ClockOffDeviceActivityMonitor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				743507B72BAEE96662965062 /* Debug */,
+				155E3EA351F3C5EF3D25E112 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CC0DA06D0415497F1616376A /* Build configuration list for PBXNativeTarget "ClockOffAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E64C6F9487423F46084669D2 /* Debug */,
+				9B12E4C59759BE3881EC5DB1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		14185C39986034ACED33D37E /* XCLocalSwiftPackageReference "Packages/WorkModeCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/WorkModeCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0753D1CA1162834FD7BABA9D /* WorkModeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeCore;
+		};
+		379433806F1C5C600419A883 /* WorkModeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeCore;
+		};
+		3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeScreenTime;
+		};
+		4F4074585205C997C69445A0 /* WorkModeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeCore;
+		};
+		70322A8087EB2EF9D543FF8F /* WorkModeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeCore;
+		};
+		AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WorkModeScreenTime;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 799D25834F4ABCAB1C8BC5E5 /* Project object */;
+}

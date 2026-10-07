@@ -4,12 +4,12 @@ import Foundation
 /// the shielded app or anything about how the phone is used (§12). Pure, so the extension stays tiny and the
 /// copy is unit-tested here.
 public struct ShieldCopy: Equatable, Sendable {
-    public static let defaultTitle = "Work Mode"
+    public static let defaultTitle = "ClockOff"
     public static let defaultSubtitle = "This app is paused while you're on shift."
     public static let primaryButtonTitle = "OK"
-    public static let secondaryButtonTitle = "Open Work Mode"
+    public static let secondaryButtonTitle = "Open ClockOff"
 
-    /// The employer's name when known, else "Work Mode".
+    /// The employer's name when known, else "ClockOff".
     public var title: String
     /// The policy's shield message, else "Work Mode is active until HH:mm", else the default line.
     public var subtitle: String

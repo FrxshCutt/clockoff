@@ -1,6 +1,6 @@
 import Foundation
 
-/// Tunables of the state machine. Defaults match `DEFAULT_WORK_MODE_OPTIONS` in @workmode/shared.
+/// Tunables of the state machine. Defaults match `DEFAULT_WORK_MODE_OPTIONS` in @clockoff/shared.
 public struct WorkModeEngineOptions: Equatable, Sendable {
     /// Minutes before a shift start during which the state is SHIFT_STARTING_SOON. Default 15.
     public var preShiftWarningMinutes: Int

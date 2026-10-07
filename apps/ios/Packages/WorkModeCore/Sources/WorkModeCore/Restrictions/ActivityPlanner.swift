@@ -22,7 +22,7 @@ public enum ActivityNaming {
         "\(breakPrefix)\(clientBreakId)"
     }
 
-    /// Nil for a name Work Mode did not register.
+    /// Nil for a name ClockOff did not register.
     public static func parse(_ name: String) -> Kind? {
         if name.hasPrefix(shiftPrefix) {
             let rest = name.dropFirst(shiftPrefix.count)

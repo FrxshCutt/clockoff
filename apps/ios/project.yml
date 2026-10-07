@@ -1,8 +1,8 @@
-# XcodeGen spec — the source of truth for WorkMode.xcodeproj (regenerate with `make generate`).
+# XcodeGen spec — the source of truth for ClockOff.xcodeproj (regenerate with `make generate`).
 # Settings live in Config/*.xcconfig; this file only wires targets, Info.plists and entitlements.
-name: WorkMode
+name: ClockOff
 options:
-  bundleIdPrefix: com.workmode
+  bundleIdPrefix: online.clockoff
   deploymentTarget:
     iOS: "16.4"
   developmentLanguage: en
@@ -24,25 +24,25 @@ packages:
     path: Packages/WorkModeCore
 
 targets:
-  WorkModeApp:
+  ClockOffApp:
     type: application
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: WorkModeApp
+      - path: ClockOffApp
     settings:
       base:
-        PRODUCT_NAME: WorkModeApp
-        PRODUCT_BUNDLE_IDENTIFIER: $(WORKMODE_APP_BUNDLE_ID)
+        PRODUCT_NAME: ClockOffApp
+        PRODUCT_BUNDLE_IDENTIFIER: $(CLOCKOFF_APP_BUNDLE_ID)
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
     info:
-      path: WorkModeApp/Info.plist
+      path: ClockOffApp/Info.plist
       properties:
-        CFBundleDisplayName: Work Mode
+        CFBundleDisplayName: ClockOff
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
@@ -57,20 +57,20 @@ targets:
           - remote-notification
           - processing
         BGTaskSchedulerPermittedIdentifiers:
-          - com.workmode.app.refresh
+          - online.clockoff.app.refresh
         NSFamilyControlsUsageDescription: >-
-          Work Mode uses Screen Time to block the apps you choose only while you are on shift, relaxes the blocks
+          ClockOff uses Screen Time to block the apps you choose only while you are on shift, relaxes the blocks
           on breaks and lifts them when your shift ends. Your employer can see whether Work Mode is set up and
           working, but never which apps you choose, your messages, photos, browsing or how you use your phone.
         API_BASE_URL: $(API_BASE_URL)
-        WorkModePushEnvironment: $(WORKMODE_PUSH_ENVIRONMENT)
-        WorkModeAppGroup: $(WORKMODE_APP_GROUP)
+        ClockOffPushEnvironment: $(CLOCKOFF_PUSH_ENVIRONMENT)
+        ClockOffAppGroup: $(CLOCKOFF_APP_GROUP)
     entitlements:
-      path: WorkModeApp/WorkModeApp.entitlements
+      path: ClockOffApp/ClockOffApp.entitlements
       properties:
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.com.workmode.app.shared
+          - group.online.clockoff.app.shared
         aps-environment: development
     dependencies:
       - package: WorkModeCore
@@ -78,12 +78,12 @@ targets:
       # Shared ManagedSettings/FamilyControls adapter (also linked by the DeviceActivityMonitor extension).
       - package: WorkModeCore
         product: WorkModeScreenTime
-      - target: WorkModeDeviceActivityMonitor
-      - target: WorkModeShieldConfiguration
-      - target: WorkModeShieldAction
+      - target: ClockOffDeviceActivityMonitor
+      - target: ClockOffShieldConfiguration
+      - target: ClockOffShieldAction
     postBuildScripts:
       # Local development API: plain HTTP to local hosts (localhost, *.local, LAN) and the local-network
-      # privacy prompt text are added in Debug only (WORKMODE_ALLOW_LOCAL_HTTP). Release never gets them
+      # privacy prompt text are added in Debug only (CLOCKOFF_ALLOW_LOCAL_HTTP). Release never gets them
       # (`make build-release` verifies). Runs after Info.plist processing, before signing.
       - name: Debug-only local HTTP (ATS)
         basedOnDependencyAnalysis: false
@@ -94,145 +94,145 @@ targets:
           PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
           /usr/libexec/PlistBuddy -c "Delete :NSAppTransportSecurity:NSAllowsLocalNetworking" "$PLIST" >/dev/null 2>&1 || true
           /usr/libexec/PlistBuddy -c "Delete :NSLocalNetworkUsageDescription" "$PLIST" >/dev/null 2>&1 || true
-          if [ "${WORKMODE_ALLOW_LOCAL_HTTP:-NO}" = "YES" ]; then
+          if [ "${CLOCKOFF_ALLOW_LOCAL_HTTP:-NO}" = "YES" ]; then
             /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity dict" "$PLIST" >/dev/null 2>&1 || true
             /usr/libexec/PlistBuddy -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$PLIST"
-            /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Development builds only: lets Work Mode reach the test server on your local network.'" "$PLIST"
+            /usr/libexec/PlistBuddy -c "Add :NSLocalNetworkUsageDescription string 'Development builds only: lets ClockOff reach the test server on your local network.'" "$PLIST"
             echo "note: local development HTTP enabled (${CONFIGURATION})"
           fi
 
-  WorkModeDeviceActivityMonitor:
+  ClockOffDeviceActivityMonitor:
     type: app-extension
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: WorkModeDeviceActivityMonitor
+      - path: ClockOffDeviceActivityMonitor
     settings:
       base:
-        PRODUCT_NAME: WorkModeDeviceActivityMonitor
-        PRODUCT_BUNDLE_IDENTIFIER: $(WORKMODE_MONITOR_BUNDLE_ID)
+        PRODUCT_NAME: ClockOffDeviceActivityMonitor
+        PRODUCT_BUNDLE_IDENTIFIER: $(CLOCKOFF_MONITOR_BUNDLE_ID)
         APPLICATION_EXTENSION_API_ONLY: YES
     info:
-      path: WorkModeDeviceActivityMonitor/Info.plist
+      path: ClockOffDeviceActivityMonitor/Info.plist
       properties:
-        CFBundleDisplayName: Work Mode Monitor
+        CFBundleDisplayName: ClockOff Monitor
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).DeviceActivityMonitorExtension
     entitlements:
-      path: WorkModeDeviceActivityMonitor/WorkModeDeviceActivityMonitor.entitlements
+      path: ClockOffDeviceActivityMonitor/ClockOffDeviceActivityMonitor.entitlements
       properties:
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.com.workmode.app.shared
+          - group.online.clockoff.app.shared
     dependencies:
       - package: WorkModeCore
         product: WorkModeCore
       - package: WorkModeCore
         product: WorkModeScreenTime
 
-  WorkModeShieldConfiguration:
+  ClockOffShieldConfiguration:
     type: app-extension
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: WorkModeShieldConfiguration
+      - path: ClockOffShieldConfiguration
     settings:
       base:
-        PRODUCT_NAME: WorkModeShieldConfiguration
-        PRODUCT_BUNDLE_IDENTIFIER: $(WORKMODE_SHIELD_CONFIG_BUNDLE_ID)
+        PRODUCT_NAME: ClockOffShieldConfiguration
+        PRODUCT_BUNDLE_IDENTIFIER: $(CLOCKOFF_SHIELD_CONFIG_BUNDLE_ID)
         APPLICATION_EXTENSION_API_ONLY: YES
     info:
-      path: WorkModeShieldConfiguration/Info.plist
+      path: ClockOffShieldConfiguration/Info.plist
       properties:
-        CFBundleDisplayName: Work Mode Shield
+        CFBundleDisplayName: ClockOff Shield
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
     entitlements:
-      path: WorkModeShieldConfiguration/WorkModeShieldConfiguration.entitlements
+      path: ClockOffShieldConfiguration/ClockOffShieldConfiguration.entitlements
       properties:
         # Screen Time (ManagedSettings) extensions carry Family Controls like the app and the monitor.
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.com.workmode.app.shared
+          - group.online.clockoff.app.shared
     dependencies:
       - package: WorkModeCore
         product: WorkModeCore
 
-  WorkModeShieldAction:
+  ClockOffShieldAction:
     type: app-extension
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: WorkModeShieldAction
+      - path: ClockOffShieldAction
     settings:
       base:
-        PRODUCT_NAME: WorkModeShieldAction
-        PRODUCT_BUNDLE_IDENTIFIER: $(WORKMODE_SHIELD_ACTION_BUNDLE_ID)
+        PRODUCT_NAME: ClockOffShieldAction
+        PRODUCT_BUNDLE_IDENTIFIER: $(CLOCKOFF_SHIELD_ACTION_BUNDLE_ID)
         APPLICATION_EXTENSION_API_ONLY: YES
     info:
-      path: WorkModeShieldAction/Info.plist
+      path: ClockOffShieldAction/Info.plist
       properties:
-        CFBundleDisplayName: Work Mode Shield Action
+        CFBundleDisplayName: ClockOff Shield Action
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldActionExtension
     entitlements:
-      path: WorkModeShieldAction/WorkModeShieldAction.entitlements
+      path: ClockOffShieldAction/ClockOffShieldAction.entitlements
       properties:
         # Screen Time (ManagedSettings) extensions carry Family Controls like the app and the monitor.
         com.apple.developer.family-controls: true
         com.apple.security.application-groups:
-          - group.com.workmode.app.shared
+          - group.online.clockoff.app.shared
     dependencies:
       - package: WorkModeCore
         product: WorkModeCore
 
-  WorkModeAppTests:
+  ClockOffAppTests:
     type: bundle.unit-test
     platform: iOS
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
     sources:
-      - path: WorkModeAppTests
+      - path: ClockOffAppTests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(WORKMODE_TESTS_BUNDLE_ID)
+        PRODUCT_BUNDLE_IDENTIFIER: $(CLOCKOFF_TESTS_BUNDLE_ID)
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: $(BUILT_PRODUCTS_DIR)/WorkModeApp.app/WorkModeApp
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ClockOffApp.app/ClockOffApp
         BUNDLE_LOADER: $(TEST_HOST)
     # WorkModeCore is deliberately NOT linked here: the tests use the host app's copy, so types such as
     # APIError are the same type in test and app code (two static copies would break dynamic casts).
     dependencies:
-      - target: WorkModeApp
+      - target: ClockOffApp
 
 schemes:
-  WorkModeApp:
+  ClockOffApp:
     build:
       targets:
-        WorkModeApp: all
-        WorkModeAppTests: [test]
+        ClockOffApp: all
+        ClockOffAppTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       gatherCoverageData: false
       targets:
-        - name: WorkModeAppTests
+        - name: ClockOffAppTests
         - package: WorkModeCore/WorkModeCoreTests
         - package: WorkModeCore/WorkModeScreenTimeTests
     profile:

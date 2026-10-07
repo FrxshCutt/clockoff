@@ -4,9 +4,9 @@
 // The mock restriction provider is compiled ONLY when DEBUG_MOCK_RESTRICTIONS is defined. It is defined for
 // Debug, so simulator runs (where Screen Time does not work) are fully usable. To exercise the real
 // Screen Time provider in a Debug build on a device, override in Config/Local.xcconfig:
-//     WORKMODE_MOCK_RESTRICTIONS_CONDITION =
-WORKMODE_MOCK_RESTRICTIONS_CONDITION = DEBUG_MOCK_RESTRICTIONS
-SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(WORKMODE_MOCK_RESTRICTIONS_CONDITION)
+//     CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =
+CLOCKOFF_MOCK_RESTRICTIONS_CONDITION = DEBUG_MOCK_RESTRICTIONS
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(CLOCKOFF_MOCK_RESTRICTIONS_CONDITION)
 SWIFT_OPTIMIZATION_LEVEL = -Onone
 GCC_OPTIMIZATION_LEVEL = 0
 ONLY_ACTIVE_ARCH = YES
@@ -20,9 +20,9 @@ DEAD_CODE_STRIPPING = NO
 // Local.xcconfig, e.g. http:/$()/my-mac.local:3000/api/mobile/v1 (docs/IOS_SETUP.md).
 API_BASE_URL = http:/$()/localhost:3000/api/mobile/v1
 // Plain HTTP to local hosts is allowed in Debug only (a build phase adds NSAllowsLocalNetworking).
-WORKMODE_ALLOW_LOCAL_HTTP = YES
-WORKMODE_PUSH_ENVIRONMENT = sandbox
+CLOCKOFF_ALLOW_LOCAL_HTTP = YES
+CLOCKOFF_PUSH_ENVIRONMENT = sandbox
 
-// Optional, git-ignored Debug overrides (API_BASE_URL for a device, WORKMODE_MOCK_RESTRICTIONS_CONDITION).
+// Optional, git-ignored Debug overrides (API_BASE_URL for a device, CLOCKOFF_MOCK_RESTRICTIONS_CONDITION).
 // DEVELOPMENT_TEAM goes in Config/Signing.local.xcconfig so Release picks it up too.
 #include? "Local.xcconfig"

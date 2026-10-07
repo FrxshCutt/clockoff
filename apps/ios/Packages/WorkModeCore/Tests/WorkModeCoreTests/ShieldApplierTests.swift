@@ -152,7 +152,7 @@ final class ShieldApplierTests: XCTestCase {
         let london = try XCTUnwrap(TimeZone(identifier: "Europe/London"))
         let locale = Locale(identifier: "en_GB")
         let now = iso("2026-10-06T10:00:00Z")
-        XCTAssertEqual(ShieldCopy.make(plans: nil, now: now, timeZone: london, locale: locale), ShieldCopy(title: "Work Mode", subtitle: ShieldCopy.defaultSubtitle))
+        XCTAssertEqual(ShieldCopy.make(plans: nil, now: now, timeZone: london, locale: locale), ShieldCopy(title: "ClockOff", subtitle: ShieldCopy.defaultSubtitle))
 
         func entry(message: String?) -> PlanEntry {
             PlanEntry(shiftId: "s", plan: RestrictionPlan(shiftId: "s", policyVersion: "pv", categories: [.games], shieldMessage: message, requiresBreakSubsetSelection: false),
@@ -166,7 +166,7 @@ final class ShieldApplierTests: XCTestCase {
         XCTAssertEqual(ShieldCopy.make(plans: withoutMessage, now: now, timeZone: london, locale: locale).subtitle, "Work Mode is active until 17:00.")
         XCTAssertEqual(ShieldCopy.make(plans: withoutMessage, now: iso("2026-10-06T20:00:00Z"), timeZone: london, locale: locale).subtitle, ShieldCopy.defaultSubtitle,
                        "no covering shift: neutral copy")
-        XCTAssertEqual(ShieldCopy.make(plans: PlansFile(generatedAt: now, organisationName: "", entries: [PlanEntry]()), now: now, timeZone: london, locale: locale).title, "Work Mode")
+        XCTAssertEqual(ShieldCopy.make(plans: PlansFile(generatedAt: now, organisationName: "", entries: [PlanEntry]()), now: now, timeZone: london, locale: locale).title, "ClockOff")
     }
 
     // MARK: Break ledger

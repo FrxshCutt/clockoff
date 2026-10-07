@@ -9,14 +9,14 @@
 DEVELOPMENT_TEAM =
 CODE_SIGN_STYLE = Automatic
 
-WORKMODE_APP_BUNDLE_ID = com.workmode.app
-WORKMODE_MONITOR_BUNDLE_ID = com.workmode.app.devicemonitor
-WORKMODE_SHIELD_CONFIG_BUNDLE_ID = com.workmode.app.shieldconfig
-WORKMODE_SHIELD_ACTION_BUNDLE_ID = com.workmode.app.shieldaction
-WORKMODE_TESTS_BUNDLE_ID = com.workmode.app.tests
+CLOCKOFF_APP_BUNDLE_ID = online.clockoff.app
+CLOCKOFF_MONITOR_BUNDLE_ID = online.clockoff.app.devicemonitor
+CLOCKOFF_SHIELD_CONFIG_BUNDLE_ID = online.clockoff.app.shieldconfig
+CLOCKOFF_SHIELD_ACTION_BUNDLE_ID = online.clockoff.app.shieldaction
+CLOCKOFF_TESTS_BUNDLE_ID = online.clockoff.app.tests
 
 // Must match WorkModeCore `AppGroup.identifier` and every *.entitlements file.
-WORKMODE_APP_GROUP = group.com.workmode.app.shared
+CLOCKOFF_APP_GROUP = group.online.clockoff.app.shared
 
 // Optional, git-ignored: DEVELOPMENT_TEAM (and, for a personal team, bundle id overrides).
 #include? "Signing.local.xcconfig"

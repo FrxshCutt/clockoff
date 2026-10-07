@@ -139,6 +139,6 @@ public struct APIError: Error, Equatable, Sendable, LocalizedError, CustomString
     }
 
     public static func network(_ error: Error) -> APIError {
-        APIError(code: .networkError, message: "Can't reach Work Mode. Check your internet connection.", status: 0)
+        APIError(code: .networkError, message: "Can't reach ClockOff. Check your internet connection.", status: 0)
     }
 }

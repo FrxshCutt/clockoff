@@ -23,7 +23,7 @@ final class StorageTests: XCTestCase {
 
     func testFallbackLiveStoreIsUsableWithoutAppGroupEntitlement() throws {
         // The test bundle has no App Group entitlement, so this exercises the private fallback.
-        let store = try AppGroupFileStore.live(identifier: "group.com.workmode.tests.\(UUID().uuidString)")
+        let store = try AppGroupFileStore.live(identifier: "group.online.clockoff.tests.\(UUID().uuidString)")
         try store.write(Data("ok".utf8), to: "probe-\(UUID().uuidString).json")
     }
 

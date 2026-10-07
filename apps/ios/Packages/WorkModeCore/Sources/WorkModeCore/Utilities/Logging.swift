@@ -3,7 +3,7 @@ import os
 
 /// Unified logging categories. Never log tokens, request bodies or anything from §12's CANNOT list.
 public enum WorkModeLog {
-    public static let subsystem = "com.workmode.app"
+    public static let subsystem = "online.clockoff.app"
 
     public static let network = Logger(subsystem: subsystem, category: "network")
     public static let storage = Logger(subsystem: subsystem, category: "storage")

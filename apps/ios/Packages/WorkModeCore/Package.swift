@@ -1,7 +1,7 @@
 // swift-tools-version:5.9
 import PackageDescription
 
-// WorkModeCore — Foundation-only domain layer shared by the Work Mode app and its three app extensions
+// WorkModeCore — Foundation-only domain layer shared by the ClockOff app and its three app extensions
 // (DeviceActivityMonitor, ShieldConfiguration, ShieldAction). It must stay small and must never import
 // UIKit, SwiftUI or the Screen Time frameworks: extensions have tight memory limits, and every decision
 // (engine, break rules, shield applier, monitor handler) is unit-tested here in the simulator.

@@ -1,7 +1,7 @@
 import Foundation
 
 // Wire form of the Work Mode state machine output (`expectedStateSchema` / `ExpectedStateJson`). The server
-// computes it with `computeExpectedState()` in @workmode/shared; the on-device `WorkModeEngine` produces the
+// computes it with `computeExpectedState()` in @clockoff/shared; the on-device `WorkModeEngine` produces the
 // same shape so the app, the extensions and the dashboard can be compared like for like.
 
 public struct ShiftRef: Codable, Equatable, Hashable, Sendable {

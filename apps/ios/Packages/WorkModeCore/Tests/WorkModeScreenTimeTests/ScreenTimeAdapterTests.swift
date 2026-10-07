@@ -14,8 +14,8 @@ final class ScreenTimeAdapterTests: XCTestCase {
     }
 
     func testStoreNamesAreDistinctAndStable() {
-        XCTAssertEqual(ManagedSettingsStore.Name.work.rawValue, "com.workmode.shields.work")
-        XCTAssertEqual(ManagedSettingsStore.Name.breakRelaxed.rawValue, "com.workmode.shields.breakRelaxed")
+        XCTAssertEqual(ManagedSettingsStore.Name.work.rawValue, "online.clockoff.shields.work")
+        XCTAssertEqual(ManagedSettingsStore.Name.breakRelaxed.rawValue, "online.clockoff.shields.breakRelaxed")
         XCTAssertNotEqual(ManagedSettingsStore.Name.work, ManagedSettingsStore.Name.breakRelaxed)
         XCTAssertEqual(ManagedSettingsStore.Name.forRole(.work), .work)
         XCTAssertEqual(ManagedSettingsStore.Name.forRole(.breakRelaxed), .breakRelaxed)

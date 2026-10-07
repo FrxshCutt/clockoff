@@ -25,20 +25,20 @@ public final class AppGroupFileStore {
         )
     }
 
-    /// The App Group container's `WorkMode` directory, or nil when the container is unavailable (the
+    /// The App Group container's `ClockOff` directory, or nil when the container is unavailable (the
     /// App Group entitlement is missing — e.g. an unsigned simulator build).
     public static func appGroup(identifier: String = AppGroup.identifier, fileManager: FileManager = .default) -> AppGroupFileStore? {
         guard let container = fileManager.containerURL(forSecurityApplicationGroupIdentifier: identifier) else {
             return nil
         }
         return try? AppGroupFileStore(
-            directory: container.appendingPathComponent("WorkMode", isDirectory: true),
+            directory: container.appendingPathComponent("ClockOff", isDirectory: true),
             isSharedContainer: true,
             fileManager: fileManager
         )
     }
 
-    /// The App Group store when available, else `Application Support/WorkModeShared` in this process's own
+    /// The App Group store when available, else `Application Support/ClockOffShared` in this process's own
     /// container. The fallback keeps unsigned simulator builds working; extensions cannot see it, which is
     /// logged because on a device it means the entitlement is misconfigured.
     public static func live(identifier: String = AppGroup.identifier, fileManager: FileManager = .default) throws -> AppGroupFileStore {
@@ -47,7 +47,7 @@ public final class AppGroupFileStore {
         }
         WorkModeLog.storage.error("App Group container \(identifier, privacy: .public) unavailable; using a private fallback directory")
         let support = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        return try AppGroupFileStore(directory: support.appendingPathComponent("WorkModeShared", isDirectory: true), fileManager: fileManager)
+        return try AppGroupFileStore(directory: support.appendingPathComponent("ClockOffShared", isDirectory: true), fileManager: fileManager)
     }
 
     public func url(for name: String) -> URL {

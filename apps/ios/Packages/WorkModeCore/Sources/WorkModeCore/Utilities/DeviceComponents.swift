@@ -2,7 +2,7 @@ import Foundation
 
 /// Wall-clock `DateComponents` for an absolute instant in `timeZone`, for `DeviceActivitySchedule`.
 ///
-/// DeviceActivity schedules are expressed in calendar components, not instants. Work Mode stores every
+/// DeviceActivity schedules are expressed in calendar components, not instants. ClockOff stores every
 /// instant in UTC and converts only here, at the edge, using the zone the device is in *now*. The result
 /// carries a Gregorian calendar and the zone, plus year/month/day/hour/minute/second, so it identifies one
 /// specific (non-repeating) moment:

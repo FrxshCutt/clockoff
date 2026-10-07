@@ -31,7 +31,7 @@ public struct KeychainError: Error, Equatable, LocalizedError {
 /// the first unlock, and never restored to another phone from a backup (a refresh token is bound to one
 /// `Device` row; a copy on a second phone would trip the server's reuse detection and sign both out).
 public final class KeychainTokenStore: TokenStore {
-    public static let defaultService = "com.workmode.app.auth"
+    public static let defaultService = "online.clockoff.app.auth"
     private static let account = "device-token-pair"
 
     private let service: String

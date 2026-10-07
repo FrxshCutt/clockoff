@@ -9,9 +9,9 @@ import WorkModeCore
 
 extension ManagedSettingsStore.Name {
     /// Full shield set during a shift.
-    public static let work = Self("com.workmode.shields.work")
+    public static let work = Self("online.clockoff.shields.work")
     /// The "kept" subset during a RELAX_CATEGORIES break.
-    public static let breakRelaxed = Self("com.workmode.shields.breakRelaxed")
+    public static let breakRelaxed = Self("online.clockoff.shields.breakRelaxed")
 
     public static func forRole(_ role: ShieldStoreRole) -> ManagedSettingsStore.Name {
         switch role {
@@ -64,7 +64,7 @@ public final class ManagedSettingsShieldStore: ShieldStoring {
     }
 }
 
-/// The two named stores Work Mode uses.
+/// The two named stores ClockOff uses.
 public final class ScreenTimeShieldStores: ShieldStoreProviding {
     public let work = ManagedSettingsShieldStore(name: .work)
     public let breakRelaxed = ManagedSettingsShieldStore(name: .breakRelaxed)

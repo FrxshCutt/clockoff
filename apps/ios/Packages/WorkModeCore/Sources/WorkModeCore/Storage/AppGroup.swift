@@ -1,9 +1,9 @@
 import Foundation
 
 /// Identifiers shared by the app and its extensions. Must match the entitlements files and
-/// `Config/Signing.xcconfig` (`WORKMODE_APP_GROUP`).
+/// `Config/Signing.xcconfig` (`CLOCKOFF_APP_GROUP`).
 public enum AppGroup {
-    public static let identifier = "group.com.workmode.app.shared"
+    public static let identifier = "group.online.clockoff.app.shared"
 }
 
 /// Small key/value store for flags and scalars shared between the app and extensions.

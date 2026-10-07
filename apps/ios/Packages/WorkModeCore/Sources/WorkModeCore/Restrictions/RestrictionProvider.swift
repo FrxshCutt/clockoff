@@ -1,6 +1,6 @@
 import Foundation
 
-// The seam between Work Mode's domain logic and Apple's Screen Time frameworks (§8.3).
+// The seam between ClockOff's domain logic and Apple's Screen Time frameworks (§8.3).
 //
 // Implementations:
 //  - `AppleScreenTimeRestrictionProvider` (app target) — FamilyControls / ManagedSettings / DeviceActivity.
@@ -31,7 +31,7 @@ public enum RestrictionAuthorizationStatus: String, Codable, CaseIterable, Senda
     }
 }
 
-/// What to shield during a shift. Category names are Work Mode's policy categories; the provider maps them
+/// What to shield during a shift. Category names are ClockOff's policy categories; the provider maps them
 /// to the employee's on-device selection (opaque Apple tokens never leave the device).
 public struct RestrictionPlan: Codable, Equatable, Sendable {
     public var shiftId: String
@@ -183,7 +183,7 @@ public enum RestrictionProviderError: Error, Equatable, LocalizedError {
         case .unavailable(let reason):
             return reason
         case .schedulingFailed(let reason):
-            return "Work Mode could not schedule your shifts: \(reason)"
+            return "ClockOff could not schedule your shifts: \(reason)"
         }
     }
 }
@@ -236,7 +236,7 @@ extension Notification.Name {
     /// `RestrictionAuthorizationNotification.statusKey` → `RestrictionAuthorizationStatus.rawValue` in `userInfo`.
     /// On a revocation the provider has already cleared both shield stores and recorded PERMISSION_ERROR; the
     /// app reconciles, reports to the server and shows "Action Required".
-    public static let workModeAuthorizationStatusDidChange = Notification.Name("com.workmode.authorizationStatusDidChange")
+    public static let workModeAuthorizationStatusDidChange = Notification.Name("online.clockoff.authorizationStatusDidChange")
 }
 
 public enum RestrictionAuthorizationNotification {

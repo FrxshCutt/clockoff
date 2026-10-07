@@ -49,7 +49,7 @@ public final class SharedFlags {
         UserDefaultsKeyValueStore(suiteName: identifier).map(SharedFlags.init)
     }
 
-    /// Set by the ShieldAction extension when the employee taps "Open Work Mode" on the shield; the app reads
+    /// Set by the ShieldAction extension when the employee taps "Open ClockOff" on the shield; the app reads
     /// and clears it on its next foreground to show the status screen.
     public var openStatusRequested: Bool {
         get { store.bool(forKey: Keys.openStatusRequested) }

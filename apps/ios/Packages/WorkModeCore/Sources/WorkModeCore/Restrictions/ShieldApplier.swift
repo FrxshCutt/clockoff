@@ -1,6 +1,6 @@
 import Foundation
 
-/// The two `ManagedSettingsStore`s Work Mode writes to.
+/// The two `ManagedSettingsStore`s ClockOff writes to.
 public enum ShieldStoreRole: String, CaseIterable, Codable, Sendable {
     /// `ManagedSettingsStore(named: .work)`: the full shield set during a shift.
     case work

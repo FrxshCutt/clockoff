@@ -1,7 +1,7 @@
 #!/bin/bash
-# Verifies a Release build of Work Mode (run by `make build-release` after the build).
+# Verifies a Release build of ClockOff (run by `make build-release` after the build).
 #
-#   Scripts/verify-release.sh <path to Release WorkModeApp.app>
+#   Scripts/verify-release.sh <path to Release ClockOffApp.app>
 #
 # Fails (exit 1) when:
 #   - any target's Release build settings define DEBUG or DEBUG_MOCK_RESTRICTIONS, or a bundle id is wrong;
@@ -13,11 +13,11 @@
 #   - one of the three extensions is not embedded.
 set -euo pipefail
 
-APP="${1:?usage: verify-release.sh <WorkModeApp.app>}"
+APP="${1:?usage: verify-release.sh <ClockOffApp.app>}"
 cd "$(dirname "$0")/.."
 
-PROJECT=WorkMode.xcodeproj
-APP_GROUP=group.com.workmode.app.shared
+PROJECT=ClockOff.xcodeproj
+APP_GROUP=group.online.clockoff.app.shared
 PLISTBUDDY=/usr/libexec/PlistBuddy
 # API_BASE_URL is the mobile API root: https://<host>[/<segment>…]/api/mobile/v1 (no trailing slash, query,
 # fragment, user info or empty `//` segment).
@@ -36,10 +36,10 @@ setting() { # <settings text> <name>
 
 # target:bundle id
 TARGETS=(
-  "WorkModeApp:com.workmode.app"
-  "WorkModeDeviceActivityMonitor:com.workmode.app.devicemonitor"
-  "WorkModeShieldConfiguration:com.workmode.app.shieldconfig"
-  "WorkModeShieldAction:com.workmode.app.shieldaction"
+  "ClockOffApp:online.clockoff.app"
+  "ClockOffDeviceActivityMonitor:online.clockoff.app.devicemonitor"
+  "ClockOffShieldConfiguration:online.clockoff.app.shieldconfig"
+  "ClockOffShieldAction:online.clockoff.app.shieldaction"
 )
 
 for entry in "${TARGETS[@]}"; do
@@ -70,7 +70,7 @@ for entry in "${TARGETS[@]}"; do
   echo "  $target: $bundle_id, conditions:[${conditions// /}], entitlements OK"
 done
 
-[ -f "$APP/WorkModeApp" ] || { echo "error: $APP/WorkModeApp not found — did the Release build run?" >&2; exit 1; }
+[ -f "$APP/ClockOffApp" ] || { echo "error: $APP/ClockOffApp not found — did the Release build run?" >&2; exit 1; }
 # Every executable and dylib in the bundle (the app, the extensions, any debug dylib).
 while IFS= read -r -d '' binary; do
   for symbol in MockRestrictionProvider SimulatorTokenStore "DEVELOPMENT MODE"; do
@@ -101,10 +101,10 @@ elif [[ "$url" == *"$API_ROOT_PATH/"* ]]; then
 else
   echo "  Release API_BASE_URL: $url"
 fi
-push="$($PLISTBUDDY -c "Print :WorkModePushEnvironment" "$INFO" 2>/dev/null || true)"
-[ "$push" = "production" ] || fail "Release WorkModePushEnvironment is '$push', expected 'production'"
+push="$($PLISTBUDDY -c "Print :ClockOffPushEnvironment" "$INFO" 2>/dev/null || true)"
+[ "$push" = "production" ] || fail "Release ClockOffPushEnvironment is '$push', expected 'production'"
 
-for ext in WorkModeDeviceActivityMonitor WorkModeShieldConfiguration WorkModeShieldAction; do
+for ext in ClockOffDeviceActivityMonitor ClockOffShieldConfiguration ClockOffShieldAction; do
   [ -d "$APP/PlugIns/$ext.appex" ] || fail "$ext.appex is not embedded"
 done
 

@@ -2,7 +2,7 @@
 // cannot be compiled into a Release build (`make build-release` verifies the binary does not contain it).
 #include "Base.xcconfig"
 
-WORKMODE_MOCK_RESTRICTIONS_CONDITION =
+CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =
 SWIFT_ACTIVE_COMPILATION_CONDITIONS =
 SWIFT_OPTIMIZATION_LEVEL = -O
 SWIFT_COMPILATION_MODE = wholemodule
@@ -16,5 +16,5 @@ DEAD_CODE_STRIPPING = YES
 // Root of the production mobile API (the dashboard + API host is app.clockoff.online). docs/DEPLOYMENT.md
 // `make build-release` requires https and a path ending in /api/mobile/v1 (Scripts/verify-release.sh).
 API_BASE_URL = https:/$()/app.clockoff.online/api/mobile/v1
-WORKMODE_ALLOW_LOCAL_HTTP = NO
-WORKMODE_PUSH_ENVIRONMENT = production
+CLOCKOFF_ALLOW_LOCAL_HTTP = NO
+CLOCKOFF_PUSH_ENVIRONMENT = production

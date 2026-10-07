@@ -171,7 +171,7 @@ public final class APIClient: MobileAPI {
             return try JSONDecoder.workMode.decode(Response.self, from: data)
         } catch {
             WorkModeLog.network.error("decode failed for \(endpoint.path, privacy: .public): \(String(describing: error), privacy: .public)")
-            throw APIError(code: .decodingError, message: "The server sent a response this version of Work Mode does not understand.", status: 200)
+            throw APIError(code: .decodingError, message: "The server sent a response this version of ClockOff does not understand.", status: 200)
         }
     }
 

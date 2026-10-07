@@ -1,6 +1,6 @@
-# Work Mode iOS — build, test and verify from the command line (see docs/IOS_SETUP.md).
+# ClockOff iOS — build, test and verify from the command line (see docs/IOS_SETUP.md).
 #
-#   make generate        regenerate WorkMode.xcodeproj from project.yml (XcodeGen)
+#   make generate        regenerate ClockOff.xcodeproj from project.yml (XcodeGen)
 #   make build           Debug build of the app + 3 extensions for the simulator (mock restrictions)
 #   make test            WorkModeCore tests + hosted app tests on the simulator
 #   make build-release   Release build for the simulator, then Scripts/verify-release.sh: fails if the
@@ -18,8 +18,8 @@
 # failed build fails the make target.
 SHELL := /bin/bash
 
-PROJECT       := WorkMode.xcodeproj
-SCHEME        := WorkModeApp
+PROJECT       := ClockOff.xcodeproj
+SCHEME        := ClockOffApp
 SIMULATOR     ?= iPhone 17 Pro
 DESTINATION   ?= platform=iOS Simulator,name=$(SIMULATOR)
 DERIVED_DATA  := build/DerivedData
@@ -31,7 +31,7 @@ FORMATTER := $(shell command -v xcbeautify 2>/dev/null || command -v xcpretty 2>
 
 XCODEBUILD = set -o pipefail && xcodebuild -project $(PROJECT) -scheme $(SCHEME) -destination '$(DESTINATION)'
 
-RELEASE_APP = $(RELEASE_DATA)/Build/Products/Release-iphonesimulator/WorkModeApp.app
+RELEASE_APP = $(RELEASE_DATA)/Build/Products/Release-iphonesimulator/ClockOffApp.app
 
 FIXTURE_SRC   := ../../docs/fixtures/workmode-cases.json
 FIXTURE_DST   := Packages/WorkModeCore/Tests/WorkModeCoreTests/Fixtures/workmode-cases.json
