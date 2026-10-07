@@ -31,7 +31,9 @@ fail() {
 }
 
 setting() { # <settings text> <name>
-  printf '%s\n' "$1" | awk -F ' = ' -v key="$2" '$1 ~ "^ *" key "$" { print $2; exit }'
+  # Reads all of its input (no early `exit`): under `set -o pipefail` an early exit can kill the writer with
+  # SIGPIPE (status 141) once the settings dump is larger than the pipe buffer.
+  printf '%s\n' "$1" | awk -F ' = ' -v key="$2" '!found && $1 ~ "^ *" key "$" { print $2; found = 1 }'
 }
 
 # target:bundle id
