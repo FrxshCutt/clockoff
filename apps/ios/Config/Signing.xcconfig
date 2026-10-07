@@ -1,12 +1,12 @@
 // Signing.xcconfig — bundle identifiers, App Group and team for every target and configuration.
 //
-// DEVELOPMENT_TEAM is intentionally blank: no signing identity exists on the build machine, and simulator
-// builds/tests run with CODE_SIGNING_ALLOWED=NO (see Makefile). To build for a device or archive, put your
-// Apple Developer Team ID in the git-ignored Config/Signing.local.xcconfig (applies to Debug AND Release):
-//     DEVELOPMENT_TEAM = ABCDE12345
+// Apple Developer team that owns the online.clockoff.app App IDs, the App Group and the App Store Connect
+// record. Automatic signing creates certificates and profiles for it (xcodebuild -allowProvisioningUpdates).
+// Simulator builds/tests still run with CODE_SIGNING_ALLOWED=NO (Makefile). A different team (e.g. a personal
+// team) can be set in the git-ignored Config/Signing.local.xcconfig, together with bundle id overrides.
 // The Family Controls capability must be approved by Apple for the bundle ids below (docs/IOS_SETUP.md).
 
-DEVELOPMENT_TEAM =
+DEVELOPMENT_TEAM = 78B9UY2V8C
 CODE_SIGN_STYLE = Automatic
 
 CLOCKOFF_APP_BUNDLE_ID = online.clockoff.app

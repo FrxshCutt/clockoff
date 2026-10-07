@@ -1,7 +1,7 @@
 // Base.xcconfig — settings shared by every target and configuration.
 #include "Signing.xcconfig"
 
-MARKETING_VERSION = 1.0.0
+MARKETING_VERSION = 0.1.0
 CURRENT_PROJECT_VERSION = 1
 
 IPHONEOS_DEPLOYMENT_TARGET = 16.4

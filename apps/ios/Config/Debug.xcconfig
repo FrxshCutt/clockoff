@@ -1,11 +1,13 @@
 // Debug.xcconfig — local development.
 #include "Base.xcconfig"
 
-// The mock restriction provider is compiled ONLY when DEBUG_MOCK_RESTRICTIONS is defined. It is defined for
-// Debug, so simulator runs (where Screen Time does not work) are fully usable. To exercise the real
-// Screen Time provider in a Debug build on a device, override in Config/Local.xcconfig:
-//     CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =
+// The mock restriction provider is compiled ONLY when DEBUG_MOCK_RESTRICTIONS is defined: in Debug builds for
+// the SIMULATOR (where Screen Time does not work). Debug builds for a physical iPhone (sdk=iphoneos) never
+// define it, so they always run Apple's real Screen Time provider and never show the "simulated" banner. To force
+// the mock on a device anyway, set in Config/Local.xcconfig:
+//     CLOCKOFF_MOCK_RESTRICTIONS_CONDITION[sdk=iphoneos*] = DEBUG_MOCK_RESTRICTIONS
 CLOCKOFF_MOCK_RESTRICTIONS_CONDITION = DEBUG_MOCK_RESTRICTIONS
+CLOCKOFF_MOCK_RESTRICTIONS_CONDITION[sdk=iphoneos*] =
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG $(CLOCKOFF_MOCK_RESTRICTIONS_CONDITION)
 SWIFT_OPTIMIZATION_LEVEL = -Onone
 GCC_OPTIMIZATION_LEVEL = 0
@@ -15,14 +17,15 @@ DEBUG_INFORMATION_FORMAT = dwarf
 // The hosted unit tests resolve ClockOffCore symbols from the app binary: keep unused ones.
 DEAD_CODE_STRIPPING = NO
 
-// Root of the mobile API on the local Next.js dev server (the client appends endpoint paths such as /sync).
-// `//` starts a comment in xcconfig, hence `/$()/`. From a device use your Mac's Bonjour name in
-// Local.xcconfig, e.g. http:/$()/my-mac.local:3000/api/mobile/v1 (docs/IOS_SETUP.md).
+// Root of the mobile API (the client appends endpoint paths such as /sync). `//` starts a comment in xcconfig,
+// hence `/$()/`. Simulator: the local Next.js dev server. Physical iPhone (sdk=iphoneos): production, because
+// "localhost" on a phone is the phone itself. To point a device at your Mac instead, set in Local.xcconfig:
+//     API_BASE_URL[sdk=iphoneos*] = http:/$()/my-mac.local:3000/api/mobile/v1   (docs/IOS_SETUP.md)
 API_BASE_URL = http:/$()/localhost:3000/api/mobile/v1
+API_BASE_URL[sdk=iphoneos*] = https:/$()/app.clockoff.online/api/mobile/v1
 // Plain HTTP to local hosts is allowed in Debug only (a build phase adds NSAllowsLocalNetworking).
 CLOCKOFF_ALLOW_LOCAL_HTTP = YES
 CLOCKOFF_PUSH_ENVIRONMENT = sandbox
 
-// Optional, git-ignored Debug overrides (API_BASE_URL for a device, CLOCKOFF_MOCK_RESTRICTIONS_CONDITION).
-// DEVELOPMENT_TEAM goes in Config/Signing.local.xcconfig so Release picks it up too.
+// Optional, git-ignored Debug overrides (see the conditional examples above).
 #include? "Local.xcconfig"

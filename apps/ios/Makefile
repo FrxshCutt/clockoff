@@ -9,10 +9,13 @@
 #                        or API_BASE_URL is not the https mobile API root (…/api/mobile/v1)
 #   make sync-fixtures   copy docs/fixtures/workmode-cases.json into the ClockOffCore test bundle (the engine
 #                        fixture test fails when the copy is stale)
+#   make device-install  Debug build for the connected iPhone (production API, real Screen Time), install, launch
+#   make testflight      archive Release (date-based build number), verify, upload to App Store Connect/TestFlight
 #   make clean           remove build output
 #
-# Simulator builds are unsigned (no signing identity is needed). Device builds need DEVELOPMENT_TEAM in the
-# git-ignored Config/Signing.local.xcconfig and are run from Xcode (docs/IOS_SETUP.md).
+# Simulator builds are unsigned (no signing identity is needed). Device builds and archives sign automatically for
+# DEVELOPMENT_TEAM (Config/Signing.xcconfig) using the Apple ID in Xcode or an App Store Connect API key
+# (docs/IOS_SETUP.md, docs/DEVICE_TESTING.md).
 
 # macOS ships GNU Make 3.81 (no .SHELLFLAGS): recipes that pipe xcodebuild set pipefail themselves so a
 # failed build fails the make target.
@@ -36,7 +39,7 @@ RELEASE_APP = $(RELEASE_DATA)/Build/Products/Release-iphonesimulator/ClockOffApp
 FIXTURE_SRC   := ../../docs/fixtures/workmode-cases.json
 FIXTURE_DST   := Packages/ClockOffCore/Tests/ClockOffCoreTests/Fixtures/workmode-cases.json
 
-.PHONY: generate build test build-release sync-fixtures clean check-project
+.PHONY: generate build test build-release device-install testflight sync-fixtures clean check-project
 
 sync-fixtures:
 	cp "$(FIXTURE_SRC)" "$(FIXTURE_DST)"
@@ -61,3 +64,9 @@ build-release: check-project
 
 clean:
 	rm -rf build
+
+device-install: check-project
+	@Scripts/device-install.sh
+
+testflight: check-project
+	@FORMATTER="$(FORMATTER)" Scripts/testflight.sh

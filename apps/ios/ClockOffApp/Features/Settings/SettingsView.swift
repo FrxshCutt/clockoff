@@ -8,6 +8,11 @@ struct SettingsView: View {
     @State private var confirmingSignOut = false
     @State private var isLeaving = false
     @State private var actionError: String?
+    #if DEBUG
+    /// Debug builds only: five taps on "App version" open Diagnostics.
+    @State private var diagnosticsUnlock = DiagnosticsUnlock()
+    @State private var showingDiagnostics = false
+    #endif
 
     var body: some View {
         let cache = model.cachedState
@@ -67,7 +72,7 @@ struct SettingsView: View {
                 }
 
                 Section("Device") {
-                    LabeledContent("App version", value: model.container.configuration.displayVersion)
+                    appVersionRow
                     LabeledContent("iOS version", value: model.container.deviceInfo.osVersion)
                     LabeledContent("Device", value: model.container.deviceInfo.model)
                     LabeledContent("Timezone", value: model.container.deviceInfo.timeZone.identifier)
@@ -104,6 +109,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            #if DEBUG
+            .navigationDestination(isPresented: $showingDiagnostics) {
+                DiagnosticsView(source: LiveDiagnosticsDataSource(model: model))
+            }
+            #endif
             .confirmationDialog("Leave \(cache.organisation?.name ?? "this workplace")?", isPresented: $confirmingLeave, titleVisibility: .visible) {
                 Button("Leave Workplace", role: .destructive) { leave() }
                 Button("Cancel", role: .cancel) {}
@@ -126,6 +136,19 @@ struct SettingsView: View {
 
     private var helpURL: URL {
         model.container.configuration.helpURL
+    }
+
+    @ViewBuilder
+    private var appVersionRow: some View {
+        #if DEBUG
+        LabeledContent("App version", value: model.container.configuration.displayVersion)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if diagnosticsUnlock.registerTap(at: Date()) { showingDiagnostics = true }
+            }
+        #else
+        LabeledContent("App version", value: model.container.configuration.displayVersion)
+        #endif
     }
 
     private var selectionText: String {

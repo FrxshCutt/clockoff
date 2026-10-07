@@ -7,6 +7,8 @@
 #   - any target's Release build settings define DEBUG or DEBUG_MOCK_RESTRICTIONS, or a bundle id is wrong;
 #   - a target's entitlements lack the App Group or Family Controls;
 #   - the Release binary contains the mock restriction provider or the simulator token store;
+#   - the Release binary contains the Debug-only Diagnostics screen (its report title "ClockOff Diagnostics",
+#     the DiagnosticsSnapshot model or the DiagnosticsUnlock tap counter behind Settings › App version);
 #   - the Debug-only ATS / local-network Info.plist keys are present;
 #   - API_BASE_URL is not https, or is not the mobile API root (its path must end with /api/mobile/v1, exactly
 #     once, with no empty segment);
@@ -74,8 +76,11 @@ done
 
 [ -f "$APP/ClockOffApp" ] || { echo "error: $APP/ClockOffApp not found — did the Release build run?" >&2; exit 1; }
 # Every executable and dylib in the bundle (the app, the extensions, any debug dylib).
+# The Diagnostics markers: DiagnosticsReport.title (a string literal longer than 15 bytes, so Swift stores it
+# as a C string) and the type names the screen's #if DEBUG files declare (kept in Swift type metadata).
+DEBUG_ONLY_MARKERS=(MockRestrictionProvider SimulatorTokenStore "DEVELOPMENT MODE" "ClockOff Diagnostics" DiagnosticsSnapshot DiagnosticsUnlock)
 while IFS= read -r -d '' binary; do
-  for symbol in MockRestrictionProvider SimulatorTokenStore "DEVELOPMENT MODE"; do
+  for symbol in "${DEBUG_ONLY_MARKERS[@]}"; do
     if /usr/bin/grep -q -a "$symbol" "$binary"; then
       fail "'$symbol' is compiled into ${binary#"$APP"/}"
     fi
@@ -114,5 +119,5 @@ if [ "$failures" -gt 0 ]; then
   echo "Release verification FAILED ($failures problem(s))." >&2
   exit 1
 fi
-echo "Release product OK: no mock provider or simulator token store, no Debug-only keys, https API at $API_ROOT_PATH," \
+echo "Release product OK: no mock provider, simulator token store or Diagnostics screen, no Debug-only keys, https API at $API_ROOT_PATH," \
   "production push, 4 targets with correct bundle ids, App Group and Family Controls, 3 extensions embedded."
