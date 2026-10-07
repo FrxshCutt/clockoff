@@ -3,16 +3,16 @@ import { env } from "@/lib/env";
 /**
  * Cookie names and attribute builders for the manager web session.
  *
- * - `wm_session`  httpOnly, opaque session token (hash stored server-side).
- * - `wm_csrf`     readable by JS; double-submit CSRF token echoed in `x-csrf-token`.
- * - `wm_org`      httpOnly, currently selected organisation id (membership is re-checked per request).
+ * - `clockoff_session`  httpOnly, opaque session token (hash stored server-side).
+ * - `clockoff_csrf`     readable by JS; double-submit CSRF token echoed in `x-csrf-token`.
+ * - `clockoff_org`      httpOnly, currently selected organisation id (membership is re-checked per request).
  *
  * All cookies are `SameSite=Lax`, `Path=/`, and `Secure` whenever APP_URL is https or in production.
  */
 
-export const SESSION_COOKIE = "wm_session";
-export const CSRF_COOKIE = "wm_csrf";
-export const ORG_COOKIE = "wm_org";
+export const SESSION_COOKIE = "clockoff_session";
+export const CSRF_COOKIE = "clockoff_csrf";
+export const ORG_COOKIE = "clockoff_org";
 
 export interface CookieOptions {
   httpOnly?: boolean;

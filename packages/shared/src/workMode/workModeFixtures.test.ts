@@ -33,7 +33,7 @@ import type {
 const FIXTURE_URL = new URL("../../../../docs/fixtures/workmode-cases.json", import.meta.url);
 /**
  * Canonical wire form only: UTC, millisecond precision (`2026-01-12T09:00:00.000Z`) — what `toISOString()` and
- * the Swift `WorkModeDateCoding.format` both produce, so expected instants can be compared as strings.
+ * the Swift `ClockOffDateCoding.format` both produce, so expected instants can be compared as strings.
  */
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 /** Keys whose values are instants anywhere in the file (input rows, expectations, wall-clock annotations). */

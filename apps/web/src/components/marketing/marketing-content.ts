@@ -352,7 +352,7 @@ export const PRIVACY_TECH_POINTS: readonly PrivacyTechPoint[] = [
 export const PRIVACY_DATA_HANDLING: readonly string[] = [
   "Push tokens and workforce-integration credentials are encrypted at rest with AES-256-GCM.",
   "Audit logs record what managers do (who changed a policy, who created an override), not what employees do on their phones.",
-  "Leaving the workplace from the app removes Work Mode's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.",
+  "Leaving the workplace from the app removes ClockOff's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.",
   "Employees can revoke Screen Time access at any time in iOS Settings. The dashboard then shows that the device needs attention, and nothing more.",
 ];
 

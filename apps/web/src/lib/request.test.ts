@@ -45,7 +45,9 @@ describe("request helpers", () => {
   it("parses bearer tokens, cookies and user agents", () => {
     expect(getBearerToken(req({ authorization: "Bearer abc.def" }))).toBe("abc.def");
     expect(getBearerToken(req({ authorization: "Basic xyz" }))).toBeNull();
-    expect(getCookie(req({ cookie: "wm_session=s; wm_csrf=c" }), "wm_csrf")).toBe("c");
+    expect(getCookie(req({ cookie: "clockoff_session=s; clockoff_csrf=c" }), "clockoff_csrf")).toBe(
+      "c",
+    );
     expect(getUserAgent(req({ "user-agent": "x".repeat(1000) }))).toHaveLength(512);
   });
 

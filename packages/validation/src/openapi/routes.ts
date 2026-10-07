@@ -246,7 +246,7 @@ defineRoute({
   path: "/api/auth/register",
   summary: "Create a manager account",
   description:
-    "Always returns 201 with the same body for new and already-registered emails (enumeration resistance) and sends a verification (or 'you already have an account') email. When REQUIRE_EMAIL_VERIFICATION is false the new account is signed in immediately (`wm_session` / `wm_csrf` cookies); otherwise the user must verify, then sign in.",
+    "Always returns 201 with the same body for new and already-registered emails (enumeration resistance) and sends a verification (or 'you already have an account') email. When REQUIRE_EMAIL_VERIFICATION is false the new account is signed in immediately (`clockoff_session` / `clockoff_csrf` cookies); otherwise the user must verify, then sign in.",
   tags: ["Auth"],
   auth: "public",
   request: { body: registerSchema },
@@ -358,7 +358,7 @@ defineRoute({
   path: "/api/auth/switch-organisation",
   summary: "Select the current organisation",
   description:
-    "Sets the `wm_org` cookie. NOT_FOUND when the caller is not a member of that organisation.",
+    "Sets the `clockoff_org` cookie. NOT_FOUND when the caller is not a member of that organisation.",
   tags: ["Auth", "Organisations"],
   auth: "user",
   request: { body: switchOrganisationSchema },
@@ -384,7 +384,7 @@ defineRoute({
   path: "/api/organisations",
   summary: "Create an organisation",
   description:
-    "Creates an organisation owned by the signed-in manager (no current organisation required), with an active company join code and, optionally, a first location. Becomes the current organisation (`wm_org` cookie). Requires a verified email when the deployment enforces verification.",
+    "Creates an organisation owned by the signed-in manager (no current organisation required), with an active company join code and, optionally, a first location. Becomes the current organisation (`clockoff_org` cookie). Requires a verified email when the deployment enforces verification.",
   tags: ["Organisations"],
   auth: "user",
   request: { body: createOrganisationSchema },
@@ -503,7 +503,7 @@ defineRoute({
   path: "/api/organisations/current/members/:membershipId",
   summary: "Remove a manager, or leave the organisation",
   description:
-    "Removing yourself (leaving) needs no permission and clears the `wm_org` cookie; removing someone else needs members:invite (FORBIDDEN). The last OWNER cannot be removed (LAST_OWNER).",
+    "Removing yourself (leaving) needs no permission and clears the `clockoff_org` cookie; removing someone else needs members:invite (FORBIDDEN). The last OWNER cannot be removed (LAST_OWNER).",
   tags: ["Members"],
   auth: "manager",
   request: { params: membershipIdParamsSchema },

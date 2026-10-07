@@ -16,8 +16,8 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 /**
  * Mirrors the `auth` option of `createHandler` in apps/web (`cron` routes are internal and not documented):
- * - `manager` — cookie session (`wm_session`) scoped to the current organisation; mutating requests also
- *   need the `x-csrf-token` header (double-submit of the `wm_csrf` cookie).
+ * - `manager` — cookie session (`clockoff_session`) scoped to the current organisation; mutating requests also
+ *   need the `x-csrf-token` header (double-submit of the `clockoff_csrf` cookie).
  * - `user`    — cookie session without an organisation (auth routes, creating / listing organisations);
  *   same CSRF rule as `manager`.
  * - `mobile`  — `Authorization: Bearer <access JWT>` issued by `/api/mobile/v1/join/confirm`.

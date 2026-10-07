@@ -57,7 +57,7 @@ export default function HelpPage() {
     <>
       <PageHeader
         title="Help"
-        description="Get your team set up, understand exactly what Work Mode can and can't see, and fix the problems that come up."
+        description="Get your team set up, understand exactly what ClockOff can and can't see, and fix the problems that come up."
         actions={
           <Button asChild variant="outline">
             <a href={supportHref}>
@@ -132,7 +132,7 @@ export default function HelpPage() {
 
         <div id={HELP_ANCHORS.privacy} className="scroll-mt-20">
           <SectionCard
-            title="Privacy: what Work Mode can and can't see"
+            title="Privacy: what ClockOff can and can't see"
             description="These statements drive the dashboard, the employee app and the mobile API. They are the same ones employees read before joining."
           >
             <PrivacyExplainer />

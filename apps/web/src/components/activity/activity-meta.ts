@@ -101,7 +101,7 @@ export const ACTIVITY_EVENT_META: Record<ActivityEventType, ActivityEventMeta> =
     icon: "circle-check",
     tone: "success",
     group: "setup",
-    sentence: ({ subject }) => `${subject} finished setting up Work Mode`,
+    sentence: ({ subject }) => `${subject} finished setting up ClockOff`,
   },
   PERMISSION_GRANTED: {
     label: "Permission granted",

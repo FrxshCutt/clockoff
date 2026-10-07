@@ -131,7 +131,7 @@ export const CANNOT_SEE = [
     key: "notifications",
     label: "Notifications",
     detail:
-      "Neither the content nor the existence of notifications from other apps is visible to Work Mode.",
+      "Neither the content nor the existence of notifications from other apps is visible to ClockOff.",
   },
   {
     key: "location",
@@ -369,7 +369,7 @@ export function renderPrivacyMarkdown(): string {
     "",
     "- Push tokens and workforce-integration credentials are encrypted at rest with AES-256-GCM (`INTEGRATION_ENCRYPTION_KEY`).",
     "- Audit logs record what managers do (who changed a policy, who created an override), not what employees do on their phones.",
-    "- Leaving the workplace from the app removes Work Mode's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.",
+    "- Leaving the workplace from the app removes ClockOff's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.",
     integrationsStatement(),
     "",
   ];

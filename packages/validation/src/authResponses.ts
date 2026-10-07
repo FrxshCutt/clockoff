@@ -7,7 +7,7 @@ import { instantSchema } from "./primitives";
 /**
  * Response bodies of the manager auth routes (`/api/auth/*`). The request bodies live in `auth.ts`; these
  * mirror what the handlers in apps/web/src/app/api/auth return. Every sign-in style response also sets the
- * `wm_session` / `wm_csrf` cookies and returns the CSRF token so the client can send `x-csrf-token` at once.
+ * `clockoff_session` / `clockoff_csrf` cookies and returns the CSRF token so the client can send `x-csrf-token` at once.
  */
 
 /** `POST /api/auth/register` (201) and `POST /api/auth/login`. */
@@ -39,7 +39,7 @@ export const changePasswordResponseSchema = z
   .meta({ id: "ChangePasswordResponse" });
 export type ChangePasswordResponse = z.infer<typeof changePasswordResponseSchema>;
 
-/** `POST /api/auth/switch-organisation` — also sets the `wm_org` cookie. */
+/** `POST /api/auth/switch-organisation` — also sets the `clockoff_org` cookie. */
 export const switchOrganisationResponseSchema = z
   .object({ ok: z.literal(true), currentOrganisationId: uuidSchema })
   .meta({ id: "SwitchOrganisationResponse" });

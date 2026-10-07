@@ -107,7 +107,7 @@ export async function sendOrganisationDigest(params: {
   const outcome = await prisma.$transaction(async (tx) => {
     // Serialise per organisation so concurrent ticks cannot both pass the "recently sent" check. The lock
     // function returns `void`, which `$queryRaw` cannot deserialise — `$executeRaw` discards the result.
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`workmode:digest:${organisationId}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`clockoff:digest:${organisationId}`}))`;
     const recent = await tx.notification.findFirst({
       where: {
         organisationId,

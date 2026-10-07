@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { apnsConfigured, parseEnv } from "./env";
 
 const VALID = {
-  DATABASE_URL: "postgresql://u:p@localhost:5433/workmode",
+  DATABASE_URL: "postgresql://u:p@localhost:5433/clockoff",
   APP_URL: "http://localhost:3000/",
   SESSION_SECRET: "s".repeat(64),
   MOBILE_JWT_SECRET: "m".repeat(64),

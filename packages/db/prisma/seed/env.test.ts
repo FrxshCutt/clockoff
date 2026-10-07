@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveDatabaseUrl } from "./env";
 
-const LOCAL = "postgresql://workmode:workmode@localhost:5433/workmode?schema=public";
+const LOCAL = "postgresql://clockoff:clockoff@localhost:5433/clockoff?schema=public";
 const REMOTE =
   "postgresql://user:pw@ep-cool-name-123456-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require";
 
@@ -36,7 +36,7 @@ describe("seed database guard", () => {
   });
 
   it("still refuses the integration-test database unless SEED_ALLOW_TEST_DB=1", () => {
-    const test = LOCAL.replace("/workmode?", "/workmode_test?");
+    const test = LOCAL.replace("/clockoff?", "/clockoff_test?");
     expect(() => resolveDatabaseUrl({ DATABASE_URL: test } as NodeJS.ProcessEnv)).toThrow(
       /integration-test/,
     );

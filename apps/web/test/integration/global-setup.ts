@@ -15,7 +15,7 @@ import { assertTestDatabaseName, assertTestDatabaseUrl } from "../helpers/testDa
  * - Refuses to run unless TEST_DATABASE_URL names a database ending in `_test` that differs from
  *   DATABASE_URL, and re-checks `current_database()` on the open connection before dropping the schema;
  *   DATABASE_URL is overwritten with the test URL before the Prisma client module loads.
- * - Concurrent runs (several engineers / terminals on one machine share `workmode_test`) are serialised
+ * - Concurrent runs (several engineers / terminals on one machine share `clockoff_test`) are serialised
  *   with a Postgres session advisory lock held from reset until the run's teardown, so one run never
  *   drops the schema under another. Waits up to INTEGRATION_LOCK_WAIT_SECONDS (default 600) for it.
  * - `lock_timeout` makes the reset fail with a clear error instead of hanging if some other client holds
@@ -48,7 +48,7 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     if (Date.now() > deadline) {
       await client.$disconnect();
       throw new Error(
-        `Another integration run holds the workmode_test lock (waited ${waitSeconds}s). ` +
+        `Another integration run holds the clockoff_test lock (waited ${waitSeconds}s). ` +
           "Wait for it to finish, or stop the stale vitest process.",
       );
     }

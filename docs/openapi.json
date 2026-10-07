@@ -990,7 +990,7 @@
       "post": {
         "operationId": "postAuthRegister",
         "summary": "Create a manager account",
-        "description": "Always returns 201 with the same body for new and already-registered emails (enumeration resistance) and sends a verification (or 'you already have an account') email. When REQUIRE_EMAIL_VERIFICATION is false the new account is signed in immediately (`wm_session` / `wm_csrf` cookies); otherwise the user must verify, then sign in.",
+        "description": "Always returns 201 with the same body for new and already-registered emails (enumeration resistance) and sends a verification (or 'you already have an account') email. When REQUIRE_EMAIL_VERIFICATION is false the new account is signed in immediately (`clockoff_session` / `clockoff_csrf` cookies); otherwise the user must verify, then sign in.",
         "tags": [
           "Auth"
         ],
@@ -1364,7 +1364,7 @@
       "post": {
         "operationId": "postAuthSwitchOrganisation",
         "summary": "Select the current organisation",
-        "description": "Sets the `wm_org` cookie. NOT_FOUND when the caller is not a member of that organisation.",
+        "description": "Sets the `clockoff_org` cookie. NOT_FOUND when the caller is not a member of that organisation.",
         "tags": [
           "Auth",
           "Organisations"
@@ -11939,7 +11939,7 @@
       "post": {
         "operationId": "postOrganisations",
         "summary": "Create an organisation",
-        "description": "Creates an organisation owned by the signed-in manager (no current organisation required), with an active company join code and, optionally, a first location. Becomes the current organisation (`wm_org` cookie). Requires a verified email when the deployment enforces verification.",
+        "description": "Creates an organisation owned by the signed-in manager (no current organisation required), with an active company join code and, optionally, a first location. Becomes the current organisation (`clockoff_org` cookie). Requires a verified email when the deployment enforces verification.",
         "tags": [
           "Organisations"
         ],
@@ -13803,7 +13803,7 @@
       "delete": {
         "operationId": "deleteOrganisationsCurrentMembersByMembershipId",
         "summary": "Remove a manager, or leave the organisation",
-        "description": "Removing yourself (leaving) needs no permission and clears the `wm_org` cookie; removing someone else needs members:invite (FORBIDDEN). The last OWNER cannot be removed (LAST_OWNER).",
+        "description": "Removing yourself (leaving) needs no permission and clears the `clockoff_org` cookie; removing someone else needs members:invite (FORBIDDEN). The last OWNER cannot be removed (LAST_OWNER).",
         "tags": [
           "Members"
         ],
@@ -26810,14 +26810,14 @@
       "managerSession": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "wm_session",
+        "name": "clockoff_session",
         "description": "Opaque httpOnly session cookie set by POST /api/auth/login."
       },
       "csrfToken": {
         "type": "apiKey",
         "in": "header",
         "name": "x-csrf-token",
-        "description": "Double-submit CSRF token: echo the value of the `wm_csrf` cookie on every mutating request."
+        "description": "Double-submit CSRF token: echo the value of the `clockoff_csrf` cookie on every mutating request."
       },
       "mobileBearer": {
         "type": "http",

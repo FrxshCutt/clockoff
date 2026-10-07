@@ -196,7 +196,7 @@ export function DeviceDetail({ id }: { id: string }) {
             {device.isActive && canWrite ? (
               <ConfirmDialog
                 title={`Deactivate ${title ?? "this device"}?`}
-                description="The phone signs out immediately and stops syncing. Work Mode will not run on it until the employee joins again from the app. The employee record is unaffected."
+                description="The phone signs out immediately and stops syncing. ClockOff will not run on it until the employee joins again from the app. The employee record is unaffected."
                 confirmLabel="Deactivate device"
                 destructive
                 onConfirm={confirmDeactivate}

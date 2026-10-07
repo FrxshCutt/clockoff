@@ -91,14 +91,14 @@ export interface OrganisationSelection {
 /**
  * Pick the organisation for a user: the one named by `requestedOrganisationId` when the user is a
  * member of it, otherwise the user's earliest membership. Null when the user has no organisation.
- * A forged or stale `wm_org` cookie therefore degrades to the default organisation, never to
+ * A forged or stale `clockoff_org` cookie therefore degrades to the default organisation, never to
  * another tenant's data.
  */
 export async function resolveOrganisationSelection(
   userId: string,
   requestedOrganisationId: string | undefined,
 ): Promise<OrganisationSelection | null> {
-  // The id usually comes from the `wm_org` cookie, i.e. client input: anything that is not a UUID is
+  // The id usually comes from the `clockoff_org` cookie, i.e. client input: anything that is not a UUID is
   // ignored here (querying a uuid column with it would make Postgres raise and the request 500).
   if (requestedOrganisationId && isUuid(requestedOrganisationId)) {
     const membership = await prisma.organisationMembership.findFirst({

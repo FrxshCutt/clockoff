@@ -24,8 +24,8 @@ describe("logger", () => {
         req: {
           headers: {
             authorization: "Bearer x",
-            cookie: "wm_session=s",
-            "set-cookie": "wm_session=s",
+            cookie: "clockoff_session=s",
+            "set-cookie": "clockoff_session=s",
           },
         },
         deep: { nested: { refreshToken: "r" } },

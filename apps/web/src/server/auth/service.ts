@@ -407,7 +407,7 @@ export async function changePassword(
 // ── Current user / organisation selection ───────────────────────────────────
 
 /**
- * `GET /api/auth/me`. Also (re)installs the CSRF cookie when it is missing and keeps the `wm_org`
+ * `GET /api/auth/me`. Also (re)installs the CSRF cookie when it is missing and keeps the `clockoff_org`
  * cookie in sync with the organisation actually selected (a stale/forged value falls back to the
  * first membership).
  */

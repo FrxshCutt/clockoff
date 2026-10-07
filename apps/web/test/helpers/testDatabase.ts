@@ -1,6 +1,6 @@
 /**
  * Guards shared by the integration global setup and per-file setup: the integration suite may only ever
- * talk to a dedicated test database, i.e. one whose name ENDS in `_test` (e.g. `workmode_test`) and that
+ * talk to a dedicated test database, i.e. one whose name ENDS in `_test` (e.g. `clockoff_test`) and that
  * differs from the development `DATABASE_URL`. The global setup additionally checks the name the server
  * reports (`current_database()`) before it drops anything — see {@link assertTestDatabaseName}.
  */
@@ -10,7 +10,7 @@ const TEST_DATABASE_SUFFIX = "_test";
 export function assertTestDatabaseName(dbName: string): void {
   if (!dbName.endsWith(TEST_DATABASE_SUFFIX) || dbName.length <= TEST_DATABASE_SUFFIX.length) {
     throw new Error(
-      `Refusing to run integration tests against database "${dbName}": the test database name must end with "${TEST_DATABASE_SUFFIX}" (e.g. workmode_test).`,
+      `Refusing to run integration tests against database "${dbName}": the test database name must end with "${TEST_DATABASE_SUFFIX}" (e.g. clockoff_test).`,
     );
   }
 }

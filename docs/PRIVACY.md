@@ -34,7 +34,7 @@ ClockOff exists to make shift work less distracting, not to monitor people. The 
 - **Browsing history and searches.** No websites visited, search terms or other web activity. Websites an employee chooses to shield are opaque tokens on the phone: counted, never sent.
 - **App usage, screen time or which apps were opened.** ClockOff registers time-based schedules only and receives no usage reports. When a shielded app is opened, the shield and its buttons are handled on the phone; nothing about which app, how often or for how long is sent to the server.
 - **Which specific apps, categories or websites were selected.** Apple returns the selection as opaque tokens that are meaningless off the phone that created them. They are stored only in the app's on-device container and are never uploaded; the server receives counts only.
-- **Notifications.** Neither the content nor the existence of notifications from other apps is visible to Work Mode.
+- **Notifications.** Neither the content nor the existence of notifications from other apps is visible to ClockOff.
 - **Location.** The app does not use Location Services, Wi-Fi or Bluetooth scanning. Like any internet service, the server sees the network address of each request for security and rate limiting; it is not used to locate anyone and is never shown to the employer.
 - **Contacts, calendar, health, passwords, keystrokes or screenshots.** ClockOff requests none of these permissions and contains no keyboard, screen-recording or screenshot capability.
 - **What happens on the phone outside shifts.** Shields lift when the shift ends. Off shift the app only performs routine sync check-ins, which carry the same operational fields as always and nothing about how the phone is used.
@@ -68,5 +68,5 @@ The mobile API accepts only the fields below, by their exact request field names
 
 - Push tokens and workforce-integration credentials are encrypted at rest with AES-256-GCM (`INTEGRATION_ENCRYPTION_KEY`).
 - Audit logs record what managers do (who changed a policy, who created an override), not what employees do on their phones.
-- Leaving the workplace from the app removes Work Mode's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.
+- Leaving the workplace from the app removes ClockOff's shields and schedules from the phone and deletes its local copy of the schedule. A manager deactivating an employee or device revokes that device's access, so it can no longer sync.
 - Workforce integrations (Planday, Deputy, 7shifts, When I Work, Rotaready and Homebase) are not available yet. When they are, they will only bring employees, teams, locations, shifts and clock events into ClockOff; nothing about the phone will be sent to them.

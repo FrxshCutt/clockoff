@@ -111,7 +111,7 @@ export interface CallRouteOptions {
   /** Extra raw cookies (merged over the jar). */
   cookies?: Record<string, string>;
   headers?: Record<string, string>;
-  /** Send `x-csrf-token` from the jar's `wm_csrf` cookie on mutating requests (default true). */
+  /** Send `x-csrf-token` from the jar's `clockoff_csrf` cookie on mutating requests (default true). */
   csrf?: boolean;
   /** `Origin` header for mutating requests; `null` omits it. Default: the APP_URL origin. */
   origin?: string | null;

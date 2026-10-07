@@ -96,7 +96,7 @@ export const ACTIVATION_MODE_OPTIONS: readonly ActivationModeOption[] = ACTIVATI
       ? {
           value,
           label: ACTIVATION_MODE_LABELS[value],
-          description: "Work Mode follows each employee's shifts in the schedule.",
+          description: "ClockOff follows each employee's shifts in the schedule.",
           disabled: false,
         }
       : {

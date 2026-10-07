@@ -4,14 +4,14 @@ import { API_ERROR_CODES, type ApiErrorCode } from "@clockoff/shared/errors";
  * Browser client for the ClockOff manager API (`/api/**`).
  *
  * - Same-origin cookie session (`credentials: "same-origin"`).
- * - CSRF double submit: mutating requests echo the JS-readable `wm_csrf` cookie in `x-csrf-token`.
+ * - CSRF double submit: mutating requests echo the JS-readable `clockoff_csrf` cookie in `x-csrf-token`.
  * - Every non-2xx response becomes an `ApiClientError` carrying the API's `{ error: { code, message, details } }`
  *   envelope. Responses without a recognisable envelope (e.g. an HTML 404 for a route that does not exist yet)
  *   are mapped from the HTTP status, so callers can always switch on `error.code`.
  * - A 401 without a more specific code becomes `UNAUTHENTICATED`; the dashboard layout redirects to `/login`.
  */
 
-export const CSRF_COOKIE_NAME = "wm_csrf";
+export const CSRF_COOKIE_NAME = "clockoff_csrf";
 export const CSRF_HEADER_NAME = "x-csrf-token";
 
 /** Error codes produced by the client itself (no response from the API, or a response it cannot read). */
@@ -147,7 +147,7 @@ export function readCookieValue(cookieString: string, name: string): string | nu
 let csrfTokenFallback: string | null = null;
 
 /**
- * Remembers the CSRF token returned by `GET /api/auth/me`. Used only when the `wm_csrf` cookie cannot be
+ * Remembers the CSRF token returned by `GET /api/auth/me`. Used only when the `clockoff_csrf` cookie cannot be
  * read (the cookie stays the source of truth because the server rotates it).
  */
 export function rememberCsrfToken(token: string | null): void {

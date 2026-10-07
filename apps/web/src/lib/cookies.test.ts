@@ -32,7 +32,7 @@ describe("cookies", () => {
     process.env.APP_URL = "http://localhost:3000";
     resetEnvCache();
     const header = sessionCookie("tok");
-    expect(header).toMatch(/^wm_session=tok; Path=\/; Max-Age=\d+; HttpOnly; SameSite=Lax$/);
+    expect(header).toMatch(/^clockoff_session=tok; Path=\/; Max-Age=\d+; HttpOnly; SameSite=Lax$/);
     expect(header).not.toContain("Secure");
   });
 
@@ -58,9 +58,11 @@ describe("cookies", () => {
     expect(serializeCookie("a", "b c;", { maxAge: 10.7 })).toBe(
       "a=b%20c%3B; Path=/; Max-Age=10; SameSite=Lax",
     );
-    const parsed = parseCookieHeader("a=b%20c%3B; wm_session=one; wm_session=two; broken; =x");
+    const parsed = parseCookieHeader(
+      "a=b%20c%3B; clockoff_session=one; clockoff_session=two; broken; =x",
+    );
     expect(parsed.get("a")).toBe("b c;");
-    expect(parsed.get("wm_session")).toBe("one");
+    expect(parsed.get("clockoff_session")).toBe("one");
     expect(parseCookieHeader(null).size).toBe(0);
   });
 

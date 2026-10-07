@@ -572,7 +572,7 @@ export function buildOpenApiDocument(
         managerSession: {
           type: "apiKey",
           in: "cookie",
-          name: "wm_session",
+          name: "clockoff_session",
           description: "Opaque httpOnly session cookie set by POST /api/auth/login.",
         },
         csrfToken: {
@@ -580,7 +580,7 @@ export function buildOpenApiDocument(
           in: "header",
           name: "x-csrf-token",
           description:
-            "Double-submit CSRF token: echo the value of the `wm_csrf` cookie on every mutating request.",
+            "Double-submit CSRF token: echo the value of the `clockoff_csrf` cookie on every mutating request.",
         },
         mobileBearer: {
           type: "http",

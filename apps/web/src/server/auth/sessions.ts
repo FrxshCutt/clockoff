@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 import { generateToken, hashToken, DAY_MS, MINUTE_MS } from "@/lib/tokens";
 
 /**
- * Manager web sessions: opaque 32-byte token in the `wm_session` cookie, sha256 at rest, sliding
+ * Manager web sessions: opaque 32-byte token in the `clockoff_session` cookie, sha256 at rest, sliding
  * expiry (extended when less than half of the TTL remains), `lastSeenAt` refreshed at most once a
  * minute to avoid write amplification.
  */

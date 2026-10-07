@@ -18,27 +18,29 @@ describe("assertCsrf", () => {
     expect(() =>
       assertCsrf(
         req("POST", {
-          cookie: `wm_csrf=${token}`,
+          cookie: `clockoff_csrf=${token}`,
           "x-csrf-token": token,
           origin: env().APP_ORIGIN,
         }),
       ),
     ).not.toThrow();
     expect(() =>
-      assertCsrf(req("PATCH", { cookie: `wm_csrf=${token}`, "x-csrf-token": token })),
+      assertCsrf(req("PATCH", { cookie: `clockoff_csrf=${token}`, "x-csrf-token": token })),
     ).not.toThrow();
   });
 
   it("rejects missing / mismatched tokens and foreign origins", () => {
-    expect(() => assertCsrf(req("POST", { cookie: `wm_csrf=${token}` }))).toThrow(/CSRF/);
+    expect(() => assertCsrf(req("POST", { cookie: `clockoff_csrf=${token}` }))).toThrow(/CSRF/);
     expect(() => assertCsrf(req("POST", { "x-csrf-token": token }))).toThrow(/CSRF/);
     expect(() =>
-      assertCsrf(req("DELETE", { cookie: `wm_csrf=${token}`, "x-csrf-token": createCsrfToken() })),
+      assertCsrf(
+        req("DELETE", { cookie: `clockoff_csrf=${token}`, "x-csrf-token": createCsrfToken() }),
+      ),
     ).toThrow();
     expect(() =>
       assertCsrf(
         req("POST", {
-          cookie: `wm_csrf=${token}`,
+          cookie: `clockoff_csrf=${token}`,
           "x-csrf-token": token,
           origin: "https://evil.example",
         }),
@@ -50,9 +52,9 @@ describe("assertCsrf", () => {
 describe("ensureCsrfToken", () => {
   it("reuses a valid cookie and mints a new one otherwise", () => {
     const token = createCsrfToken();
-    expect(ensureCsrfToken(req("GET", { cookie: `wm_csrf=${token}` }))).toEqual({ token });
-    const minted = ensureCsrfToken(req("GET", { cookie: "wm_csrf=forged.value" }));
+    expect(ensureCsrfToken(req("GET", { cookie: `clockoff_csrf=${token}` }))).toEqual({ token });
+    const minted = ensureCsrfToken(req("GET", { cookie: "clockoff_csrf=forged.value" }));
     expect(minted.token).not.toBe("forged.value");
-    expect(minted.setCookie).toContain(`wm_csrf=${encodeURIComponent(minted.token)}`);
+    expect(minted.setCookie).toContain(`clockoff_csrf=${encodeURIComponent(minted.token)}`);
   });
 });

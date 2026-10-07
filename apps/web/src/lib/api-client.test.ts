@@ -61,11 +61,11 @@ describe("buildApiUrl", () => {
 
 describe("readCookieValue", () => {
   it("reads and decodes a single cookie", () => {
-    expect(readCookieValue("a=1; wm_csrf=abc%3D%3D; b=2", "wm_csrf")).toBe("abc==");
-    expect(readCookieValue("wm_csrf_old=x; wm_csrf=y", "wm_csrf")).toBe("y");
-    expect(readCookieValue("a=1", "wm_csrf")).toBeNull();
-    expect(readCookieValue("wm_csrf=", "wm_csrf")).toBeNull();
-    expect(readCookieValue("wm_csrf=%E0%A4%A", "wm_csrf")).toBe("%E0%A4%A");
+    expect(readCookieValue("a=1; clockoff_csrf=abc%3D%3D; b=2", "clockoff_csrf")).toBe("abc==");
+    expect(readCookieValue("clockoff_csrf_old=x; clockoff_csrf=y", "clockoff_csrf")).toBe("y");
+    expect(readCookieValue("a=1", "clockoff_csrf")).toBeNull();
+    expect(readCookieValue("clockoff_csrf=", "clockoff_csrf")).toBeNull();
+    expect(readCookieValue("clockoff_csrf=%E0%A4%A", "clockoff_csrf")).toBe("%E0%A4%A");
   });
 });
 
@@ -122,7 +122,7 @@ describe("apiFetch", () => {
   });
 
   it("GETs same-origin JSON without a CSRF header", async () => {
-    vi.stubGlobal("document", { cookie: "wm_csrf=tok123" });
+    vi.stubGlobal("document", { cookie: "clockoff_csrf=tok123" });
     const fetchFn = mockFetch(jsonResponse(200, { ok: true }));
     await expect(apiFetch<{ ok: boolean }>("/api/auth/me", { query: { a: 1 } })).resolves.toEqual({
       ok: true,
@@ -135,8 +135,8 @@ describe("apiFetch", () => {
     expect(sentHeaders(fetchFn).has("x-csrf-token")).toBe(false);
   });
 
-  it("sends JSON bodies with the CSRF token from the wm_csrf cookie on mutations", async () => {
-    vi.stubGlobal("document", { cookie: "other=1; wm_csrf=tok%2B123" });
+  it("sends JSON bodies with the CSRF token from the clockoff_csrf cookie on mutations", async () => {
+    vi.stubGlobal("document", { cookie: "other=1; clockoff_csrf=tok%2B123" });
     const fetchFn = mockFetch(jsonResponse(201, { ok: true }));
     await apiFetch("/api/organisations", { method: "POST", body: { name: "Acme" } });
     const init = fetchFn.mock.calls[0]?.[1];
@@ -168,7 +168,7 @@ describe("apiFetch", () => {
   });
 
   it("passes FormData through without a JSON content type", async () => {
-    vi.stubGlobal("document", { cookie: "wm_csrf=t" });
+    vi.stubGlobal("document", { cookie: "clockoff_csrf=t" });
     const fetchFn = mockFetch(jsonResponse(200, {}));
     const form = new FormData();
     form.append("file", "a,b");

@@ -15,7 +15,7 @@ export const GET = createHandler({ auth: "user" }, async ({ ctx }) => ({
 /**
  * `POST /api/organisations` `{ name, timezone, firstLocationName? }` → 201 `{ organisation, joinCode }`.
  * Creates the OWNER membership, optional first location and the ACTIVE company join code, and selects
- * the new organisation (`wm_org` cookie). Requires a verified email when `REQUIRE_EMAIL_VERIFICATION`.
+ * the new organisation (`clockoff_org` cookie). Requires a verified email when `REQUIRE_EMAIL_VERIFICATION`.
  */
 export const POST = createHandler(
   { auth: "user", emailVerification: "env", body: createOrganisationSchema },

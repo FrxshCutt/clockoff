@@ -4,7 +4,7 @@ import { createHandler, json } from "@/server/http/apiHandler";
 
 /**
  * `POST /api/auth/switch-organisation` `{ organisationId }` → `{ ok: true, currentOrganisationId }` and
- * the `wm_org` cookie. `NOT_FOUND` when the caller is not a member of that organisation.
+ * the `clockoff_org` cookie. `NOT_FOUND` when the caller is not a member of that organisation.
  */
 export const POST = createHandler(
   { auth: "user", body: switchOrganisationSchema },

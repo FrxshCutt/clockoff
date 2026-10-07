@@ -6,12 +6,12 @@ export const HOUR_MS = 60 * MINUTE_MS;
 export const DAY_MS = 24 * HOUR_MS;
 
 /**
- * Deterministic UUID for a seed key: the first 128 bits of sha256("workmode-seed:" + key) laid out as an
+ * Deterministic UUID for a seed key: the first 128 bits of sha256("clockoff-seed:" + key) laid out as an
  * RFC 9562 UUID (version nibble 4, variant 10xx), so `@db.Uuid` columns and `z.uuid()` both accept it. The
  * same key yields the same id on every run — bookmarked dashboard URLs and e2e fixtures survive a re-seed.
  */
 export function stableId(key: string): string {
-  const hex = createHash("sha256").update(`workmode-seed:${key}`).digest("hex");
+  const hex = createHash("sha256").update(`clockoff-seed:${key}`).digest("hex");
   const variantNibble = ((parseInt(hex.charAt(16), 16) & 0x3) | 0x8).toString(16);
   const body = `${hex.slice(0, 12)}4${hex.slice(13, 16)}${variantNibble}${hex.slice(17, 32)}`;
   return [

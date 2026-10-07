@@ -10,7 +10,7 @@ import { allowedOriginForRequest, readHostRoutingConfig } from "@/server/http/ho
  *
  * 1. Origin check — the middleware enforces `Origin === APP_URL` (or same-origin `Sec-Fetch-Site`) for
  *    every non-GET `/api/*` request; this module re-checks a present `Origin` header as defence in depth.
- * 2. Double submit — the `wm_csrf` cookie (signed, readable by JS) must be echoed in `x-csrf-token`.
+ * 2. Double submit — the `clockoff_csrf` cookie (signed, readable by JS) must be echoed in `x-csrf-token`.
  */
 
 /**
