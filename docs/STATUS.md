@@ -7,22 +7,27 @@ partial, and what needs external credentials or hardware that were not available
 
 All 26 build stages are implemented. Every quality gate passes on the build machine:
 
-| Gate                                                 | Result                                                                                                       |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | clean                                                                                                        |
-| `packages/shared` unit tests                         | 1,930 passed                                                                                                 |
-| `packages/validation` unit tests                     | 107 passed                                                                                                   |
-| `packages/db` unit tests                             | 7 passed                                                                                                     |
-| `apps/web` unit tests                                | 847 passed                                                                                                   |
-| `apps/web` integration tests (real Postgres)         | 353 passed, incl. 85-case tenant-isolation matrix and the Definition-of-Done journey                         |
-| Playwright manager journey (`apps/web/e2e`)          | passes on a fresh `pnpm dev`                                                                                 |
-| `pnpm build` (Next.js production build)              | succeeds                                                                                                     |
-| iOS `make build` / `make test`                       | ClockOffCore 195, ClockOffScreenTime 4, app 134 passed (1 Keychain test skipped on unsigned simulator hosts) |
-| iOS `make build-release`                             | succeeds with the real Apple provider; `Scripts/verify-release.sh` confirms no mock code ships               |
+| Gate                                                  | Result                                                                                                               |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck` · `pnpm lint` · `pnpm format:check`  | clean                                                                                                                |
+| `packages/shared` unit tests                          | 1,930 passed                                                                                                         |
+| `packages/validation` unit tests                      | 114 passed                                                                                                           |
+| `packages/db` unit tests                              | 7 passed                                                                                                             |
+| `apps/web` unit tests                                 | 860 passed                                                                                                           |
+| `apps/web` integration tests (real Postgres)          | 364 passed, incl. 85-case tenant-isolation matrix and the Definition-of-Done journey                                 |
+| Playwright manager journey (`apps/web/e2e`)           | passes on a fresh `pnpm dev`                                                                                         |
+| `pnpm build` (Next.js production build)               | succeeds                                                                                                             |
+| iOS `make build` / `make test`                        | ClockOffCore 195, ClockOffScreenTime 4, app 145 passed (1 Keychain test skipped on unsigned simulator hosts)         |
+| iOS `make build-release`                              | succeeds with the real Apple provider; `Scripts/verify-release.sh` confirms no mock code or Diagnostics screen ships |
+| iOS Debug build for a device (`generic/platform=iOS`) | succeeds (compiles the real Screen Time provider path and the Diagnostics screen)                                    |
 
-The one thing that could **not** be exercised is real Screen Time enforcement on a physical iPhone: this Mac
-has no code-signing identity, and Apple's FamilyControls / ManagedSettings / DeviceActivity only enforce on a
-device. Everything around it is built, compiled for Release, and covered by tests with the mock provider.
+Real Screen Time enforcement on a physical iPhone has **not been verified yet**. Apple's FamilyControls,
+ManagedSettings and DeviceActivity only enforce on a device. Everything around them is built, compiled for
+Release and covered by tests with the mock provider.
+
+Signing works since 2026-10-07: a signed Debug build (production API, real provider) was installed and
+launched on the owner's iPhone. The owner's checklist is `docs/DEVICE_TESTING.md` (see "On-device testing
+and TestFlight" below). Definition of Done items 7–10 stay "device pending" until it has been run.
 
 ## Definition of Done
 
@@ -45,21 +50,45 @@ device. Everything around it is built, compiled for Release, and covered by test
 
 ### Manual device script (items 5–10 on hardware)
 
-`docs/SCREEN_TIME_IMPLEMENTATION.md` §11 has the step-by-step script. In short: set your team in
-`apps/ios/Config/Signing.local.xcconfig`, point `API_BASE_URL` at `http://<your Mac's LAN IP>:3000/api/mobile/v1` in `Config/Local.xcconfig`,
-build the Debug scheme with the mock condition switched off, join with a seeded employee, schedule a shift
-starting 5 minutes ahead, close the app, and confirm the shield appears at the start time, relaxes during a
-break, returns at break end and lifts at shift end.
+`docs/DEVICE_TESTING.md` is the owner's step-by-step checklist. It has ten steps, and each says what the
+phone, the Diagnostics screen and the dashboard should show:
+
+1. Fresh install and join ClockOff Test with `SCALE-0090`.
+2. Approve Screen Time access.
+3. Select apps and categories.
+4. "Create test shift…", then Force sync, so the DeviceActivity appears.
+5. With the app closed, the shield appears at the shift start.
+6. A break relaxes the shields, and they return at the break end with the app closed.
+7. The shields lift at the shift end.
+8. The shields survive a reboot mid-shift.
+9. Restrictions apply on schedule in Airplane Mode.
+10. Revoking Screen Time access shows Action Required, and "Permissions missing" on the dashboard.
+
+`docs/SCREEN_TIME_IMPLEMENTATION.md` §11 keeps the engineering version, which adds the `RELAX_CATEGORIES`
+and manager-override cases.
+
+## On-device testing and TestFlight
+
+| Piece                | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Signing              | ✅ `apps/ios/Config/Signing.xcconfig`: `DEVELOPMENT_TEAM = 78B9UY2V8C`, automatic signing. Development profiles exist for the four bundle ids. A local App Store export (2026-10-07) signed all four with Family Controls and the App Group, and the app with `aps-environment = production`, so the Family Controls distribution entitlement is in place.                                                                                                                                                                                                                                                                                                                                                                               |
+| Device builds        | ✅ Debug builds for a physical iPhone (`[sdk=iphoneos*]` in `Config/Debug.xcconfig`) use `https://app.clockoff.online/api/mobile/v1` and Apple's real Screen Time provider, with no "simulated" banner. The simulator keeps `localhost` and the mock. Install with Xcode Run or `make -C apps/ios device-install` (`xcodebuild -allowProvisioningUpdates` + `xcrun devicectl`).                                                                                                                                                                                                                                                                                                                                                          |
+| Owner's iPhone       | ✅ An iPhone17,3 on iOS 26.6.2, registered with the team (automatic signing created the Apple Development certificate and profiles). The current Debug build — production API, real Screen Time provider, Diagnostics screen, three extensions embedded — was installed on 2026-10-07 at 21:42 from commit `53c31a0` (`make -C apps/ios device-install`). The phone was locked, so iOS refused the automatic launch; open ClockOff from the Home Screen.                                                                                                                                                                                                                                                                                 |
+| Diagnostics screen   | ✅ Debug builds only: Settings › tap "App version" five times. It shows the live Screen Time state, the selection counts, the engine state and its reason, the registered DeviceActivity schedules against `plans.json`, the shield stores, the App Group contents and the sync metadata. It has buttons to force a sync, re-plan, clear shields and copy a report (counts and states only). `verify-release.sh` fails if it reaches a Release binary.                                                                                                                                                                                                                                                                                   |
+| Test organisation    | ✅ **ClockOff Test** in production: id `77340865-337d-4ab5-8a18-8f75bf5ab306`, company code **`SCALE-0090`**, location "Test site", employee "Zach Stephens", Work Policy "Standard Staff" (Social Media, Games, Entertainment) and Break Policy "Standard Break" (2 × 15 min `RELAX_ALL`, from the shift start, no gap), both defaults. It is owned by the owner account and created or found again by `apps/web/scripts/setup-test-organisation.ts` (idempotent).                                                                                                                                                                                                                                                                      |
+| "Create test shift…" | ⏳ Built and tested (dashboard action on the employee and Schedule pages; `POST /api/test-tools/test-shift`: 15–480 minutes, starting 1–240 minutes from now, created through `createShift`, 30 per hour; only for organisations in `TEST_TOOLS_ORGANISATION_IDS`). `TEST_TOOLS_ORGANISATION_IDS=77340865-337d-4ab5-8a18-8f75bf5ab306` is set on the Netlify site, but the deploy of commit `7f8256f` was **skipped by Netlify: "account credit usage exceeded"** (the Free plan's monthly credits are used up), so production still runs `3ac25d4` and the button is not live yet. Until it is, create an ordinary shift on the Schedule page (starts ≥ 20 minutes from now, lasts ≥ 15 minutes).                                       |
+| TestFlight           | ✅ Build **202610072043** (version 0.1.0) of commit `53c31a0` was archived, passed `verify-release.sh`, signed with the Apple Distribution certificate (Family Controls and production push in all four App Store profiles) and **uploaded on 2026-10-07 at 21:45 UTC**; App Store Connect answered "Uploaded package is processing". Processing status was not polled: the App Store Connect API key file (`AuthKey_7JXT9C365S.p8`) is not on the build Mac, so the upload used the Apple ID signed into Xcode. Pipeline: `make -C apps/ios testflight` (`Scripts/testflight.sh`, `ExportOptions.plist`, date-based build numbers; with the key at `ASC_API_KEY_PATH` it also waits for processing via `Scripts/asc-build-status.mjs`). |
+| Device checklist     | ⏳ Not run yet: needs the owner and the phone (`docs/DEVICE_TESTING.md`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 ## Needs external credentials or accounts
 
-| What                                                                | Why it matters                                                                                                                                                                       | How to configure                                                                                                                                                                   |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Apple Developer team + Family Controls **distribution** entitlement | Real-device builds and App Store distribution. All four bundle ids carry the entitlement (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)                 | Request the distribution entitlement from Apple for each id; put `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig`; see `docs/IOS_SETUP.md`                           |
-| APNs auth key                                                       | Silent pushes that make phones re-sync immediately after policy/schedule/override changes. Without it, phones sync on launch, foreground, background refresh (~15 min) and reconnect | Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_BASE64`, `APNS_BUNDLE_ID`, `APNS_ENVIRONMENT`; `ApnsPushProvider` is selected automatically                                            |
-| Email delivery                                                      | Verification, password reset and invite emails go through Resend (`EMAIL_PROVIDER=resend`) from `noreply@clockoff.online`                                                            | Live: the domain is verified in Resend, its records are in the Cloudflare zone (`docs/DNS_RECORDS.md`), and `EMAIL_PROVIDER`, `EMAIL_FROM` and `RESEND_API_KEY` are set on Netlify |
-| Planday (or other workforce provider)                               | Automatic schedule sync and clock-in activation                                                                                                                                      | All six providers are registered as Coming Soon; `docs/INTEGRATIONS.md` describes how to implement Planday against the `WorkforceProvider` interface                               |
-| App Store Connect                                                   | TestFlight/App Store distribution                                                                                                                                                    | Not started; see Deployment → Manual steps                                                                                                                                         |
+| What                                                                | Why it matters                                                                                                                                                                       | How to configure                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Apple Developer team + Family Controls **distribution** entitlement | Real-device builds and App Store distribution. All four bundle ids carry the entitlement (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)                 | ✅ Team `78B9UY2V8C` in `apps/ios/Config/Signing.xcconfig`, automatic signing; device builds and an App Store export with Family Controls work (`docs/IOS_SETUP.md`)                                                                                                                       |
+| APNs auth key                                                       | Silent pushes that make phones re-sync immediately after policy/schedule/override changes. Without it, phones sync on launch, foreground, background refresh (~15 min) and reconnect | Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_BASE64`, `APNS_BUNDLE_ID`, `APNS_ENVIRONMENT`; `ApnsPushProvider` is selected automatically                                                                                                                                                    |
+| Email delivery                                                      | Verification, password reset and invite emails go through Resend (`EMAIL_PROVIDER=resend`) from `noreply@clockoff.online`                                                            | Live: the domain is verified in Resend, its records are in the Cloudflare zone (`docs/DNS_RECORDS.md`), and `EMAIL_PROVIDER`, `EMAIL_FROM` and `RESEND_API_KEY` are set on Netlify                                                                                                         |
+| Planday (or other workforce provider)                               | Automatic schedule sync and clock-in activation                                                                                                                                      | All six providers are registered as Coming Soon; `docs/INTEGRATIONS.md` describes how to implement Planday against the `WorkforceProvider` interface                                                                                                                                       |
+| App Store Connect                                                   | TestFlight/App Store distribution                                                                                                                                                    | `make -C apps/ios testflight` is ready (`docs/IOS_SETUP.md` › "TestFlight"). It needs the app record for `online.clockoff.app` and testers. An App Store Connect API key (`ASC_API_KEY_*`) is optional and enables unattended uploads and processing status. See Deployment → Manual steps |
 
 ## Partial or deliberately limited
 
@@ -100,7 +129,7 @@ edited by hand. The domain is still registered at IONOS, and the IONOS mailbox i
 | Mobile API errors                                               | ✅ Bad or unknown join requests on `app.clockoff.online` return structured 4xx JSON (`VALIDATION_ERROR` 400 with field details, `INVALID_COMPANY_CODE` 404, malformed JSON 400).                                                                                                                                                                                                                                                                                                                                                                          |
 | Email (Resend, `noreply@clockoff.online`)                       | ✅ Domain verified by Resend (all four records). A test email to `support@clockoff.online` was delivered at 22:40 UTC. A throwaway manager registration received its verification email through the app, verified through the link and signed in; the account was then deleted and the database is empty again. SPF and bounces use the `send` subdomain; the apex SPF is untouched.                                                                                                                                                                      |
 | Scheduled tick (`work-mode-tick`, every minute)                 | ✅ Succeeding once a minute since 21:01 UTC (3–5 s per run, because the database is across the Atlantic), with no errors. Before `app.clockoff.online` resolved, each run failed with a DNS-lookup error and Netlify retried it about 3 times; the tick is idempotent, so the retries were harmless.                                                                                                                                                                                                                                                      |
-| iOS Release build                                               | ✅ Points at `https://app.clockoff.online/api/mobile/v1` (`verify-release.sh` enforces https and the path). Not distributed yet (see the manual steps).                                                                                                                                                                                                                                                                                                                                                                                                   |
+| iOS Release build                                               | ✅ Points at `https://app.clockoff.online/api/mobile/v1` (`verify-release.sh` enforces https and the path). TestFlight pipeline ready (`make testflight`); see "On-device testing and TestFlight".                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Mocked or limited in production
 
@@ -139,23 +168,28 @@ session is no longer recognised. Nothing else is needed. Existing local checkout
    Cloudflare token with the same scope (Zone → DNS → Edit on `clockoff.online` only), store it as
    `DNS_API_TOKEN` in `.env.deploy`, and revoke the old one; it is never set on Netlify. The deploy key and
    webhook do not need rotating.
-2. **Apple Developer Program and the new identifiers.** The first rename (D-021) gave the app new bundle ids,
-   so everything Apple-side is created under them (nothing under `com.workmode.*` carries over):
-   - register the App IDs `online.clockoff.app`, `online.clockoff.app.devicemonitor`,
-     `online.clockoff.app.shieldconfig` and `online.clockoff.app.shieldaction`;
-   - register the App Group `group.online.clockoff.app.shared` and enable it, plus Family Controls, on all four;
-   - request the **Family Controls (Distribution)** entitlement for all four ids;
-   - create the provisioning profiles for them (Xcode automatic signing does this once the team is set), and set
-     `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig` (`docs/IOS_SETUP.md`).
+2. **Apple Developer Program and the new identifiers: done (2026-10-07).** Team `78B9UY2V8C` is set in
+   `apps/ios/Config/Signing.xcconfig`. The four App IDs, the App Group and Family Controls are in place, and
+   automatic signing produced development and App Store profiles. A signed Debug build runs on the owner's
+   iPhone.
 3. **APNs auth key** (Apple Developer → Keys → enable Apple Push Notifications service). Set `APNS_KEY_ID`,
    `APNS_TEAM_ID`, `APNS_P8_BASE64` (base64 of the `.p8`), `APNS_BUNDLE_ID=online.clockoff.app` and
    `APNS_ENVIRONMENT=production` on Netlify, then redeploy. The app switches to real silent pushes
    automatically. Push notifications need this.
-4. **App Store Connect and TestFlight**: create the app record for `online.clockoff.app` (name ClockOff), archive
-   the Release scheme `ClockOffApp` with your signing team, upload it and add testers. Once the app is listed, set
-   `NEXT_PUBLIC_APP_STORE_URL` on Netlify so invite instructions link to it (until then they link to the web app).
-5. **Run the physical-device script** (Definition of Done items 7–10, above) on a real iPhone against
-   production or a local server.
+4. **App Store Connect and TestFlight.**
+   - Make sure the app record for `online.clockoff.app` (name ClockOff) exists.
+   - Run `make -C apps/ios testflight`: it archives, verifies, signs and uploads, with the Apple ID in Xcode or
+     an App Store Connect API key. An API key (`ASC_API_KEY_ID`, `ASC_API_ISSUER_ID` and `ASC_API_KEY_PATH`
+     to a `.p8` outside the repo) lets the script wait for processing.
+   - Add testers in TestFlight once the build is processed.
+   - Once the app is listed, set `NEXT_PUBLIC_APP_STORE_URL` on Netlify so invite instructions link to it.
+     Until then they link to the web app.
+5. **Run the device checklist** (`docs/DEVICE_TESTING.md`; Definition of Done items 7–10) on the iPhone.
+   - The current Debug build with the Diagnostics screen is already installed (reinstall any time with
+     `make -C apps/ios device-install`).
+   - "Create test shift…" goes live with the next successful Netlify deploy (the variable is already set);
+     until then add the test shift on the Schedule page by hand.
+   - Record the results in the checklist's table.
 6. **Optional: Netlify Pro** and move the functions region to London to remove the US-region limitation.
 7. **Optional: DMARC reporting.** The `_dmarc` CNAME to IONOS (`v=DMARC1; p=none;`) already satisfies Resend.
    If you want aggregate reports, replace that CNAME with **one** TXT record, for example
@@ -166,4 +200,6 @@ session is no longer recognised. Nothing else is needed. Existing local checkout
 
 - Decisions and assumptions: `docs/DECISIONS.md`
 - How to run everything: `README.md`, `docs/LOCAL_DEVELOPMENT.md`
+- iOS builds, signing, device installs and TestFlight: `docs/IOS_SETUP.md`; the on-device checklist:
+  `docs/DEVICE_TESTING.md`
 - Tests and how to add tenant-isolation cases: `docs/TESTING.md`, `docs/DEVELOPER_GUIDE.md`

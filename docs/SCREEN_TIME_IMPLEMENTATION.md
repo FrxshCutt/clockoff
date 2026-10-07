@@ -280,13 +280,19 @@ reaches a Release binary.
 
 ## 11. Manual device test script
 
-Prerequisites: a physical iPhone (iOS 16.4+), the four App IDs with Family Controls (development) and the
-App Group, `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`, a Debug build pointed at a reachable API
-(`Config/Local.xcconfig`, `CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =`), and a dashboard login to the same
-organisation. Watch `log stream --predicate 'subsystem == "online.clockoff.app"'` from a Mac with the phone
-attached. Use a Work Policy blocking Social Media + Games, a break policy with 2 × 15 min breaks
-(`minMinutesAfterShiftStart` 0, `minGapBetweenBreaksMinutes` 0) and, for step 7b, a second break policy with
-`RELAX_CATEGORIES` [Social Media].
+`docs/DEVICE_TESTING.md` is the owner's step-by-step version of this script, with what to check on the
+Debug-only Diagnostics screen.
+
+**Prerequisites**
+
+- A physical iPhone (iOS 16.4+) with a Debug build: `make -C apps/ios device-install`, or Run from Xcode. It
+  is signed automatically for team `78B9UY2V8C`. Device Debug builds use production and the real provider
+  (`docs/IOS_SETUP.md`).
+- A dashboard login to the same organisation (production: ClockOff Test).
+- Console on a Mac with the phone selected, filtered on subsystem `online.clockoff.app`, to watch the logs.
+- A Work Policy blocking Social Media + Games, and a break policy with 2 × 15 min breaks
+  (`minMinutesAfterShiftStart` 0, `minGapBetweenBreaksMinutes` 0).
+- For step 7b, a second break policy with `RELAX_CATEGORIES` [Social Media].
 
 The numbered steps mirror the product Definition of Done items 5–10 (the repository holds no copy of that
 list; this is the Screen Time end-to-end sequence those items describe).
@@ -295,7 +301,7 @@ list; this is the Screen Time end-to-end sequence those items describe).
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 5   | Join with the company code; on screen 6 tap "Allow Screen Time access" and approve; on screen 7 pick a social app, a game, and the Social Media and Games categories; complete setup.                          | iOS prompt shown once; `PERMISSION_GRANTED`, `SELECTION_CONFIGURED` (counts only) and `SETUP_COMPLETED` appear in the dashboard activity; device status shows selection counts (e.g. 2 categories, 2 apps), never names.                                                                                                                                                                                             |
 | 6   | Schedule a shift starting in ~20 minutes. Sync (pull to refresh). **Force-quit the app.** Wait.                                                                                                                | 15 min before: Home (on reopen) says "Starting soon". At the start minute, with the app still closed, the picked apps show the ClockOff shield (employer name, "Work Mode is active until HH:mm" or the policy message). Dashboard: `WORK_MODE_STARTED` (reason `INTERVAL_STARTED`) after the phone next syncs; device status Working. Tap "Open ClockOff" on a shield, reopen the app → the status screen is shown. |
-| 7   | Open the app, tap "Take a break" (15 min). Force-quit. Wait 15 min.                                                                                                                                            | The shielded apps open immediately (RELAX_ALL). `BREAK_STARTED` in the dashboard. At the planned end, with the app closed, the shields return within one minute; `BREAK_EXPIRED` after the next sync. Repeat with a 5-minute break: the shields return at ~15 minutes after the start with the app closed, at 5 minutes with it open.                                                                                |
+| 7   | Open the app, tap "Start Break" (15 min). Force-quit. Wait 15 min.                                                                                                                                             | The shielded apps open immediately (RELAX_ALL). `BREAK_STARTED` in the dashboard. At the planned end, with the app closed, the shields return within one minute; `BREAK_EXPIRED` after the next sync. Repeat with a 5-minute break: the shields return at ~15 minutes after the start with the app closed, at 5 minutes with it open.                                                                                |
 | 7b  | Switch the employee to the `RELAX_CATEGORIES` break policy, sync, take a break **before** making the second selection; then make the "Keep blocked on breaks" selection (game + Games) and take another break. | First break: everything stays blocked and the app shows "Selection incomplete". Second break: the social app opens, the game stays shielded.                                                                                                                                                                                                                                                                         |
 | 8   | Let the shift reach its end (or shorten it from the dashboard and sync) with the app closed, once during a break.                                                                                              | Shields lift at the end minute; a running break is ended with the shift (`BREAK_ENDED` then `WORK_MODE_ENDED`). Reopen: "Off shift".                                                                                                                                                                                                                                                                                 |
 | 9   | During a shift, from the dashboard apply "Exempt temporarily" (15 min), then sync the phone (foreground). Let it expire.                                                                                       | Shields lift at once; Home "Work Mode paused" with the resume time; `WORK_MODE_ENDED` with the override id; at expiry shields return, `WORK_MODE_STARTED`.                                                                                                                                                                                                                                                           |

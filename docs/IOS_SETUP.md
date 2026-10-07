@@ -25,8 +25,11 @@ All four run unsigned (`CODE_SIGNING_ALLOWED=NO`), so no Apple Developer account
 simulator, run `make test SIMULATOR="iPhone 16"`. Build output goes to `apps/ios/build/` (git-ignored).
 
 To run the app, open `apps/ios/ClockOff.xcodeproj`, choose the **ClockOffApp** scheme and a simulator, and
-press Run. Start the API first (`pnpm dev` at the repo root). The Debug build talks to the mobile API at
-`http://localhost:3000/api/mobile/v1`.
+press Run. Start the API first (`pnpm dev` at the repo root). The Debug build for the simulator talks to the
+mobile API at `http://localhost:3000/api/mobile/v1`.
+
+For a physical iPhone, see "Installing on an iPhone" (`make device-install`). For TestFlight, see
+"TestFlight" (`make testflight`). The owner's on-device checklist is `docs/DEVICE_TESTING.md`.
 
 ## Targets
 
@@ -45,21 +48,26 @@ extension also imports UIKit, because `ShieldConfiguration` takes `UIColor`s.
 
 ## Configuration (xcconfig)
 
-| File                      | What it sets                                                                                                                                                             |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Config/Base.xcconfig`    | Version numbers, deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                                         |
-| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM` (blank), bundle ids, `CLOCKOFF_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                              |
-| `Config/Debug.xcconfig`   | `DEBUG_MOCK_RESTRICTIONS`, `API_BASE_URL = http://localhost:3000/api/mobile/v1`, local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
-| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.clockoff.online/api/mobile/v1` (the production mobile API), APNs production.                                      |
+| File                      | What it sets                                                                                                                                                                                                                                                                                                           |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Config/Base.xcconfig`    | `MARKETING_VERSION` (`0.1.0`), `CURRENT_PROJECT_VERSION` (`1`; `make testflight` overrides it with a date-based build number), deployment target, Swift settings. Includes `Signing.xcconfig`.                                                                                                                         |
+| `Config/Signing.xcconfig` | `DEVELOPMENT_TEAM = 78B9UY2V8C`, `CODE_SIGN_STYLE = Automatic`, bundle ids, `CLOCKOFF_APP_GROUP`. Optionally includes the git-ignored `Signing.local.xcconfig`.                                                                                                                                                        |
+| `Config/Debug.xcconfig`   | `DEBUG`. Simulator: `DEBUG_MOCK_RESTRICTIONS` and `API_BASE_URL = http://localhost:3000/api/mobile/v1`. Physical iPhone (`[sdk=iphoneos*]`): no mock condition and `API_BASE_URL = https://app.clockoff.online/api/mobile/v1`. Local HTTP allowed, APNs sandbox. Optionally includes the git-ignored `Local.xcconfig`. |
+| `Config/Release.xcconfig` | No compilation conditions, `API_BASE_URL = https://app.clockoff.online/api/mobile/v1` (the production mobile API), APNs production.                                                                                                                                                                                    |
 
 Settings that matter:
 
-| Setting                               | Debug                                 | Release                                     | Used by                                                                                      |
-| ------------------------------------- | ------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS`       | _(empty)_                                   | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`                             |
-| `API_BASE_URL`                        | `http://localhost:3000/api/mobile/v1` | `https://app.clockoff.online/api/mobile/v1` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL` → `APIClientConfiguration.baseURL` |
-| `CLOCKOFF_ALLOW_LOCAL_HTTP`           | `YES`                                 | `NO`                                        | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription`            |
-| `CLOCKOFF_PUSH_ENVIRONMENT`           | `sandbox`                             | `production`                                | Info.plist `ClockOffPushEnvironment`, sent with the push token                               |
+| Setting                               | Debug, simulator                      | Debug, iPhone (`[sdk=iphoneos*]`)           | Release                                     | Used by                                                                                                       |
+| ------------------------------------- | ------------------------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `SWIFT_ACTIVE_COMPILATION_CONDITIONS` | `DEBUG DEBUG_MOCK_RESTRICTIONS`       | `DEBUG`                                     | _(empty)_                                   | `#if DEBUG_MOCK_RESTRICTIONS` compiles `MockRestrictionProvider`; `#if DEBUG` compiles the Diagnostics screen |
+| `API_BASE_URL`                        | `http://localhost:3000/api/mobile/v1` | `https://app.clockoff.online/api/mobile/v1` | `https://app.clockoff.online/api/mobile/v1` | Info.plist `API_BASE_URL` → `AppConfiguration.apiBaseURL` → `APIClientConfiguration.baseURL`                  |
+| `CLOCKOFF_ALLOW_LOCAL_HTTP`           | `YES`                                 | `YES`                                       | `NO`                                        | A build phase adds `NSAllowsLocalNetworking` and `NSLocalNetworkUsageDescription`                             |
+| `CLOCKOFF_PUSH_ENVIRONMENT`           | `sandbox`                             | `sandbox`                                   | `production`                                | Info.plist `ClockOffPushEnvironment`, sent with the push token                                                |
+
+The mock condition is set through `CLOCKOFF_MOCK_RESTRICTIONS_CONDITION`, which `Debug.xcconfig` empties for
+`[sdk=iphoneos*]`. A Debug build on a phone is therefore a real build: it talks to production, uses Apple's
+Screen Time provider and shows no "DEVELOPMENT MODE" banner. It differs from Release in its optimisation and
+in the Debug-only extras: the Diagnostics screen, local HTTP and the APNs sandbox.
 
 `API_BASE_URL` is the **root of the mobile API**, not the server origin: the client appends endpoint paths
 such as `/sync` to it (`Endpoint.url(apiRoot:)`, which keeps the root's path and puts exactly one `/` between
@@ -74,13 +82,17 @@ In xcconfig, `//` starts a comment. URLs are therefore written as `http:/$()/hos
 Per-developer overrides go in two git-ignored files, so nothing personal is committed:
 
 ```xcconfig
-// apps/ios/Config/Signing.local.xcconfig — used by Debug AND Release
+// apps/ios/Config/Signing.local.xcconfig — used by Debug AND Release; only to sign with another team
 DEVELOPMENT_TEAM = ABCDE12345
 
 // apps/ios/Config/Local.xcconfig — Debug only
-API_BASE_URL = http:/$()/my-mac.local:3000/api/mobile/v1
-CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =      // use the real Screen Time provider in Debug on a device
+API_BASE_URL[sdk=iphoneos*] = http:/$()/my-mac.local:3000/api/mobile/v1   // a phone against your Mac
+CLOCKOFF_MOCK_RESTRICTIONS_CONDITION[sdk=iphoneos*] = DEBUG_MOCK_RESTRICTIONS   // force the mock on a phone
 ```
+
+Keep the `[sdk=iphoneos*]` condition. `Local.xcconfig` is included last, so an unconditional value there
+replaces the setting for the simulator as well. An unconditional `CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =`
+removes the mock from simulator builds and breaks `make test`.
 
 ## Capabilities
 
@@ -108,11 +120,12 @@ it. `make build-release` fails if any of the four targets loses it.
 
 - **Development:** Family Controls works on a real device with the development entitlement, which any team
   can use once the capability is enabled for each App ID.
-- **Distribution (TestFlight/App Store):** request the Family Controls distribution entitlement from Apple
-  for **each** of the four bundle ids (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`,
-  `.shieldaction`) via Account › Certificates, IDs & Profiles › the App ID › Additional Capabilities, or the
-  Family Controls request form. Until Apple approves it, distribution builds cannot be signed with the
-  entitlement.
+- **Distribution (TestFlight/App Store):** App Store profiles carry Family Controls only once Apple has
+  approved the Family Controls (Distribution) entitlement for **each** of the four bundle ids
+  (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`). It is requested via Account ›
+  Certificates, IDs & Profiles › the App ID › Additional Capabilities, or the Family Controls request form.
+  Team `78B9UY2V8C` has it. On 2026-10-07 a local App Store export signed all four bundles with
+  `com.apple.developer.family-controls` and the App Group, and the app with `aps-environment = production`.
 - `NSFamilyControlsUsageDescription` in the app's Info.plist explains Screen Time access in plain words:
   blocking runs only during shifts, and the employer never sees which apps are chosen or how the phone is
   used.
@@ -136,21 +149,144 @@ DeviceActivity schedules, not by background refresh.
 
 ## Signing
 
-No signing identity exists on the build machine, so `DEVELOPMENT_TEAM` is blank and every `make` target
-builds unsigned. To sign for a device:
+`Config/Signing.xcconfig` sets `DEVELOPMENT_TEAM = 78B9UY2V8C` (the team that owns the `online.clockoff.app`
+App IDs, the App Group and the App Store Connect record) and `CODE_SIGN_STYLE = Automatic`. The simulator
+targets (`make build`, `make test`, `make build-release`) still pass `CODE_SIGNING_ALLOWED=NO`, so they need
+no account. Device builds, archives and exports sign automatically.
 
-1. In the Apple Developer portal, register four explicit App IDs: `online.clockoff.app`,
-   `online.clockoff.app.devicemonitor`, `online.clockoff.app.shieldconfig` and `online.clockoff.app.shieldaction`.
-2. Create the App Group `group.online.clockoff.app.shared`. Enable **App Groups** on all four App IDs and
-   assign the group.
-3. Enable **Family Controls** on all four App IDs, and **Push Notifications** on the app.
-4. Put your Team ID in `apps/ios/Config/Signing.local.xcconfig` (`DEVELOPMENT_TEAM = …`).
-5. Run `make generate` (only needed after editing `project.yml`), open the project and run on your device.
-   Signing is automatic.
+- Xcode needs an Apple ID with access to the team (Xcode › Settings › Accounts).
+- Command-line builds pass `-allowProvisioningUpdates`, so `xcodebuild` may create the development
+  certificate and profiles and register a new iPhone. It uses that Apple ID, or an App Store Connect API
+  key (see "TestFlight").
+- The four explicit App IDs (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)
+  carry App Groups (`group.online.clockoff.app.shared`) and Family Controls; the app also carries Push
+  Notifications.
 
-With a free personal team, bundle ids must be globally unique. Override all five `CLOCKOFF_*_BUNDLE_ID`
-values in `Signing.local.xcconfig`, plus `CLOCKOFF_APP_GROUP`. Keep the entitlements and
+To sign with a different team (for example a free personal team), set `DEVELOPMENT_TEAM` in the git-ignored
+`apps/ios/Config/Signing.local.xcconfig`. A personal team needs globally unique bundle ids, so also override
+all five `CLOCKOFF_*_BUNDLE_ID` values and `CLOCKOFF_APP_GROUP`. Keep the entitlements and
 `AppGroup.identifier` in step with the group.
+
+To check that the device-only code (the real provider path) compiles without signing anything:
+
+```sh
+cd apps/ios
+xcodebuild -project ClockOff.xcodeproj -scheme ClockOffApp -configuration Debug -destination 'generic/platform=iOS' \
+  -derivedDataPath build/DeviceCompileCheck CODE_SIGNING_ALLOWED=NO build
+```
+
+## Installing on an iPhone
+
+The phone needs:
+
+- iOS 16.4 or later.
+- **Developer Mode** (Settings › Privacy & Security › Developer Mode, then restart).
+- Pairing with the Mac: connect it by cable, unlock it and tap **Trust**.
+
+The Debug build it gets uses production (`https://app.clockoff.online/api/mobile/v1`) and Apple's real
+Screen Time provider, and includes the Diagnostics screen.
+
+**Xcode:** open `ClockOff.xcodeproj`, choose the **ClockOffApp** scheme and the iPhone, and press Run. Stop
+the run (⌘.) before testing Work Mode, and start ClockOff from the Home Screen. A debugger session keeps the
+app alive, which hides what happens when it is closed.
+
+**Command line:**
+
+```sh
+make -C apps/ios device-install
+```
+
+`Scripts/device-install.sh` does the following:
+
+1. Picks the first paired physical iPhone from `xcrun devicectl list devices`.
+2. Builds Debug for it with `xcodebuild -destination "platform=iOS,id=<udid>" -allowProvisioningUpdates`
+   into `build/DeviceDerivedData`.
+3. Prints the embedded extensions.
+4. Installs the app with `xcrun devicectl device install app --device <id> <ClockOffApp.app>`.
+5. Launches `online.clockoff.app` with `xcrun devicectl device process launch --terminate-existing`.
+
+Run the same commands by hand to target a particular phone.
+
+Install again after code changes. Every Debug build shows version `0.1.0 (1)`.
+
+## Diagnostics screen (Debug builds only)
+
+**Opening it:** Settings › Device › tap **App version** five times, each tap within 1.5 s of the last. This
+pushes **Diagnostics**. It is reachable once onboarding is complete.
+
+**What it shows**, refreshed every 2 seconds while visible, on foreground and when Screen Time access
+changes:
+
+| Section                  | Contents                                                                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Snapshot                 | Capture time, app version, time zone                                                                                                                                               |
+| Screen Time access       | Family Controls status, the permission reported to the workplace, which provider is active                                                                                         |
+| App selection            | Counts only, never names or tokens                                                                                                                                                 |
+| Work Mode engine         | What the app shows, the engine state and the reason it computed it, the expected restriction, and what the shield stores read back as                                              |
+| DeviceActivity schedules | `DeviceActivityCenter().activities` with `schedule(for:)` on a phone; the mock's list on the simulator                                                                             |
+| plans.json               | Entries, and whether each is registered with iOS                                                                                                                                   |
+| Shield stores            | Which sets are set, and their token counts, in the `.work` and `.breakRelaxed` ManagedSettings stores                                                                              |
+| App Group                | Container, `state.json` timestamps, the extension-written engine state, the monitor extension's last callback, outbox length, offline breaks queued, the selection-incomplete flag |
+| Sync                     | Last sync and error, policy and schedule versions, clock skew, last check-in, API host                                                                                             |
+
+**Buttons:** "Force sync", "Re-plan schedules", "Clear all shields" (with a confirmation dialog) and "Copy
+diagnostics to clipboard". The copied plain-text report holds counts, states, activity names and times only:
+no app, category, organisation or employee names. Rows that need attention show an orange triangle, and
+`[!]` in the copied text.
+
+The exact labels, and how to read them during a test, are in `docs/DEVICE_TESTING.md`.
+
+**Code:** `ClockOffApp/Features/Diagnostics/`.
+
+- The screen and its view model.
+- `DiagnosticsDataSource` with `LiveDiagnosticsDataSource`: reads the app's real objects.
+- `DiagnosticsSnapshot`.
+- `DiagnosticsReport`: the pure formatter shared by the screen and the copied text, unit-tested in
+  `ClockOffAppTests/Features/DiagnosticsReportTests.swift`.
+- `ClockOffApp/Restrictions/ScreenTimeDiagnostics.swift`: reads DeviceActivity and ManagedSettings, or the
+  mock.
+
+Every file, and the tap gesture in `SettingsView`, is inside `#if DEBUG`. `make build-release` fails if a
+Release binary contains the screen (see "Release safety").
+
+## TestFlight
+
+```sh
+make -C apps/ios testflight
+```
+
+`Scripts/testflight.sh` takes these steps:
+
+1. **Archive.** Archives the Release configuration for `generic/platform=iOS` with
+   `-allowProvisioningUpdates`, into `build/ClockOff-<build>.xcarchive`.
+   - The marketing version comes from `MARKETING_VERSION` in `Config/Base.xcconfig` (`0.1.0`).
+   - The build number is date-based: `YYYYMMDDHHMM` in UTC, passed as `CURRENT_PROJECT_VERSION`. Set
+     `BUILD_NUMBER=…` to override it.
+2. **Verify.** Runs `Scripts/verify-release.sh` on the archived app, so a TestFlight build gets the same
+   checks as `make build-release`.
+3. **Export and upload.** Runs `xcodebuild -exportArchive` with `apps/ios/ExportOptions.plist`:
+   - `method` `app-store-connect`, `destination` `upload`, `teamID` `78B9UY2V8C`, automatic signing;
+   - `manageAppVersionAndBuildNumber` `false`, so App Store Connect keeps the date-based number;
+   - `uploadSymbols` `true`.
+
+   The export output goes to `build/export-<build>`.
+
+4. **Wait for processing.** Only when an API key was used: `node Scripts/asc-build-status.mjs … --wait`
+   polls App Store Connect every 30 s until the build is `VALID`, `FAILED` or `INVALID`, for up to 45
+   minutes. Without a key, check App Store Connect › ClockOff › TestFlight.
+
+**Authentication**, in this order:
+
+1. **An App Store Connect API key.** It is used when `ASC_API_KEY_ID`, `ASC_API_ISSUER_ID` and
+   `ASC_API_KEY_PATH` are all set:
+   - each value comes from the environment, else from the repo's git-ignored `.env.deploy`;
+   - `ASC_API_KEY_PATH` is the `AuthKey_<id>.p8` file, kept outside the repo; `~` is expanded;
+   - the file must exist.
+2. **The Apple ID signed into Xcode** (Xcode › Settings › Accounts), when no key file is found.
+
+The upload needs the App Store Connect app record for `online.clockoff.app`. After processing, add testers in
+App Store Connect › TestFlight. TestFlight builds are Release builds: they enforce Work Mode exactly like a
+Debug device build but have no Diagnostics screen.
 
 ## Regenerating the project
 
@@ -168,8 +304,8 @@ of `project.yml`. Change them there, not in the files. Commit the regenerated pr
 
 Apple's Screen Time frameworks do not work in the simulator. To keep the simulator fully usable:
 
-- **Debug builds use `MockRestrictionProvider`.** It is compiled only under `DEBUG_MOCK_RESTRICTIONS`, which
-  is set in Debug and never in Release. It simulates authorisation (approve, deny or fail), app selection
+- **Debug builds for the simulator use `MockRestrictionProvider`.** It is compiled only under
+  `DEBUG_MOCK_RESTRICTIONS`, which is set for Debug simulator builds and never for device or Release builds. It simulates authorisation (approve, deny or fail), app selection
   (counts only), applying and clearing shields, and DeviceActivity scheduling (it enforces Apple's 20-activity
   and 15-minute limits). It records everything for tests. While it is active, every screen shows a yellow
   banner: **"DEVELOPMENT MODE — restrictions are simulated"**. No app is really blocked.
@@ -187,8 +323,7 @@ Apple's Screen Time frameworks do not work in the simulator. To keep the simulat
   - **Background refresh:** pause in the debugger, then run
     `e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"online.clockoff.app.refresh"]`.
 
-On a real device (iOS 16.4+), a Release build or a Debug build with the mock condition switched off uses
-`AppleScreenTimeRestrictionProvider`. That provider performs real authorisation (`AuthorizationCenter.requestAuthorization(for: .individual)`),
+On a real device (iOS 16.4+), every build, Debug or Release, uses `AppleScreenTimeRestrictionProvider`. That provider performs real authorisation (`AuthorizationCenter.requestAuthorization(for: .individual)`),
 persists the employee's `FamilyActivitySelection` on-device, applies `ManagedSettingsStore` shields, schedules
 `DeviceActivity` intervals for upcoming shifts and breaks, and the DeviceActivityMonitor extension enforces them
 even when the app is closed. The full design, Apple limits and the manual device test script are in
@@ -197,16 +332,18 @@ even when the app is closed. The full design, Apple limits and the manual device
 ## Pointing a device at a local API
 
 The simulator shares the Mac's network, so the default `http://localhost:3000/api/mobile/v1` works there. A
-phone needs your Mac's address:
+Debug build on a phone talks to production by default. To point it at your Mac instead, it needs your Mac's
+address:
 
 1. Start the API so it is reachable on the LAN. `pnpm dev` prints a **Network** URL. The phone and the Mac
    must be on the same Wi-Fi.
 2. In `apps/ios/Config/Local.xcconfig` (git-ignored, Debug only), use the Mac's Bonjour name (preferred) or
-   its LAN IP, followed by the mobile API path `/api/mobile/v1`:
+   its LAN IP, followed by the mobile API path `/api/mobile/v1`. Keep the `[sdk=iphoneos*]` condition so the
+   simulator stays on `localhost`:
 
    ```xcconfig
-   API_BASE_URL = http:/$()/my-mac.local:3000/api/mobile/v1
-   // or: API_BASE_URL = http:/$()/192.168.1.20:3000/api/mobile/v1
+   API_BASE_URL[sdk=iphoneos*] = http:/$()/my-mac.local:3000/api/mobile/v1
+   // or: API_BASE_URL[sdk=iphoneos*] = http:/$()/192.168.1.20:3000/api/mobile/v1
    ```
 
    Find the Bonjour name with `scutil --get LocalHostName` and add `.local`. Without `/api/mobile/v1` the
@@ -221,7 +358,8 @@ phone needs your Mac's address:
 ## Release safety
 
 `make build-release` builds the Release configuration for the simulator, then runs
-`Scripts/verify-release.sh`, which fails if any of these is true:
+`Scripts/verify-release.sh`. `make testflight` runs the same script on the archived device app before it
+uploads anything. The script fails if any of these is true:
 
 - a target's Release build settings define `DEBUG` or `DEBUG_MOCK_RESTRICTIONS`
   (`SWIFT_ACTIVE_COMPILATION_CONDITIONS`, read with `xcodebuild -showBuildSettings`);
@@ -229,6 +367,8 @@ phone needs your Mac's address:
   Family Controls;
 - any executable or dylib in the Release app contains `MockRestrictionProvider`, `SimulatorTokenStore` or the
   "DEVELOPMENT MODE" banner text (all three are compiled only under Debug conditions, and this confirms it);
+- any of them contains the Debug-only Diagnostics screen: its report title "ClockOff Diagnostics", the
+  `DiagnosticsSnapshot` type or the `DiagnosticsUnlock` tap counter behind Settings › App version;
 - the Release Info.plist contains `NSAllowsLocalNetworking` or `NSLocalNetworkUsageDescription`;
 - `API_BASE_URL` is not `https://…`, or its path does not end with `/api/mobile/v1` exactly once (it must be
   the mobile API root, with no trailing slash, query, fragment or empty `//` segment; the script prints the
@@ -278,21 +418,25 @@ not contain the mock. A Release simulator build therefore uses `AppleScreenTimeR
 | Apple provider                                   | `ClockOffApp/Restrictions/AppleScreenTimeRestrictionProvider.swift` (authorisation, `SelectionStore`, two `ManagedSettingsStore`s, `DeviceActivity` scheduling) — see `docs/SCREEN_TIME_IMPLEMENTATION.md`                                                                                                                    |
 | App picker                                       | `ClockOffApp/Restrictions/ScreenTimeSelectionPicker.swift` (`FamilyActivityPicker` sheet, `SelectionConfiguring`) and onboarding screens 5–8 in `ClockOffApp/Features/Onboarding/ScreenTimeSetupViews.swift`                                                                                                                  |
 | Extensions                                       | `ClockOffDeviceActivityMonitor/DeviceActivityMonitorExtension.swift` (delegates to `MonitorEventHandler` in Core: reads `plans.json`, applies/clears shields, records engine state, queues events); `ClockOffShieldConfiguration/…` (shield card from App Group strings); `ClockOffShieldAction/…` (close / open-status flag) |
+| Diagnostics (Debug only)                         | `ClockOffApp/Features/Diagnostics/` (screen, `DiagnosticsDataSource`, `DiagnosticsSnapshot`, `DiagnosticsReport`), `ClockOffApp/Restrictions/ScreenTimeDiagnostics.swift`; opened from `SettingsView`                                                                                                                         |
 | Sync                                             | `ClockOffApp/Sync/SyncCoordinator.swift`: replay queued offline breaks → `GET /sync` → cache diff → engine → `ActivityPlanner` → write `plans.json` → `provider.scheduleActivities` → reconcile shields → local notifications → `POST /events` → `POST /device/state`; see `docs/SYNC_AND_OFFLINE.md`                         |
 
 ## Troubleshooting
 
-| Symptom                                                               | Fix                                                                                                                                                                                                                                    |
-| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `xcodegen: command not found`                                         | `brew install xcodegen`                                                                                                                                                                                                                |
-| `Unable to find a destination matching … iPhone 17 Pro`               | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"`                                                                                                                                                             |
-| Build error "Signing for … requires a development team"               | You built without `CODE_SIGNING_ALLOWED=NO` (for example from Xcode, for a device). Set `DEVELOPMENT_TEAM` in `Config/Signing.local.xcconfig`.                                                                                         |
-| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id.                                                                                                                   |
-| `Info.plist API_BASE_URL is missing or invalid` crash at launch       | The xcconfig value is malformed, or its path does not end with `/api/mobile/v1` (e.g. a bare origin). It must be the mobile API root, e.g. `http:/$()/my-mac.local:3000/api/mobile/v1` (write `/$()/`, because `//` starts a comment). |
-| "Can't reach ClockOff" on a device                                    | The API is not reachable from the phone: check the Wi-Fi, the `.local` name, `Local.xcconfig`, and that local-network access is allowed in Settings › Privacy & Security › Local Network.                                              |
-| Keychain error -34018                                                 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed.                                                                                                                   |
-| `BGTaskScheduler refused online.clockoff.app.refresh` in the log      | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`.                                                                                                                                 |
-| Yellow "DEVELOPMENT MODE" banner on a device                          | You are running Debug with the mock. Set `CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =` in `Local.xcconfig`, or run Release.                                                                                                                 |
-| Tests fail to compile after disabling the mock in `Local.xcconfig`    | The hosted tests use `MockRestrictionProvider`. Remove the override before running `make test`.                                                                                                                                        |
-| "Your sign-in can't be read right now" on Home                        | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking.                                                |
-| Stale project after pulling                                           | `make generate`, then `make clean` if Xcode still shows removed files.                                                                                                                                                                 |
+| Symptom                                                               | Fix                                                                                                                                                                                                                                                                             |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xcodegen: command not found`                                         | `brew install xcodegen`                                                                                                                                                                                                                                                         |
+| `Unable to find a destination matching … iPhone 17 Pro`               | `xcrun simctl list devices available`, then `make test SIMULATOR="<name>"`                                                                                                                                                                                                      |
+| Build error "Signing for … requires a development team"               | `DEVELOPMENT_TEAM` is empty: a `Signing.local.xcconfig` override blanked it. Remove the override (the team is `78B9UY2V8C` in `Signing.xcconfig`).                                                                                                                              |
+| "No profiles for 'online.clockoff.app' were found" / "No Accounts"    | Sign in to Xcode with an Apple ID on team `78B9UY2V8C` (Xcode › Settings › Accounts), and build with `-allowProvisioningUpdates` (the `make` targets do).                                                                                                                       |
+| `make device-install`: "No paired iPhone found"                       | Connect the phone, unlock it, tap Trust and turn on Developer Mode (Settings › Privacy & Security › Developer Mode, then restart). Check with `xcrun devicectl list devices`.                                                                                                   |
+| Diagnostics doesn't open after five taps                              | It exists only in Debug builds (TestFlight and App Store builds are Release), the taps must each come within 1.5 s, and onboarding must be complete.                                                                                                                            |
+| "Provisioning profile doesn't include the Family Controls capability" | Enable Family Controls on all four App IDs. For distribution, Apple must approve the entitlement for each bundle id.                                                                                                                                                            |
+| `Info.plist API_BASE_URL is missing or invalid` crash at launch       | The xcconfig value is malformed, or its path does not end with `/api/mobile/v1` (e.g. a bare origin). It must be the mobile API root, e.g. `http:/$()/my-mac.local:3000/api/mobile/v1` (write `/$()/`, because `//` starts a comment).                                          |
+| "Can't reach ClockOff" on a device                                    | The API is not reachable from the phone. With the default (production), check the phone's internet connection. With a `Local.xcconfig` override, check the Wi-Fi, the `.local` name, and that local-network access is allowed in Settings › Privacy & Security › Local Network. |
+| Keychain error -34018                                                 | Expected in unsigned builds. The simulator uses `SimulatorTokenStore`. On a device it means the build is not signed.                                                                                                                                                            |
+| `BGTaskScheduler refused online.clockoff.app.refresh` in the log      | The identifier is missing from `BGTaskSchedulerPermittedIdentifiers`. Regenerate with `make generate`.                                                                                                                                                                          |
+| Yellow "DEVELOPMENT MODE" banner on a device                          | `Local.xcconfig` forces the mock on device builds (`CLOCKOFF_MOCK_RESTRICTIONS_CONDITION[sdk=iphoneos*] = DEBUG_MOCK_RESTRICTIONS`). Remove that line.                                                                                                                          |
+| Tests fail to compile after changing the mock in `Local.xcconfig`     | The hosted tests use `MockRestrictionProvider` on the simulator. Remove an unconditional `CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =` (keep overrides to `[sdk=iphoneos*]`).                                                                                                        |
+| "Your sign-in can't be read right now" on Home                        | `CREDENTIALS_UNAVAILABLE`: the Keychain could not be read (usually right after a restart, before the first unlock). The phone stays joined; it clears on the next sync after unlocking.                                                                                         |
+| Stale project after pulling                                           | `make generate`, then `make clean` if Xcode still shows removed files.                                                                                                                                                                                                          |

@@ -165,6 +165,7 @@ that are limited carry `x-rate-limit` with the preset name (`apps/web/src/server
 | `employeeInvite`                                   | employee invites                                               | 60 / hour                  |
 | `mobileJoin`                                       | `/api/mobile/v1/join/*`                                        | 10 / hour                  |
 | `mobileRefresh`                                    | `/api/mobile/v1/auth/refresh`                                  | 60 / 15 min                |
+| `testShift`                                        | `POST /api/test-tools/test-shift`                              | 30 / hour                  |
 
 ## Not in the document
 
@@ -174,6 +175,44 @@ Internal endpoints are deliberately left out of `openapi.json`: `POST /api/jobs/
 `{ email: { to, subject, text, sentAt } }`, the last message the console email provider sent to that address
 (404 when there is none, or when dev tools are off). Integration OAuth callbacks arrive with the Phase 2
 providers (INTEGRATIONS.md).
+
+`POST /api/test-tools/test-shift` is the phone test tool behind the dashboard's "Create test shift…" (see
+DEVICE_TESTING.md). It is left out of the document too.
+
+**Availability.** It exists only for organisations the deployment enables: every organisation while
+`DEV_TOOLS_ENABLED=true` (never in production), otherwise those listed in `TEST_TOOLS_ORGANISATION_IDS`
+(ENVIRONMENT.md). `GET /api/auth/me` reports this per organisation as `organisations[].testToolsEnabled`.
+
+**Request.** A signed-in manager with `schedule:write` and the CSRF header. The organisation comes from the
+session. The strict body is:
+
+```
+{ employeeId: uuid, startsInMinutes?: int 1–240 = 20, durationMinutes?: int 15–480 = 30 }
+```
+
+Sending `organisationId` is a 400. A duration under 15 fails with "Apple requires at least 15 minutes"
+(DeviceActivity's minimum interval).
+
+**Response.** `201 { shift, warnings }`. The shift:
+
+- starts at now + `startsInMinutes`, rounded up to the next whole minute, and lasts exactly
+  `durationMinutes`;
+- is `MANUAL` and `SCHEDULED`, in the organisation's time zone, with no location;
+- has the notes "Test shift for phone testing (Create test shift…)".
+
+It is created through the ordinary `createShift`, so the overlap check, the schedule-version bump, the
+`SCHEDULE_CHANGED` push, the `SHIFT_CREATED` activity event and the `shift.created` audit entry all apply.
+
+**Checks, in order:**
+
+1. `404 NOT_FOUND` when no organisation can have the tool, even before sign-in.
+2. `429 RATE_LIMITED` (`testShift`).
+3. `401` when signed out.
+4. `403` CSRF.
+5. `404 NOT_FOUND` when the current organisation isn't enabled.
+6. `403 FORBIDDEN` without `schedule:write`.
+7. `400 VALIDATION_ERROR`.
+8. `409 SHIFT_OVERLAP`, or `404 EMPLOYEE_NOT_FOUND` for another organisation's employee.
 
 ## Realtime
 
