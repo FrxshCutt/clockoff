@@ -1,4 +1,4 @@
-# Work Mode API
+# ClockOff API
 
 The machine-readable contract is **[`docs/openapi.json`](./openapi.json)** (OpenAPI 3.1, JSON Schema
 2020-12). It is generated from the Zod schemas in `packages/validation` — the same schemas the route
@@ -6,7 +6,7 @@ handlers validate with — so the document cannot drift from the code:
 
 ```sh
 pnpm openapi            # regenerate docs/openapi.json
-pnpm --filter @workmode/validation test   # fails if the committed openapi.json is stale
+pnpm --filter @clockoff/validation test   # fails if the committed openapi.json is stale
 ```
 
 Never edit `openapi.json` by hand. To change the API, change the schema (`packages/validation/src/*.ts`)
@@ -132,7 +132,7 @@ These are rejected with `400 VALIDATION_ERROR` before a handler runs (domain cod
 `OVERRIDE_TOO_LONG` or `SHIFT_OVERLAP` stay with the handler):
 
 - **Restriction config** (`RestrictionConfig`, identical to `RestrictionConfig` in
-  `@workmode/shared/policy/restrictionConfig`): `categories` 1+ unique `RestrictionCategory` values,
+  `@clockoff/shared/policy/restrictionConfig`): `categories` 1+ unique `RestrictionCategory` values,
   `requireEmployeeAppSelection`, `alwaysAllowedNote` (≤ 20 lines of ≤ 200 chars), optional `shieldMessage`
   (≤ 120), `activationMode`, `preShiftWarningMinutes` 0–120. Unknown keys are rejected.
 - **Break rules** (`BreakPolicyRules`): enabled breaks need `maxBreaksPerShift ≥ 1` and
@@ -185,8 +185,8 @@ truth.
 
 ## Schemas in code
 
-Handlers and forms import the same Zod schemas the document is generated from — `@workmode/validation`
-(barrel) or a module subpath such as `@workmode/validation/employees`. Naming is uniform:
+Handlers and forms import the same Zod schemas the document is generated from — `@clockoff/validation`
+(barrel) or a module subpath such as `@clockoff/validation/employees`. Naming is uniform:
 
 | Kind          | Export name                                                         | Example                                     |
 | ------------- | ------------------------------------------------------------------- | ------------------------------------------- |
@@ -195,7 +195,7 @@ Handlers and forms import the same Zod schemas the document is generated from �
 | Path params   | `<thing>ParamsSchema` (`idParamsSchema` for `:id`)                  | `importRowParamsSchema`                     |
 | Response body | `<thing>ResponseSchema` / `list<Things>ResponseSchema`              | `employeeResponseSchema`                    |
 | Resource      | `<thing>Schema`                                                     | `employeeSchema`, `restrictionConfigSchema` |
-| Enum          | `<enumName>Schema`, values from `@workmode/shared/enums`            | `workModeStateSchema`                       |
+| Enum          | `<enumName>Schema`, values from `@clockoff/shared/enums`            | `workModeStateSchema`                       |
 
 Components named `…Input` in the document are request-only shapes (e.g. `CreateShiftInput`,
 `OverridePayloadInput`); the generator also emits `<Name>Input` automatically when a shared schema has a

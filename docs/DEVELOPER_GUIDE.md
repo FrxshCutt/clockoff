@@ -1,6 +1,6 @@
 # Developer Guide
 
-How to add things to Work Mode without breaking its invariants. Read `ARCHITECTURE.md` first.
+How to add things to ClockOff without breaking its invariants. Read `ARCHITECTURE.md` first.
 
 ## The contract comes first
 
@@ -19,7 +19,7 @@ Every endpoint is described in `packages/validation`:
 ```ts
 // src/app/api/widgets/[id]/route.ts
 import { createHandler } from "@/server/http/apiHandler";
-import { idParamsSchema, updateWidgetSchema } from "@workmode/validation";
+import { idParamsSchema, updateWidgetSchema } from "@clockoff/validation";
 import { updateWidget } from "@/server/widgets/widgets.service";
 
 export const PATCH = createHandler(
@@ -38,7 +38,7 @@ export const PATCH = createHandler(
   `maxBodyBytes` (default 1 MiB), `emailVerification`. Pipeline: body → rate limit → auth → CSRF/Origin → permission →
   Zod → impl. Without a schema, `params`/`query`/`body` are `undefined` — declare a schema for everything you read.
   Return a value (200 JSON), `undefined` (204), or a `Response` (`json()`, `noContent()`, `sseResponse()`).
-- **Errors**: throw `new AppError(code, message?, { status?, details? })` from `@workmode/shared/errors`. Prisma `P2002` →
+- **Errors**: throw `new AppError(code, message?, { status?, details? })` from `@clockoff/shared/errors`. Prisma `P2002` →
   `CONFLICT`, `P2025` → `NOT_FOUND`, anything else → `INTERNAL_ERROR` with only the request id.
 - **Context**: `ctx.organisation.id` is the only organisation id you may use; it comes from the verified membership.
   `ManagerContext = { user, session, organisation, membership, permissions, requestId, ip, userAgent }`;
@@ -76,8 +76,8 @@ functions; they never re-implement them. The state machine and break rules are m
 
 | Kind            | Where                                             | Command                               |
 | --------------- | ------------------------------------------------- | ------------------------------------- |
-| Pure unit       | `packages/*/src/**/*.test.ts`                     | `pnpm --filter @workmode/shared test` |
-| Web unit        | `apps/web/src/**/*.test.ts(x)` (node env, no DOM) | `pnpm --filter @workmode/web test`    |
+| Pure unit       | `packages/*/src/**/*.test.ts`                     | `pnpm --filter @clockoff/shared test` |
+| Web unit        | `apps/web/src/**/*.test.ts(x)` (node env, no DOM) | `pnpm --filter @clockoff/web test`    |
 | Web integration | `apps/web/test/integration/*.test.ts`             | `pnpm test:integration`               |
 
 Integration helpers (`apps/web/test/helpers`): `callRoute(handler, { method, path, params, query, body, jar })`,

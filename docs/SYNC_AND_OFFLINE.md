@@ -1,7 +1,7 @@
 # Sync and offline behaviour (iOS)
 
-How the Work Mode iPhone app keeps its copy of the schedule fresh, what it does without a connection, and how
-the two meet again. Code: `apps/ios/WorkModeApp/Sync/` (`SyncCoordinator`, `BreakReplayer`,
+How the ClockOff iPhone app keeps its copy of the schedule fresh, what it does without a connection, and how
+the two meet again. Code: `apps/ios/ClockOffApp/Sync/` (`SyncCoordinator`, `BreakReplayer`,
 `BreakSessionMerge`, `ConnectivityMonitor`, `SyncStaleness`), `Notifications/`, `Persistence/`, `App/AppModel.swift`.
 Enforcement itself is described in [`SCREEN_TIME_IMPLEMENTATION.md`](SCREEN_TIME_IMPLEMENTATION.md); the break
 rules the server applies to late (offline) requests are in [`BREAK_RULES.md`](BREAK_RULES.md).
@@ -18,7 +18,7 @@ about what is enforced.
 | Launch (set-up phone)   | `AppModel.start()` → `startMain`                                           | `WorkModeController.start()` (reconcile from cache at once), then `sync(.launch)` (also `GET /me`)                                                       |
 | Foreground              | `scenePhase == .active`                                                    | `sync(.foreground)`; the controller re-checks the shields itself on `didBecomeActive`                                                                    |
 | Pull to refresh         | Home / Schedule                                                            | `sync(.pullToRefresh)`                                                                                                                                   |
-| Background refresh      | `BGAppRefreshTask` `com.workmode.app.refresh` (`BackgroundRefresh`)        | `sync(.backgroundRefresh)`; the next refresh is requested ≥ 15 min ahead every time the app backgrounds or a task runs. iOS decides when it really runs. |
+| Background refresh      | `BGAppRefreshTask` `online.clockoff.app.refresh` (`BackgroundRefresh`)     | `sync(.backgroundRefresh)`; the next refresh is requested ≥ 15 min ahead every time the app backgrounds or a task runs. iOS decides when it really runs. |
 | Silent push             | `content-available: 1` (`AppDelegate.didReceiveRemoteNotification`)        | `sync(.silentPush)`                                                                                                                                      |
 | Connectivity restored   | `NWPathMonitor` (`NetworkPathConnectivityMonitor`) unsatisfied → satisfied | `sync(.connectivity)`: replay offline breaks, flush the outbox                                                                                           |
 | Setup / repair finished | onboarding screen 8, Setup Repair sheet                                    | `sync(.setup)` / `sync(.repair)`                                                                                                                         |
@@ -32,7 +32,7 @@ shields and the Home card follow the fresh cache immediately.
 1. **Replay offline breaks** (`BreakReplayer`, §4) — before `GET /sync`, so the server's answer already reflects them.
 2. **`GET /sync`** → `SyncBundle` (policy, break policy, shifts −1 … +14 days, versions, active overrides, active
    break, allowance, server time). On failure: enforce from the cache (step 5), still flush the outbox, return the
-   error (the Home line says "Couldn't reach Work Mode").
+   error (the Home line says "Couldn't reach ClockOff").
 3. **`GET /me`** on launch, setup, or when the cache lost the profile.
 4. **Version diff and cache update.** `policyVersion` (PolicyVersion id) and `scheduleVersion` (monotonic per
    employee) are compared with the cache; `lastPolicySyncAt` / `lastScheduleSyncAt` move only when they changed,
@@ -139,7 +139,7 @@ interaction (§12): there is no "you opened a blocked app" notice.
 - **Silent push** is also best effort (throttled by APNs and iOS; dropped while Low Power Mode is on). The server
   sends one whenever the schedule, policy or an override changes for the employee (`getPushProvider().sendSilent`),
   provided the APNs environment is configured (`APNS_*`; `Noop` otherwise). The app registers its token with
-  `POST /device/push-token` and `environment: sandbox | production` from `WORKMODE_PUSH_ENVIRONMENT`.
+  `POST /device/push-token` and `environment: sandbox | production` from `CLOCKOFF_PUSH_ENVIRONMENT`.
 - The sync itself needs no background mode: it runs in the foreground, in the refresh task, or on the push.
 
 ## 8. Reboot, force-quit, time changes

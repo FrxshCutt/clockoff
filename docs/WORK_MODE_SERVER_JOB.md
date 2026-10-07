@@ -14,7 +14,7 @@ Code: `apps/web/src/server/workState/workStateJob.ts` (`runWorkModeTick`), `apps
 
 | How                                                              | When to use it                                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm --filter @workmode/web jobs` (`tsx src/jobs/main.ts`)      | The default: a long-running process beside the web app. node-cron `* * * * *` while `JOBS_ENABLED` is `true` (default). Runs one tick immediately at start-up so a fresh deploy catches up.                                                                                                                                                                           |
+| `pnpm --filter @clockoff/web jobs` (`tsx src/jobs/main.ts`)      | The default: a long-running process beside the web app. node-cron `* * * * *` while `JOBS_ENABLED` is `true` (default). Runs one tick immediately at start-up so a fresh deploy catches up.                                                                                                                                                                           |
 | `POST /api/jobs/tick` with `Authorization: Bearer <CRON_SECRET>` | Serverless platforms. Production uses the Netlify Scheduled Function `apps/web/netlify/functions/work-mode-tick.mts` (every minute); any other scheduler works too (GET is accepted for GET-only schedulers). Set `JOBS_ENABLED=false` on the web app. The tick must finish within the platform's function limit (60 s on Netlify). Response: `{ ok: true, report }`. |
 
 Both may run at the same time: every write in the tick is guarded (see _Idempotency_), so overlapping
@@ -113,7 +113,7 @@ A fresh report through `/device/state` or `/events` switches the row back to `DE
 - no device sync for longer than the thresholds (`SYNC_DELAYED`, then `OFFLINE`) — stored with the marker
   `Device sync delayed: …` so an episode can be recognised.
 
-Thresholds live in `DEVICE_STATUS_THRESHOLDS` (`@workmode/shared/status/deriveDeviceStatus`).
+Thresholds live in `DEVICE_STATUS_THRESHOLDS` (`@clockoff/shared/status/deriveDeviceStatus`).
 
 **Server-owned ActivityEvents** emitted by this step:
 

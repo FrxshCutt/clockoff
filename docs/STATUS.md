@@ -55,7 +55,7 @@ break, returns at break end and lifts at shift end.
 
 | What                                                                | Why it matters                                                                                                                                                                       | How to configure                                                                                                                                                                   |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Apple Developer team + Family Controls **distribution** entitlement | Real-device builds and App Store distribution. All four bundle ids carry the entitlement (`com.workmode.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)                    | Request the distribution entitlement from Apple for each id; put `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig`; see `docs/IOS_SETUP.md`                           |
+| Apple Developer team + Family Controls **distribution** entitlement | Real-device builds and App Store distribution. All four bundle ids carry the entitlement (`online.clockoff.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)                 | Request the distribution entitlement from Apple for each id; put `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig`; see `docs/IOS_SETUP.md`                           |
 | APNs auth key                                                       | Silent pushes that make phones re-sync immediately after policy/schedule/override changes. Without it, phones sync on launch, foreground, background refresh (~15 min) and reconnect | Set `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_BASE64`, `APNS_BUNDLE_ID`, `APNS_ENVIRONMENT`; `ApnsPushProvider` is selected automatically                                            |
 | Email delivery                                                      | Verification, password reset and invite emails go through Resend (`EMAIL_PROVIDER=resend`) from `noreply@clockoff.online`                                                            | Live: the domain is verified in Resend, its records are in the Cloudflare zone (`docs/DNS_RECORDS.md`), and `EMAIL_PROVIDER`, `EMAIL_FROM` and `RESEND_API_KEY` are set on Netlify |
 | Planday (or other workforce provider)                               | Automatic schedule sync and clock-in activation                                                                                                                                      | All six providers are registered as Coming Soon; `docs/INTEGRATIONS.md` describes how to implement Planday against the `WorkforceProvider` interface                               |
@@ -67,7 +67,7 @@ break, returns at break end and lifts at shift end.
   one web instance needs the Redis adapters (interfaces exist; selecting `redis` currently fails fast).
 - **Content Security Policy** still allows inline scripts because Next.js injects inline bootstrap scripts.
   Nonce support is built in the middleware but not wired through the root layout.
-- **Billing** shows plans and usage from `@workmode/shared/plans`; upgrade/downgrade are disabled "Coming soon"
+- **Billing** shows plans and usage from `@clockoff/shared/plans`; upgrade/downgrade are disabled "Coming soon"
   and there is no payment processing (by design for the MVP). Plan limits are enforced for employees and
   locations.
 - **Audit log retention** is enforced when reading (per plan); there is no purge job yet.
@@ -93,7 +93,7 @@ edited by hand. The domain is still registered at IONOS, and the IONOS mailbox i
 | Piece                                                           | State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Netlify site, continuous deployment from GitHub `main`          | ✅ Live at `https://clockoff.netlify.app` and on the three custom hostnames below. Every push to `main` builds and publishes; CI (JS + iOS) runs on GitHub Actions.                                                                                                                                                                                                                                                                                                                                                                                       |
-| Database (Neon, `eu-west-2`)                                    | ✅ All migrations applied; **empty** by design (no seed in production). `/api/health` on the apex and app hosts reports `database: ok`, `migrations: up_to_date`.                                                                                                                                                                                                                                                                                                                                                                                         |
+| Database (Neon, `eu-west-2`)                                    | ✅ All migrations applied; no seed in production; holds the owner's organisation since 2026-10-07. `/api/health` on the apex and app hosts reports `database: ok`, `migrations: up_to_date`.                                                                                                                                                                                                                                                                                                                                                              |
 | DNS (Cloudflare zone, registrar IONOS)                          | ✅ Zone `active`; the `.online` registry delegates to `lola.ns.cloudflare.com` and `thaddeus.ns.cloudflare.com`. Managed through the Cloudflare API. 7 records added, all **DNS only** (not proxied): apex A `75.2.60.5`, `www` and `app` CNAMEs to `clockoff.netlify.app`, and the 4 Resend records. The 6 IONOS records (2 MX, apex SPF, `_dmarc`, `autodiscover`, `_domainconnect`) are preserved byte-identical; they were backed up first to `docs/dns-backup-20261006T205519Z.json`. MX and apex SPF still resolve unchanged from public resolvers. |
 | `clockoff.online`, `www.clockoff.online`, `app.clockoff.online` | ✅ Live with valid TLS. One Let's Encrypt certificate covers all three (valid until 2027-01-04; Netlify renews it automatically while the records point at Netlify). The apex serves the marketing site (200); `www` 301 → apex; `app` serves the dashboard (`/` 307 → `/overview`, `/login` renders) and every `/api/*` route; `http://` 301 → `https://`. Cross-host routing works: apex `/login` and `/overview` 308 → app, app `/pricing` 308 → apex, apex `/api/mobile/v1/me` 404.                                                                   |
 | Security headers, locked-down routes                            | ✅ CSP, HSTS (`max-age=63072000; includeSubDomains`), `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy, Permissions-Policy, COOP and `x-request-id` on apex and app responses. `/api/dev/*` answers 404; `/api/jobs/tick` without the secret answers 401.                                                                                                                                                                                                                                                                                              |
@@ -120,33 +120,42 @@ edited by hand. The domain is still registered at IONOS, and the IONOS mailbox i
 
 DNS is no longer a manual step: record changes go through the Cloudflare API (back up the zone first).
 
-1. **Register the first owner** at `https://app.clockoff.online/register` with `support@clockoff.online`, then
-   click the verification link in the email (email delivery is verified). The production database is
-   intentionally empty.
-2. **Rotate the credentials that were pasted into chat**: the Netlify personal access token, the Neon API key,
+Done since the previous update: the first owner account (`support@clockoff.online`) was registered and verified
+on 2026-10-07, so production now holds the owner's organisation.
+
+1. **Rotate the credentials that were pasted into chat**: the Netlify personal access token, the Neon API key,
    the Resend API key and the Cloudflare API token. Update `.env.deploy` with the new values. For the running
    app, create a Resend key with **sending access only**, restricted to `clockoff.online`, and set it as
    `RESEND_API_KEY` on Netlify (the full-access key was only needed to register the domain). Create the new
    Cloudflare token with the same scope (Zone → DNS → Edit on `clockoff.online` only), store it as
    `DNS_API_TOKEN` in `.env.deploy`, and revoke the old one; it is never set on Netlify. The deploy key and
    webhook do not need rotating.
-3. **Apple Developer Program** membership for the team, then request the **Family Controls (Distribution)**
-   entitlement for all four bundle ids (`com.workmode.app`, `.devicemonitor`, `.shieldconfig`, `.shieldaction`)
-   and set `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig` (`docs/IOS_SETUP.md`).
-4. **APNs auth key** (Apple Developer → Keys → enable Apple Push Notifications service). Set `APNS_KEY_ID`,
-   `APNS_TEAM_ID`, `APNS_P8_BASE64` (base64 of the `.p8`), `APNS_BUNDLE_ID=com.workmode.app` and
+2. **Apple Developer Program and the new identifiers.** The rename gave the app new bundle ids, so everything
+   Apple-side is created under them (nothing under `com.workmode.*` carries over):
+   - register the App IDs `online.clockoff.app`, `online.clockoff.app.devicemonitor`,
+     `online.clockoff.app.shieldconfig` and `online.clockoff.app.shieldaction`;
+   - register the App Group `group.online.clockoff.app.shared` and enable it, plus Family Controls, on all four;
+   - request the **Family Controls (Distribution)** entitlement for all four ids;
+   - create the provisioning profiles for them (Xcode automatic signing does this once the team is set), and set
+     `DEVELOPMENT_TEAM` in `apps/ios/Config/Signing.local.xcconfig` (`docs/IOS_SETUP.md`).
+3. **APNs auth key** (Apple Developer → Keys → enable Apple Push Notifications service). Set `APNS_KEY_ID`,
+   `APNS_TEAM_ID`, `APNS_P8_BASE64` (base64 of the `.p8`), `APNS_BUNDLE_ID=online.clockoff.app` and
    `APNS_ENVIRONMENT=production` on Netlify, then redeploy. The app switches to real silent pushes
    automatically. Push notifications need this.
-5. **App Store Connect and TestFlight**: create the app record for `com.workmode.app`, archive the Release
-   scheme with your signing team, upload it and add testers. Once the app is listed, set
+4. **App Store Connect and TestFlight**: create the app record for `online.clockoff.app` (name ClockOff), archive
+   the Release scheme `ClockOffApp` with your signing team, upload it and add testers. Once the app is listed, set
    `NEXT_PUBLIC_APP_STORE_URL` on Netlify so invite instructions link to it (until then they link to the web app).
-6. **Run the physical-device script** (Definition of Done items 7–10, above) on a real iPhone against
+5. **Run the physical-device script** (Definition of Done items 7–10, above) on a real iPhone against
    production or a local server.
+6. **Decide the ambiguous "Work Mode" lines** listed in `docs/RENAME_AUDIT.md` (Part 2). They were left as
+   "Work Mode" on purpose; the most visible are on the iOS welcome, Screen Time and privacy screens.
 7. **Optional: Netlify Pro** and move the functions region to London to remove the US-region limitation.
 8. **Optional: DMARC reporting.** The `_dmarc` CNAME to IONOS (`v=DMARC1; p=none;`) already satisfies Resend.
    If you want aggregate reports, replace that CNAME with **one** TXT record, for example
    `v=DMARC1; p=none; rua=mailto:support@clockoff.online`, through the Cloudflare API after a backup. Never add a
    second `_dmarc` record. This is the owner's call and is not needed for sending.
+9. **Optional: rename the GitHub repository** `FrxshCutt/workmode` and the local `~/workmode` folder. Neither is
+   user-visible; GitHub redirects the old URL and the Netlify deploy key and webhook stay attached.
 
 ## Where to look next
 

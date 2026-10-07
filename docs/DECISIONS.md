@@ -34,7 +34,7 @@ of configuration and nothing to keep in sync.
 
 ## D-006 — Internal packages consumed as TypeScript source (no build step)
 
-`@workmode/shared`, `@workmode/validation`, `@workmode/db` export `./src/*.ts`. Next.js
+`@clockoff/shared`, `@clockoff/validation`, `@clockoff/db` export `./src/*.ts`. Next.js
 `transpilePackages`, Vitest and `tsx` all consume TS directly. `build` for these packages is `tsc --noEmit`.
 Simpler than maintaining `dist/` outputs; revisit only if a non-TS consumer appears.
 
@@ -50,7 +50,7 @@ layered on the same `User` table.
 
 ## D-008 — OpenAPI generated in-house from Zod 4 (`z.toJSONSchema`)
 
-Zod 4 ships JSON-Schema export. A small route registry in `@workmode/validation` emits
+Zod 4 ships JSON-Schema export. A small route registry in `@clockoff/validation` emits
 `docs/openapi.json` without a third-party OpenAPI adapter whose Zod 4 support is uncertain.
 
 ## D-009 — iOS: XcodeGen `project.yml` is the source of truth; generated `.xcodeproj` committed
@@ -160,3 +160,37 @@ four Resend records); the six IONOS records were re-read afterwards and are byte
 unaffected. Netlify renews the certificate for all three hostnames only while their records stay DNS only and
 point at Netlify. The Cloudflare token is one more credential to rotate. If the owner wants DMARC aggregate
 reports, the `_dmarc` CNAME is replaced by one TXT record with `rua`; a second `_dmarc` record is never added.
+
+## D-021 — Product renamed from Work Mode to ClockOff; "Work Mode" stays the name of the shift state
+
+Context: the product ships as **ClockOff** on `clockoff.online`. "Work Mode" was used for two things: the product
+and the state an employee's phone is in during an active shift. Only the product name changes. The full inventory,
+every borderline call and the list of ambiguous occurrences left as "Work Mode" are in `docs/RENAME_AUDIT.md`.
+
+Decision:
+
+- Product name, page titles, emails, marketing copy, iOS display name and employee-facing copy that names the
+  app say **ClockOff**. The state machine, `WORKING`, `WORK_MODE_STARTED` / `WORK_MODE_ENDED`, "WORK MODE ACTIVE",
+  `WorkModeEngine`, `WorkModeController`, `workmode-cases.json` and the `work-mode-tick` function keep their names.
+  No database enum, table, column, migration or API route changed.
+- npm scope `@workmode/*` → `@clockoff/*`; root package `clockoff`.
+- iOS bundle ids `com.workmode.app*` → `online.clockoff.app*` (reverse-DNS of the domain the owner controls, which
+  avoids colliding with someone else's `com.clockoff` registration); App Group `group.com.workmode.app.shared` →
+  `group.online.clockoff.app.shared` in all four targets; Keychain service, background-task id, shield store names,
+  logger subsystem and notification names moved to the same prefix. Xcode project, scheme, targets and folders are
+  `ClockOff*`; build settings `CLOCKOFF_*`.
+- Kept on purpose: the internal `WorkModeCore` Swift package (and `WorkModeScreenTime`, `WorkModeLog`); local
+  Postgres role/database names `workmode` / `workmode_test` and the `workmode-pgdata` volume; the seed hash salt;
+  the digest advisory-lock key; cookie names `wm_*`; the GitHub repository `FrxshCutt/workmode` and the
+  `~/workmode` checkout.
+- Mobile JWT issuer/audience became `clockoff` / `clockoff-mobile`; support address `support@clockoff.online`;
+  sender `ClockOff <noreply@clockoff.online>`.
+- Earlier entries in this log are historical and stay as written, except that the mechanical package-scope pass
+  also rewrote `@workmode/` to `@clockoff/` inside D-006 and D-008. Other old identifiers in those entries (for
+  example the bundle ids in D-009) are as originally decided.
+
+Consequences: the new bundle ids make this a new app as far as Apple is concerned: the App ID, App Group,
+Family Controls (Distribution) entitlement and provisioning profiles must be created again under
+`online.clockoff.app` and its three extension ids before a device build or TestFlight upload works. Any existing
+install (there are no production users) loses its Keychain tokens and App Group data and must onboard again.
+Mobile access tokens signed with the old issuer/audience stop verifying; clients refresh within 15 minutes.

@@ -1,6 +1,6 @@
 # Workforce integrations
 
-Work Mode can take employees and shifts from the rota / time-and-attendance system a business already uses.
+ClockOff can take employees and shifts from the rota / time-and-attendance system a business already uses.
 Six providers are listed in the product: **Planday, Deputy, 7shifts, When I Work, Rotaready and Homebase**.
 All six are **Coming Soon** in the MVP: they appear on `/integrations`, can be "notified", and every API
 call against them answers `501 COMING_SOON`. This document describes the abstraction they plug into and how
@@ -13,7 +13,7 @@ Source: `packages/shared/src/providers/` (`workforceProvider.ts`, `syncSink.ts`,
 
 **Scheduling logic consumes `Shift` rows only — never provider objects.**
 
-A provider's job ends when it has written Work Mode's own tables (`Employee`, `Location`, `Team`, `Shift`,
+A provider's job ends when it has written ClockOff's own tables (`Employee`, `Location`, `Team`, `Shift`,
 `ClockEvent`). The Work Mode state machine (`computeExpectedState`), break rules, the minute job, the
 dashboard and the iOS sync all read those rows exactly as they read manual or CSV-imported shifts
 (`Shift.source = INTEGRATION`). Consequences:
@@ -22,7 +22,7 @@ dashboard and the iOS sync all read those rows exactly as they read manual or CS
 - Shifts from an integration are validated, versioned and pushed to devices by the same shifts service as
   manual shifts (15-minute minimum, overlap detection, `SHIFT_CREATED` / `SHIFT_UPDATED` activity, schedule
   version bump and silent push).
-- If a provider is down, Work Mode keeps enforcing the last synced schedule.
+- If a provider is down, ClockOff keeps enforcing the last synced schedule.
 
 ## The interface (§6.6)
 
@@ -90,7 +90,7 @@ wrapper turns into HTTP 501 `{ error: { code: "COMING_SOON", … } }`.
 | `ClockEvent`            | `CLOCK_IN` / `CLOCK_OUT` / `BREAK_START` / `BREAK_END` with `occurredAt`, `source` (the provider id) and `externalId`; unique per (organisation, source, externalId). |
 
 `Location` and `Team` have no external-id columns yet. Until the first provider ships, the
-external-id → Work Mode id mapping lives in `Integration.settings` (`{ locationMap: { [externalId]: locationId }, teamMap: { … } }`);
+external-id → ClockOff id mapping lives in `Integration.settings` (`{ locationMap: { [externalId]: locationId }, teamMap: { … } }`);
 adding `externalId` columns with a per-organisation unique index is the cleaner follow-up.
 
 ## Lifecycle
@@ -136,7 +136,7 @@ sequenceDiagram
    retrying with backoff. Shifts already synced stay in force.
 5. **Disconnect.** `disconnect` revokes tokens upstream where the provider supports it; the service deletes the
    `IntegrationConnection` row (and with it the credentials) and sets `status = DISCONNECTED`. Synced
-   employees and shifts remain as ordinary Work Mode data that managers can edit or cancel.
+   employees and shifts remain as ordinary ClockOff data that managers can edit or cancel.
 
 ### Sync semantics
 
@@ -168,7 +168,7 @@ sequenceDiagram
 
 In `CLOCK_EVENT` mode the provider's rota is not imported as `Shift` rows (otherwise Work Mode would start at
 the scheduled time even if nobody clocked in); the rota stays in the provider. `BREAK_START` / `BREAK_END`
-punches are stored for reference only: breaks still follow Work Mode's Break Rules (started by the employee in
+punches are stored for reference only: breaks still follow ClockOff's Break Rules (started by the employee in
 the app, or scheduled on the shift).
 
 Clock-event mode depends on how fast the event reaches the phone: provider → sync (≤ 1 minute polling, or a
@@ -200,7 +200,7 @@ scopes and token lifetimes against Planday's current developer documentation bef
 3. **Mapping** (pure functions in `packages/shared/src/providers/planday/`, unit-tested with recorded
    payloads; the HTTP client lives in `apps/web/src/server/integrations/`):
 
-   | Planday            | Work Mode                                                                                                                                                                                                                                          |
+   | Planday            | ClockOff                                                                                                                                                                                                                                           |
    | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
    | Department         | `Location` (via `settings.locationMap`; the portal or department zone becomes `Location.timezone`)                                                                                                                                                 |
    | Employee group     | `Team`                                                                                                                                                                                                                                             |

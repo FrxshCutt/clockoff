@@ -1,6 +1,6 @@
 # Testing
 
-Work Mode has four test layers. Each one has a single place for its files, a single command, and a rule
+ClockOff has four test layers. Each one has a single place for its files, a single command, and a rule
 about what it may touch.
 
 | Layer              | Where                                                                                  | Runner                                | Touches                                                          |
@@ -21,7 +21,7 @@ From the repo root:
 ```bash
 pnpm test                      # unit tests in every package (Turborepo)
 pnpm test:integration          # apps/web integration suite against workmode_test
-pnpm --filter @workmode/web test:e2e   # Playwright smoke (starts/reuses pnpm dev)
+pnpm --filter @clockoff/web test:e2e   # Playwright smoke (starts/reuses pnpm dev)
 make -C apps/ios test          # iOS unit tests on the simulator
 ```
 
@@ -64,7 +64,7 @@ Packages: `cd packages/shared && pnpm typecheck && pnpm lint && pnpm test` (same
   `INTEGRATION_LOCK_WAIT_SECONDS` (default 600). The reset uses `lock_timeout = 30s`, so a stray client
   holding locks on test tables produces an error instead of a hang.
 - `test/integration/setup.ts` runs before every test file and sets `process.env.DATABASE_URL` to the test
-  URL **before** anything imports `@workmode/db`, so the app's Prisma singleton is created against the test
+  URL **before** anything imports `@clockoff/db`, so the app's Prisma singleton is created against the test
   database. Static imports in that file are limited to modules that do not load the database client; keep
   it that way.
 - Tests share one database within a run. They stay independent by creating their own users and
@@ -131,7 +131,7 @@ describe("GET /api/organisations/current", () => {
 });
 ```
 
-Validate response shapes against the shared schemas (`@workmode/validation`) the dashboard and iOS client
+Validate response shapes against the shared schemas (`@clockoff/validation`) the dashboard and iOS client
 use — see `test/integration/contracts.test.ts`.
 
 ## Adding tenant isolation cases
@@ -146,7 +146,7 @@ targets B's resource and is sent with **A's** session; the expected status defau
 2. Register one case per endpoint and method:
 
 ```ts
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { PATCH } from "@/app/api/employees/[employeeId]/route";
 import { registerTenantIsolationCase } from "../../helpers/tenantIsolation";
@@ -189,7 +189,7 @@ response inside `verify`.
 needs a seeded database and a long-running server. E2E tests must never point at the test database.
 
 ```bash
-cd apps/web && npx playwright test          # or: pnpm --filter @workmode/web test:e2e
+cd apps/web && npx playwright test          # or: pnpm --filter @clockoff/web test:e2e
 ```
 
 `e2e/manager-journey.spec.ts` walks the manager journey in Chromium: register → verify email → create an

@@ -20,14 +20,14 @@ import {
   replayTransitions, // (input, since, previous?) => { states, transitions }
   mergeShiftIntervals, // (shifts) => WorkingInterval[]
   toExpectedStateJson, // ExpectedState → wire/fixture JSON (ISO strings)
-} from "@workmode/shared/workMode/workModeMachine"; // also re-exported from "@workmode/shared"
+} from "@clockoff/shared/workMode/workModeMachine"; // also re-exported from "@clockoff/shared"
 ```
 
 ---
 
 ## 1. States
 
-`WorkModeState` comes from `@workmode/shared/enums` and mirrors the Prisma enum.
+`WorkModeState` comes from `@clockoff/shared/enums` and mirrors the Prisma enum.
 
 | State                 | Produced by the machine? | Meaning                                                                                                                                                          |
 | --------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,7 +61,7 @@ computeExpectedState({
 ```
 
 - **Prisma rows satisfy these shapes directly.** Each type uses a `WorkMode…Like` name because the
-  `@workmode/shared` barrel already exports a narrower `BreakSessionLike` from `breaks/`.
+  `@clockoff/shared` barrel already exports a narrower `BreakSessionLike` from `breaks/`.
 - **All instants are UTC.** `Date` objects and offset ISO strings are accepted and normalised. A string
   without an offset throws `TypeError`, because it would otherwise be read in the host's zone. Negative or
   non-finite options throw `RangeError`. An unknown enum value (shift status, break status or behaviour,

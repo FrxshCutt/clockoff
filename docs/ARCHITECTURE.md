@@ -1,6 +1,6 @@
 # Architecture
 
-Work Mode is a monorepo with three runtime surfaces — the **manager web app + API** (Next.js), the
+ClockOff is a monorepo with three runtime surfaces — the **manager web app + API** (Next.js), the
 **background job runner** (Node, same codebase), and the **employee iOS app** (Swift) with three app
 extensions — sharing a PostgreSQL database through Prisma and a set of pure-TypeScript domain packages.
 
@@ -24,7 +24,7 @@ flowchart LR
   end
   PG[(PostgreSQL)]
   subgraph iOS["apps/ios (Swift)"]
-    APP[WorkModeApp<br/>SwiftUI · SyncCoordinator · WorkModeController]
+    APP[ClockOffApp<br/>SwiftUI · SyncCoordinator · WorkModeController]
     CORE[WorkModeCore (SPM)<br/>models · engine · RestrictionProvider · App Group store]
     MON[DeviceActivityMonitor ext.<br/>intervalDidStart/End → ManagedSettings]
     SHC[ShieldConfiguration ext.]
@@ -102,9 +102,9 @@ through the `PushProvider` (`ApnsPushProvider` when APNs env is set, otherwise `
 
 | Target                          | Runs when                                                                                         | Does                                                                                                                                    |
 | ------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `WorkModeDeviceActivityMonitor` | Apple wakes it at scheduled interval start/end/warning, even if the app is killed or after reboot | Reads `plans.json` from the App Group, applies/clears `ManagedSettingsStore` shields, writes engine state + queues events to the outbox |
-| `WorkModeShieldConfiguration`   | A shielded app is opened                                                                          | Renders the custom shield (employer name, shield message) from App Group strings                                                        |
-| `WorkModeShieldAction`          | User taps a shield button                                                                         | Primary closes; secondary sets an App Group flag to open the status screen                                                              |
+| `ClockOffDeviceActivityMonitor` | Apple wakes it at scheduled interval start/end/warning, even if the app is killed or after reboot | Reads `plans.json` from the App Group, applies/clears `ManagedSettingsStore` shields, writes engine state + queues events to the outbox |
+| `ClockOffShieldConfiguration`   | A shielded app is opened                                                                          | Renders the custom shield (employer name, shield message) from App Group strings                                                        |
+| `ClockOffShieldAction`          | User taps a shield button                                                                         | Primary closes; secondary sets an App Group flag to open the status screen                                                              |
 
 See `docs/SCREEN_TIME_IMPLEMENTATION.md` for Apple-specific limits (15-minute minimum interval, 20-activity
 cap, opaque tokens, revocation honesty).

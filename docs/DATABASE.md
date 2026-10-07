@@ -1,7 +1,7 @@
 # Database
 
 PostgreSQL 16, accessed through Prisma 6. Schema: `packages/db/prisma/schema.prisma`. Migrations:
-`packages/db/prisma/migrations/*`. Client singleton: `packages/db/src/client.ts` (`import { prisma } from "@workmode/db"`).
+`packages/db/prisma/migrations/*`. Client singleton: `packages/db/src/client.ts` (`import { prisma } from "@clockoff/db"`).
 
 ## Conventions
 

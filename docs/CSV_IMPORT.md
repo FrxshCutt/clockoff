@@ -2,9 +2,9 @@
 
 Source: `packages/shared/src/csv/` (`types.ts`, `headerMapping.ts`, `parseDateTime.ts`, `parseCsv.ts`,
 `normaliseRow.ts`, `matchEmployee.ts`, `validateRows.ts`, `summarise.ts`, `template.ts`).
-Import: `@workmode/shared/csv/csvImport` (or the `@workmode/shared` barrel).
+Import: `@clockoff/shared/csv/csvImport` (or the `@clockoff/shared` barrel).
 
-Managers upload a rota export as CSV; Work Mode turns each row into a shift for one employee. The import
+Managers upload a rota export as CSV; ClockOff turns each row into a shift for one employee. The import
 logic is a set of **pure functions** (Papa Parse + Luxon, no I/O, no database). The API feeds them the
 file text, the organisation's employees, existing shifts and locations, and persists what comes back in
 `ShiftImport` / `ShiftImportRow`.
@@ -319,8 +319,8 @@ import {
   validateRows,
   summarise,
   importFileErrorToAppError,
-} from "@workmode/shared/csv/csvImport";
-import { AppError } from "@workmode/shared/errors";
+} from "@clockoff/shared/csv/csvImport";
+import { AppError } from "@clockoff/shared/errors";
 
 // Upload: store the detection result and the suggestion; the wizard shows them for confirmation.
 const detected = detectHeaders(text); // { headers, sampleRows, delimiter, hasHeaderRow }

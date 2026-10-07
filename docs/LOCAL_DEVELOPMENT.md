@@ -39,7 +39,7 @@ Emails (verification, password reset, invites) are printed to the web server con
 | ---------------------------------------------------- | ---------------------------------------------------------------- |
 | `pnpm typecheck` / `pnpm lint` / `pnpm test`         | all packages via Turborepo                                       |
 | `pnpm test:integration`                              | API + service tests against `workmode_test` (reset on every run) |
-| `pnpm --filter @workmode/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                      |
+| `pnpm --filter @clockoff/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                      |
 | `pnpm build`                                         | production build of the web app (typechecks packages first)      |
 | `pnpm openapi`                                       | regenerate `docs/openapi.json` from the Zod schemas              |
 | `pnpm db:studio`                                     | Prisma Studio                                                    |
@@ -56,7 +56,7 @@ Emails (verification, password reset, invites) are printed to the web server con
 
 ## iOS
 
-- Open `apps/ios/WorkMode.xcodeproj`. Regenerate after editing `project.yml` with `make -C apps/ios generate`.
+- Open `apps/ios/ClockOff.xcodeproj`. Regenerate after editing `project.yml` with `make -C apps/ios generate`.
 - Simulator builds use `MockRestrictionProvider` (banner "DEVELOPMENT MODE — restrictions are simulated").
   Screen Time APIs (FamilyControls / ManagedSettings / DeviceActivity) only work on a **real device** with the
   Family Controls entitlement on your team — see `docs/IOS_SETUP.md`.

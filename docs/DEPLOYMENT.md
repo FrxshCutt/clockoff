@@ -93,7 +93,7 @@ in the US under Netlify's Data Processing Agreement (stored in the UK by Neon). 
 | Repository                         | `FrxshCutt/workmode` (private), production branch `main`                                             |
 | How builds start                   | GitHub push webhook → Netlify; Netlify clones with a read-only deploy key on the repository          |
 | Base directory / package directory | repo root / `apps/web` (`apps/web/netlify.toml`)                                                     |
-| Build command                      | `pnpm --filter @workmode/web run build:netlify` → `prisma generate` + `next build`                   |
+| Build command                      | `pnpm --filter @clockoff/web run build:netlify` → `prisma generate` + `next build`                   |
 | Publish directory                  | `apps/web/.next`                                                                                     |
 | Functions directory                | `apps/web/netlify/functions`                                                                         |
 | Runtime                            | `@netlify/plugin-nextjs` 5.16.2 (declared in `netlify.toml`, pinned in `apps/web` devDependencies)   |
@@ -115,7 +115,7 @@ in the US under Netlify's Data Processing Agreement (stored in the UK by Neon). 
 | `INTEGRATION_ENCRYPTION_KEY`                     | 32 random bytes (base64)                                                                                                                                                      |
 | `CRON_SECRET`                                    | 32 random bytes (hex)                                                                                                                                                         |
 | `SESSION_TTL_DAYS`                               | `14`                                                                                                                                                                          |
-| `EMAIL_PROVIDER` / `EMAIL_FROM`                  | `resend` / `Work Mode <noreply@clockoff.online>`                                                                                                                              |
+| `EMAIL_PROVIDER` / `EMAIL_FROM`                  | `resend` / `ClockOff <noreply@clockoff.online>`                                                                                                                               |
 | `RESEND_API_KEY`                                 | supplied by the owner; copy in `.env.deploy`                                                                                                                                  |
 | `REQUIRE_EMAIL_VERIFICATION`                     | not set → `true` in production (managers verify their email)                                                                                                                  |
 | `JOBS_ENABLED`                                   | `false` (the scheduled function replaces the in-process runner)                                                                                                               |
@@ -182,7 +182,7 @@ Recommended until on a paid plan: a nightly `pg_dump "$DIRECT_URL" | gzip` to pr
   development keeps `ConsoleEmailProvider`. Verification, password-reset, manager-invite and employee-invite emails
   all go through it.
 - Sending domain `clockoff.online` (Resend id `538d0ad9-2bee-472e-9b12-36eff396662d`, region `eu-west-1`, sending
-  only), from `Work Mode <noreply@clockoff.online>`. Resend only delivers once its DNS records verify.
+  only), from `ClockOff <noreply@clockoff.online>`. Resend only delivers once its DNS records verify.
 - **Domain verification: verified.** Requested at about 20:57 UTC on 2026-10-06; Resend reported the domain and all four records verified when checked at 22:39 UTC.
 - **SPF path: subdomain.** Resend's required records put SPF on `send.clockoff.online` (MX
   `feedback-smtp.eu-west-1.amazonses.com` and TXT `v=spf1 include:amazonses.com ~all`), plus the `rsend` CNAME
@@ -293,6 +293,20 @@ Checked between 20:43 and 21:17 UTC after the DNS move (`curl -I` at 21:05 UTC).
 | Mail records                                               | Apex MX and apex SPF resolve unchanged from public resolvers; the 6 original zone records are identical after the change                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Test email to support@clockoff.online                      | ✅ Sent through the Resend API from `noreply@clockoff.online` at 22:40 UTC; Resend reported `delivered` 5 s later (accepted by the IONOS mailbox).                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Throwaway manager registration end to end                  | ✅ 22:41 UTC, as `delivered@resend.dev` (Resend’s test inbox). `POST /api/auth/register` → 201 with `requiresEmailVerification: true`. The user row and one verification token appeared in the production database. The app sent "Confirm your Work Mode email" through Resend, which reported it `delivered`. Following its link (`/verify-email` 200, `POST /api/auth/verify-email` 200) set `emailVerifiedAt`, and sign-in then returned 200 with a session. The account was deleted (its session and token cascade) and all 38 application tables were confirmed empty again. |
+
+## Production verification after the rename (2026-10-07)
+
+Deploy `6ac60ee16c8952000854cb9b` (commit `f720667`, published 09:22 UTC) is the first build named ClockOff. The
+2026-10-06 table above is the record from before the rename and is kept as it was observed.
+
+| Check                               | Result                                                                                                                                                                                                                                                                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `https://clockoff.online/`          | `<title>ClockOff · Automatically create distraction-free shifts.</title>`; `application-name` and `og:site_name` are ClockOff. The remaining "Work Mode" on the page is the shift state ("Work Mode switches on when a scheduled shift starts").                                                                                |
+| `https://app.clockoff.online/login` | `Sign in · ClockOff`, heading "Sign in to ClockOff". `/overview` is titled `Overview · ClockOff`.                                                                                                                                                                                                                               |
+| `GET /api/health`                   | `{"status":"ok","database":"ok","migrations":"up_to_date",…}`; security headers present.                                                                                                                                                                                                                                        |
+| Email                               | A throwaway registration (`delivered@resend.dev`, deleted afterwards) received "Confirm your ClockOff email" from `ClockOff <noreply@clockoff.online>`, body "…finish setting up your ClockOff account.", Resend status `delivered`. Every table's row count was identical before and after, so the owner's data was untouched. |
+| Netlify `EMAIL_FROM`                | Changed from `Work Mode <noreply@clockoff.online>` to `ClockOff <noreply@clockoff.online>` via the API before the deploy.                                                                                                                                                                                                       |
+| Function logs                       | No warnings or errors since the deploy; server logs carry `service: "clockoff-web"` (older lines with `workmode-web` all predate the publish time).                                                                                                                                                                             |
 
 ## iOS
 

@@ -1,8 +1,8 @@
 # Break Rules (§6.3)
 
 Source: `packages/shared/src/breaks/` (`breakRules.ts`, `breakTypes.ts`, `clockSkew.ts`).
-Import: `@workmode/shared/breaks/breakRules` (re-exports the types and clock-skew helpers) or the
-`@workmode/shared` barrel.
+Import: `@clockoff/shared/breaks/breakRules` (re-exports the types and clock-skew helpers) or the
+`@clockoff/shared` barrel.
 
 The break rules are pure functions over **absolute UTC instants**. They take no clock, perform no I/O and
 never look at a timezone; the server passes its own `now`, and the device may run the same functions

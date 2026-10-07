@@ -1,6 +1,6 @@
-# Work Mode
+# ClockOff
 
-**Automatically create distraction-free shifts.** Your rota manages when your team works. Work Mode makes
+**Automatically create distraction-free shifts.** Your rota manages when your team works. ClockOff makes
 sure their phones know they're working too — without monitoring employees.
 
 - **Managers** (web dashboard) define Work Policies (which app categories are restricted during shifts) and
@@ -37,14 +37,14 @@ pnpm dev                  # web app on http://localhost:3000
 pnpm jobs                 # minute scheduler (Work Mode server job) in a second terminal
 ```
 
-iOS: open `apps/ios/WorkMode.xcodeproj` (regenerate with `make -C apps/ios generate`). Screen Time APIs
+iOS: open `apps/ios/ClockOff.xcodeproj` (regenerate with `make -C apps/ios generate`). Screen Time APIs
 require a real device; the simulator uses `MockRestrictionProvider`. See `docs/IOS_SETUP.md`.
 
 ## Quality gates
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm test:integration && pnpm build
-pnpm --filter @workmode/web test:e2e        # Playwright manager journey (starts or reuses pnpm dev)
+pnpm --filter @clockoff/web test:e2e        # Playwright manager journey (starts or reuses pnpm dev)
 make -C apps/ios build test build-release
 ```
 

@@ -1,5 +1,7 @@
 # Repository Audit (Stage 1)
 
+> Written before the product was renamed to ClockOff (see D-021).
+
 _Date: 2026-10-05. Author: Claude (autonomous build run)._
 
 ## What existed before this run

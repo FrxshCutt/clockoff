@@ -1,11 +1,11 @@
 # Policy Hierarchy (§6.1)
 
-How Work Mode decides which **Work Policy** and which **Break Policy** apply to an employee at a given
+How ClockOff decides which **Work Policy** and which **Break Policy** apply to an employee at a given
 instant. The logic is pure TypeScript in `packages/shared/src/policy/` and is exercised by the tests next to
 it (`resolvePolicy.test.ts` holds the exhaustive precedence / fall-through matrices and a 200-permutation
 determinism check). This document is the human-readable contract that code implements.
 
-Entry points (all exported from `@workmode/shared` and `@workmode/shared/policy/resolvePolicy`):
+Entry points (all exported from `@clockoff/shared` and `@clockoff/shared/policy/resolvePolicy`):
 
 | Function                                                                                 | Purpose                                                                                 |
 | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -363,17 +363,17 @@ organisation check. The Prisma client has no soft-delete extension, so `findMany
 For a whole organisation, load assignments and policies once and call `resolvePolicy` per employee —
 it is O(assignments) per call with no I/O.
 
-## 10. `RestrictionConfig` is defined in `@workmode/shared`
+## 10. `RestrictionConfig` is defined in `@clockoff/shared`
 
 `packages/shared/src/policy/restrictionConfig.ts` holds the TypeScript interface `RestrictionConfig`
 and `DEFAULT_RESTRICTION_CONFIG`; it is the source of truth for the JSON stored in
 `PolicyVersion.restrictionConfig` and decoded by the iOS client. The Zod schema
-`restrictionConfigSchema` in `@workmode/validation` validates API input and **must stay structurally
-identical**. `@workmode/shared` cannot import from `@workmode/validation` (circular), so the validation
+`restrictionConfigSchema` in `@clockoff/validation` validates API input and **must stay structurally
+identical**. `@clockoff/shared` cannot import from `@clockoff/validation` (circular), so the validation
 package should pin the two together at the type level, e.g.
 
 ```ts
-import type { RestrictionConfig } from "@workmode/shared/policy/restrictionConfig";
+import type { RestrictionConfig } from "@clockoff/shared/policy/restrictionConfig";
 type _SchemaMatchesType = [z.infer<typeof restrictionConfigSchema>] extends [RestrictionConfig]
   ? true
   : never;

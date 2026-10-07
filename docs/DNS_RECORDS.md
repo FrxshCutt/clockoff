@@ -80,7 +80,7 @@ The API returns TXT content wrapped in double quotes (see the backup file). That
 | Resend domain id | `538d0ad9-2bee-472e-9b12-36eff396662d`                                    |
 | Region           | `eu-west-1`                                                               |
 | Capability       | Sending only                                                              |
-| From address     | `Work Mode <noreply@clockoff.online>`                                     |
+| From address     | `ClockOff <noreply@clockoff.online>`                                      |
 | Netlify env      | `EMAIL_PROVIDER=resend`, `EMAIL_FROM` and `RESEND_API_KEY` set on Netlify |
 
 ### SPF: subdomain path
