@@ -25,7 +25,7 @@ flowchart LR
   PG[(PostgreSQL)]
   subgraph iOS["apps/ios (Swift)"]
     APP[ClockOffApp<br/>SwiftUI · SyncCoordinator · WorkModeController]
-    CORE[WorkModeCore (SPM)<br/>models · engine · RestrictionProvider · App Group store]
+    CORE[ClockOffCore (SPM)<br/>models · engine · RestrictionProvider · App Group store]
     MON[DeviceActivityMonitor ext.<br/>intervalDidStart/End → ManagedSettings]
     SHC[ShieldConfiguration ext.]
     SHA[ShieldAction ext.]
@@ -59,7 +59,7 @@ flowchart LR
 | `packages/db`         | Prisma schema, SQL migrations (including hand-written constraints), client singleton, seed.                                                                                                                                                                                                                                     | @prisma/client          |
 | `packages/config`     | tsconfig/eslint presets.                                                                                                                                                                                                                                                                                                        | —                       |
 | `apps/web`            | Dashboard UI, marketing pages, all API handlers, SSE, jobs entrypoint.                                                                                                                                                                                                                                                          | all packages            |
-| `apps/ios`            | Xcode project generated from `project.yml` (XcodeGen); app + 3 extensions + WorkModeCore SPM.                                                                                                                                                                                                                                   | — (consumes the API)    |
+| `apps/ios`            | Xcode project generated from `project.yml` (XcodeGen); app + 3 extensions + ClockOffCore SPM.                                                                                                                                                                                                                                   | — (consumes the API)    |
 
 ## Request lifecycle (manager)
 
@@ -79,7 +79,7 @@ flowchart LR
 row (hashed, family-based reuse detection). `getCurrentDeviceContext(req)` scopes every call to that single
 employee. Input schemas are `.strict()` and allow only the operational fields enumerated in `docs/PRIVACY.md`.
 
-## Work Mode truth model
+## ClockOff truth model
 
 - **Durable truth** lives in Postgres: shifts, break sessions, overrides, device-reported state.
 - **Expected state** is computed by the pure `computeExpectedState()` from those rows — by the server job every

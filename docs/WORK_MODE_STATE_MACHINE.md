@@ -8,7 +8,7 @@ dependencies. The same contract is implemented twice:
 | Runtime            | Implementation                               | Runs                                                                                         |
 | ------------------ | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | Server / dashboard | `packages/shared/src/workMode/` (TypeScript) | the background job (every minute), API handlers, dashboard previews                          |
-| iOS                | `WorkModeCore` engine (Swift port)           | on device, from the cached schedule, inside the app and the DeviceActivity monitor extension |
+| iOS                | `ClockOffCore` engine (Swift port)           | on device, from the cached schedule, inside the app and the DeviceActivity monitor extension |
 
 Both run the **same fixture file**, [`docs/fixtures/workmode-cases.json`](fixtures/workmode-cases.json), so
 any difference between them is a bug.
@@ -316,7 +316,7 @@ const current = states[states.length - 1]!;
 - Deduplicate events against device reports and API-emitted events. Use `(type, breakSessionId)` for break
   events, and `ManagerOverride.expiredEventEmittedAt` for `OVERRIDE_EXPIRED`.
 
-### iOS engine (`WorkModeCore`)
+### iOS engine (`ClockOffCore`)
 
 The Swift port mirrors these functions and types field for field. The device evaluates the cached schedule
 at launch, on sync, and inside the DeviceActivity monitor callbacks. It maps the result onto
@@ -363,7 +363,7 @@ interval start and end, with `warningTime` matching the two warning windows. Dev
   what a minute-by-minute `diffStates` walk emits (events, instants and ids, well-paired), and check
   invariance under input order and under splitting shifts into back-to-back pieces. Set
   `WORKMODE_PROPERTY_CASES=5000` for a deep local run.
-- **XCTest** (`WorkModeCore`) loads the same file as a test resource, decodes instants with
+- **XCTest** (`ClockOffCore`) loads the same file as a test resource, decodes instants with
   `ISO8601DateFormatter` (fractional seconds enabled), runs the Swift engine and asserts the same fields
   under the same optional-key rule.
   - Decode `breakSessions[].relaxedCategories` and `overrides[].payload` leniently, as `[String]` and as a

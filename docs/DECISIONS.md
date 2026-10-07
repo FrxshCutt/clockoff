@@ -7,6 +7,8 @@ assumption is wrong. Newest at the bottom.
 
 No existing repository matched the brief (see `REPO_AUDIT.md`). Created a fresh git repo on `main`.
 
+(Superseded by D-022: the repository is now GitHub `FrxshCutt/clockoff` and the checkout is `~/clockoff`.)
+
 ## D-002 — Pin Next.js 15.5, Prisma 6.19, TypeScript 5.9, Vitest 3, ESLint 9
 
 The registry's `latest` tags were Next 16, Prisma 7 (8 rc), TypeScript 7 (native), Vitest 5, ESLint 10.
@@ -23,7 +25,7 @@ This is a supply-chain safety feature and intentionally left on.
 ## D-004 — Postgres on port 5433, Docker Compose, two databases
 
 A Supabase stack on this machine already occupies 54321–54327; 5432 is kept free for any system Postgres.
-`docker/postgres-init.sql` creates `workmode` and `workmode_test` with `citext` + `pgcrypto`.
+`docker/postgres-init.sql` creates `clockoff` and `clockoff_test` with `citext` + `pgcrypto`.
 Integration tests use `TEST_DATABASE_URL` and reset that database; they never touch dev data.
 
 ## D-005 — Single root `.env` loaded with `dotenv-cli`
@@ -59,6 +61,8 @@ Hand-maintaining `project.pbxproj` for four targets is error-prone. `make genera
 Bundle id placeholder `com.workmode.app` (+ `.devicemonitor`, `.shieldconfig`, `.shieldaction`),
 App Group `group.com.workmode.app.shared`, `DEVELOPMENT_TEAM` left blank in `Signing.xcconfig`.
 No code-signing identity exists on the build machine, so real-device runs are documented, not executed.
+
+(Bundle ids and App Group superseded by D-021: `online.clockoff.app*` and `group.online.clockoff.app.shared`.)
 
 ## D-010 — Prisma config via `prisma.config.ts`, migrations committed, `db push` never used
 
@@ -166,6 +170,7 @@ reports, the `_dmarc` CNAME is replaced by one TXT record with `rua`; a second `
 Context: the product ships as **ClockOff** on `clockoff.online`. "Work Mode" was used for two things: the product
 and the state an employee's phone is in during an active shift. Only the product name changes. The full inventory,
 every borderline call and the list of ambiguous occurrences left as "Work Mode" are in `docs/RENAME_AUDIT.md`.
+(Superseded by D-022: those ambiguous occurrences now say ClockOff.)
 
 Decision:
 
@@ -182,15 +187,64 @@ Decision:
 - Kept on purpose: the internal `WorkModeCore` Swift package (and `WorkModeScreenTime`, `WorkModeLog`); local
   Postgres role/database names `workmode` / `workmode_test` and the `workmode-pgdata` volume; the seed hash salt;
   the digest advisory-lock key; cookie names `wm_*`; the GitHub repository `FrxshCutt/workmode` and the
-  `~/workmode` checkout.
+  `~/workmode` checkout. (Superseded by D-022: all of these now use ClockOff names.)
 - Mobile JWT issuer/audience became `clockoff` / `clockoff-mobile`; support address `support@clockoff.online`;
   sender `ClockOff <noreply@clockoff.online>`.
 - Earlier entries in this log are historical and stay as written, except that the mechanical package-scope pass
   also rewrote `@workmode/` to `@clockoff/` inside D-006 and D-008. Other old identifiers in those entries (for
-  example the bundle ids in D-009) are as originally decided.
+  example the bundle ids in D-009) are as originally decided. (Superseded by D-022: product-name prose and
+  descriptions of the current repository in earlier entries now say ClockOff; changed decisions carry a note.)
 
 Consequences: the new bundle ids make this a new app as far as Apple is concerned: the App ID, App Group,
 Family Controls (Distribution) entitlement and provisioning profiles must be created again under
 `online.clockoff.app` and its three extension ids before a device build or TestFlight upload works. Any existing
 install (there are no production users) loses its Keychain tokens and App Group data and must onboard again.
 Mobile access tokens signed with the old issuer/audience stop verifying; clients refresh within 15 minutes.
+
+## D-022 — Everything else renamed to ClockOff
+
+Context: after the first rename (D-021) the owner decided on 2026-10-07 to change everything else to ClockOff:
+the 32 lines D-021 left as "Work Mode" because they could mean either the product or the shift state, and the
+internal names D-021 kept on purpose. The inventory is in `docs/RENAME_AUDIT.md`.
+
+Decision:
+
+- The 32 ambiguous lines say **ClockOff**, worded naturally: "ClockOff cannot see your messages…", "whether
+  ClockOff is set up and working", "ClockOff needs attention", "ClockOff's shields", "what ClockOff can and can't
+  see", "finished setting up ClockOff", "Breaks aren't available in ClockOff at your workplace". Tests that pin
+  these strings changed with them, and `docs/PRIVACY.md` was regenerated from `privacyStatements.ts`.
+- Swift package `WorkModeCore` → `ClockOffCore` at `apps/ios/Packages/ClockOffCore` (targets `ClockOffCore` and
+  `ClockOffScreenTime`, tests `ClockOffCoreTests` and `ClockOffScreenTimeTests`); `WorkModeLog` → `ClockOffLog`,
+  `WorkModeDateCoding` → `ClockOffDateCoding`, `JSONEncoder` / `JSONDecoder` `.workMode` → `.clockOff`,
+  `Notification.Name.workModeSelectionDidChange` / `.workModeAuthorizationStatusDidChange` →
+  `.clockOffSelectionDidChange` / `.clockOffAuthorizationStatusDidChange`.
+- App Group defaults keys and local-notification ids: prefix `wm.` → `clockoff.` (`clockoff.flags.*`,
+  `clockoff.sync.*`, `clockoff.onboarding.step`, `clockoff.shift-<id>-start`, …).
+- Web cookies `wm_session` / `wm_csrf` / `wm_org` → `clockoff_session` / `clockoff_csrf` / `clockoff_org`.
+- Local Postgres: role and password `clockoff`, databases `clockoff` / `clockoff_test`, compose project pinned
+  with `name: clockoff`, volume `clockoff-pgdata` (Docker volume `clockoff_clockoff-pgdata`), container
+  `clockoff-postgres`. `.env.example` and CI use the new connection URLs.
+- Seed hash salt `workmode-seed:` → `clockoff-seed:`; digest advisory-lock key `workmode:digest:` →
+  `clockoff:digest:`.
+- GitHub repository `FrxshCutt/workmode` → `FrxshCutt/clockoff` (public); the Netlify site builds from it. The
+  local checkout is `~/clockoff`.
+- Earlier entries in this log and `docs/REPO_AUDIT.md` use ClockOff for the product and describe the current
+  repository (D-004 names the `clockoff` databases). Entries whose decision has since changed (D-001, D-009,
+  D-021) keep their original text with a "superseded" note. Dated observation tables in `docs/DEPLOYMENT.md` and
+  `docs/DNS_RECORDS.md` stay as observed.
+- Unchanged, pending the owner's answer: "Work Mode" as the name of the shift state. "WORK MODE ACTIVE", "Work
+  Mode active / started / ended", "switch Work Mode on / off", "During Work Mode", the state machine, the
+  `WORK_MODE_*` enums, `workModeActive`, `WorkModeEngine*`, `WorkModeController*`, `workModeMachine`,
+  `runWorkModeTick`, the `work-mode-tick` function, `workmode-cases.json`, `WORKMODE_PROPERTY_CASES`, the
+  `packages/shared/src/workMode/` and `apps/ios/ClockOffApp/WorkMode/` folders and the
+  `WORK_MODE_STATE_MACHINE.md` / `WORK_MODE_SERVER_JOB.md` docs keep their names.
+
+Consequences: the session cookie is now `clockoff_session` and the old `wm_session` is no longer read, so the
+owner signs in again once after the deploy. Seeded ids change on the next re-seed because the salt changed
+(production is never seeded). Existing local databases need the steps in `docs/LOCAL_DEVELOPMENT.md` ›
+"Upgrading an existing checkout" (recreate, or rename the role and databases and copy the volume) and the new
+`DATABASE_URL` / `DIRECT_URL` / `TEST_DATABASE_URL` values in `.env`. An existing development install of the
+iOS app does not read its old `wm.*` App Group keys (there are no production users). GitHub redirects the old
+repository URL, and the Netlify deploy key and webhook stayed attached through the rename. The old local volume
+`workmode_workmode-pgdata` is kept as a backup on the owner's machine; remove it with
+`docker volume rm workmode_workmode-pgdata` once the new database is confirmed.

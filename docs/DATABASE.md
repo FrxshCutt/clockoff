@@ -39,8 +39,8 @@ the SQL, then `pnpm db:migrate`.
 
 | Database        | URL variable        | Used by                                                    |
 | --------------- | ------------------- | ---------------------------------------------------------- |
-| `workmode`      | `DATABASE_URL`      | dev server, jobs, seed, Prisma Studio                      |
-| `workmode_test` | `TEST_DATABASE_URL` | integration tests — **dropped and recreated on every run** |
+| `clockoff`      | `DATABASE_URL`      | dev server, jobs, seed, Prisma Studio                      |
+| `clockoff_test` | `TEST_DATABASE_URL` | integration tests — **dropped and recreated on every run** |
 
 The integration global setup refuses to run unless `TEST_DATABASE_URL` contains `_test`.
 

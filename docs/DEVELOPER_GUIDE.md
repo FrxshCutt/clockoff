@@ -83,5 +83,5 @@ functions; they never re-implement them. The state machine and break rules are m
 Integration helpers (`apps/web/test/helpers`): `callRoute(handler, { method, path, params, query, body, jar })`,
 `createTestUser()`, `createTestOrg({ owner })`, `addMember(orgId, user, role)`, `loginAs(user)` → cookie jar with CSRF,
 `createTestDevice(orgId)`, `lastEmailToken(email, path)`, `registerTenantIsolationCase(...)`. The global setup resets
-`workmode_test` (refuses any database whose name does not end in `_test`) and serialises concurrent runs with an
+`clockoff_test` (refuses any database whose name does not end in `_test`) and serialises concurrent runs with an
 advisory lock.

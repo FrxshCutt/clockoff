@@ -8,7 +8,7 @@ about what it may touch.
 | Unit               | `packages/*/src/**/*.test.ts`, `apps/web/src/**/*.test.ts` (next to the source)        | Vitest (`unit` project in `apps/web`) | Nothing outside the process: no database, no network             |
 | Integration        | `apps/web/test/integration/**/*.test.ts` (and `apps/web/src/**/*.integration.test.ts`) | Vitest (`integration` project)        | The dedicated `TEST_DATABASE_URL` database (reset every run)     |
 | End-to-end (smoke) | `apps/web/e2e/**`                                                                      | Playwright                            | A running dev server on `:3000` with a seeded dev database       |
-| iOS                | `apps/ios/Packages/WorkModeCore/Tests/**` and the app's XCTest targets                 | XCTest (`make -C apps/ios test`)      | Simulator only; `MockRestrictionProvider` instead of Screen Time |
+| iOS                | `apps/ios/Packages/ClockOffCore/Tests/**` and the app's XCTest targets                 | XCTest (`make -C apps/ios test`)      | Simulator only; `MockRestrictionProvider` instead of Screen Time |
 
 The pure state-machine fixtures in `docs/fixtures/workmode-cases.json` are run by both the TypeScript
 unit tests (`packages/shared`) and XCTest, so the server and the phone cannot disagree about Work Mode
@@ -20,7 +20,7 @@ From the repo root:
 
 ```bash
 pnpm test                      # unit tests in every package (Turborepo)
-pnpm test:integration          # apps/web integration suite against workmode_test
+pnpm test:integration          # apps/web integration suite against clockoff_test
 pnpm --filter @clockoff/web test:e2e   # Playwright smoke (starts/reuses pnpm dev)
 make -C apps/ios test          # iOS unit tests on the simulator
 ```
@@ -50,7 +50,7 @@ Packages: `cd packages/shared && pnpm typecheck && pnpm lint && pnpm test` (same
 ### Database policy
 
 - The suite only ever talks to `TEST_DATABASE_URL`. `test/helpers/testDatabase.ts` refuses to run unless
-  that URL names a database whose name **ends in `_test`** (e.g. `workmode_test`) and that differs from
+  that URL names a database whose name **ends in `_test`** (e.g. `clockoff_test`) and that differs from
   `DATABASE_URL` (same host, port and name = same database). Before dropping anything the global setup
   re-checks `SELECT current_database()` on the open connection. `test/integration/harness.test.ts` covers
   the guard.
@@ -216,7 +216,7 @@ manager and organisation (`E2E Coffee <runId>`) in the dev database.
 
 `make -C apps/ios test` builds and runs XCTest on the simulator. Screen Time APIs are unavailable there, so
 `MockRestrictionProvider` stands in; tests that need real shields are manual device checks listed in
-`docs/IOS_SETUP.md`. The `WorkModeCore` Swift package also runs `docs/fixtures/workmode-cases.json`.
+`docs/IOS_SETUP.md`. The `ClockOffCore` Swift package also runs `docs/fixtures/workmode-cases.json`.
 
 ## Before you push
 
@@ -224,4 +224,4 @@ manager and organisation (`E2E Coffee <runId>`) in the dev database.
 pnpm typecheck && pnpm lint && pnpm test && pnpm test:integration
 ```
 
-Integration tests need Postgres from `pnpm db:up` (port 5433) with the `workmode_test` database.
+Integration tests need Postgres from `pnpm db:up` (port 5433) with the `clockoff_test` database.

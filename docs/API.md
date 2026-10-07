@@ -23,10 +23,10 @@ There are two APIs on one origin:
 
 ### Managers (cookie session + CSRF)
 
-- `POST /api/auth/login` sets `wm_session` (httpOnly, opaque, hashed server-side, sliding expiry) and
-  `wm_csrf` (readable by JavaScript). `wm_org` selects the current organisation; membership is re-checked on
+- `POST /api/auth/login` sets `clockoff_session` (httpOnly, opaque, hashed server-side, sliding expiry) and
+  `clockoff_csrf` (readable by JavaScript). `clockoff_org` selects the current organisation; membership is re-checked on
   every request.
-- Every **mutating** request (`POST`/`PUT`/`PATCH`/`DELETE`) must echo the `wm_csrf` cookie value in the
+- Every **mutating** request (`POST`/`PUT`/`PATCH`/`DELETE`) must echo the `clockoff_csrf` cookie value in the
   `x-csrf-token` header (double-submit), and cross-origin mutating requests are rejected. Missing or wrong
   token → `403 CSRF_FAILED`.
 - Each operation lists its required permission as `x-permission` (see `packages/shared/src/permissions.ts`

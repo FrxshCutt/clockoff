@@ -1,7 +1,7 @@
 # iOS setup
 
 The employee app lives in `apps/ios`: a SwiftUI app, three Screen Time app extensions and a local Swift
-package, `WorkModeCore`, that holds everything that is not UI. The Xcode project is generated from
+package, `ClockOffCore`, that holds everything that is not UI. The Xcode project is generated from
 `apps/ios/project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen). Settings live in
 `apps/ios/Config/*.xcconfig`.
 
@@ -17,7 +17,7 @@ package, `WorkModeCore`, that holds everything that is not UI. The Xcode project
 cd apps/ios
 make generate        # ClockOff.xcodeproj from project.yml
 make build           # Debug build of the app + 3 extensions for the iPhone 17 Pro simulator
-make test            # WorkModeCore tests + the app's hosted tests on the simulator
+make test            # ClockOffCore tests + the app's hosted tests on the simulator
 make build-release   # Release build for the simulator, then product checks (see "Release safety")
 ```
 
@@ -37,9 +37,9 @@ press Run. Start the API first (`pnpm dev` at the repo root). The Debug build ta
 | `ClockOffShieldConfiguration`                 | app extension (`com.apple.ManagedSettingsUI.shield-configuration-service`) | `online.clockoff.app.shieldconfig`  | Family Controls, App Groups                    | Draws the screen shown over a blocked app                                |
 | `ClockOffShieldAction`                        | app extension (`com.apple.ManagedSettings.shield-action-service`)          | `online.clockoff.app.shieldaction`  | Family Controls, App Groups                    | Handles taps on that screen's buttons                                    |
 | `ClockOffAppTests`                            | unit tests, hosted by the app                                              | `online.clockoff.app.tests`         | none                                           | View models, sync, the mock provider                                     |
-| `WorkModeCore` (SPM, `Packages/WorkModeCore`) | static library                                                             | none                                | none                                           | Models, API client, Keychain, App Group storage, engine, planner         |
+| `ClockOffCore` (SPM, `Packages/ClockOffCore`) | static library                                                             | none                                | none                                           | Models, API client, Keychain, App Group storage, engine, planner         |
 
-The extensions link only `WorkModeCore`, which imports Foundation, `os` and Security, and never UIKit,
+The extensions link only `ClockOffCore`, which imports Foundation, `os` and Security, and never UIKit,
 SwiftUI or the Screen Time frameworks. Extensions have tight memory limits. The shield configuration
 extension also imports UIKit, because `ShieldConfiguration` takes `UIColor`s.
 
@@ -86,7 +86,7 @@ CLOCKOFF_MOCK_RESTRICTIONS_CONDITION =      // use the real Screen Time provider
 
 ### App Group
 
-`group.online.clockoff.app.shared` is on all four targets. It must match `AppGroup.identifier` in WorkModeCore,
+`group.online.clockoff.app.shared` is on all four targets. It must match `AppGroup.identifier` in ClockOffCore,
 `CLOCKOFF_APP_GROUP` and every `*.entitlements` file. The container holds:
 
 | File                  | Writer       | Reader                        | Contents                                                                                                                                               |
@@ -269,7 +269,7 @@ not contain the mock. A Release simulator build therefore uses `AppleScreenTimeR
 
 | Area                                             | File(s)                                                                                                                                                                                                                                                                                                                       |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| §8.3 protocol and value types                    | `Packages/WorkModeCore/Sources/WorkModeCore/Restrictions/RestrictionProvider.swift` (`RestrictionProvider`, `RestrictionPlan`, `BreakBehaviour`, `ActivityPlan`, `RestrictionEngineState`, `RestrictionAuthorizationStatus`, `SelectionCountsProviding`)                                                                      |
+| §8.3 protocol and value types                    | `Packages/ClockOffCore/Sources/ClockOffCore/Restrictions/RestrictionProvider.swift` (`RestrictionProvider`, `RestrictionPlan`, `BreakBehaviour`, `ActivityPlan`, `RestrictionEngineState`, `RestrictionAuthorizationStatus`, `SelectionCountsProviding`)                                                                      |
 | Planning and reconciling                         | `Restrictions/ActivityPlanner.swift` (`ActivityPlanner`, `RestrictionReconciler`, `RestrictionAction`)                                                                                                                                                                                                                        |
 | Engine (placeholder for the fixture-tested port) | `Engine/WorkModeEngine.swift` (`WorkModeEngineProtocol`, `WorkModeEngine`), `Engine/WorkModeEvents.swift`                                                                                                                                                                                                                     |
 | App Group                                        | `Storage/AppGroup.swift`, `AppGroupFileStore.swift`, `StateCache.swift`, `EventOutbox.swift`, `PlansStore.swift`                                                                                                                                                                                                              |

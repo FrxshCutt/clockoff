@@ -150,7 +150,7 @@ sequenceDiagram
   automatically: deactivation affects a person's phone, so a manager confirms it.
 - **Matching employees.** By `externalEmployeeId` first; otherwise by email (case-insensitive) within the
   organisation, which links someone added manually before the integration was connected; otherwise create.
-  `inviteStatus`, devices and Work Mode settings are never changed by a sync.
+  `inviteStatus`, devices and ClockOff settings are never changed by a sync.
 - **Open shifts** (no assigned employee) are skipped. Shifts shorter than 15 minutes, ending before they
   start or overlapping another shift for the same employee are reported (`INVALID_TIME` / `CONFLICT`) and
   skipped.
@@ -161,7 +161,7 @@ sequenceDiagram
 
 `Integration.activationMode` decides what turns Work Mode on for that organisation's synced staff:
 
-| Mode          | Work Mode follows                       | How it reaches the state machine                                                                                                                                                                                                                                                               |
+| Mode          | ClockOff follows                        | How it reaches the state machine                                                                                                                                                                                                                                                               |
 | ------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SCHEDULED`   | The rota: shifts as published upstream. | `syncShifts` upserts `Shift` rows; nothing else changes. Same behaviour as manual or CSV shifts.                                                                                                                                                                                               |
 | `CLOCK_EVENT` | Actual clock-in and clock-out.          | `syncClockEvents` records `ClockEvent` rows. A reconciler pairs `CLOCK_IN` / `CLOCK_OUT` per employee and upserts one `Shift` per pair (`externalShiftId = clock:<provider>:<clock-in id>`; ends at clock-out, or while still clocked in at the matched rota shift's end, capped at 12 hours). |

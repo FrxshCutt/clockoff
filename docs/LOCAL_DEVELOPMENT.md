@@ -12,10 +12,10 @@
 ## First run
 
 ```bash
-git clone <repo> workmode && cd workmode
+git clone https://github.com/FrxshCutt/clockoff.git clockoff && cd clockoff
 pnpm install                 # also runs `prisma generate`
 pnpm setup:env               # .env with generated secrets (edit if needed)
-pnpm db:up                   # Postgres 16 on localhost:5433 → databases `workmode` and `workmode_test`
+pnpm db:up                   # Postgres 16 on localhost:5433 → databases `clockoff` and `clockoff_test`
 pnpm db:migrate:deploy       # apply committed migrations (or `pnpm db:migrate` to create new ones)
 pnpm db:seed                 # Harpenden Coffee Co. demo data
 pnpm dev                     # http://localhost:3000
@@ -33,12 +33,62 @@ pnpm jobs
 Emails (verification, password reset, invites) are printed to the web server console by
 `ConsoleEmailProvider` — look for the boxed block containing the link.
 
+## Upgrading an existing checkout
+
+Checkouts from before the rename to ClockOff (`docs/DECISIONS.md` D-022) ran Postgres as the `workmode-postgres`
+container with a `workmode` role, `workmode` / `workmode_test` databases and the `workmode_workmode-pgdata`
+volume. The compose project is now `clockoff`: container `clockoff-postgres`, role and password `clockoff`,
+databases `clockoff` / `clockoff_test`, volume `clockoff_clockoff-pgdata`. After pulling, run `pnpm install`.
+
+`pnpm db:down` is not enough: it now acts on the `clockoff` project, so it neither stops the old container (which
+still holds port 5433) nor moves its data. Stop `pnpm dev`, `pnpm jobs` and Prisma Studio, then pick one:
+
+- **Recreate (simplest; local data is lost).** The old volume is left alone.
+
+  ```bash
+  docker compose -p workmode down     # removes the old container, keeps its volume
+  pnpm db:up                          # clockoff-postgres on a fresh clockoff_clockoff-pgdata volume
+  pnpm db:migrate && pnpm db:seed
+  ```
+
+- **Rename in place (keeps local data).** With the old container running (`docker start workmode-postgres`):
+
+  ```bash
+  # A temporary superuser does the renames: Postgres cannot rename the role or database you are connected as.
+  docker exec workmode-postgres psql -U workmode -d postgres -c "CREATE ROLE clockoff_upgrade SUPERUSER LOGIN"
+  docker exec workmode-postgres psql -U clockoff_upgrade -d postgres \
+    -c "ALTER ROLE workmode RENAME TO clockoff" \
+    -c "ALTER ROLE clockoff PASSWORD 'clockoff'" \
+    -c "ALTER DATABASE workmode RENAME TO clockoff" \
+    -c "ALTER DATABASE workmode_test RENAME TO clockoff_test"
+  docker exec workmode-postgres psql -U clockoff -d postgres -c "DROP ROLE clockoff_upgrade"
+  docker compose -p workmode down     # removes the old container, keeps its volume
+  # Copy the data directory into the new volume (ownership preserved).
+  docker run --rm -v workmode_workmode-pgdata:/from:ro -v clockoff_clockoff-pgdata:/to \
+    postgres:16-alpine sh -c "cp -a /from/. /to/"
+  pnpm db:up                          # clockoff-postgres on the copied volume
+  ```
+
+  Compose may warn that `clockoff_clockoff-pgdata` was not created by Compose; that is harmless. The old volume
+  stays as a backup until you remove it with `docker volume rm workmode_workmode-pgdata`.
+
+Then:
+
+- Update `DATABASE_URL`, `DIRECT_URL` and `TEST_DATABASE_URL` in your `.env` to the `.env.example` values
+  (`postgresql://clockoff:clockoff@localhost:5433/clockoff?schema=public` and `…/clockoff_test?schema=public`).
+- Rename any `WORKMODE_*` settings in the git-ignored `apps/ios/Config/Local.xcconfig` and
+  `apps/ios/Config/Signing.local.xcconfig` to `CLOCKOFF_*` (the committed xcconfigs already use `CLOCKOFF_*`).
+- Sign in to the local dashboard again: the session cookie is now `clockoff_session`. The seed hash salt changed
+  too, so the next `pnpm db:seed` gives the demo records new ids.
+- Optional: point the remote at the new name with `git remote set-url origin https://github.com/FrxshCutt/clockoff.git`
+  (GitHub redirects the old URL either way) and rename the folder to `clockoff`.
+
 ## Everyday commands
 
 | Command                                              | What                                                             |
 | ---------------------------------------------------- | ---------------------------------------------------------------- |
 | `pnpm typecheck` / `pnpm lint` / `pnpm test`         | all packages via Turborepo                                       |
-| `pnpm test:integration`                              | API + service tests against `workmode_test` (reset on every run) |
+| `pnpm test:integration`                              | API + service tests against `clockoff_test` (reset on every run) |
 | `pnpm --filter @clockoff/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                      |
 | `pnpm build`                                         | production build of the web app (typechecks packages first)      |
 | `pnpm openapi`                                       | regenerate `docs/openapi.json` from the Zod schemas              |
@@ -52,7 +102,7 @@ Emails (verification, password reset, invites) are printed to the web server con
 - Constraints Prisma can't express (partial unique indexes, check constraints, functional indexes) are
   hand-written SQL in the migration — see `docs/DATABASE.md`.
 - `prisma migrate reset` is intentionally not used by tooling or tests (it refuses to run from automation);
-  the integration suite resets the dedicated `workmode_test` schema itself.
+  the integration suite resets the dedicated `clockoff_test` schema itself.
 
 ## iOS
 
@@ -76,4 +126,4 @@ Emails (verification, password reset, invites) are printed to the web server con
 - **Prisma "Environment variable not found: DATABASE_URL"** — scripts load the root `.env` via `dotenv-cli`;
   run package scripts through `pnpm --filter …` or from the repo root.
 - **`prisma migrate dev` wants to reset** — happens when the dev DB has objects but no migration history.
-  Drop and recreate the `workmode` database (it is local), then `pnpm db:migrate:deploy`.
+  Drop and recreate the `clockoff` database (it is local), then `pnpm db:migrate:deploy`.

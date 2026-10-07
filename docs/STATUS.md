@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-10-06. This is the honest state of the MVP: what works and how it was verified, what is
+_Last updated: 2026-10-07. This is the honest state of the MVP: what works and how it was verified, what is
 partial, and what needs external credentials or hardware that were not available while building it._
 
 ## Summary
@@ -17,7 +17,7 @@ All 26 build stages are implemented. Every quality gate passes on the build mach
 | `apps/web` integration tests (real Postgres)         | 353 passed, incl. 85-case tenant-isolation matrix and the Definition-of-Done journey                         |
 | Playwright manager journey (`apps/web/e2e`)          | passes on a fresh `pnpm dev`                                                                                 |
 | `pnpm build` (Next.js production build)              | succeeds                                                                                                     |
-| iOS `make build` / `make test`                       | WorkModeCore 195, WorkModeScreenTime 4, app 134 passed (1 Keychain test skipped on unsigned simulator hosts) |
+| iOS `make build` / `make test`                       | ClockOffCore 195, ClockOffScreenTime 4, app 134 passed (1 Keychain test skipped on unsigned simulator hosts) |
 | iOS `make build-release`                             | succeeds with the real Apple provider; `Scripts/verify-release.sh` confirms no mock code ships               |
 
 The one thing that could **not** be exercised is real Screen Time enforcement on a physical iPhone: this Mac
@@ -121,7 +121,14 @@ edited by hand. The domain is still registered at IONOS, and the IONOS mailbox i
 DNS is no longer a manual step: record changes go through the Cloudflare API (back up the zone first).
 
 Done since the previous update: the first owner account (`support@clockoff.online`) was registered and verified
-on 2026-10-07, so production now holds the owner's organisation.
+on 2026-10-07, so production now holds the owner's organisation. On the same day everything else was renamed to
+ClockOff (`docs/DECISIONS.md` D-022): the lines previously left as "Work Mode" because they were ambiguous, the
+internal names, the local database names and the GitHub repository (now `FrxshCutt/clockoff`, checked out at
+`~/clockoff`). "Work Mode" remains the name of the shift state until the owner decides otherwise.
+
+**Sign in again once after that deploy:** the dashboard session cookie is now `clockoff_session`, so the old
+session is no longer recognised. Nothing else is needed. Existing local checkouts follow
+`docs/LOCAL_DEVELOPMENT.md` › "Upgrading an existing checkout".
 
 1. **Rotate the credentials that were pasted into chat**: the Netlify personal access token, the Neon API key,
    the Resend API key and the Cloudflare API token. Update `.env.deploy` with the new values. For the running
@@ -130,8 +137,8 @@ on 2026-10-07, so production now holds the owner's organisation.
    Cloudflare token with the same scope (Zone → DNS → Edit on `clockoff.online` only), store it as
    `DNS_API_TOKEN` in `.env.deploy`, and revoke the old one; it is never set on Netlify. The deploy key and
    webhook do not need rotating.
-2. **Apple Developer Program and the new identifiers.** The rename gave the app new bundle ids, so everything
-   Apple-side is created under them (nothing under `com.workmode.*` carries over):
+2. **Apple Developer Program and the new identifiers.** The first rename (D-021) gave the app new bundle ids,
+   so everything Apple-side is created under them (nothing under `com.workmode.*` carries over):
    - register the App IDs `online.clockoff.app`, `online.clockoff.app.devicemonitor`,
      `online.clockoff.app.shieldconfig` and `online.clockoff.app.shieldaction`;
    - register the App Group `group.online.clockoff.app.shared` and enable it, plus Family Controls, on all four;
@@ -147,15 +154,11 @@ on 2026-10-07, so production now holds the owner's organisation.
    `NEXT_PUBLIC_APP_STORE_URL` on Netlify so invite instructions link to it (until then they link to the web app).
 5. **Run the physical-device script** (Definition of Done items 7–10, above) on a real iPhone against
    production or a local server.
-6. **Decide the ambiguous "Work Mode" lines** listed in `docs/RENAME_AUDIT.md` (Part 2). They were left as
-   "Work Mode" on purpose; the most visible are on the iOS welcome, Screen Time and privacy screens.
-7. **Optional: Netlify Pro** and move the functions region to London to remove the US-region limitation.
-8. **Optional: DMARC reporting.** The `_dmarc` CNAME to IONOS (`v=DMARC1; p=none;`) already satisfies Resend.
+6. **Optional: Netlify Pro** and move the functions region to London to remove the US-region limitation.
+7. **Optional: DMARC reporting.** The `_dmarc` CNAME to IONOS (`v=DMARC1; p=none;`) already satisfies Resend.
    If you want aggregate reports, replace that CNAME with **one** TXT record, for example
    `v=DMARC1; p=none; rua=mailto:support@clockoff.online`, through the Cloudflare API after a backup. Never add a
    second `_dmarc` record. This is the owner's call and is not needed for sending.
-9. **Optional: rename the GitHub repository** `FrxshCutt/workmode` and the local `~/workmode` folder. Neither is
-   user-visible; GitHub redirects the old URL and the Netlify deploy key and webhook stay attached.
 
 ## Where to look next
 

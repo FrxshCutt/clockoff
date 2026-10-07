@@ -112,18 +112,18 @@ ended but not yet reported. Expiries are never replayed: the server sweeps them.
 ## 6. Local notifications
 
 `NotificationPlanner` (pure) turns the cache into requests with deterministic identifiers, and
-`UserNotificationScheduler` replaces every pending `wm.*` request on each re-plan, so re-planning never
+`UserNotificationScheduler` replaces every pending `clockoff.*` request on each re-plan, so re-planning never
 duplicates:
 
-| Identifier                        | When                                                              | Text                      |
-| --------------------------------- | ----------------------------------------------------------------- | ------------------------- |
-| `wm.shift-<firstShiftId>-warning` | interval start − `preShiftWarningMinutes` (0 disables)            | Shift begins soon         |
-| `wm.shift-<firstShiftId>-start`   | merged working-interval start                                     | Work Mode activated       |
-| `wm.shift-<firstShiftId>-end`     | merged working-interval end                                       | Work Mode ended           |
-| `wm.break-<clientBreakId>-ending` | `plannedEndsAt` − 2 min                                           | Break ending soon         |
-| `wm.break-<clientBreakId>-ended`  | `plannedEndsAt`                                                   | Break ended               |
-| `wm.schedule-changed`             | immediately, once per new `scheduleVersion`                       | Schedule changed          |
-| `wm.permission-attention`         | immediately when Screen Time access is lost (once per regression) | Work Mode needs attention |
+| Identifier                              | When                                                              | Text                     |
+| --------------------------------------- | ----------------------------------------------------------------- | ------------------------ |
+| `clockoff.shift-<firstShiftId>-warning` | interval start − `preShiftWarningMinutes` (0 disables)            | Shift begins soon        |
+| `clockoff.shift-<firstShiftId>-start`   | merged working-interval start                                     | Work Mode activated      |
+| `clockoff.shift-<firstShiftId>-end`     | merged working-interval end                                       | Work Mode ended          |
+| `clockoff.break-<clientBreakId>-ending` | `plannedEndsAt` − 2 min                                           | Break ending soon        |
+| `clockoff.break-<clientBreakId>-ended`  | `plannedEndsAt`                                                   | Break ended              |
+| `clockoff.schedule-changed`             | immediately, once per new `scheduleVersion`                       | Schedule changed         |
+| `clockoff.permission-attention`         | immediately when Screen Time access is lost (once per regression) | ClockOff needs attention |
 
 Only future moments are planned, within 7 days, at most 60 pending (iOS caps at 64). A break the shift end cuts
 short gets no break notifications ("Work Mode ended" covers it). Nothing is planned without a Work Policy (nothing
@@ -156,7 +156,7 @@ interaction (§12): there is no "you opened a blocked app" notice.
 ## 9. Leaving and signing out
 
 Leave Workplace lifts the shields and cancels every activity first, wipes `state.json`, `plans.json`, both
-selection files, the shared flags, the sync metadata and onboarding progress, cancels every `wm.*` notification,
+selection files, the shared flags, the sync metadata and onboarding progress, cancels every `clockoff.*` notification,
 then `POST /leave-workplace` and deletes the tokens — local cleanup happens even when the server is unreachable
 (the employee is told to ask a manager to disconnect the phone). Sign Out does the same without unlinking
 (`POST /auth/logout`). The server ending the session (DEVICE_INACTIVE, TOKEN_REUSED, …) triggers the same wipe

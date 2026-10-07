@@ -30,7 +30,7 @@ flowchart LR
   NEON[("Neon Postgres 17 · aws-eu-west-2 London\nproject quiet-flower-84715995 · branch production")]
   RESEND["Resend (eu-west-1)\nnoreply@clockoff.online"]
   MAILBOX["IONOS mailbox\n(e.g. support@clockoff.online)"]
-  GH["GitHub FrxshCutt/workmode (private)\npush to main → Netlify build"]
+  GH["GitHub FrxshCutt/clockoff (public)\npush to main → Netlify build"]
   IOS["iOS app (Release → https://app.clockoff.online/api/mobile/v1)"]
 
   REG --> CF
@@ -87,19 +87,19 @@ in the US under Netlify's Data Processing Agreement (stored in the UK by Neon). 
 
 ## Build and continuous deployment
 
-| Setting                            | Value                                                                                                |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Netlify site                       | `clockoff` (id `b65c1658-1110-42ec-a926-637ae7d9415f`, team `frxshcutt`, free plan)                  |
-| Repository                         | `FrxshCutt/workmode` (private), production branch `main`                                             |
-| How builds start                   | GitHub push webhook → Netlify; Netlify clones with a read-only deploy key on the repository          |
-| Base directory / package directory | repo root / `apps/web` (`apps/web/netlify.toml`)                                                     |
-| Build command                      | `pnpm --filter @clockoff/web run build:netlify` → `prisma generate` + `next build`                   |
-| Publish directory                  | `apps/web/.next`                                                                                     |
-| Functions directory                | `apps/web/netlify/functions`                                                                         |
-| Runtime                            | `@netlify/plugin-nextjs` 5.16.2 (declared in `netlify.toml`, pinned in `apps/web` devDependencies)   |
-| Node / pnpm                        | 22 / 11.10.0 (`[build.environment]`)                                                                 |
-| Prisma                             | `binaryTargets = ["native", "rhel-openssl-3.0.x"]` (Lambda engine bundled into the server function)  |
-| Custom domains                     | primary `clockoff.online`, aliases `www.clockoff.online`, `app.clockoff.online`; no Netlify DNS zone |
+| Setting                            | Value                                                                                                                                   |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Netlify site                       | `clockoff` (id `b65c1658-1110-42ec-a926-637ae7d9415f`, team `frxshcutt`, free plan)                                                     |
+| Repository                         | `FrxshCutt/clockoff` (public), production branch `main`; renamed from `FrxshCutt/workmode` on 2026-10-07 (GitHub redirects the old URL) |
+| How builds start                   | GitHub push webhook → Netlify; Netlify clones with a read-only deploy key on the repository                                             |
+| Base directory / package directory | repo root / `apps/web` (`apps/web/netlify.toml`)                                                                                        |
+| Build command                      | `pnpm --filter @clockoff/web run build:netlify` → `prisma generate` + `next build`                                                      |
+| Publish directory                  | `apps/web/.next`                                                                                                                        |
+| Functions directory                | `apps/web/netlify/functions`                                                                                                            |
+| Runtime                            | `@netlify/plugin-nextjs` 5.16.2 (declared in `netlify.toml`, pinned in `apps/web` devDependencies)                                      |
+| Node / pnpm                        | 22 / 11.10.0 (`[build.environment]`)                                                                                                    |
+| Prisma                             | `binaryTargets = ["native", "rhel-openssl-3.0.x"]` (Lambda engine bundled into the server function)                                     |
+| Custom domains                     | primary `clockoff.online`, aliases `www.clockoff.online`, `app.clockoff.online`; no Netlify DNS zone                                    |
 
 ## Environment variables (Netlify site, all contexts)
 
