@@ -57,3 +57,6 @@ apps/ios/**/.swiftpm/xcode/package.xcworkspace/xcuserdata/
 
 # Local Netlify folder
 .netlify
+
+# Apple keys (App Store Connect API / APNs) — never commit
+*.p8

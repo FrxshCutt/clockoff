@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apnsConfigured, parseEnv } from "./env";
+import { apnsConfigured, parseEnv, testToolsConfigured, testToolsEnabledFor } from "./env";
 
 const VALID = {
   DATABASE_URL: "postgresql://u:p@localhost:5433/clockoff",
@@ -223,5 +223,49 @@ describe("parseEnv", () => {
       APNS_P8_BASE64: "cA==",
     });
     expect(apnsConfigured(env)).toBe(true);
+  });
+
+  it("parses TEST_TOOLS_ORGANISATION_IDS as a validated, lowercased id list (empty when unset)", () => {
+    const a = "77340865-337D-4AB5-8A18-8F75BF5AB306";
+    const b = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+    expect(parseEnv(VALID).env.TEST_TOOLS_ORGANISATION_IDS).toEqual([]);
+    expect(
+      parseEnv({ ...VALID, TEST_TOOLS_ORGANISATION_IDS: "" }).env.TEST_TOOLS_ORGANISATION_IDS,
+    ).toEqual([]);
+    expect(
+      parseEnv({ ...VALID, TEST_TOOLS_ORGANISATION_IDS: ` ${a} ,${b},, ${b}` }).env
+        .TEST_TOOLS_ORGANISATION_IDS,
+    ).toEqual([a.toLowerCase(), b]);
+    expect(() =>
+      parseEnv({ ...VALID, TEST_TOOLS_ORGANISATION_IDS: `${a},SCALE-0090` }),
+    ).toThrowError(/TEST_TOOLS_ORGANISATION_IDS[\s\S]*comma-separated list of organisation UUIDs/);
+  });
+
+  it("enables the test tools for listed organisations, or for every organisation with dev tools on", () => {
+    const listed = "77340865-337d-4ab5-8a18-8f75bf5ab306";
+    const other = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+    const off = parseEnv({ ...VALID, NODE_ENV: "development" }).env;
+    expect(testToolsConfigured(off)).toBe(false);
+    expect(testToolsEnabledFor(listed, off)).toBe(false);
+
+    const dev = parseEnv({ ...VALID, NODE_ENV: "development", DEV_TOOLS_ENABLED: "true" }).env;
+    expect(testToolsConfigured(dev)).toBe(true);
+    expect(testToolsEnabledFor(other, dev)).toBe(true);
+
+    const prod = parseEnv({
+      ...VALID,
+      NODE_ENV: "production",
+      APP_URL: "https://app.example.com",
+      TEST_TOOLS_ORGANISATION_IDS: listed,
+    }).env;
+    expect(testToolsConfigured(prod)).toBe(true);
+    expect(testToolsEnabledFor(listed, prod)).toBe(true);
+    expect(testToolsEnabledFor(listed.toUpperCase(), prod)).toBe(true);
+    expect(testToolsEnabledFor(other, prod)).toBe(false);
+
+    // Defence in depth behind parseEnv's refusal: dev tools never open the gate in production.
+    const prodWithDevTools = { ...prod, DEV_TOOLS_ENABLED: true, TEST_TOOLS_ORGANISATION_IDS: [] };
+    expect(testToolsConfigured(prodWithDevTools)).toBe(false);
+    expect(testToolsEnabledFor(other, prodWithDevTools)).toBe(false);
   });
 });

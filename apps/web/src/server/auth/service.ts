@@ -11,7 +11,7 @@ import {
   sessionCookie,
 } from "@/lib/cookies";
 import { createCsrfToken } from "@/lib/crypto";
-import { env } from "@/lib/env";
+import { env, testToolsEnabledFor } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { DUMMY_PASSWORD_HASH, hashPassword, needsRehash, verifyPassword } from "@/lib/password";
 import {
@@ -446,6 +446,7 @@ export async function getCurrentUser(
         slug: m.organisation.slug,
         role: m.role,
         timezone: m.organisation.timezone,
+        testToolsEnabled: testToolsEnabledFor(m.organisation.id),
       })),
       currentOrganisationId: selected?.organisationId ?? null,
       csrfToken: csrf.token,

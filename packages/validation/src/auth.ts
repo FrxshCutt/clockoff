@@ -57,6 +57,12 @@ export const currentUserSchema = z.object({
       slug: z.string(),
       role: z.enum(ROLES),
       timezone: z.string(),
+      /**
+       * Whether the phone test tools (`POST /api/test-tools/test-shift`) are available in this
+       * organisation: the server runs with `DEV_TOOLS_ENABLED=true`, or the organisation is listed in
+       * `TEST_TOOLS_ORGANISATION_IDS`. The dashboard hides "Create test shift…" otherwise.
+       */
+      testToolsEnabled: z.boolean(),
     }),
   ),
   /** Organisation currently selected (cookie), null until the manager creates/joins one. */

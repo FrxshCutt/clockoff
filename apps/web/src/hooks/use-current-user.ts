@@ -58,3 +58,21 @@ export function usePermission(permission: Permission): boolean {
   const role = useCurrentRole();
   return role !== null && hasPermission(role, permission);
 }
+
+/**
+ * Whether the phone test tools ("Create test shift…") are available in the current organisation
+ * (`testToolsEnabled` on `GET /api/auth/me`; the API answers 404 otherwise).
+ */
+export function useTestToolsEnabled(): boolean {
+  return useCurrentMembership()?.testToolsEnabled === true;
+}
+
+/**
+ * Whether to show "Create test shift…": the current organisation has the phone test tools and the
+ * manager may create shifts (`schedule:write`, the permission `POST /api/test-tools/test-shift` checks).
+ */
+export function useCanCreateTestShift(): boolean {
+  const testTools = useTestToolsEnabled();
+  const canSchedule = usePermission("schedule:write");
+  return testTools && canSchedule;
+}

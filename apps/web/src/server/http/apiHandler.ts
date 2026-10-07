@@ -143,6 +143,13 @@ export interface HandlerOptions<A extends AuthMode, P, Q, B> {
    * - `"always"`: require a verified email regardless of the environment.
    */
   emailVerification?: EmailVerificationPolicy;
+  /**
+   * `manager` mode only: whether the route exists for the caller's organisation. `false` answers 404
+   * `NOT_FOUND` after authentication and the CSRF check but BEFORE the permission check and validation,
+   * so an organisation without the feature cannot tell the route from one that does not exist (used by
+   * the per-organisation test tools).
+   */
+  available?: (ctx: ManagerContext) => boolean;
 }
 
 export type HandlerImpl<A extends AuthMode, P, Q, B> = (
@@ -157,6 +164,9 @@ export function createHandler<A extends AuthMode, P = undefined, Q = undefined, 
 ): RouteHandler {
   if (options.permission && options.auth !== "manager") {
     throw new Error("createHandler: `permission` is only valid with auth: 'manager'");
+  }
+  if (options.available && options.auth !== "manager") {
+    throw new Error("createHandler: `available` is only valid with auth: 'manager'");
   }
   const cookieAuthenticated = options.auth === "user" || options.auth === "manager";
   if (cookieAuthenticated && options.csrf === false) {
@@ -208,9 +218,12 @@ export function createHandler<A extends AuthMode, P = undefined, Q = undefined, 
         }
       }
 
-      // 5. Permission.
+      // 5. Availability for this organisation, then permission.
       if (ctx && ctx.kind === "manager") {
         log = log.child({ organisationId: ctx.organisation.id });
+        if (options.available && !options.available(ctx)) {
+          throw new AppError("NOT_FOUND", "Not found");
+        }
         if (options.permission) requirePermission(ctx, options.permission);
       }
 

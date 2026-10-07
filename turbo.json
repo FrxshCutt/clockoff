@@ -31,6 +31,7 @@
     "CRON_SECRET",
     "LOG_LEVEL",
     "DEV_TOOLS_ENABLED",
+    "TEST_TOOLS_ORGANISATION_IDS",
     "PRISMA_LOG",
     "ALLOW_SEED",
     "SEED_*",

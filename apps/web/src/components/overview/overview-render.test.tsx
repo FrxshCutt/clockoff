@@ -68,6 +68,7 @@ const currentUser = (role: Role) => ({
       slug: "harbour-cafe",
       role,
       timezone: "Europe/London",
+      testToolsEnabled: false,
     },
   ],
   currentOrganisationId: ORGANISATION.organisation.id,

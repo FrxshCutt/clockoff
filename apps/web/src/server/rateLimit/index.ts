@@ -111,6 +111,8 @@ export const RATE_LIMITS = {
   employeeInvite: { key: "employees:invite", limit: 60, windowSeconds: 60 * 60, by: "ip" },
   /** Mobile refresh-token rotation (another engineer's endpoint). */
   mobileRefresh: { key: "mobile:refresh", limit: 60, windowSeconds: 15 * 60, by: "ip" },
+  /** Phone test tools ("Create test shift…"): plenty for a person testing, not for a script. */
+  testShift: { key: "test-tools:test-shift", limit: 30, windowSeconds: 60 * 60, by: "ip" },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitPreset = keyof typeof RATE_LIMITS;

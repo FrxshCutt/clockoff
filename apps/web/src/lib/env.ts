@@ -15,6 +15,23 @@ const booleanString = z
   .enum(["true", "false", "1", "0"])
   .transform((v) => v === "true" || v === "1");
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** `"id1, id2"` → `["id1", "id2"]` (trimmed, lowercased, blanks dropped); every entry must be a UUID. */
+const uuidListString = z
+  .string()
+  .transform((v) =>
+    v
+      .split(",")
+      .map((id) => id.trim().toLowerCase())
+      .filter((id) => id !== ""),
+  )
+  .pipe(
+    z.array(
+      z.string().regex(UUID, { message: "must be a comma-separated list of organisation UUIDs" }),
+    ),
+  );
+
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"] as const;
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
@@ -110,14 +127,26 @@ const envSchema = z.object({
 
   // Dev
   DEV_TOOLS_ENABLED: booleanString.default(false),
+  /**
+   * Organisations (comma-separated ids) that get the phone test tools — "Create test shift…" on the
+   * dashboard and `POST /api/test-tools/test-shift` — in any environment, production included. Every
+   * organisation gets them while DEV_TOOLS_ENABLED=true. Production lists only the internal test
+   * organisation ("ClockOff Test", created by apps/web/scripts/setup-test-organisation.ts).
+   */
+  TEST_TOOLS_ORGANISATION_IDS: uuidListString.optional(),
 });
 
 type RawEnv = z.infer<typeof envSchema>;
 
-export interface Env extends Omit<RawEnv, "REQUIRE_EMAIL_VERIFICATION" | "NEXT_PUBLIC_APP_URL"> {
+export interface Env extends Omit<
+  RawEnv,
+  "REQUIRE_EMAIL_VERIFICATION" | "NEXT_PUBLIC_APP_URL" | "TEST_TOOLS_ORGANISATION_IDS"
+> {
   /** Resolved: explicit value, otherwise `true` in production and `false` elsewhere. */
   REQUIRE_EMAIL_VERIFICATION: boolean;
   NEXT_PUBLIC_APP_URL: string;
+  /** Lowercased organisation ids with the test tools (empty when unset). See {@link testToolsEnabledFor}. */
+  TEST_TOOLS_ORGANISATION_IDS: readonly string[];
   /** `new URL(APP_URL).origin` — used for CSRF origin checks and absolute links. */
   APP_ORIGIN: string;
   isProduction: boolean;
@@ -254,6 +283,7 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
     ...raw,
     REQUIRE_EMAIL_VERIFICATION: raw.REQUIRE_EMAIL_VERIFICATION ?? isProduction,
     NEXT_PUBLIC_APP_URL: raw.NEXT_PUBLIC_APP_URL ?? raw.APP_URL,
+    TEST_TOOLS_ORGANISATION_IDS: [...new Set(raw.TEST_TOOLS_ORGANISATION_IDS ?? [])],
     APP_ORIGIN: new URL(raw.APP_URL).origin,
     isProduction,
     isTest: raw.NODE_ENV === "test",
@@ -281,6 +311,20 @@ export function envWarnings(): readonly string[] {
 export function resetEnvCache(): void {
   cached = undefined;
   cachedWarnings = [];
+}
+
+/**
+ * Whether the phone test tools are available to `organisationId`: DEV_TOOLS_ENABLED=true (never in
+ * production — parseEnv refuses it), or the organisation is listed in TEST_TOOLS_ORGANISATION_IDS.
+ */
+export function testToolsEnabledFor(organisationId: string, e: Env = env()): boolean {
+  if (e.DEV_TOOLS_ENABLED && !e.isProduction) return true;
+  return e.TEST_TOOLS_ORGANISATION_IDS.includes(organisationId.toLowerCase());
+}
+
+/** Whether ANY organisation can have the test tools (the routes answer 404 up front otherwise). */
+export function testToolsConfigured(e: Env = env()): boolean {
+  return (e.DEV_TOOLS_ENABLED && !e.isProduction) || e.TEST_TOOLS_ORGANISATION_IDS.length > 0;
 }
 
 /** Whether all APNs variables are configured (selects ApnsPushProvider). */

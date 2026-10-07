@@ -26,3 +26,4 @@ export * from "./locationsTeams";
 export * from "./notifications";
 export * from "./auditLogs";
 export * from "./realtime";
+export * from "./testTools";

@@ -260,6 +260,12 @@ describe("createHandler", () => {
     ).toThrow(/permission/);
   });
 
+  it("refuses `available` outside manager mode at definition time", () => {
+    expect(() => createHandler({ auth: "user", available: () => true }, async () => null)).toThrow(
+      /available/,
+    );
+  });
+
   it("refuses to disable CSRF for cookie-authenticated modes, or to enable it for bearer modes", () => {
     expect(() => createHandler({ auth: "manager", csrf: false }, async () => null)).toThrow(
       /cannot be disabled/,

@@ -23,6 +23,7 @@ const me: CurrentUser = {
       slug: "harpenden-coffee",
       role: "OWNER",
       timezone: "Europe/London",
+      testToolsEnabled: false,
     },
   ],
   currentOrganisationId: "6f9619ff-8b86-4011-b42d-00c04fc964ff",

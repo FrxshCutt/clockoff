@@ -1,7 +1,7 @@
 "use client";
 
 import type { Employee } from "@clockoff/validation/employees";
-import { KeyRound, Pencil, Send, Users } from "lucide-react";
+import { FlaskConical, KeyRound, Pencil, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -12,11 +12,13 @@ import { CreateOverrideDialog } from "@/components/overrides/create-override-dia
 import { PageHeader } from "@/components/page-header";
 import { BackLink } from "@/components/placeholder-page";
 import { useBreadcrumbLabel } from "@/components/shell/breadcrumb-store";
+import { CreateTestShiftDialog } from "@/components/test-tools/create-test-shift-dialog";
+import { TEST_SHIFT_COPY } from "@/components/test-tools/test-shift-model";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { ROUTES } from "@/config/navigation";
-import { usePermission } from "@/hooks/use-current-user";
+import { useCanCreateTestShift, usePermission } from "@/hooks/use-current-user";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { hasErrorCode } from "@/lib/api-client";
 import {
@@ -54,6 +56,7 @@ export function EmployeeDetailPage({ id, initialTab }: EmployeeDetailPageProps) 
   const query = useEmployee(id);
   const canWrite = usePermission("employees:write");
   const canOverride = usePermission("overrides:create");
+  const canCreateTestShift = useCanCreateTestShift();
   const organisation = useCurrentOrganisation();
   const [tab, setTab] = useState<EmployeeTab>(() => parseEmployeeTab(initialTab));
   const [request, setRequest] = useState<EmployeeActionRequest | null>(null);
@@ -146,6 +149,17 @@ export function EmployeeDetailPage({ id, initialTab }: EmployeeDetailPageProps) 
                   <Button type="button" variant="outline">
                     <KeyRound aria-hidden="true" />
                     Override
+                  </Button>
+                }
+              />
+            ) : null}
+            {canCreateTestShift && employee.employmentStatus === "ACTIVE" ? (
+              <CreateTestShiftDialog
+                employee={employee}
+                trigger={
+                  <Button type="button" variant="outline">
+                    <FlaskConical aria-hidden="true" />
+                    {TEST_SHIFT_COPY.action}
                   </Button>
                 }
               />

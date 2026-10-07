@@ -20934,6 +20934,9 @@
                 },
                 "timezone": {
                   "type": "string"
+                },
+                "testToolsEnabled": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -20941,7 +20944,8 @@
                 "name",
                 "slug",
                 "role",
-                "timezone"
+                "timezone",
+                "testToolsEnabled"
               ]
             }
           },

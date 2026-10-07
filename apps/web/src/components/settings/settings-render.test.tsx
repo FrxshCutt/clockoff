@@ -30,7 +30,14 @@ function me(role: "OWNER" | "ADMIN" | "MANAGER"): CurrentUser {
       createdAt: "2026-10-01T09:00:00Z",
     },
     organisations: [
-      { id: ORG_ID, name: "Harbour Café", slug: "harbour-cafe", role, timezone: "Europe/London" },
+      {
+        id: ORG_ID,
+        name: "Harbour Café",
+        slug: "harbour-cafe",
+        role,
+        timezone: "Europe/London",
+        testToolsEnabled: false,
+      },
     ],
     currentOrganisationId: ORG_ID,
     csrfToken: "csrf",

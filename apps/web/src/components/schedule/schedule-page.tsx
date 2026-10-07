@@ -2,7 +2,7 @@
 
 import type { Shift } from "@clockoff/validation/shifts";
 import type { LocalDateString } from "@clockoff/shared/time/time";
-import { Plus } from "lucide-react";
+import { FlaskConical, Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -10,10 +10,16 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { PageHeader } from "@/components/page-header";
 import { TableSkeleton } from "@/components/loading-skeletons";
+import { CreateTestShiftDialog } from "@/components/test-tools/create-test-shift-dialog";
+import { TEST_SHIFT_COPY } from "@/components/test-tools/test-shift-model";
 import { Button } from "@/components/ui/button";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
-import { useCurrentMembership, usePermission } from "@/hooks/use-current-user";
+import {
+  useCanCreateTestShift,
+  useCurrentMembership,
+  usePermission,
+} from "@/hooks/use-current-user";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { DayView, DayViewSkeleton } from "./day-view";
 import { EmployeePicker, type EmployeeRef } from "./employee-picker";
@@ -51,6 +57,7 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
   const organisation = useCurrentOrganisation();
   const canEdit = usePermission("schedule:write");
   const canImport = usePermission("imports:write");
+  const canCreateTestShift = useCanCreateTestShift();
   const toastError = useApiErrorToast();
 
   const today = useMemo(() => todayIn(timezone), [timezone]);
@@ -260,6 +267,20 @@ export function SchedulePage({ initialSearch }: SchedulePageProps) {
       <PageHeader
         title="Schedule"
         description="Shifts switch Work Mode on and off automatically on each employee's phone."
+        actions={
+          canCreateTestShift ? (
+            <CreateTestShiftDialog
+              employee={selectedEmployeeRef}
+              chooseEmployee
+              trigger={
+                <Button type="button" variant="outline">
+                  <FlaskConical aria-hidden="true" />
+                  {TEST_SHIFT_COPY.action}
+                </Button>
+              }
+            />
+          ) : undefined
+        }
       />
       <div className="space-y-6">
         <ScheduleToolbar
