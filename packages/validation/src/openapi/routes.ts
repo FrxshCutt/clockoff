@@ -1750,7 +1750,7 @@ defineRoute({
   path: "/api/realtime/stream",
   summary: "Server-Sent Events stream for the current organisation",
   description:
-    "`text/event-stream`. Each frame: `event: <type>`, `id: <n>`, `data: <SseEvent JSON>`. A `: ping` comment is sent every 25 s. Events are invalidation hints; refetch the affected resource.",
+    "`text/event-stream`. Each frame: `event: <type>`, `id: <n>`, `data: <SseEvent JSON>`. A `: ping` comment is sent every 15 s. The server ends each stream after about 20 s with a final control frame, `event: reconnect` / `data: {}` (not an SseEvent), then closes it normally; reconnect straight away. Events are invalidation hints; refetch the affected resource.",
   tags: ["Realtime"],
   auth: "manager",
   request: { query: realtimeStreamQuerySchema },

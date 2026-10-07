@@ -4,10 +4,20 @@ import { instantSchema, jsonObjectSchema } from "./primitives";
 
 /**
  * Realtime (§5 `GET /api/realtime/stream`): a Server-Sent Events stream per organisation. Each frame is
- * `event: <type>\nid: <n>\ndata: <SseEvent JSON>\n\n`; `: ping` comments keep the connection alive.
+ * `event: <type>\nid: <n>\ndata: <SseEvent JSON>\n\n`; `: ping` comments keep the connection alive and
+ * the server ends every stream after a fixed lifetime with the `REALTIME_RECONNECT_EVENT` control frame.
  * Events are cache-invalidation hints for the dashboard — refetch the resource, never treat the payload
  * as the source of truth.
  */
+
+/**
+ * Stream CONTROL frame, not an event kind: `event: reconnect\ndata: {}\n\n` is the last frame of a stream
+ * the server ends on purpose (its lifetime cap). A client that knows it reconnects silently; one that does
+ * not ignores the unknown named event and reconnects as after any drop. Deliberately absent from
+ * `REALTIME_EVENT_TYPES`: it is never published on the bus, invalidates no query and never reaches the
+ * push bridge.
+ */
+export const REALTIME_RECONNECT_EVENT = "reconnect" as const;
 
 /** Known event kinds (mirrors REALTIME_EVENT_TYPES in apps/web/src/server/events). */
 export const REALTIME_EVENT_TYPES = [

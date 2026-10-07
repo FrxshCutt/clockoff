@@ -1,4 +1,4 @@
-import { REALTIME_EVENT_TYPES } from "@clockoff/validation/realtime";
+import { REALTIME_EVENT_TYPES, REALTIME_RECONNECT_EVENT } from "@clockoff/validation/realtime";
 import { describe, expect, it } from "vitest";
 import { activityKeys } from "@/components/activity/activity-keys";
 import { importKeys } from "@/components/imports/import-queries";
@@ -14,11 +14,17 @@ import {
   REALTIME_STATUS_META,
   REALTIME_STREAM_PATH,
   REALTIME_TIMING,
+  attemptAfterDrop,
+  classifyStreamEnd,
   invalidationKeysFor,
   isPollingFallbackDue,
   isRealtimeEventType,
+  msUntilPollingFallback,
   nextBackoffMs,
+  outageStartedAt,
   parseSseEvent,
+  plannedReconnectDelayMs,
+  stayedOpenLongEnough,
   statusWhileDisconnected,
   type RealtimeStatus,
 } from "./realtime-model";
@@ -31,6 +37,124 @@ describe("REALTIME_TIMING", () => {
     expect(REALTIME_TIMING.pollIntervalMs).toBe(30_000);
     expect(REALTIME_TIMING.baseDelayMs).toBeLessThanOrEqual(REALTIME_TIMING.maxDelayMs);
     expect(REALTIME_STREAM_PATH).toBe("/api/realtime/stream");
+  });
+
+  it("refreshes everything every 30 s while connected, the same cadence as the polling fallback", () => {
+    expect(REALTIME_TIMING.refreshIntervalMs).toBe(30_000);
+    expect(REALTIME_TIMING.refreshIntervalMs).toBe(REALTIME_TIMING.pollIntervalMs);
+  });
+
+  it("counts a stream as healthy after 5 s, well inside the server's 20 s lifetime cap", () => {
+    expect(REALTIME_TIMING.minHealthyStreamMs).toBe(5_000);
+    // REALTIME_STREAM_MAX_LIFETIME_MS (server) is 20 s: every capped stream qualifies as planned.
+    expect(REALTIME_TIMING.minHealthyStreamMs).toBeLessThan(20_000);
+  });
+
+  it("reconnects after a planned close faster than after any drop", () => {
+    expect(REALTIME_TIMING.plannedReconnectMinMs).toBe(100);
+    expect(REALTIME_TIMING.plannedReconnectMaxMs).toBe(400);
+    expect(REALTIME_TIMING.plannedReconnectMaxMs).toBeLessThan(nextBackoffMs(0, () => 0));
+  });
+});
+
+describe("stream ends", () => {
+  const openedAt = 1_700_000_000_000;
+  const healthy = openedAt + REALTIME_TIMING.minHealthyStreamMs;
+
+  it("treats a stream as healthy once it stayed open for minHealthyStreamMs", () => {
+    expect(stayedOpenLongEnough(openedAt, healthy)).toBe(true);
+    expect(stayedOpenLongEnough(openedAt, healthy - 1)).toBe(false);
+    expect(stayedOpenLongEnough(null, healthy)).toBe(false);
+    // A clock that went backwards is not evidence of a healthy stream.
+    expect(stayedOpenLongEnough(openedAt, openedAt - 1_000)).toBe(false);
+  });
+
+  it("classifies the server's lifetime close after a healthy stream as planned", () => {
+    expect(classifyStreamEnd({ plannedCloseSeen: true, openedAt, now: openedAt + 20_000 })).toBe(
+      "planned",
+    );
+    expect(classifyStreamEnd({ plannedCloseSeen: true, openedAt, now: healthy })).toBe("planned");
+  });
+
+  it("treats a reconnect frame too soon after opening as unplanned (backs off, shows the drop)", () => {
+    expect(classifyStreamEnd({ plannedCloseSeen: true, openedAt, now: healthy - 1 })).toBe(
+      "unplanned",
+    );
+    expect(classifyStreamEnd({ plannedCloseSeen: true, openedAt, now: openedAt })).toBe(
+      "unplanned",
+    );
+    expect(classifyStreamEnd({ plannedCloseSeen: true, openedAt: null, now: healthy })).toBe(
+      "unplanned",
+    );
+  });
+
+  it("treats an end without the frame as unplanned (network drop, platform cut, older server)", () => {
+    expect(classifyStreamEnd({ plannedCloseSeen: false, openedAt, now: openedAt + 30_000 })).toBe(
+      "unplanned",
+    );
+    expect(classifyStreamEnd({ plannedCloseSeen: false, openedAt: null, now: healthy })).toBe(
+      "unplanned",
+    );
+  });
+
+  it("honours a custom timing table", () => {
+    const timing = { ...REALTIME_TIMING, minHealthyStreamMs: 50 };
+    expect(
+      classifyStreamEnd({ plannedCloseSeen: true, openedAt, now: openedAt + 50 }, timing),
+    ).toBe("planned");
+  });
+});
+
+describe("attemptAfterDrop", () => {
+  const openedAt = 1_700_000_000_000;
+
+  it("resets the backoff after a healthy stream", () => {
+    expect(attemptAfterDrop(4, openedAt, openedAt + REALTIME_TIMING.minHealthyStreamMs)).toBe(0);
+    expect(attemptAfterDrop(0, openedAt, openedAt + 30_000)).toBe(0);
+  });
+
+  it("keeps counting when the stream never opened or closed right after opening", () => {
+    expect(attemptAfterDrop(3, null, openedAt)).toBe(3);
+    expect(attemptAfterDrop(3, openedAt, openedAt + 1_000)).toBe(3);
+    expect(attemptAfterDrop(0, openedAt, openedAt + REALTIME_TIMING.minHealthyStreamMs - 1)).toBe(
+      0,
+    );
+  });
+
+  it("makes a server that closes right after every open back off instead of hot-looping", () => {
+    let attempt = 0;
+    let now = openedAt;
+    const delays: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      // Opens, then drops one second later.
+      attempt = attemptAfterDrop(attempt, now, now + 1_000);
+      const delay = nextBackoffMs(attempt, () => 0);
+      delays.push(delay);
+      attempt += 1;
+      now += 1_000 + delay;
+    }
+    expect(delays).toEqual([500, 1_000, 2_000, 4_000, 8_000, 15_000]);
+  });
+});
+
+describe("plannedReconnectDelayMs", () => {
+  it("lands in the 100–400 ms window", () => {
+    expect(plannedReconnectDelayMs(() => 0)).toBe(100);
+    expect(plannedReconnectDelayMs(() => 1)).toBe(400);
+    expect(plannedReconnectDelayMs(() => 0.5)).toBe(250);
+  });
+
+  it("clamps out-of-range randomness", () => {
+    expect(plannedReconnectDelayMs(() => -3)).toBe(100);
+    expect(plannedReconnectDelayMs(() => 9)).toBe(400);
+  });
+
+  it("stays within bounds with the real random source", () => {
+    for (let i = 0; i < 50; i += 1) {
+      const delay = plannedReconnectDelayMs();
+      expect(delay).toBeGreaterThanOrEqual(REALTIME_TIMING.plannedReconnectMinMs);
+      expect(delay).toBeLessThanOrEqual(REALTIME_TIMING.plannedReconnectMaxMs);
+    }
   });
 });
 
@@ -102,12 +226,77 @@ describe("polling fallback", () => {
   });
 });
 
+describe("outage start and the polling flip", () => {
+  const close = 1_700_000_000_000;
+
+  it("keeps an outage's start, dates a failed planned reconnect from the close, otherwise starts now", () => {
+    const later = close + 25_000;
+    expect(
+      outageStartedAt({ disconnectedSince: close - 5_000, plannedGapSince: close, now: later }),
+    ).toBe(close - 5_000);
+    expect(outageStartedAt({ disconnectedSince: null, plannedGapSince: close, now: later })).toBe(
+      close,
+    );
+    expect(outageStartedAt({ disconnectedSince: null, plannedGapSince: null, now: later })).toBe(
+      later,
+    );
+  });
+
+  it("counts down the time left before polling, never below 0", () => {
+    expect(msUntilPollingFallback(close, close)).toBe(REALTIME_TIMING.pollingAfterMs);
+    expect(msUntilPollingFallback(close, close + 3_000)).toBe(
+      REALTIME_TIMING.pollingAfterMs - 3_000,
+    );
+    expect(msUntilPollingFallback(close, close + REALTIME_TIMING.pollingAfterMs)).toBe(0);
+    expect(msUntilPollingFallback(close, close + 60_000)).toBe(0);
+    // A clock that went backwards does not shorten the wait.
+    expect(msUntilPollingFallback(close, close - 5_000)).toBe(REALTIME_TIMING.pollingAfterMs);
+    expect(
+      msUntilPollingFallback(close, close + 50, { ...REALTIME_TIMING, pollingAfterMs: 100 }),
+    ).toBe(50);
+  });
+
+  it("flips a planned reconnect that stalls before opening at the same time as an unplanned drop", () => {
+    // Stream ends with the reconnect frame at `close`; the replacement stalls, then fails 25.4 s later.
+    // The watchdog armed at the close fires 10 s after it, not 10 s after the late failure.
+    const watchdogAt = close + msUntilPollingFallback(close, close);
+    expect(watchdogAt).toBe(close + REALTIME_TIMING.pollingAfterMs);
+
+    const failedAt = close + 25_400;
+    const since = outageStartedAt({
+      disconnectedSince: null,
+      plannedGapSince: close,
+      now: failedAt,
+    });
+    expect(statusWhileDisconnected(since, failedAt)).toBe<RealtimeStatus>("polling");
+    expect(isPollingFallbackDue(since, failedAt)).toBe(true);
+  });
+
+  it("shows a replacement that fails soon after a planned close as reconnecting, polling 10 s after the close", () => {
+    const failedAt = close + 3_000;
+    const since = outageStartedAt({
+      disconnectedSince: null,
+      plannedGapSince: close,
+      now: failedAt,
+    });
+    expect(statusWhileDisconnected(since, failedAt)).toBe<RealtimeStatus>("reconnecting");
+    expect(failedAt + msUntilPollingFallback(since, failedAt)).toBe(
+      close + REALTIME_TIMING.pollingAfterMs,
+    );
+  });
+});
+
 describe("invalidation table", () => {
   it("knows every realtime event type the contract declares", () => {
     for (const type of REALTIME_EVENT_TYPES) {
       expect(isRealtimeEventType(type)).toBe(true);
       expect(invalidationKeysFor(type).length).toBeGreaterThan(0);
     }
+  });
+
+  it("never treats the stream's reconnect control frame as an event", () => {
+    expect(isRealtimeEventType(REALTIME_RECONNECT_EVENT)).toBe(false);
+    expect(invalidationKeysFor(REALTIME_RECONNECT_EVENT)).toEqual([]);
   });
 
   it("ignores event kinds this UI has never heard of", () => {

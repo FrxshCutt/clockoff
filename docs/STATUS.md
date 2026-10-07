@@ -11,9 +11,9 @@ All 26 build stages are implemented. Every quality gate passes on the build mach
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `pnpm typecheck` · `pnpm lint` · `pnpm format:check` | clean                                                                                                        |
 | `packages/shared` unit tests                         | 1,930 passed                                                                                                 |
-| `packages/validation` unit tests                     | 104 passed                                                                                                   |
+| `packages/validation` unit tests                     | 107 passed                                                                                                   |
 | `packages/db` unit tests                             | 7 passed                                                                                                     |
-| `apps/web` unit tests                                | 819 passed                                                                                                   |
+| `apps/web` unit tests                                | 847 passed                                                                                                   |
 | `apps/web` integration tests (real Postgres)         | 353 passed, incl. 85-case tenant-isolation matrix and the Definition-of-Done journey                         |
 | Playwright manager journey (`apps/web/e2e`)          | passes on a fresh `pnpm dev`                                                                                 |
 | `pnpm build` (Next.js production build)              | succeeds                                                                                                     |
@@ -113,7 +113,9 @@ edited by hand. The domain is still registered at IONOS, and the IONOS mailbox i
   crosses the Atlantic and employee data is processed in the US under Netlify's DPA. Remedy: Netlify Pro, then
   set the functions region to London (`eu-west-2`).
 - **Realtime and rate limiting are per function instance.** Dashboard events raised on another instance arrive
-  through the 30-second polling fallback, and rate limits are best effort. Remedy: the Redis adapters.
+  through the dashboard's refresh of realtime-backed data every 30 seconds while connected, and rate limits are
+  best effort. The server ends each realtime stream after 20 s with a `reconnect` control event (this site's
+  streaming limit is 30 s in practice) and the dashboard reconnects silently. Remedy: the Redis adapters.
 - **Free-tier quotas:** Resend's free plan sends 100 emails a day; Neon's free plan keeps a 6-hour restore window.
 
 ### Manual steps

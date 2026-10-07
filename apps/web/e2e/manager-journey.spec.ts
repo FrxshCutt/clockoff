@@ -18,7 +18,10 @@ const expect = baseExpect.configure({ timeout: 20_000 });
 
 const ORG_TIME_ZONE = "Europe/London";
 const SCREENSHOTS = path.join(__dirname, "screenshots");
-/** The SSE stream normally updates the dashboard at once; the polling fallback invalidates every 30 s. */
+/**
+ * The SSE stream updates the dashboard at once when the change is published on the same server instance;
+ * otherwise the dashboard's 30 s refresh of realtime-backed data (or the polling fallback) picks it up.
+ */
 const REALTIME_TIMEOUT = 35_000;
 const MOBILE = "/api/mobile/v1";
 const DEVICE = {
@@ -325,7 +328,7 @@ test.describe("manager web journey", () => {
       expect(tokens.refreshToken).toBeTruthy();
       accessToken = tokens.accessToken;
 
-      // No reload: the realtime stream (or its 30 s polling fallback) must move him to "joined".
+      // No reload: the realtime stream (or the dashboard's 30 s refresh) must move him to "joined".
       const item = page
         .getByRole("list", { name: "Employees awaiting setup" })
         .getByRole("listitem")

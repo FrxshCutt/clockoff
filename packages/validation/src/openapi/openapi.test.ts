@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as sharedEnums from "@clockoff/shared/enums";
 import { API_ERROR_CODES } from "@clockoff/shared/errors";
 import { PERMISSIONS } from "@clockoff/shared/permissions";
+import { REALTIME_RECONNECT_EVENT } from "../realtime";
 import {
   buildOpenApiDocument,
   convertSchema,
@@ -369,6 +370,10 @@ describe("OpenAPI document", () => {
     const media = (sse?.content as Record<string, JsonSchema>)["text/event-stream"];
     expect(media?.["x-event-schema"]).toEqual({ $ref: "#/components/schemas/SseEvent" });
     expect(schemas.SseEvent?.required).toEqual(["type", "organisationId", "payload", "at"]);
+    // The lifetime cap's control frame is documented next to the event frames.
+    expect(document.paths["/api/realtime/stream"]?.get?.description).toContain(
+      `event: ${REALTIME_RECONNECT_EVENT}`,
+    );
   });
 
   it("encodes the override duration cap in schema metadata", () => {

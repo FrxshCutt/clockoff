@@ -15,9 +15,10 @@ import { scheduleKeys } from "@/components/schedule/schedule-queries";
 import { queryKeys } from "@/lib/query-client";
 
 /**
- * Pure logic behind the realtime connection (`useRealtimeConnection`): reconnect backoff, the polling
- * fallback threshold, SSE frame parsing and the "which queries does this event stale" table. No React or
- * browser APIs here so every rule is unit tested in node.
+ * Pure logic behind the realtime connection (`useRealtimeConnection`): reconnect backoff, planned vs
+ * unplanned stream ends, the polling fallback threshold, SSE frame parsing and the "which queries does this
+ * event stale" table. No React or browser APIs here so every rule is unit tested in node (time and
+ * randomness are passed in).
  */
 
 export type RealtimeStatus = "connected" | "reconnecting" | "polling";
@@ -35,6 +36,19 @@ export const REALTIME_TIMING = {
   pollIntervalMs: 30_000,
   /** Invalidations caused by a burst of events are coalesced over this window. */
   coalesceMs: 250,
+  /**
+   * A stream that stayed open at least this long was healthy: its end resets the backoff, and only then does
+   * a `reconnect` control frame count as a planned close. A server that closes right after opening backs off.
+   */
+  minHealthyStreamMs: 5_000,
+  /**
+   * While connected, every realtime-backed query is refetched this often. The server's event bus is per
+   * instance, so on a multi-instance host (Netlify) events raised elsewhere only arrive through this refresh.
+   */
+  refreshIntervalMs: 30_000,
+  /** A planned reconnect (server lifetime cap) waits a jittered delay in this window. */
+  plannedReconnectMinMs: 100,
+  plannedReconnectMaxMs: 400,
 } as const;
 
 /** The timing table's shape (widened so tests and callers can pass their own values). */
@@ -56,6 +70,55 @@ export function nextBackoffMs(
   return Math.round(ceiling / 2 + (ceiling / 2) * r);
 }
 
+/** True when the stream opened and stayed open for at least `minHealthyStreamMs`. */
+export function stayedOpenLongEnough(
+  openedAtMs: number | null,
+  nowMs: number,
+  timing: RealtimeTiming = REALTIME_TIMING,
+): boolean {
+  return openedAtMs !== null && nowMs - openedAtMs >= timing.minHealthyStreamMs;
+}
+
+/**
+ * How a stream ended. "planned": the server sent the `reconnect` control frame (its lifetime cap) after a
+ * healthy stream — reconnect silently. "unplanned": anything else (network drop, platform cut, an old server
+ * without the frame, or a "planned" close too soon after opening) — the usual backoff and status path.
+ */
+export type StreamEnd = "planned" | "unplanned";
+
+export function classifyStreamEnd(
+  input: { plannedCloseSeen: boolean; openedAt: number | null; now: number },
+  timing: RealtimeTiming = REALTIME_TIMING,
+): StreamEnd {
+  return input.plannedCloseSeen && stayedOpenLongEnough(input.openedAt, input.now, timing)
+    ? "planned"
+    : "unplanned";
+}
+
+/**
+ * Backoff attempt to use for the reconnect after a drop: back to 0 when the stream that just ended had been
+ * healthy, otherwise the running count (a stream that never opened, or closed right after opening, keeps
+ * backing off instead of hot-looping).
+ */
+export function attemptAfterDrop(
+  previousAttempt: number,
+  openedAtMs: number | null,
+  nowMs: number,
+  timing: RealtimeTiming = REALTIME_TIMING,
+): number {
+  return stayedOpenLongEnough(openedAtMs, nowMs, timing) ? 0 : previousAttempt;
+}
+
+/** Delay before a planned reconnect: short, jittered so tabs opened together do not reconnect in lockstep. */
+export function plannedReconnectDelayMs(
+  random: () => number = Math.random,
+  timing: RealtimeTiming = REALTIME_TIMING,
+): number {
+  const r = Math.min(Math.max(random(), 0), 1);
+  const span = Math.max(0, timing.plannedReconnectMaxMs - timing.plannedReconnectMinMs);
+  return Math.round(timing.plannedReconnectMinMs + span * r);
+}
+
 /** True once the connection has been down for longer than `pollingAfterMs`. */
 export function isPollingFallbackDue(
   disconnectedSinceMs: number | null,
@@ -63,6 +126,32 @@ export function isPollingFallbackDue(
   timing: RealtimeTiming = REALTIME_TIMING,
 ): boolean {
   return disconnectedSinceMs !== null && nowMs - disconnectedSinceMs > timing.pollingAfterMs;
+}
+
+/**
+ * Time left before an outage that began at `outageStartMs` falls back to polling (0 once it is due). At a
+ * planned close this is the full `pollingAfterMs`: the hook arms the polling flip then, so a replacement
+ * stream that stalls before opening still flips on time even though the pill kept saying "Live".
+ */
+export function msUntilPollingFallback(
+  outageStartMs: number,
+  nowMs: number,
+  timing: RealtimeTiming = REALTIME_TIMING,
+): number {
+  return Math.max(0, timing.pollingAfterMs - Math.max(0, nowMs - outageStartMs));
+}
+
+/**
+ * When the current outage began. One already under way keeps its start. A drop while a planned reconnect's
+ * replacement had not opened yet dates from the planned close (the last stream ended then, not when the
+ * stalled attempt finally failed or the polling flip fired). Anything else starts now.
+ */
+export function outageStartedAt(input: {
+  disconnectedSince: number | null;
+  plannedGapSince: number | null;
+  now: number;
+}): number {
+  return input.disconnectedSince ?? input.plannedGapSince ?? input.now;
 }
 
 /** Status to show while not connected: a short blip reads as "reconnecting", a long outage as "polling". */
@@ -153,7 +242,10 @@ function dedupeKeys(keys: readonly QueryKey[]): QueryKey[] {
   return out;
 }
 
-/** Every key a realtime event can touch: refetched on the polling interval and once after a reconnect. */
+/**
+ * Every key a realtime event can touch: refetched every `refreshIntervalMs` while connected, on the polling
+ * interval while down, and once after reconnecting from an unplanned drop.
+ */
 export const REALTIME_ALL_KEYS: readonly QueryKey[] = dedupeKeys([
   ...Object.values(REALTIME_INVALIDATIONS).flatMap((keys) => keys ?? []),
   ...DEFAULT_INVALIDATION_KEYS,

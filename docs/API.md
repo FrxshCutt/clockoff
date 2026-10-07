@@ -179,9 +179,15 @@ providers (INTEGRATIONS.md).
 
 `GET /api/realtime/stream` is a Server-Sent Events stream for the current organisation. Each frame is
 `event: <type>`, `id: <n>`, `data: <SseEvent JSON>` (`{ type, organisationId, employeeId?, payload, at }`),
-with a `: ping` comment every 25 s. Events are cache-invalidation hints (`shift.changed`,
+with a `: ping` comment every 15 s. Events are cache-invalidation hints (`shift.changed`,
 `employee.work_state.changed`, ...): refetch the affected resource, never treat the payload as the source of
 truth.
+
+The server ends every stream after 20 s (Netlify cuts streamed responses at 30 s): the last frame is the
+control frame `event: reconnect` / `data: {}` (`REALTIME_RECONNECT_EVENT` in `@clockoff/validation/realtime`;
+not an event kind and not an `SseEvent`), then a normal close. Reconnect straight away; the dashboard does so
+silently and refreshes its realtime-backed data every 30 s while connected, because the in-process event bus
+only carries events raised on the same server instance.
 
 ## Schemas in code
 
