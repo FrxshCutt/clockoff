@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { SITE } from "@/config/site";
 
-/** Work Mode mark: a rounded square with a focus "shield" glyph. Decorative; pair with the visible name. */
+/** ClockOff mark: a rounded square with a focus "shield" glyph. Decorative; pair with the visible name. */
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg

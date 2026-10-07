@@ -3,7 +3,7 @@
 import type {
   NotificationPreferences,
   UpdateNotificationPreferencesInput,
-} from "@workmode/validation/notifications";
+} from "@clockoff/validation/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, hasErrorCode } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";

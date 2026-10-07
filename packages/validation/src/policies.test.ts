@@ -3,8 +3,8 @@ import type { z } from "zod";
 import {
   createDefaultRestrictionConfig,
   type RestrictionConfig,
-} from "@workmode/shared/policy/restrictionConfig";
-import type { BreakPolicyLike } from "@workmode/shared/breaks/breakTypes";
+} from "@clockoff/shared/policy/restrictionConfig";
+import type { BreakPolicyLike } from "@clockoff/shared/breaks/breakTypes";
 import {
   BREAK_POLICY_DEFAULTS,
   breakPolicyRulesSchema,

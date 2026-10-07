@@ -1,6 +1,6 @@
 "use client";
 
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Star } from "lucide-react";
 import Link from "next/link";

@@ -1,5 +1,5 @@
-import { archiveEmployeeSchema } from "@workmode/validation/employees";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { archiveEmployeeSchema } from "@clockoff/validation/employees";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { archiveEmployee } from "@/server/employees";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ActivityEvent } from "@workmode/validation/activity";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import {
   Activity,
   CalendarClock,

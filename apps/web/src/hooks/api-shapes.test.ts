@@ -1,5 +1,5 @@
-import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@workmode/validation/notifications";
-import { ORGANISATION_SETTINGS_DEFAULTS } from "@workmode/validation/organisation";
+import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@clockoff/validation/notifications";
+import { ORGANISATION_SETTINGS_DEFAULTS } from "@clockoff/validation/organisation";
 import { describe, expect, it } from "vitest";
 import { ApiClientError } from "@/lib/api-client";
 import {

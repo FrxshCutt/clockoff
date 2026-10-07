@@ -9,7 +9,7 @@ import type { DateFormat, ShiftImportRowStatus } from "../enums";
 /**
  * Hard limits. The upload endpoint enforces the file size; `parseCsv` enforces the row count;
  * `validateRows` / `normaliseRow` enforce the shift and break lengths (mirroring SHIFT_LIMITS in
- * @workmode/validation so an import never fails at commit time for a reason it could have reported).
+ * @clockoff/validation so an import never fails at commit time for a reason it could have reported).
  */
 export const IMPORT_LIMITS = {
   /** Maximum upload size: 5 MB. */

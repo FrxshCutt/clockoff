@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImportRow, UpdateImportRowInput } from "@workmode/validation/imports";
+import type { ImportRow, UpdateImportRowInput } from "@clockoff/validation/imports";
 import {
   Building2,
   ChevronDown,

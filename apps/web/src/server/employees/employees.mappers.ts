@@ -4,28 +4,28 @@ import type {
   EmployeeInvite as EmployeeInviteRow,
   EmployeeWorkState as EmployeeWorkStateRow,
   Prisma,
-} from "@workmode/db";
-import { parseRelaxedCategories } from "@workmode/shared/breaks/breakRules";
-import type { ActivityEventType } from "@workmode/shared/enums";
-import type { ActivityEvent } from "@workmode/validation/activity";
-import type { DeviceSummary } from "@workmode/validation/devices";
-import type { EmployeeInvite } from "@workmode/validation/invites";
-import type { MobileEmployee, MobileOrganisation } from "@workmode/validation/mobile";
+} from "@clockoff/db";
+import { parseRelaxedCategories } from "@clockoff/shared/breaks/breakRules";
+import type { ActivityEventType } from "@clockoff/shared/enums";
+import type { ActivityEvent } from "@clockoff/validation/activity";
+import type { DeviceSummary } from "@clockoff/validation/devices";
+import type { EmployeeInvite } from "@clockoff/validation/invites";
+import type { MobileEmployee, MobileOrganisation } from "@clockoff/validation/mobile";
 import {
   deriveOverrideStatus,
   type Override,
   type OverridePayload,
-} from "@workmode/validation/overrides";
+} from "@clockoff/validation/overrides";
 import type {
   DeviceStatus,
   EmployeeSummary,
   NamedRef,
   ShiftSummary,
-} from "@workmode/validation/refs";
+} from "@clockoff/validation/refs";
 import type {
   BreakSessionResponse,
   EmployeeWorkStateResponse,
-} from "@workmode/validation/workState";
+} from "@clockoff/validation/workState";
 import type {
   DeviceRow,
   EmployeeRow,
@@ -264,7 +264,7 @@ export function toMobileOrganisation(org: {
 // ── Activity feed ───────────────────────────────────────────────────────────
 
 const ACTIVITY_VERBS: Record<ActivityEventType, string> = {
-  EMPLOYEE_JOINED: "joined from the Work Mode app",
+  EMPLOYEE_JOINED: "joined from the ClockOff app",
   SETUP_COMPLETED: "completed Screen Time setup",
   PERMISSION_GRANTED: "granted Screen Time permission",
   PERMISSION_NEEDS_ATTENTION: "has a Screen Time permission that needs attention",

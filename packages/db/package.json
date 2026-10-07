@@ -1,5 +1,5 @@
 {
-  "name": "@workmode/db",
+  "name": "@clockoff/db",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -23,12 +23,12 @@
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
-    "@workmode/shared": "workspace:*"
+    "@clockoff/shared": "workspace:*"
   },
   "devDependencies": {
     "@node-rs/argon2": "2.2.1",
     "@types/node": "24.19.1",
-    "@workmode/config": "workspace:*",
+    "@clockoff/config": "workspace:*",
     "eslint": "9.39.5",
     "prisma": "6.19.3",
     "tsx": "4.23.15",

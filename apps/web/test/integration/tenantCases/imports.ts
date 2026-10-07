@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as commitRoute } from "@/app/api/imports/[id]/commit/route";
 import { GET as errorsCsvRoute } from "@/app/api/imports/[id]/errors.csv/route";

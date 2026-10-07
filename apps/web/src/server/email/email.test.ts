@@ -48,7 +48,7 @@ describe("templates", () => {
     });
     expect(invite.subject).toContain("Harpenden Coffee Co.");
     expect(invite.text).toContain(
-      "Ana has invited you to manage Harpenden Coffee Co. on Work Mode as an admin.",
+      "Ana has invited you to manage Harpenden Coffee Co. on ClockOff as an admin.",
     );
     expect(invite.text).toContain(`${appUrl}/accept-invite?token=i1`);
     const anonymous = managerInviteEmail({
@@ -57,9 +57,7 @@ describe("templates", () => {
       role: "MANAGER",
       token: "i2",
     });
-    expect(anonymous.text).toContain(
-      "You have been invited to manage X on Work Mode as a manager.",
-    );
+    expect(anonymous.text).toContain("You have been invited to manage X on ClockOff as a manager.");
 
     const exists = accountExistsEmail({ name: "Sam <b>" });
     expect(exists.text).toContain(`${appUrl}/login`);
@@ -102,12 +100,12 @@ describe("providers", () => {
     const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
     await new ConsoleEmailProvider({ suppressContent: true }).send({
       to: "alice@x.test",
-      subject: "Reset your Work Mode password",
+      subject: "Reset your ClockOff password",
       text: "http://h/reset-password?token=secret-token",
     });
     expect(info).not.toHaveBeenCalled();
     const logged = JSON.stringify(warn.mock.calls);
-    expect(logged).toContain("Reset your Work Mode password");
+    expect(logged).toContain("Reset your ClockOff password");
     expect(logged).not.toContain("alice@x.test");
     expect(logged).not.toContain("secret-token");
   });

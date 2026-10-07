@@ -94,7 +94,7 @@ test.describe("manager web journey", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
     const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    const email = `e2e-manager-${runId}@workmode.test`;
+    const email = `e2e-manager-${runId}@clockoff.test`;
     const password = `E2e-${runId}-Passw0rd`;
     const orgName = `E2E Coffee ${runId}`;
     const employeeName = "Zach Stephens";
@@ -115,7 +115,7 @@ test.describe("manager web journey", () => {
       expect(link, "verification link in the email").toBeTruthy();
       await page.goto(link!);
       await expect(page.getByRole("heading", { name: "Email verified" })).toBeVisible();
-      const next = page.getByRole("link", { name: "Continue to Work Mode" });
+      const next = page.getByRole("link", { name: "Continue to ClockOff" });
       await expect(next).toHaveAttribute("href", "/create-organisation");
       await next.click();
 
@@ -428,7 +428,7 @@ test.describe("manager web journey", () => {
       await expect(entryFor("Setup complete")).toHaveCount(1);
       await expect(entryFor("Setup complete")).toContainText(`${employeeName} completed`);
       await expect(entryFor("Joined")).toContainText(
-        `${employeeName} joined from the Work Mode app`,
+        `${employeeName} joined from the ClockOff app`,
       );
     });
   });

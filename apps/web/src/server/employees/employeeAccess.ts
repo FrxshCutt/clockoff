@@ -1,5 +1,5 @@
-import type { ActivityEvent, Prisma } from "@workmode/db";
-import type { ActorType, BreakEndReason } from "@workmode/shared/enums";
+import type { ActivityEvent, Prisma } from "@clockoff/db";
+import type { ActorType, BreakEndReason } from "@clockoff/shared/enums";
 import { recordActivity } from "@/server/activity/recordActivity";
 
 /**

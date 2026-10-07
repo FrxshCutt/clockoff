@@ -1,4 +1,4 @@
-import { AppError } from "@workmode/shared/errors";
+import { AppError } from "@clockoff/shared/errors";
 
 /**
  * Opaque keyset cursors for "newest first" lists ordered by `(instant DESC, id DESC)`: the cursor names

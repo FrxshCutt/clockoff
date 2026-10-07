@@ -1,10 +1,10 @@
-import { prisma, type Prisma, type ShiftStatus } from "@workmode/db";
-import { breakPolicyFromRecord, type BreakPolicyLike } from "@workmode/shared/breaks/breakRules";
+import { prisma, type Prisma, type ShiftStatus } from "@clockoff/db";
+import { breakPolicyFromRecord, type BreakPolicyLike } from "@clockoff/shared/breaks/breakRules";
 import {
   fromBreakPolicyAssignment,
   indexPoliciesById,
   resolvePolicy,
-} from "@workmode/shared/policy/resolvePolicy";
+} from "@clockoff/shared/policy/resolvePolicy";
 import { shiftInclude, type ShiftRow } from "./shifts.mappers";
 import type { IntervalLike } from "./shifts.rules";
 

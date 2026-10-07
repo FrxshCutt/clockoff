@@ -1,7 +1,7 @@
 "use client";
 
-import { listProviders } from "@workmode/shared/providers/registry";
-import type { ComplianceSummaryResponse } from "@workmode/validation/compliance";
+import { listProviders } from "@clockoff/shared/providers/registry";
+import type { ComplianceSummaryResponse } from "@clockoff/validation/compliance";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { RelativeTime } from "@/components/relative-time";

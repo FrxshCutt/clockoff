@@ -1,5 +1,5 @@
-import { Prisma, prisma } from "@workmode/db";
-import type { NamedRef } from "@workmode/validation/refs";
+import { Prisma, prisma } from "@clockoff/db";
+import type { NamedRef } from "@clockoff/validation/refs";
 
 /**
  * Employee-scoped queries. Every function takes `organisationId` explicitly (it always comes from the

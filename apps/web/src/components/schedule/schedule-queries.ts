@@ -4,8 +4,8 @@ import type {
   Employee,
   EmployeeDetailResponse,
   ListEmployeesResponse,
-} from "@workmode/validation/employees";
-import type { ListLocationsResponse, Location } from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/employees";
+import type { ListLocationsResponse, Location } from "@clockoff/validation/locationsTeams";
 import type {
   BulkShiftActionInput,
   BulkShiftActionResponse,
@@ -16,8 +16,8 @@ import type {
   ListShiftsResponse,
   Shift,
   ShiftResponse,
-} from "@workmode/validation/shifts";
-import { updateShiftSchema } from "@workmode/validation/shifts";
+} from "@clockoff/validation/shifts";
+import { updateShiftSchema } from "@clockoff/validation/shifts";
 import type { z } from "zod";
 import {
   keepPreviousData,

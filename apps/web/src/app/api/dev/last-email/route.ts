@@ -1,5 +1,5 @@
-import { AppError } from "@workmode/shared/errors";
-import { emailSchema } from "@workmode/validation/common";
+import { AppError } from "@clockoff/shared/errors";
+import { emailSchema } from "@clockoff/validation/common";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { env } from "@/lib/env";

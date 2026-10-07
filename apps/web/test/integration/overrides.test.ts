@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
-import { mobileSyncResponseSchema } from "@workmode/validation/mobile";
+import { prisma } from "@clockoff/db";
+import { mobileSyncResponseSchema } from "@clockoff/validation/mobile";
 import {
   listOverridesResponseSchema,
   overrideResponseSchema,
-} from "@workmode/validation/overrides";
+} from "@clockoff/validation/overrides";
 import { describe, expect, it } from "vitest";
 import { GET as syncRoute } from "@/app/api/mobile/v1/sync/route";
 import { POST as revokeRoute } from "@/app/api/overrides/[id]/revoke/route";

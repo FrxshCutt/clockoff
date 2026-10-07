@@ -1,6 +1,6 @@
-import { prisma, type ActivityEvent, type Prisma } from "@workmode/db";
-import type { ApiErrorCode } from "@workmode/shared/errors";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type ActivityEvent, type Prisma } from "@clockoff/db";
+import type { ApiErrorCode } from "@clockoff/shared/errors";
+import { AppError } from "@clockoff/shared/errors";
 import {
   addLocalDays,
   buildShiftInstants,
@@ -19,7 +19,7 @@ import {
   weekStart,
   type RecurrenceOccurrence,
   type ShiftTimeWarning,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 import {
   SHIFT_LIMITS,
   isInstantShiftInput,
@@ -38,7 +38,7 @@ import {
   type ShiftWarning,
   type SkippedOccurrence,
   type UpdateShiftInput,
-} from "@workmode/validation/shifts";
+} from "@clockoff/validation/shifts";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { readOrganisationSettings } from "@/server/organisations/mappers";

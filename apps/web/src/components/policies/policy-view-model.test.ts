@@ -1,11 +1,11 @@
-import { DEFAULT_RESTRICTION_CONFIG } from "@workmode/shared/policy/restrictionConfig";
+import { DEFAULT_RESTRICTION_CONFIG } from "@clockoff/shared/policy/restrictionConfig";
 import {
   createPolicySchema,
   updatePolicySchema,
   type Policy,
   type PolicyAssignment,
   type PolicyVersion,
-} from "@workmode/validation/policies";
+} from "@clockoff/validation/policies";
 import { describe, expect, it } from "vitest";
 import {
   PRECEDENCE_LEVELS,

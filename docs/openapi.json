@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Work Mode API",
+    "title": "ClockOff API",
     "version": "0.1.0",
     "summary": "Manager dashboard API and iOS employee app API (/api/mobile/v1).",
     "description": "Generated from the Zod schemas in packages/validation — do not edit by hand (run `pnpm openapi`). See docs/API.md for authentication, errors, pagination, idempotency, rate limits and versioning."

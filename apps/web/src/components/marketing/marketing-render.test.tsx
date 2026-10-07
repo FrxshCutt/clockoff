@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PLANS } from "@workmode/shared/enums";
-import { PLAN_CONFIG } from "@workmode/shared/plans";
-import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@workmode/shared/privacyStatements";
+import { PLANS } from "@clockoff/shared/enums";
+import { PLAN_CONFIG } from "@clockoff/shared/plans";
+import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@clockoff/shared/privacyStatements";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";

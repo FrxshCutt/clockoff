@@ -1,7 +1,7 @@
-import { API_ERROR_CODES, type ApiErrorCode } from "@workmode/shared/errors";
+import { API_ERROR_CODES, type ApiErrorCode } from "@clockoff/shared/errors";
 
 /**
- * Browser client for the Work Mode manager API (`/api/**`).
+ * Browser client for the ClockOff manager API (`/api/**`).
  *
  * - Same-origin cookie session (`credentials: "same-origin"`).
  * - CSRF double submit: mutating requests echo the JS-readable `wm_csrf` cookie in `x-csrf-token`.

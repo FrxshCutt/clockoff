@@ -1,4 +1,4 @@
-// Work Mode — Prisma schema (PostgreSQL).
+// ClockOff — Prisma schema (PostgreSQL).
 // Conventions: UUID primary keys, snake_case tables/columns via @map, created_at/updated_at everywhere,
 // deleted_at soft delete where the spec requires it, organisation_id on every tenant-owned table with
 // composite indexes. Functional / partial indexes and check constraints that Prisma cannot express live in
@@ -726,7 +726,7 @@ model PolicyVersion {
   id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   policyId              String    @map("policy_id") @db.Uuid
   versionNumber         Int       @map("version_number")
-  /// Validated by `restrictionConfigSchema` in @workmode/validation.
+  /// Validated by `restrictionConfigSchema` in @clockoff/validation.
   restrictionConfig     Json      @map("restriction_config")
   /// Default break behaviour when no BreakPolicy resolves: { restrictionBehaviour, relaxedCategories }.
   breakBehaviourDefault Json      @default("{\"restrictionBehaviour\":\"RELAX_ALL\",\"relaxedCategories\":[]}") @map("break_behaviour_default")

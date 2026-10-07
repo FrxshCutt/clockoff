@@ -1,7 +1,7 @@
 "use client";
 
-import type { Shift } from "@workmode/validation/shifts";
-import type { LocalDateString } from "@workmode/shared/time/time";
+import type { Shift } from "@clockoff/validation/shifts";
+import type { LocalDateString } from "@clockoff/shared/time/time";
 import { Plus } from "lucide-react";
 import { useId, useMemo, useState, type DragEvent } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +33,7 @@ export interface WeekViewProps {
   className?: string;
 }
 
-const DRAG_MIME = "application/x-workmode-shift";
+const DRAG_MIME = "application/x-clockoff-shift";
 
 interface DragPayload {
   shiftId: string;

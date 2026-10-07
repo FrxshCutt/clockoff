@@ -1,8 +1,8 @@
 "use client";
 
-import type { Shift } from "@workmode/validation/shifts";
-import { SHIFT_LIMITS } from "@workmode/validation/shifts";
-import { RECURRENCE_WEEKDAY_CODES, type LocalDateString } from "@workmode/shared/time/time";
+import type { Shift } from "@clockoff/validation/shifts";
+import { SHIFT_LIMITS } from "@clockoff/validation/shifts";
+import { RECURRENCE_WEEKDAY_CODES, type LocalDateString } from "@clockoff/shared/time/time";
 import {
   Ban,
   CalendarPlus,

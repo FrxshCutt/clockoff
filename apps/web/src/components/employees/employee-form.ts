@@ -5,8 +5,8 @@ import {
   type CreateEmployeeInput,
   type Employee,
   type UpdateEmployeeInput,
-} from "@workmode/validation/employees";
-import { phoneSchema } from "@workmode/validation/primitives";
+} from "@clockoff/validation/employees";
+import { phoneSchema } from "@clockoff/validation/primitives";
 import { z } from "zod";
 
 /**

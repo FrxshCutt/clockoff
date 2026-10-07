@@ -1,6 +1,6 @@
 "use client";
 
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import { Coffee } from "lucide-react";
 import { useId, useState } from "react";
 import { useWatch } from "react-hook-form";
@@ -239,7 +239,7 @@ export function BreakPolicyForm({ policy, variant, onSaved, onCancel }: BreakPol
           control={form.control}
           name="employeeTriggeredAllowed"
           label="Employees can start breaks"
-          description="From the Work Mode app on their phone."
+          description="From the ClockOff app on their phone."
           disabled={!breaksEnabled}
         />
         <SwitchField

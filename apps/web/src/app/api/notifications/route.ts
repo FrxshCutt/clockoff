@@ -1,4 +1,4 @@
-import { notificationQuerySchema } from "@workmode/validation/notifications";
+import { notificationQuerySchema } from "@clockoff/validation/notifications";
 import { createHandler } from "@/server/http/apiHandler";
 import { listNotifications } from "@/server/notifications";
 

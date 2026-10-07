@@ -1,7 +1,7 @@
 "use client";
 
-import type { AssignmentScopeType } from "@workmode/shared/enums";
-import { SCOPE_TYPE_LABELS } from "@workmode/shared/policy/explainResolution";
+import type { AssignmentScopeType } from "@clockoff/shared/enums";
+import { SCOPE_TYPE_LABELS } from "@clockoff/shared/policy/explainResolution";
 import {
   Building2,
   LoaderCircle,

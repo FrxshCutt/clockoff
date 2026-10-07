@@ -1,5 +1,5 @@
-import { importMappingSchema } from "@workmode/validation/imports";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { importMappingSchema } from "@clockoff/validation/imports";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { saveImportMapping } from "@/server/imports";
 

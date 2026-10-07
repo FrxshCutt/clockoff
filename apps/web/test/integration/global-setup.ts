@@ -21,7 +21,7 @@ import { assertTestDatabaseName, assertTestDatabaseUrl } from "../helpers/testDa
  * - `lock_timeout` makes the reset fail with a clear error instead of hanging if some other client holds
  *   locks on the test tables.
  */
-const ADVISORY_LOCK_KEY = 74_201_031; // arbitrary constant: "workmode integration suite"
+const ADVISORY_LOCK_KEY = 74_201_031; // arbitrary constant: "clockoff integration suite"
 
 function singleConnectionUrl(url: string): string {
   const u = new URL(url);
@@ -33,7 +33,7 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   const testUrl = assertTestDatabaseUrl(process.env.TEST_DATABASE_URL, process.env.DATABASE_URL);
   process.env.DATABASE_URL = testUrl;
 
-  const { createPrismaClient } = await import("@workmode/db");
+  const { createPrismaClient } = await import("@clockoff/db");
   // One connection, so the session-level advisory lock and the reset share a backend.
   const client = createPrismaClient(singleConnectionUrl(testUrl));
 

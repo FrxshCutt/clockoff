@@ -4,28 +4,28 @@ import type {
   ManagerOverride,
   ScheduledBreak,
   Shift,
-} from "@workmode/db";
+} from "@clockoff/db";
 import {
   breakPolicyFromRecord,
   parseRelaxedCategories,
   resolveBreakBehaviour,
   type BreakAllowance,
-} from "@workmode/shared/breaks/breakRules";
-import { toExpectedStateJson, type ExpectedState } from "@workmode/shared/workMode/workModeMachine";
+} from "@clockoff/shared/breaks/breakRules";
+import { toExpectedStateJson, type ExpectedState } from "@clockoff/shared/workMode/workModeMachine";
 import type {
   MobileActiveOverride,
   MobileBreakPolicy,
   MobileResolvedPolicy,
   MobileShift,
-} from "@workmode/validation/mobile";
+} from "@clockoff/validation/mobile";
 import type {
   BreakAllowanceResponse,
   BreakSessionResponse,
   ExpectedStateResponse,
-} from "@workmode/validation/workState";
+} from "@clockoff/validation/workState";
 import type { EmployeePolicyResolution } from "./policyResolution";
 
-/** DTO mappers for the mobile API (`@workmode/validation/mobile`). Operational fields only (§12). */
+/** DTO mappers for the mobile API (`@clockoff/validation/mobile`). Operational fields only (§12). */
 
 export type ShiftWithScheduledBreaks = Shift & {
   scheduledBreaks: ScheduledBreak[];

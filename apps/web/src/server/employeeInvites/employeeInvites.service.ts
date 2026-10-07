@@ -1,8 +1,8 @@
-import { Prisma, prisma, type EmployeeInvite as EmployeeInviteRow } from "@workmode/db";
-import type { EmploymentStatus, InviteChannel } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
-import { generateEmployeeInviteCode } from "@workmode/shared/joinCode";
-import { CAN_SEE, CANNOT_SEE, EMPLOYEE_PRIVACY_SUMMARY } from "@workmode/shared/privacyStatements";
+import { Prisma, prisma, type EmployeeInvite as EmployeeInviteRow } from "@clockoff/db";
+import type { EmploymentStatus, InviteChannel } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
+import { generateEmployeeInviteCode } from "@clockoff/shared/joinCode";
+import { CAN_SEE, CANNOT_SEE, EMPLOYEE_PRIVACY_SUMMARY } from "@clockoff/shared/privacyStatements";
 import type {
   CreateEmployeeInviteInput,
   CreateEmployeeInviteResponse,
@@ -10,7 +10,7 @@ import type {
   InviteInstructions,
   InviteInstructionsResponse,
   ResendEmployeeInviteInput,
-} from "@workmode/validation/invites";
+} from "@clockoff/validation/invites";
 import { env } from "@/lib/env";
 import { DAY_MS, expiresIn, generateToken } from "@/lib/tokens";
 import { audit } from "@/server/audit/audit";
@@ -187,7 +187,7 @@ export function buildInviteInstructions(input: BuildInstructionsInput): InviteIn
     ? `Enter the company code ${input.companyCode}.`
     : "Enter the company code your manager gives you (the current code has been revoked; ask your manager for the new one).";
   const steps = [
-    `Download the Work Mode app: ${input.appStoreUrl}`,
+    `Download the ClockOff app: ${input.appStoreUrl}`,
     'Open the app and tap "Join my workplace".',
     companyCodeStep,
     `Enter your name exactly as your manager has it: ${fullName}.`,
@@ -200,7 +200,7 @@ export function buildInviteInstructions(input: BuildInstructionsInput): InviteIn
   const copyText = [
     `Hi ${input.employee.firstName},`,
     "",
-    `${input.organisationName} uses Work Mode to keep phones distraction-free during shifts. Here is how to set it up:`,
+    `${input.organisationName} uses ClockOff to keep phones distraction-free during shifts. Here is how to set it up:`,
     "",
     ...steps.map((step, index) => `${index + 1}. ${step}`),
     "",
@@ -246,11 +246,11 @@ export function employeeInviteEmail(
     .map((block) => `<p>${escapeHtml(block).replaceAll("\n", "<br>")}</p>`)
     .join("\n");
   return {
-    subject: `Join ${organisationName} on Work Mode`,
+    subject: `Join ${organisationName} on ClockOff`,
     text: instructions.copyText,
     html: [
       `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">`,
-      `<h2 style="margin:0 0 12px">${escapeHtml(`Join ${organisationName} on Work Mode`)}</h2>`,
+      `<h2 style="margin:0 0 12px">${escapeHtml(`Join ${organisationName} on ClockOff`)}</h2>`,
       paragraphs,
       `</body></html>`,
     ].join("\n"),

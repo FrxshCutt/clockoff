@@ -1,9 +1,9 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 import type {
   ActivationMode,
   IntegrationProvider,
   IntegrationStatus,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 
 /**
  * `Integration` rows (one per organisation and provider, created lazily) and their `IntegrationConnection`

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { BreakEndReason } from "@workmode/shared/enums";
-import type { DeviceToServerFieldGroupKey } from "@workmode/shared/privacyStatements";
+import type { BreakEndReason } from "@clockoff/shared/enums";
+import type { DeviceToServerFieldGroupKey } from "@clockoff/shared/privacyStatements";
 import { isoDateTimeSchema, nonEmptyString, timezoneSchema, uuidSchema } from "./common";
 import { BREAK_POLICY_LIMITS, breakPolicyRulesSchema } from "./breakPolicies";
 import { selectionCountsSchema } from "./devices";
@@ -32,7 +32,7 @@ import { breakAllowanceSchema, breakSessionSchema, expectedStateSchema } from ".
  *
  * PRIVACY (§12): every request schema here is a STRICT object, at every nesting level, and only carries
  * the operational fields listed in docs/PRIVACY.md (`DEVICE_TO_SERVER_ALLOWED_FIELDS` in
- * @workmode/shared). Unknown keys — `installedApps`, `contacts`, `location`, `notifications`, `messages`,
+ * @clockoff/shared). Unknown keys — `installedApps`, `contacts`, `location`, `notifications`, `messages`,
  * anything — are rejected with VALIDATION_ERROR rather than silently dropped, so a client bug can never
  * leak data into logs. mobile.test.ts enforces this for every mobile route in the OpenAPI registry.
  *
@@ -54,7 +54,7 @@ export const MOBILE_LIMITS = {
 
 /**
  * Privacy class of a field a mobile request may carry: the `DEVICE_TO_SERVER_ALLOWED_FIELDS` group in
- * @workmode/shared (rendered into docs/PRIVACY.md) that discloses it to employees, or one of the classes
+ * @clockoff/shared (rendered into docs/PRIVACY.md) that discloses it to employees, or one of the classes
  * that carry no information about the employee or the phone:
  * - `credential`     — authentication material (refresh token);
  * - `serverIssuedId` — an id the server itself handed to the device (employee, shift, break session);

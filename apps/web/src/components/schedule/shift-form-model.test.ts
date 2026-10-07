@@ -1,4 +1,4 @@
-import type { Shift } from "@workmode/validation/shifts";
+import type { Shift } from "@clockoff/validation/shifts";
 import { describe, expect, it } from "vitest";
 import {
   daysBetweenLocalDates,

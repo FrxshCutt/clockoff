@@ -11,8 +11,8 @@ import type {
   ListImportRowsResponse,
   UpdateImportRowInput,
   ValidateImportResponse,
-} from "@workmode/validation/imports";
-import type { ShiftImportRowStatus } from "@workmode/shared/enums";
+} from "@clockoff/validation/imports";
+import type { ShiftImportRowStatus } from "@clockoff/shared/enums";
 import {
   keepPreviousData,
   useMutation,

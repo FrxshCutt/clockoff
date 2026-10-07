@@ -1,8 +1,8 @@
 "use client";
 
-import type { DateFormat } from "@workmode/shared/enums";
-import { IMPORT_LIMITS } from "@workmode/shared/csv/types";
-import type { CreateImportResponse } from "@workmode/validation/imports";
+import type { DateFormat } from "@clockoff/shared/enums";
+import { IMPORT_LIMITS } from "@clockoff/shared/csv/types";
+import type { CreateImportResponse } from "@clockoff/validation/imports";
 import { Download, FileSpreadsheet, FileUp, LoaderCircle, X } from "lucide-react";
 import { useId, useRef, useState, type DragEvent } from "react";
 import { FormErrorAlert } from "@/components/forms/form-fields";

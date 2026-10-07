@@ -1,6 +1,6 @@
-import { Prisma, prisma, type User } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import type { CurrentUser, LoginInput, RegisterInput } from "@workmode/validation/auth";
+import { Prisma, prisma, type User } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import type { CurrentUser, LoginInput, RegisterInput } from "@clockoff/validation/auth";
 import {
   ORG_COOKIE,
   SESSION_COOKIE,
@@ -44,7 +44,7 @@ import {
 
 /**
  * Manager authentication flows (first-party, D-007). Route handlers stay thin: they validate input with
- * the `@workmode/validation/auth` schemas, call these functions, and attach the returned cookies.
+ * the `@clockoff/validation/auth` schemas, call these functions, and attach the returned cookies.
  *
  * Invariants:
  * - Raw tokens (session, CSRF, verification, reset) leave the server exactly once; only sha256 is stored.

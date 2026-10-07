@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import type { PaginationState, SortingState } from "@tanstack/react-table";
 import { UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";

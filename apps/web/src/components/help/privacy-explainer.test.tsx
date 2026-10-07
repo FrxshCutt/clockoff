@@ -1,4 +1,4 @@
-import { CANNOT_SEE, CAN_SEE, EMPLOYEE_PRIVACY_SUMMARY } from "@workmode/shared/privacyStatements";
+import { CANNOT_SEE, CAN_SEE, EMPLOYEE_PRIVACY_SUMMARY } from "@clockoff/shared/privacyStatements";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PrivacyExplainer, PrivacyStatementList } from "./privacy-explainer";

@@ -1,4 +1,4 @@
-import type { Plan } from "@workmode/shared/enums";
+import type { Plan } from "@clockoff/shared/enums";
 import {
   PLAN_CONFIG,
   PLAN_LIMIT_METRICS,
@@ -7,12 +7,12 @@ import {
   limitFeatureLines,
   type LimitValue,
   type PlanLimitMetric,
-} from "@workmode/shared/plans";
+} from "@clockoff/shared/plans";
 import { SITE } from "@/config/site";
 
 /**
  * Pure helpers for the plan cards on Billing and the marketing pricing page. Prices, limits and features come
- * from `PLAN_CONFIG` (@workmode/shared) so the two pages and plan enforcement can never disagree.
+ * from `PLAN_CONFIG` (@clockoff/shared) so the two pages and plan enforcement can never disagree.
  */
 
 export type PlanCardCta = "current" | "upgrade" | "downgrade" | "contact-sales";

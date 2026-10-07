@@ -1,4 +1,4 @@
-import { importQuerySchema } from "@workmode/validation/imports";
+import { importQuerySchema } from "@clockoff/validation/imports";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { IMPORT_UPLOAD_MAX_BODY_BYTES, listImports, uploadImport } from "@/server/imports";
 

@@ -38,7 +38,7 @@ export default function GlobalError({
           tabIndex={-1}
           style={{ maxWidth: 480, textAlign: "center", outline: "none" }}
         >
-          <p style={{ fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 8 }}>Work Mode</p>
+          <p style={{ fontWeight: 600, letterSpacing: "-0.01em", marginBottom: 8 }}>ClockOff</p>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: "0 0 8px" }}>Something went wrong</h1>
           <p style={{ color: "#525252", lineHeight: 1.5, margin: "0 0 20px" }}>
             An unexpected error stopped the app from loading. Try again, or reload the page.

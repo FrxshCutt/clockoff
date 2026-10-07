@@ -1,7 +1,7 @@
 "use client";
 
-import type { Role } from "@workmode/shared/enums";
-import { inviteMemberSchema } from "@workmode/validation/organisation";
+import type { Role } from "@clockoff/shared/enums";
+import { inviteMemberSchema } from "@clockoff/validation/organisation";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

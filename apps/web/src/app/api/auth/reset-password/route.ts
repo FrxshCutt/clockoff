@@ -1,4 +1,4 @@
-import { resetPasswordSchema } from "@workmode/validation/auth";
+import { resetPasswordSchema } from "@clockoff/validation/auth";
 import { resetPassword } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { RATE_LIMITS } from "@/server/rateLimit";

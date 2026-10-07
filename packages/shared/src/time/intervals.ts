@@ -1,5 +1,5 @@
 /**
- * Instant arithmetic. All intervals in Work Mode are half-open `[start, end)`: a shift that ends at 15:00
+ * Instant arithmetic. All intervals in ClockOff are half-open `[start, end)`: a shift that ends at 15:00
  * does not overlap one that starts at 15:00, and 15:00:00 itself is "after" the first shift.
  */
 

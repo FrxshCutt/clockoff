@@ -1,4 +1,4 @@
-import type { ImportRow, ImportSummaryResponse, ShiftImport } from "@workmode/validation/imports";
+import type { ImportRow, ImportSummaryResponse, ShiftImport } from "@clockoff/validation/imports";
 import { describe, expect, it } from "vitest";
 import {
   IMPORT_STEPS,

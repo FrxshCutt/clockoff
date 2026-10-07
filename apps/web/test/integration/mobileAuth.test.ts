@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { env } from "@/lib/env";

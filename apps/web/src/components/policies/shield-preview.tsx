@@ -30,7 +30,7 @@ export function ShieldPreview({ message, organisationName, className }: ShieldPr
           >
             <ShieldCheck className="size-8 text-emerald-300" />
           </div>
-          <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">Work Mode</p>
+          <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">ClockOff</p>
           <p className="mt-1 text-lg font-semibold">{organisationName ?? "Your organisation"}</p>
           <p className="mt-3 min-h-10 text-sm leading-5 text-pretty break-words text-zinc-200">
             {text}

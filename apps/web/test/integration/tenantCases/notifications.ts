@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as readRoute } from "@/app/api/notifications/[id]/read/route";
 import { registerTenantIsolationCase } from "../../helpers/tenantIsolation";

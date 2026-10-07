@@ -1,5 +1,5 @@
-import { AppError } from "@workmode/shared/errors";
-import type { ActivityQuery, ListActivityResponse } from "@workmode/validation/activity";
+import { AppError } from "@clockoff/shared/errors";
+import type { ActivityQuery, ListActivityResponse } from "@clockoff/validation/activity";
 import { toActivityEventDto, toEmployeeSummary } from "@/server/employees/employees.mappers";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { findActivityEvents, findActorUsers, type ActivityEventRow } from "./activity.repository";

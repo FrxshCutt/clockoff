@@ -12,12 +12,12 @@ import {
 import { createEmailProvider, sendEmailSafely, setEmailProviderForTesting } from "./index";
 
 const API_KEY = "re_test_Sup3rSecretKey_123";
-const FROM = "Work Mode <noreply@clockoff.online>";
+const FROM = "ClockOff <noreply@clockoff.online>";
 const RECIPIENT = "alice.recipient@example.test";
 
 const MESSAGE: EmailMessage = {
   to: RECIPIENT,
-  subject: "Reset your Work Mode password",
+  subject: "Reset your ClockOff password",
   text: "Hi Alice,\nhttps://app.clockoff.online/reset-password?token=secret-token-value",
   html: "<p>Hi Alice</p>",
 };

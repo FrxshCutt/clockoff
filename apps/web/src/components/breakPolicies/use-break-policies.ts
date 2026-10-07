@@ -11,8 +11,8 @@ import type {
   ListBreakPolicyAssignmentsResponse,
   SetDefaultBreakPolicyInput,
   UpdateBreakPolicyInput,
-} from "@workmode/validation/breakPolicies";
-import type { OrganisationResponse } from "@workmode/validation/organisation";
+} from "@clockoff/validation/breakPolicies";
+import type { OrganisationResponse } from "@clockoff/validation/organisation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { breakPolicyQueryKeys } from "@/components/policies/policy-query-keys";
 import { api } from "@/lib/api-client";

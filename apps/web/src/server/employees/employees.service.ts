@@ -3,13 +3,13 @@ import {
   prisma,
   type ActivityEvent as ActivityEventRow,
   type Organisation as OrganisationRow,
-} from "@workmode/db";
-import { computeBreakAllowance } from "@workmode/shared/breaks/breakRules";
-import type { InviteStatus } from "@workmode/shared/enums";
-import { AppError, isAppError, type ApiErrorCode } from "@workmode/shared/errors";
-import { PLAN_CONFIG, isWithinLimit, planLimitsFor } from "@workmode/shared/plans";
-import { toExpectedStateJson } from "@workmode/shared/workMode/workModeMachine";
-import type { EmployeeActivityQuery, ListActivityResponse } from "@workmode/validation/activity";
+} from "@clockoff/db";
+import { computeBreakAllowance } from "@clockoff/shared/breaks/breakRules";
+import type { InviteStatus } from "@clockoff/shared/enums";
+import { AppError, isAppError, type ApiErrorCode } from "@clockoff/shared/errors";
+import { PLAN_CONFIG, isWithinLimit, planLimitsFor } from "@clockoff/shared/plans";
+import { toExpectedStateJson } from "@clockoff/shared/workMode/workModeMachine";
+import type { EmployeeActivityQuery, ListActivityResponse } from "@clockoff/validation/activity";
 import type {
   AssignEmployeeBreakPolicyInput,
   AssignEmployeeLocationInput,
@@ -26,8 +26,8 @@ import type {
   EmployeeStateResponse,
   ListEmployeesResponse,
   UpdateEmployeeInput,
-} from "@workmode/validation/employees";
-import type { EmployeeShiftsQuery, ListShiftsResponse } from "@workmode/validation/shifts";
+} from "@clockoff/validation/employees";
+import type { EmployeeShiftsQuery, ListShiftsResponse } from "@clockoff/validation/shifts";
 import { errorSummary, logger } from "@/lib/logger";
 import { publishActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";

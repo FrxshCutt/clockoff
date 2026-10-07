@@ -1,4 +1,4 @@
-import { createDepartmentSchema } from "@workmode/validation/locationsTeams";
+import { createDepartmentSchema } from "@clockoff/validation/locationsTeams";
 import { createDepartment, listDepartments } from "@/server/departments";
 import { createHandler, json } from "@/server/http/apiHandler";
 

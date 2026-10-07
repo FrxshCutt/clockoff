@@ -1,4 +1,4 @@
-import { updateShiftSchema, type Shift } from "@workmode/validation/shifts";
+import { updateShiftSchema, type Shift } from "@clockoff/validation/shifts";
 import type { z } from "zod";
 import {
   addLocalDays,
@@ -13,13 +13,13 @@ import {
   weekStart,
   type IsoWeekday,
   type LocalDateString,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 import { isResourceId } from "@/config/navigation";
 
 /**
  * Pure view-model helpers for the schedule page. Every date here is a local `YYYY-MM-DD` in the display
  * timezone (the organisation's zone) and every instant is a UTC `Date`; the timezone maths all goes through
- * `@workmode/shared/time` so the grid can never disagree with the server about which day a shift is on.
+ * `@clockoff/shared/time` so the grid can never disagree with the server about which day a shift is on.
  */
 
 export const SCHEDULE_VIEWS = ["week", "day", "employee"] as const;

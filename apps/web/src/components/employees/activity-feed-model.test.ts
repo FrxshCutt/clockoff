@@ -1,5 +1,5 @@
-import { ACTIVITY_EVENT_TYPES } from "@workmode/shared/enums";
-import type { ActivityEvent } from "@workmode/validation/activity";
+import { ACTIVITY_EVENT_TYPES } from "@clockoff/shared/enums";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import { describe, expect, it } from "vitest";
 import {
   ACTIVITY_TYPE_OPTIONS,
@@ -76,6 +76,6 @@ describe("describeActor", () => {
     ).toBe("Ada");
     expect(describeActor({ actorType: "MANAGER", actor: null })).toBe("A manager");
     expect(describeActor({ actorType: "EMPLOYEE_DEVICE", actor: null })).toBe("Device");
-    expect(describeActor({ actorType: "SYSTEM", actor: null })).toBe("Work Mode");
+    expect(describeActor({ actorType: "SYSTEM", actor: null })).toBe("ClockOff");
   });
 });

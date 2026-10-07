@@ -1,7 +1,7 @@
 "use client";
 
-import type { ColumnMapping, ImportField } from "@workmode/shared/csv/types";
-import type { ImportResponse, ShiftImport } from "@workmode/validation/imports";
+import type { ColumnMapping, ImportField } from "@clockoff/shared/csv/types";
+import type { ImportResponse, ShiftImport } from "@clockoff/validation/imports";
 import {
   ArrowLeft,
   ArrowRight,

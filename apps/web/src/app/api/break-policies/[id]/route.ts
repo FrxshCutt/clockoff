@@ -1,5 +1,5 @@
-import { idParamsSchema } from "@workmode/validation/primitives";
-import { updateBreakPolicySchema } from "@workmode/validation/breakPolicies";
+import { idParamsSchema } from "@clockoff/validation/primitives";
+import { updateBreakPolicySchema } from "@clockoff/validation/breakPolicies";
 import {
   deleteBreakPolicy,
   getBreakPolicy,

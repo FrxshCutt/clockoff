@@ -1,4 +1,4 @@
-import { sseEventSchema } from "@workmode/validation/realtime";
+import { sseEventSchema } from "@clockoff/validation/realtime";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { GET as streamRoute } from "@/app/api/realtime/stream/route";

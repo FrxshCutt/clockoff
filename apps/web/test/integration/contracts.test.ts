@@ -1,4 +1,4 @@
-import { currentUserSchema } from "@workmode/validation/auth";
+import { currentUserSchema } from "@clockoff/validation/auth";
 import {
   acceptManagerInviteResponseSchema,
   listMembersResponseSchema,
@@ -7,7 +7,7 @@ import {
   memberResponseSchema,
   onboardingResponseSchema,
   organisationResponseSchema,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 import { describe, expect, it } from "vitest";
 import { GET as meRoute } from "@/app/api/auth/me/route";
 import { GET as previewInviteRoute } from "@/app/api/invites/manager/[token]/route";
@@ -35,11 +35,11 @@ import {
 } from "../helpers";
 
 /**
- * Contract tests: responses of this module's endpoints parse with the shared `@workmode/validation`
+ * Contract tests: responses of this module's endpoints parse with the shared `@clockoff/validation`
  * schemas the dashboard and the iOS client are generated from.
  */
 describe("response contracts", () => {
-  it("auth + organisation + member endpoints match @workmode/validation", async () => {
+  it("auth + organisation + member endpoints match @clockoff/validation", async () => {
     const { user } = await createTestUser();
     const jar = await loginAs(user);
     expect(

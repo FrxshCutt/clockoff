@@ -1,4 +1,4 @@
-import { deviceQuerySchema } from "@workmode/validation/devices";
+import { deviceQuerySchema } from "@clockoff/validation/devices";
 import { listDevices } from "@/server/devices";
 import { createHandler } from "@/server/http/apiHandler";
 

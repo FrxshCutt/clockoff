@@ -1,6 +1,6 @@
 "use client";
 
-import type { DateFormat } from "@workmode/shared/enums";
+import type { DateFormat } from "@clockoff/shared/enums";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 
 export interface OrgDateOptions {

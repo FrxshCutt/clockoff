@@ -19,18 +19,18 @@ import {
   type Role,
   type ShiftStatus,
   type WorkModeState,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 import {
   INVITE_STATUS_META,
   STATUS_BADGE_META,
   WORK_MODE_STATE_META,
   type StatusTone,
-} from "@workmode/shared/status/statusMeta";
+} from "@clockoff/shared/status/statusMeta";
 
 /**
  * Pure mapping tables behind `<StatusBadge>`: every value of every status enum → label, tone, icon and a
  * one-line description. No React here so the tables are unit-testable in node. Device, invite and Work Mode
- * copy comes from `@workmode/shared` (shared with the iOS app); the rest is dashboard-only.
+ * copy comes from `@clockoff/shared` (shared with the iOS app); the rest is dashboard-only.
  */
 
 export type { StatusTone };
@@ -114,7 +114,7 @@ export interface StatusValueByKind {
 }
 export type StatusValue<K extends StatusKind> = StatusValueByKind[K];
 
-/** Every enum value per kind, straight from `@workmode/shared/enums`. */
+/** Every enum value per kind, straight from `@clockoff/shared/enums`. */
 export const STATUS_ENUM_VALUES: { readonly [K in StatusKind]: readonly StatusValueByKind[K][] } = {
   inviteStatus: INVITE_STATUSES,
   deviceStatus: DEVICE_STATUS_BADGES,

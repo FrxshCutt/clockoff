@@ -1,4 +1,4 @@
-import { auditLogQuerySchema } from "@workmode/validation/auditLogs";
+import { auditLogQuerySchema } from "@clockoff/validation/auditLogs";
 import { listAuditLogs } from "@/server/auditLogs";
 import { createHandler } from "@/server/http/apiHandler";
 

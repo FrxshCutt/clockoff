@@ -1,7 +1,7 @@
 "use client";
 
-import type { EmployeeDetail } from "@workmode/validation/employees";
-import type { EmployeeInvite, InviteInstructions } from "@workmode/validation/invites";
+import type { EmployeeDetail } from "@clockoff/validation/employees";
+import type { EmployeeInvite, InviteInstructions } from "@clockoff/validation/invites";
 import { Ban, ClipboardList, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -91,7 +91,7 @@ export function EmployeeInvitesTab({ employee }: EmployeeInvitesTabProps) {
     <>
       <SectionCard
         title="Invites"
-        description="The employee enters your company code and their personal code in the Work Mode app. A new invite replaces the previous code."
+        description="The employee enters your company code and their personal code in the ClockOff app. A new invite replaces the previous code."
         actions={createButton}
         flush
       >
@@ -221,7 +221,7 @@ export function EmployeeInvitesTab({ employee }: EmployeeInvitesTabProps) {
             </div>
           )}
           <p className="text-muted-foreground text-xs">
-            Work Mode keeps the most recent invite for each employee. Re-sending issues a fresh code
+            ClockOff keeps the most recent invite for each employee. Re-sending issues a fresh code
             and cancels the previous one.
           </p>
         </div>

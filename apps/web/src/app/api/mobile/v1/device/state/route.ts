@@ -1,4 +1,4 @@
-import { deviceStateReportSchema } from "@workmode/validation/mobile";
+import { deviceStateReportSchema } from "@clockoff/validation/mobile";
 import { reportDeviceState } from "@/server/deviceState/deviceState.service";
 import { createHandler } from "@/server/http/apiHandler";
 

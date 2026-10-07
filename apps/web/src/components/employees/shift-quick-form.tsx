@@ -1,6 +1,6 @@
 "use client";
 
-import type { CreateShiftResponse } from "@workmode/validation/shifts";
+import type { CreateShiftResponse } from "@clockoff/validation/shifts";
 import { useState } from "react";
 import { toast } from "sonner";
 import {

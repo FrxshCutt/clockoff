@@ -1,8 +1,8 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   complianceEmployeesResponseSchema,
   complianceSummaryResponseSchema,
-} from "@workmode/validation/compliance";
+} from "@clockoff/validation/compliance";
 import { describe, expect, it } from "vitest";
 import { GET as employeesRoute } from "@/app/api/compliance/employees/route";
 import { GET as summaryRoute } from "@/app/api/compliance/summary/route";

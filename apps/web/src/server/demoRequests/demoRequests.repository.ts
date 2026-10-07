@@ -1,4 +1,4 @@
-import { prisma, type DemoRequest, type Prisma } from "@workmode/db";
+import { prisma, type DemoRequest, type Prisma } from "@clockoff/db";
 
 /** Marketing demo requests. Not tenant-owned: there is no organisation yet. */
 

@@ -1,4 +1,4 @@
-import { AppError } from "@workmode/shared/errors";
+import { AppError } from "@clockoff/shared/errors";
 import { env } from "@/lib/env";
 import { MemoryRateLimiter } from "./MemoryRateLimiter";
 import type { RateLimiter, RateLimitResult, RateLimitRule } from "./RateLimiter";
@@ -26,18 +26,18 @@ export function createRateLimiter(): RateLimiter {
 }
 
 declare global {
-  var __workmodeRateLimiter: RateLimiter | undefined;
+  var __clockoffRateLimiter: RateLimiter | undefined;
 }
 
 /** Process-wide limiter (cached on globalThis so Next dev HMR does not reset counters). */
 export function getRateLimiter(): RateLimiter {
-  if (!globalThis.__workmodeRateLimiter) globalThis.__workmodeRateLimiter = createRateLimiter();
-  return globalThis.__workmodeRateLimiter;
+  if (!globalThis.__clockoffRateLimiter) globalThis.__clockoffRateLimiter = createRateLimiter();
+  return globalThis.__clockoffRateLimiter;
 }
 
 /** Replace the process-wide limiter (tests). Pass `undefined` to recreate from env on next use. */
 export function setRateLimiterForTesting(limiter: RateLimiter | undefined): void {
-  globalThis.__workmodeRateLimiter = limiter;
+  globalThis.__clockoffRateLimiter = limiter;
 }
 
 /** Build a stable counter key from a rule namespace and caller identity parts. */

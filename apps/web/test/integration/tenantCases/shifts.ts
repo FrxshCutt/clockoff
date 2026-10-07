@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as bulkRoute } from "@/app/api/shifts/bulk/route";
 import { POST as cancelRoute } from "@/app/api/shifts/[id]/cancel/route";

@@ -1,7 +1,7 @@
-import type { BreakPolicy as BreakPolicyRow } from "@workmode/db";
-import { breakPolicyFromRecord, type BreakPolicyLike } from "@workmode/shared/breaks/breakRules";
-import type { AssignmentScopeType, PolicyStatus } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
+import type { BreakPolicy as BreakPolicyRow } from "@clockoff/db";
+import { breakPolicyFromRecord, type BreakPolicyLike } from "@clockoff/shared/breaks/breakRules";
+import type { AssignmentScopeType, PolicyStatus } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
 import {
   fromBreakPolicyAssignment,
   indexPoliciesById,
@@ -9,9 +9,9 @@ import {
   resolveWorkPolicy,
   type ResolutionWarning,
   type ResolvedFrom,
-} from "@workmode/shared/policy/resolvePolicy";
-import type { RestrictionConfig } from "@workmode/shared/policy/restrictionConfig";
-import type { BreakBehaviourDefault, ResolvedPolicyRef } from "@workmode/validation/policies";
+} from "@clockoff/shared/policy/resolvePolicy";
+import type { RestrictionConfig } from "@clockoff/shared/policy/restrictionConfig";
+import type { BreakBehaviourDefault, ResolvedPolicyRef } from "@clockoff/validation/policies";
 import { readBreakBehaviourDefault } from "./policies.mappers";
 import { loadResolutionInputs, type ResolutionPolicyRow } from "./policies.repository";
 import { loadScopeNames, scopeKey, type ScopeRef } from "./scopes";
@@ -19,7 +19,7 @@ import { loadScopeNames, scopeKey, type ScopeRef } from "./scopes";
 /**
  * Resolution service (§6.1): loads an employee's context (teams, primary location), every assignment of
  * the organisation and the referenced policies, and delegates the decision to the pure resolver in
- * `@workmode/shared/policy`. Used by the employee endpoints, the mobile sync and the sync job. Nothing
+ * `@clockoff/shared/policy`. Used by the employee endpoints, the mobile sync and the sync job. Nothing
  * here writes: warnings (including `AMBIGUOUS_TEAM_ASSIGNMENT`) are returned for the caller to persist
  * with `resolutionWarningKey` de-duplication (the job's responsibility, not an API request's).
  */

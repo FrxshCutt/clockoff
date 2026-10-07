@@ -1,13 +1,13 @@
-import { prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import type {
   DeactivateDeviceInput,
   DeviceQuery,
   DeviceResponse,
   DeviceWithEmployee,
   ListDevicesResponse,
-} from "@workmode/validation/devices";
-import type { DeviceStatus } from "@workmode/validation/refs";
+} from "@clockoff/validation/devices";
+import type { DeviceStatus } from "@clockoff/validation/refs";
 import { audit } from "@/server/audit/audit";
 import {
   computeEmployeeStatus,

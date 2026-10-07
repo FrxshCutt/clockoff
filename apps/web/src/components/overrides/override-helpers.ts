@@ -3,8 +3,8 @@ import type {
   OverrideType,
   RestrictionCategory,
   Role,
-} from "@workmode/shared/enums";
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
+} from "@clockoff/shared/enums";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
 import {
   OVERRIDE_LIMITS,
   createOverrideSchema,
@@ -13,7 +13,7 @@ import {
   type CreateOverrideInput,
   type Override,
   type OverrideStatus,
-} from "@workmode/validation/overrides";
+} from "@clockoff/validation/overrides";
 import { formatDurationMinutes, toDate, type DateInput } from "@/lib/format";
 
 /** Pure helpers for the override dialog and list (unit tested in node). */

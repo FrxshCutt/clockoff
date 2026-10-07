@@ -79,7 +79,7 @@ export const INVITE_STATUS_META: Record<InviteStatus, StatusMeta> = {
   NOT_INVITED: {
     label: "Not invited",
     tone: "neutral",
-    description: "The employee exists in Work Mode but has not been sent an invite yet.",
+    description: "The employee exists in ClockOff but has not been sent an invite yet.",
   },
   INVITED: {
     label: "Invited",

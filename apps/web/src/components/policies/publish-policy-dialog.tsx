@@ -1,6 +1,6 @@
 "use client";
 
-import type { Policy } from "@workmode/validation/policies";
+import type { Policy } from "@clockoff/validation/policies";
 import { LoaderCircle, Rocket } from "lucide-react";
 import { useId, useState } from "react";
 import { InlineAlert } from "@/components/inline-alert";

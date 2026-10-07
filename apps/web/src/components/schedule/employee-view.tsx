@@ -1,8 +1,8 @@
 "use client";
 
-import type { Shift } from "@workmode/validation/shifts";
+import type { Shift } from "@clockoff/validation/shifts";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { DateFormat } from "@workmode/shared/enums";
+import type { DateFormat } from "@clockoff/shared/enums";
 import { CalendarClock, TriangleAlert } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 import { DataTable, DataTableColumnHeader } from "@/components/data-table";

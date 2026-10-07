@@ -1,4 +1,4 @@
-import { mobileBreakParamsSchema, mobileEndBreakSchema } from "@workmode/validation/mobile";
+import { mobileBreakParamsSchema, mobileEndBreakSchema } from "@clockoff/validation/mobile";
 import { endBreakFromDevice } from "@/server/breaks/breaks.service";
 import { createHandler } from "@/server/http/apiHandler";
 

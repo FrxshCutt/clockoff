@@ -1,4 +1,4 @@
-import { updateSettingsSchema } from "@workmode/validation/settings";
+import { updateSettingsSchema } from "@clockoff/validation/settings";
 import { createHandler } from "@/server/http/apiHandler";
 import { getSettings, updateSettings } from "@/server/settings";
 

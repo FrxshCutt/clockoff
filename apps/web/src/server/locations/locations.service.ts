@@ -1,12 +1,12 @@
-import { prisma, type Prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import { isWithinLimit, planLimitsFor } from "@workmode/shared/plans";
+import { prisma, type Prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import { isWithinLimit, planLimitsFor } from "@clockoff/shared/plans";
 import type {
   CreateLocationInput,
   ListLocationsResponse,
   Location,
   UpdateLocationInput,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import { audit } from "@/server/audit/audit";
 import { lockOrganisationRow } from "@/server/joinCodes/joinCodes.repository";
 import { publishBreakPolicyChanged, publishPolicyChanged } from "@/server/policies/events";

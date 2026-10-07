@@ -42,7 +42,7 @@ const limitValueSchema = z
   .union([z.int().min(0), z.literal("UNLIMITED")])
   .meta({ id: "PlanLimitValue", description: "A count, or UNLIMITED." });
 
-/** One plan of the catalogue (`PLAN_CONFIG` in @workmode/shared/plans) as shown on the billing page. */
+/** One plan of the catalogue (`PLAN_CONFIG` in @clockoff/shared/plans) as shown on the billing page. */
 export const planCatalogEntrySchema = z
   .object({
     id: planSchema,

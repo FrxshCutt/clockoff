@@ -1,4 +1,4 @@
-import type { Organisation as OrganisationRow } from "@workmode/db";
+import type { Organisation as OrganisationRow } from "@clockoff/db";
 import { describe, expect, it } from "vitest";
 import { JOIN_CODE_PATTERN, JOIN_CODE_WORD_COUNT, generateCompanyJoinCode } from "./joinCode";
 import { managerInviteState, readOrganisationSettings, toOrganisationDto } from "./mappers";

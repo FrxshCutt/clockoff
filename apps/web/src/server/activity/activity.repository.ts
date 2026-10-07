@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { ActivityEventType } from "@workmode/shared/enums";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { ActivityEventType } from "@clockoff/shared/enums";
 
 /** Organisation-scoped activity-feed reads. `organisationId` always comes from the verified context. */
 

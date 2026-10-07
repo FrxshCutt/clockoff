@@ -1,4 +1,4 @@
-import { emptyBodySchema, idParamsSchema } from "@workmode/validation/primitives";
+import { emptyBodySchema, idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { archivePolicy } from "@/server/policies/policies.service";
 

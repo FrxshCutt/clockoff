@@ -9,7 +9,7 @@ import type {
   SelectionState,
   ShiftSource,
   WorkModeState,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 import type { SeedClock } from "./clock";
 import { emptyRows, type SeedRows } from "./collector";
 import { addSeconds, assertNoOverlaps, ceilMinutes, stableId, toJson } from "./util";

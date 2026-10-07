@@ -1,4 +1,4 @@
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import { describe, expect, it } from "vitest";
 import {
   EMPTY_EMPLOYEE_FORM,

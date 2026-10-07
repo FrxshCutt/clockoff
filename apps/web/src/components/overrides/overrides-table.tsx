@@ -1,7 +1,7 @@
 "use client";
 
-import { RESTRICTION_CATEGORY_LABELS } from "@workmode/shared/enums";
-import type { Override } from "@workmode/validation/overrides";
+import { RESTRICTION_CATEGORY_LABELS } from "@clockoff/shared/enums";
+import type { Override } from "@clockoff/validation/overrides";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Ban } from "lucide-react";
 import { useMemo, useState } from "react";

@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /**
  * Company join code rows, always scoped by the organisation id the caller took from its verified

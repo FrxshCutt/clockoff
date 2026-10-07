@@ -1,4 +1,4 @@
-import { PLAN_CONFIG, PLAN_ORDER } from "@workmode/shared/plans";
+import { PLAN_CONFIG, PLAN_ORDER } from "@clockoff/shared/plans";
 import { Check, Mail } from "lucide-react";
 import Link from "next/link";
 import { planHighlights, planLimitLines, salesMailto } from "@/components/billing/plan-cards";
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { MARKETING_ROUTES } from "./marketing-content";
 
 /**
- * The plan catalogue on the public pricing page, rendered from `PLAN_CONFIG` (@workmode/shared/plans), the
+ * The plan catalogue on the public pricing page, rendered from `PLAN_CONFIG` (@clockoff/shared/plans), the
  * same source the dashboard's Billing page and plan enforcement use. There is no self-serve checkout: every
  * plan leads to a demo request or a sales email.
  */

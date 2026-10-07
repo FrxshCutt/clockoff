@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Starter, Business, Pro and Enterprise plans for Work Mode, sized by employees, locations and integrations. Set up with our team; no card needed.",
+    "Starter, Business, Pro and Enterprise plans for ClockOff, sized by employees, locations and integrations. Set up with our team; no card needed.",
 };
 
 const FAQ_ITEMS = PRICING_FAQ.map((item, index) => ({
@@ -33,7 +33,7 @@ export default function PricingPage() {
         lead="Every plan includes Work Policies, Break Rules, scheduling and live device status. Pick the size that fits; we'll set it up with you. There's no card to enter and no self-serve checkout yet."
       >
         <Button asChild variant="outline">
-          <a href={salesMailto("Work Mode pricing")}>
+          <a href={salesMailto("ClockOff pricing")}>
             <Mail aria-hidden="true" />
             Contact sales
           </a>

@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import * as sharedEnums from "@workmode/shared/enums";
-import { API_ERROR_CODES } from "@workmode/shared/errors";
-import { PERMISSIONS } from "@workmode/shared/permissions";
+import * as sharedEnums from "@clockoff/shared/enums";
+import { API_ERROR_CODES } from "@clockoff/shared/errors";
+import { PERMISSIONS } from "@clockoff/shared/permissions";
 import {
   buildOpenApiDocument,
   convertSchema,
@@ -484,7 +484,7 @@ describe("OpenAPI document — completeness, strictness and naming", () => {
     for (const name of Object.keys(schemas)) expect(PASCAL_CASE.test(name), name).toBe(true);
   });
 
-  it("takes every domain enum from @workmode/shared and references it by its named component", () => {
+  it("takes every domain enum from @clockoff/shared and references it by its named component", () => {
     const shared: Record<string, readonly string[]> = { API_ERROR_CODES, PERMISSIONS };
     for (const [name, value] of Object.entries(sharedEnums)) {
       if (Array.isArray(value)) shared[name] = value as readonly string[];

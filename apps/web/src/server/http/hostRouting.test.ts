@@ -41,12 +41,12 @@ describe("readHostRoutingConfig", () => {
   it("accepts extra alias hosts", () => {
     const c = readHostRoutingConfig({
       ...ENV,
-      MARKETING_ALIAS_HOSTS: "workmode.co.uk, www.workmode.co.uk",
+      MARKETING_ALIAS_HOSTS: "clockoff.co.uk, www.clockoff.co.uk",
     });
     expect(c?.marketingAliasHosts).toEqual([
       "www.example.com",
-      "workmode.co.uk",
-      "www.workmode.co.uk",
+      "clockoff.co.uk",
+      "www.clockoff.co.uk",
     ]);
   });
 });

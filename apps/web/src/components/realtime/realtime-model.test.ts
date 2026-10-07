@@ -1,4 +1,4 @@
-import { REALTIME_EVENT_TYPES } from "@workmode/validation/realtime";
+import { REALTIME_EVENT_TYPES } from "@clockoff/validation/realtime";
 import { describe, expect, it } from "vitest";
 import { activityKeys } from "@/components/activity/activity-keys";
 import { importKeys } from "@/components/imports/import-queries";

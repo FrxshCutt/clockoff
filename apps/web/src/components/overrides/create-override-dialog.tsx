@@ -5,8 +5,8 @@ import {
   RESTRICTION_CATEGORY_LABELS,
   type OverrideType,
   type RestrictionCategory,
-} from "@workmode/shared/enums";
-import { OVERRIDE_LIMITS, type Override } from "@workmode/validation/overrides";
+} from "@clockoff/shared/enums";
+import { OVERRIDE_LIMITS, type Override } from "@clockoff/validation/overrides";
 import { KeyRound } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";

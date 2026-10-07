@@ -45,7 +45,7 @@ export type ScheduledBreak = z.infer<typeof scheduledBreakSchema>;
 /**
  * RFC 5545 RRULE body, e.g. `FREQ=WEEKLY;BYDAY=MO,TU,WE`. The end is given separately via `until`.
  * Structural check only (kept free of the timezone library so web forms stay light); the handler runs
- * `validateRecurrenceRule` from @workmode/shared/time/recurrence and answers INVALID_RECURRENCE for rules
+ * `validateRecurrenceRule` from @clockoff/shared/time/recurrence and answers INVALID_RECURRENCE for rules
  * that parse here but cannot occur (e.g. `BYMONTH=2;BYMONTHDAY=31`).
  */
 export const rruleSchema = z

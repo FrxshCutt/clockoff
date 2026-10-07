@@ -1,4 +1,4 @@
-import { AppError } from "@workmode/shared/errors";
+import { AppError } from "@clockoff/shared/errors";
 import { CSRF_COOKIE, csrfCookie } from "@/lib/cookies";
 import { createCsrfToken, isValidCsrfToken, verifyCsrfPair } from "@/lib/crypto";
 import { env } from "@/lib/env";

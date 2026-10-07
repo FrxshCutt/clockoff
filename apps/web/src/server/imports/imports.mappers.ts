@@ -1,4 +1,4 @@
-import type { Prisma } from "@workmode/db";
+import type { Prisma } from "@clockoff/db";
 import {
   IMPORT_FIELDS,
   IMPORT_PROBLEM_CODES,
@@ -9,9 +9,9 @@ import {
   type ImportProblemCode,
   type ImportProblemSeverity,
   type ParsedShiftRow,
-} from "@workmode/shared/csv/csvImport";
-import { DATE_FORMATS, type DateFormat } from "@workmode/shared/enums";
-import type { ImportRow, ImportSummaryResponse, ShiftImport } from "@workmode/validation/imports";
+} from "@clockoff/shared/csv/csvImport";
+import { DATE_FORMATS, type DateFormat } from "@clockoff/shared/enums";
+import type { ImportRow, ImportSummaryResponse, ShiftImport } from "@clockoff/validation/imports";
 
 /**
  * Storage shapes of the CSV import (`ShiftImport` / `ShiftImportRow` JSON columns) and their API DTOs.

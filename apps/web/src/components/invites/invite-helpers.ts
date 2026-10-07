@@ -1,5 +1,5 @@
-import type { EmployeeInviteStatus, InviteChannel, InviteStatus } from "@workmode/shared/enums";
-import type { EmployeeInvite } from "@workmode/validation/invites";
+import type { EmployeeInviteStatus, InviteChannel, InviteStatus } from "@clockoff/shared/enums";
+import type { EmployeeInvite } from "@clockoff/validation/invites";
 import { toDate, type DateInput } from "@/lib/format";
 
 /** Pure helpers for the employee invite UX (unit tested in node). */

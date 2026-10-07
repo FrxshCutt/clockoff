@@ -36,7 +36,7 @@ const GETTING_STARTED = [
   },
   {
     title: "Share your join code",
-    body: "Employees install Work Mode on their iPhone and join with your company code.",
+    body: "Employees install ClockOff on their iPhone and join with your company code.",
     href: routeFor.settingsTab("join-code"),
   },
 ] as const;
@@ -115,7 +115,7 @@ export default function HelpPage() {
         <div id={HELP_ANCHORS.setup} className="scroll-mt-20">
           <SectionCard
             title="Employee setup guide"
-            description="What employees see in the Work Mode app on their iPhone, screen by screen, and where you can help."
+            description="What employees see in the ClockOff app on their iPhone, screen by screen, and where you can help."
           >
             <SetupGuide />
           </SectionCard>

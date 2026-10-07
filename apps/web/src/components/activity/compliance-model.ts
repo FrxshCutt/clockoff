@@ -1,4 +1,4 @@
-import type { ComplianceEmployeeRow, ComplianceFilter } from "@workmode/validation/compliance";
+import type { ComplianceEmployeeRow, ComplianceFilter } from "@clockoff/validation/compliance";
 
 /** Pure helpers for the Compliance tab (unit tested in node). */
 

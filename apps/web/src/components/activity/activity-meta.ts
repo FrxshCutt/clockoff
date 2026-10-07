@@ -1,6 +1,6 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@workmode/shared/enums";
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
-import type { ActivityEvent } from "@workmode/validation/activity";
+import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import { formatDurationMinutes, humanizeEnum } from "@/lib/format";
 
 /**
@@ -94,7 +94,7 @@ export const ACTIVITY_EVENT_META: Record<ActivityEventType, ActivityEventMeta> =
     icon: "user-check",
     tone: "success",
     group: "setup",
-    sentence: ({ subject }) => `${subject} joined from the Work Mode app`,
+    sentence: ({ subject }) => `${subject} joined from the ClockOff app`,
   },
   SETUP_COMPLETED: {
     label: "Setup complete",

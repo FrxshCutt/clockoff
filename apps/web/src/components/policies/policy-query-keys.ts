@@ -1,5 +1,5 @@
-import type { BreakPolicyQuery } from "@workmode/validation/breakPolicies";
-import type { PolicyQuery } from "@workmode/validation/policies";
+import type { BreakPolicyQuery } from "@clockoff/validation/breakPolicies";
+import type { PolicyQuery } from "@clockoff/validation/policies";
 
 /**
  * React Query keys for Work Policies, Break Policies and the things they can be assigned to. Organisation-scoped

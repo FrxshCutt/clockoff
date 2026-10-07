@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeviceWithEmployee } from "@workmode/validation/devices";
+import type { DeviceWithEmployee } from "@clockoff/validation/devices";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { DataTableColumnHeader } from "@/components/data-table";

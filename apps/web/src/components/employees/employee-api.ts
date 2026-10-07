@@ -1,14 +1,14 @@
 "use client";
 
-import type { ActivityEventType, InviteChannel } from "@workmode/shared/enums";
+import type { ActivityEventType, InviteChannel } from "@clockoff/shared/enums";
 import {
   listActivityResponseSchema,
   type ListActivityResponse,
-} from "@workmode/validation/activity";
+} from "@clockoff/validation/activity";
 import {
   listBreakPoliciesResponseSchema,
   type BreakPolicy,
-} from "@workmode/validation/breakPolicies";
+} from "@clockoff/validation/breakPolicies";
 import {
   bulkEmployeeActionResponseSchema,
   employeeDetailResponseSchema,
@@ -25,7 +25,7 @@ import {
   type EmployeeStateResponse,
   type ListEmployeesResponse,
   type UpdateEmployeeInput,
-} from "@workmode/validation/employees";
+} from "@clockoff/validation/employees";
 import {
   createEmployeeInviteResponseSchema,
   employeeInviteResponseSchema,
@@ -33,7 +33,7 @@ import {
   type CreateEmployeeInviteResponse,
   type EmployeeInvite,
   type InviteInstructions,
-} from "@workmode/validation/invites";
+} from "@clockoff/validation/invites";
 import {
   listDepartmentsResponseSchema,
   listLocationsResponseSchema,
@@ -41,7 +41,7 @@ import {
   type Department,
   type Location,
   type Team,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import {
   listOverridesResponseSchema,
   overrideResponseSchema,
@@ -49,15 +49,15 @@ import {
   type ListOverridesResponse,
   type Override,
   type OverrideStatus,
-} from "@workmode/validation/overrides";
-import { listPoliciesResponseSchema, type Policy } from "@workmode/validation/policies";
+} from "@clockoff/validation/overrides";
+import { listPoliciesResponseSchema, type Policy } from "@clockoff/validation/policies";
 import {
   createShiftResponseSchema,
   listShiftsResponseSchema,
   type CreateShiftInput,
   type CreateShiftResponse,
   type Shift,
-} from "@workmode/validation/shifts";
+} from "@clockoff/validation/shifts";
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -72,7 +72,7 @@ import { toEmployeeApiQuery, type EmployeeListParams } from "./employee-filters"
 import { employeeKeys, inviteKeys, overrideKeys, referenceKeys } from "./employee-keys";
 
 /**
- * Queries and mutations for the employee domain, typed by the `@workmode/validation` response schemas (every
+ * Queries and mutations for the employee domain, typed by the `@clockoff/validation` response schemas (every
  * response is parsed, so a contract drift surfaces as INVALID_RESPONSE naming the endpoint, never as
  * `undefined` in the UI).
  */

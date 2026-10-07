@@ -1,5 +1,5 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@workmode/shared/enums";
-import type { ActivityEvent } from "@workmode/validation/activity";
+import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {

@@ -2,7 +2,7 @@ import { DEVICE_REPORTABLE_EVENT_TYPES, INTEGRATION_PROVIDERS } from "./enums";
 import { PROVIDERS } from "./providers/registry";
 
 /**
- * Single source of truth for Work Mode's privacy promise (§12): what an employer CAN see about an
+ * Single source of truth for ClockOff's privacy promise (§12): what an employer CAN see about an
  * employee's phone, what it CANNOT see, and the only fields a device is permitted to send to the server.
  *
  * Consumed by: the marketing/privacy and help pages (web), the iOS Welcome and Privacy screens
@@ -13,8 +13,8 @@ import { PROVIDERS } from "./providers/registry";
  * Technical grounding: the iOS app uses Apple's Screen Time frameworks (FamilyControls, ManagedSettings,
  * DeviceActivity). The apps, categories and websites an employee chooses come back from Apple's picker as
  * opaque tokens (`FamilyActivitySelection`) that can only be interpreted on the device that created them.
- * The app keeps them in its on-device App Group container and sends the server nothing but counts. Work
- * Mode registers time-based schedules only (no usage thresholds) and ships no DeviceActivityReport
+ * The app keeps them in its on-device App Group container and sends the server nothing but counts.
+ * ClockOff registers time-based schedules only (no usage thresholds) and ships no DeviceActivityReport
  * extension, so it never learns which apps were used or for how long.
  */
 
@@ -35,7 +35,7 @@ export const CAN_SEE = [
     key: "connection",
     label: "Whether the employee has joined and their device is connected",
     detail:
-      "The employee's setup stage (not invited, invited, joined, setup incomplete, connected or deactivated) and whether the Work Mode app is active on their phone.",
+      "The employee's setup stage (not invited, invited, joined, setup incomplete, connected or deactivated) and whether the ClockOff app is active on their phone.",
   },
   {
     key: "permissionState",
@@ -47,7 +47,7 @@ export const CAN_SEE = [
     key: "selectionCounts",
     label: "Whether apps have been selected, and how many",
     detail:
-      "Whether the employee has chosen what to shield and how many categories, apps and websites that choice contains. Never which ones: the choice is held on the phone as opaque Apple tokens that neither the employer nor Work Mode's servers can read.",
+      "Whether the employee has chosen what to shield and how many categories, apps and websites that choice contains. Never which ones: the choice is held on the phone as opaque Apple tokens that neither the employer nor ClockOff's servers can read.",
   },
   {
     key: "workModeState",
@@ -101,7 +101,7 @@ export const CANNOT_SEE = [
     key: "messages",
     label: "Messages and calls",
     detail:
-      "No iMessage, SMS, WhatsApp, email or call content or history. The Screen Time frameworks Work Mode uses do not expose messaging or calls at all.",
+      "No iMessage, SMS, WhatsApp, email or call content or history. The Screen Time frameworks ClockOff uses do not expose messaging or calls at all.",
   },
   {
     key: "photos",
@@ -119,7 +119,7 @@ export const CANNOT_SEE = [
     key: "appUsage",
     label: "App usage, screen time or which apps were opened",
     detail:
-      "Work Mode registers time-based schedules only and receives no usage reports. When a shielded app is opened, the shield and its buttons are handled on the phone; nothing about which app, how often or for how long is sent to the server.",
+      "ClockOff registers time-based schedules only and receives no usage reports. When a shielded app is opened, the shield and its buttons are handled on the phone; nothing about which app, how often or for how long is sent to the server.",
   },
   {
     key: "selectedApps",
@@ -143,7 +143,7 @@ export const CANNOT_SEE = [
     key: "personalData",
     label: "Contacts, calendar, health, passwords, keystrokes or screenshots",
     detail:
-      "Work Mode requests none of these permissions and contains no keyboard, screen-recording or screenshot capability.",
+      "ClockOff requests none of these permissions and contains no keyboard, screen-recording or screenshot capability.",
   },
   {
     key: "offShift",
@@ -160,7 +160,7 @@ export type CannotSeeKey = (typeof CANNOT_SEE)[number]["key"];
  * Welcome screen and the Screen Time permission prompt show shorter excerpts of it.
  */
 export const EMPLOYEE_PRIVACY_SUMMARY =
-  "Work Mode blocks distracting apps during your shifts. Your employer sees operational status only: whether the app is set up and working, when you take breaks, when your phone last synced, and basics such as the app version and your timezone. " +
+  "ClockOff blocks distracting apps during your shifts. Your employer sees operational status only: whether the app is set up and working, when you take breaks, when your phone last synced, and basics such as the app version and your timezone. " +
   "They cannot see your messages, photos, browsing history, notifications, what you do on your phone, or which apps you chose to block. " +
   "Your app choices stay on this device.";
 
@@ -220,7 +220,7 @@ export const DEVICE_TO_SERVER_ALLOWED_FIELDS = [
     label: "App and OS version",
     fields: ["appVersion", "osVersion"],
     detail:
-      "The Work Mode app version (for example 1.2.0) and the iOS version (for example 17.5.1).",
+      "The ClockOff app version (for example 1.2.0) and the iOS version (for example 17.5.1).",
   },
   {
     key: "deviceModel",
@@ -310,8 +310,8 @@ function integrationsStatement(): string {
   const names = formatList(INTEGRATION_PROVIDERS.map((id) => PROVIDERS[id].displayName));
   const anyAvailable = INTEGRATION_PROVIDERS.some((id) => PROVIDERS[id].status === "AVAILABLE");
   return anyAvailable
-    ? `- Workforce integrations (${names}) only bring employees, teams, locations, shifts and clock events into Work Mode. Nothing about the phone is sent to them.`
-    : `- Workforce integrations (${names}) are not available yet. When they are, they will only bring employees, teams, locations, shifts and clock events into Work Mode; nothing about the phone will be sent to them.`;
+    ? `- Workforce integrations (${names}) only bring employees, teams, locations, shifts and clock events into ClockOff. Nothing about the phone is sent to them.`
+    : `- Workforce integrations (${names}) are not available yet. When they are, they will only bring employees, teams, locations, shifts and clock events into ClockOff; nothing about the phone will be sent to them.`;
 }
 
 function renderAllowedFields(items: readonly DeviceToServerField[]): string {
@@ -333,13 +333,13 @@ export function renderPrivacyMarkdown(): string {
     "",
     `> **${PRIVACY_PRINCIPLE}**`,
     "",
-    "Work Mode exists to make shift work less distracting, not to monitor people. The employer sees operational status only. This document is the authoritative statement of what that means; the same definitions drive the dashboard, the employee app and the mobile API allow-list.",
+    "ClockOff exists to make shift work less distracting, not to monitor people. The employer sees operational status only. This document is the authoritative statement of what that means; the same definitions drive the dashboard, the employee app and the mobile API allow-list.",
     "",
     "## How it works, technically",
     "",
     "- The iOS app uses Apple's Screen Time frameworks (FamilyControls, ManagedSettings and DeviceActivity). They let an app shield apps, categories and websites on a schedule. They do not give the app message content, photos, notifications or browsing history.",
     "- When an employee chooses what to shield, Apple's picker returns the choice as opaque tokens (`FamilyActivitySelection`). The tokens can only be interpreted on the phone that created them. The app stores them in its on-device App Group container; the server receives only the number of categories, apps and websites selected.",
-    "- Shields are applied and lifted by the app's DeviceActivity extension at the shift and break times the server synced to the phone. Work Mode registers time-based schedules only, with no usage thresholds and no activity-report extension, so it never learns which apps were used or for how long.",
+    "- Shields are applied and lifted by the app's DeviceActivity extension at the shift and break times the server synced to the phone. ClockOff registers time-based schedules only, with no usage thresholds and no activity-report extension, so it never learns which apps were used or for how long.",
     "- Enforcement is local. The server never controls the phone: it supplies the schedule and policy (and may send a silent push asking the app to sync) and receives the resulting engine state.",
     '- Everything managers see is derived from the fields listed under "What the device sends" plus the employer\'s own shifts, policies and break rules.',
     "",

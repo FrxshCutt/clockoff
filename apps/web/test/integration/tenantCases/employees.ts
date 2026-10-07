@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { GET as activityRoute } from "@/app/api/employees/[id]/activity/route";
 import { POST as archiveRoute } from "@/app/api/employees/[id]/archive/route";

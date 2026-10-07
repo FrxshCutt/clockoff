@@ -1,6 +1,6 @@
 "use client";
 
-import { RESTRICTION_CONFIG_LIMITS, type Policy } from "@workmode/validation/policies";
+import { RESTRICTION_CONFIG_LIMITS, type Policy } from "@clockoff/validation/policies";
 import { Info, RotateCcw } from "lucide-react";
 import { useId } from "react";
 import { useWatch } from "react-hook-form";
@@ -123,7 +123,7 @@ export function PolicyBuilder({ policy, canEdit, readOnlyReason, onSaved }: Poli
 
         <SectionCard
           title="Basics"
-          description="How the policy appears in the dashboard and in the Work Mode app."
+          description="How the policy appears in the dashboard and in the ClockOff app."
         >
           <div className="space-y-5">
             <TextField

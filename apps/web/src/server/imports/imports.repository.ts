@@ -3,8 +3,8 @@ import {
   type Prisma,
   type ShiftImportRowStatus,
   type ShiftImportStatus,
-} from "@workmode/db";
-import type { EmployeeCandidate, ImportExistingShift } from "@workmode/shared/csv/csvImport";
+} from "@clockoff/db";
+import type { EmployeeCandidate, ImportExistingShift } from "@clockoff/shared/csv/csvImport";
 import {
   importInclude,
   importRowInclude,

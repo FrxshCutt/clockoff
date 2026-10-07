@@ -1,7 +1,7 @@
 "use client";
 
-import type { Role } from "@workmode/shared/enums";
-import type { UpdateOrganisationInput } from "@workmode/validation/organisation";
+import type { Role } from "@clockoff/shared/enums";
+import type { UpdateOrganisationInput } from "@clockoff/validation/organisation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { api } from "@/lib/api-client";

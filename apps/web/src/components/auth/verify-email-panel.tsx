@@ -35,7 +35,7 @@ export function VerifyEmailPanel({ token: rawToken }: { token: string | null }) 
       ? ROUTES.overview
       : ROUTES.createOrganisation
     : ROUTES.login;
-  const continueLabel = me ? "Continue to Work Mode" : "Sign in";
+  const continueLabel = me ? "Continue to ClockOff" : "Sign in";
 
   if (!token) {
     return (

@@ -1,5 +1,5 @@
-import type { DeviceStatusBadge } from "@workmode/shared/enums";
-import { DEVICE_STATUS_THRESHOLDS } from "@workmode/shared/status/deriveDeviceStatus";
+import type { DeviceStatusBadge } from "@clockoff/shared/enums";
+import { DEVICE_STATUS_THRESHOLDS } from "@clockoff/shared/status/deriveDeviceStatus";
 import { ROUTES, routeFor } from "@/config/navigation";
 import { SITE } from "@/config/site";
 
@@ -29,9 +29,9 @@ export interface FaqItem {
 export const FAQ_ITEMS: readonly FaqItem[] = [
   {
     id: "what-it-does",
-    question: "What does Work Mode actually do on an employee's phone?",
+    question: "What does ClockOff actually do on an employee's phone?",
     answer:
-      "During a scheduled shift the Work Mode app uses Apple's Screen Time frameworks to shield the app categories in your Work Policy (and, if you allow it, specific apps the employee picks). Shields lift for breaks according to your Break Rules and when the shift ends. Everything is enforced on the phone itself; the server only sends the schedule and policy.",
+      "During a scheduled shift the ClockOff app uses Apple's Screen Time frameworks to shield the app categories in your Work Policy (and, if you allow it, specific apps the employee picks). Shields lift for breaks according to your Break Rules and when the shift ends. Everything is enforced on the phone itself; the server only sends the schedule and policy.",
   },
   {
     id: "what-can-i-see",
@@ -45,15 +45,15 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "how-employees-join",
     question: "How do employees join?",
     answer:
-      "Add them in Employees first, then share your company join code. They install Work Mode on their iPhone, enter the code and their name, and the app matches them to your employee list. If the name matches more than one person they also enter the personal invite code from their invite.",
+      "Add them in Employees first, then share your company join code. They install ClockOff on their iPhone, enter the code and their name, and the app matches them to your employee list. If the name matches more than one person they also enter the personal invite code from their invite.",
     href: routeFor.settingsTab("join-code"),
     linkLabel: "Join code settings",
   },
   {
     id: "android",
-    question: "Does Work Mode work on Android?",
+    question: "Does ClockOff work on Android?",
     answer:
-      "Not yet. Work Mode relies on Apple's Screen Time frameworks (FamilyControls, ManagedSettings and DeviceActivity), which exist only on iPhone running iOS 16.4 or later. Android support depends on equivalent platform controls.",
+      "Not yet. ClockOff relies on Apple's Screen Time frameworks (FamilyControls, ManagedSettings and DeviceActivity), which exist only on iPhone running iOS 16.4 or later. Android support depends on equivalent platform controls.",
   },
   {
     id: "breaks",
@@ -67,7 +67,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "precedence",
     question: "An employee is in a team and a location with different policies. Which one applies?",
     answer:
-      "The most specific assignment wins: a policy assigned directly to the employee beats their team, which beats their location, which beats the organisation default. If two teams the employee belongs to assign different policies the result is ambiguous: Work Mode applies one, records a warning in Activity and you should remove one of the assignments.",
+      "The most specific assignment wins: a policy assigned directly to the employee beats their team, which beats their location, which beats the organisation default. If two teams the employee belongs to assign different policies the result is ambiguous: ClockOff applies one, records a warning in Activity and you should remove one of the assignments.",
     href: ROUTES.policies,
     linkLabel: "Policies",
   },
@@ -83,7 +83,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     id: "employee-turns-off",
     question: "Can an employee just turn it off?",
     answer:
-      "Yes. Screen Time access can be revoked at any time in iOS Settings, and the app can leave the workplace. The dashboard then shows that the device needs attention; it never shows what the employee did instead. Work Mode makes agreed rules effortless to follow, it does not enforce them against someone's will.",
+      "Yes. Screen Time access can be revoked at any time in iOS Settings, and the app can leave the workplace. The dashboard then shows that the device needs attention; it never shows what the employee did instead. ClockOff makes agreed rules effortless to follow, it does not enforce them against someone's will.",
   },
   {
     id: "override",
@@ -103,7 +103,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
   },
   {
     id: "billing",
-    question: "How is Work Mode billed?",
+    question: "How is ClockOff billed?",
     answer:
       "Per organisation, on a monthly plan sized by employees, locations and integrations. There are no card payments in the dashboard yet: plans are set up and changed with our team.",
     href: ROUTES.billing,
@@ -113,7 +113,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
 
 /**
  * The iOS onboarding steps, exactly as `OnboardingViewModel.Step` enumerates them in
- * apps/ios/WorkModeApp/Onboarding/OnboardingViewModel.swift. `help-content.test.ts` pins the list.
+ * apps/ios/ClockOffApp/Features/Onboarding/OnboardingViewModel.swift. `help-content.test.ts` pins the list.
  */
 export const IOS_ONBOARDING_STEP_KEYS = [
   "welcome",
@@ -141,9 +141,9 @@ export const SETUP_STEPS: readonly SetupStep[] = [
   {
     key: "welcome",
     screen: "Welcome",
-    title: "Open Work Mode",
+    title: "Open ClockOff",
     detail:
-      "The first screen explains that their employer uses Work Mode to reduce phone distractions while they're working, and summarises what managers can and cannot see.",
+      "The first screen explains that their employer uses ClockOff to reduce phone distractions while they're working, and summarises what managers can and cannot see.",
   },
   {
     key: "name",
@@ -174,7 +174,7 @@ export const SETUP_STEPS: readonly SetupStep[] = [
     screen: "Screen Time explained",
     title: "Learn what Screen Time access means",
     detail:
-      "A plain explanation that iOS will ask to allow Work Mode to use Screen Time, that it only blocks apps during shifts, and that access can be turned off at any time in Settings › Screen Time.",
+      "A plain explanation that iOS will ask to allow ClockOff to use Screen Time, that it only blocks apps during shifts, and that access can be turned off at any time in Settings › Screen Time.",
   },
   {
     key: "authorise",
@@ -211,7 +211,7 @@ export interface IosScreen {
 /** The app's main tabs after setup, by their navigation titles. */
 export const IOS_MAIN_SCREENS: readonly IosScreen[] = [
   {
-    name: "Work Mode",
+    name: "ClockOff",
     detail:
       "Home: the current state (Off shift, Starting soon, Working, On break…), the next shift and when the phone last synced.",
   },
@@ -249,7 +249,7 @@ export const TROUBLESHOOTING: readonly TroubleshootingItem[] = [
     cause:
       "Screen Time access was declined during setup or turned off later in iOS Settings, or no apps have been selected yet. Without it the app cannot apply shields.",
     steps: [
-      "Ask the employee to open Work Mode › Settings and tap the Screen Time prompt, or go to iOS Settings › Screen Time and allow Work Mode.",
+      "Ask the employee to open ClockOff › Settings and tap the Screen Time prompt, or go to iOS Settings › Screen Time and allow ClockOff.",
       "If they never chose what to pause, they can do that from the same Settings screen.",
       "The badge updates on the phone's next sync; opening the app forces one.",
     ],
@@ -263,7 +263,7 @@ export const TROUBLESHOOTING: readonly TroubleshootingItem[] = [
       "The phone has been off, out of coverage or in Low Power Mode, or iOS has not woken the app in the background. Shifts already on the phone still run on time; what's delayed is the status you see and any rota changes reaching the phone.",
     steps: [
       "Ask the employee to open the app once; it syncs immediately.",
-      "Check the phone has a data connection and that Background App Refresh is on for Work Mode.",
+      "Check the phone has a data connection and that Background App Refresh is on for ClockOff.",
       "If the badge persists for days the app may have been deleted: the device can be deactivated from its page and the employee re-invited.",
     ],
   },
@@ -284,7 +284,7 @@ export const TROUBLESHOOTING: readonly TroubleshootingItem[] = [
 
 export const SUPPORT = {
   email: SITE.supportEmail,
-  subject: "Work Mode support",
+  subject: "ClockOff support",
   hours: "Replies within one working day.",
   include: [
     "Your organisation name",

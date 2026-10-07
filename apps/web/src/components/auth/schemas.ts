@@ -4,12 +4,12 @@ import {
   registerSchema,
   resetPasswordSchema,
   verifyEmailSchema,
-} from "@workmode/validation/auth";
-import { passwordSchema } from "@workmode/validation/common";
+} from "@clockoff/validation/auth";
+import { passwordSchema } from "@clockoff/validation/common";
 import { z } from "zod";
 
 /**
- * Client form schemas derived from the shared API schemas in `@workmode/validation`, adding only UI concerns
+ * Client form schemas derived from the shared API schemas in `@clockoff/validation`, adding only UI concerns
  * (password confirmation, empty optional inputs).
  */
 

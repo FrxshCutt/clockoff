@@ -1,7 +1,7 @@
-import { Prisma } from "@workmode/db";
-import { API_ERROR_CODES, AppError, isAppError, type ApiErrorCode } from "@workmode/shared/errors";
-import type { Permission } from "@workmode/shared/permissions";
-import { searchParamsToObject } from "@workmode/validation/common";
+import { Prisma } from "@clockoff/db";
+import { API_ERROR_CODES, AppError, isAppError, type ApiErrorCode } from "@clockoff/shared/errors";
+import type { Permission } from "@clockoff/shared/permissions";
+import { searchParamsToObject } from "@clockoff/validation/common";
 import type { NextRequest } from "next/server";
 import { z, type ZodType } from "zod";
 import {
@@ -444,7 +444,7 @@ const KNOWN_ERROR_CODES: ReadonlySet<string> = new Set(API_ERROR_CODES);
 
 /**
  * Normalise AppErrors that crossed a module boundary (duck-typed by `isAppError`, e.g. a second copy
- * of @workmode/shared). Only a known code with a 4xx/5xx status is trusted; anything else that merely
+ * of @clockoff/shared). Only a known code with a 4xx/5xx status is trusted; anything else that merely
  * calls itself "AppError" is treated as an unknown failure (500, nothing leaked).
  */
 function asAppError(err: unknown): AppError | null {

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { afterEach, describe, expect, it } from "vitest";
 import { POST as tickRoute } from "@/app/api/jobs/tick/route";
 import { GET as syncRoute } from "@/app/api/mobile/v1/sync/route";

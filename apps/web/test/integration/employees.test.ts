@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   bulkEmployeeActionResponseSchema,
   employeeDetailResponseSchema,
@@ -10,9 +10,9 @@ import {
   type EmployeeResponse,
   type EmployeeStateResponse,
   type ListEmployeesResponse,
-} from "@workmode/validation/employees";
-import type { ListActivityResponse } from "@workmode/validation/activity";
-import type { ListShiftsResponse } from "@workmode/validation/shifts";
+} from "@clockoff/validation/employees";
+import type { ListActivityResponse } from "@clockoff/validation/activity";
+import type { ListShiftsResponse } from "@clockoff/validation/shifts";
 import { describe, expect, it } from "vitest";
 import { GET as activityRoute } from "@/app/api/employees/[id]/activity/route";
 import { POST as archiveRoute } from "@/app/api/employees/[id]/archive/route";

@@ -5,14 +5,14 @@ import {
   type ActivationMode,
   type AssignmentScopeType,
   type RestrictionCategory,
-} from "@workmode/shared/enums";
-import { SCOPE_TYPE_LABELS } from "@workmode/shared/policy/explainResolution";
-import { POLICY_SCOPE_PRECEDENCE } from "@workmode/shared/policy/resolvePolicy";
-import { DEFAULT_RESTRICTION_CONFIG } from "@workmode/shared/policy/restrictionConfig";
+} from "@clockoff/shared/enums";
+import { SCOPE_TYPE_LABELS } from "@clockoff/shared/policy/explainResolution";
+import { POLICY_SCOPE_PRECEDENCE } from "@clockoff/shared/policy/resolvePolicy";
+import { DEFAULT_RESTRICTION_CONFIG } from "@clockoff/shared/policy/restrictionConfig";
 import {
   activationModeSchema,
   breakRestrictionBehaviourSchema,
-} from "@workmode/validation/enumSchemas";
+} from "@clockoff/validation/enumSchemas";
 import {
   BREAK_BEHAVIOUR_DEFAULT,
   RESTRICTION_CONFIG_LIMITS,
@@ -23,7 +23,7 @@ import {
   type PolicyVersion,
   type RestrictionConfig,
   type UpdatePolicyInput,
-} from "@workmode/validation/policies";
+} from "@clockoff/validation/policies";
 import { z } from "zod";
 import { toDate, type DateInput } from "@/lib/format";
 import { BREAK_BEHAVIOUR_META } from "@/components/breakPolicies/break-policy-view-model";
@@ -556,7 +556,7 @@ const PRECEDENCE_DESCRIPTIONS: Record<AssignmentScopeType, string> = {
     "Everyone, unless something above applies. An organisation-wide assignment beats the organisation default, which is the final fallback.",
 };
 
-/** `POLICY_SCOPE_PRECEDENCE` from @workmode/shared, with dashboard copy: Employee › Team › Location › Organisation. */
+/** `POLICY_SCOPE_PRECEDENCE` from @clockoff/shared, with dashboard copy: Employee › Team › Location › Organisation. */
 export const PRECEDENCE_LEVELS: readonly PrecedenceLevel[] = POLICY_SCOPE_PRECEDENCE.map(
   (scopeType, index) => ({
     scopeType,

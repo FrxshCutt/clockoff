@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { STATUS_SEVERITIES } from "@workmode/shared/status/deriveDeviceStatus";
+import { STATUS_SEVERITIES } from "@clockoff/shared/status/deriveDeviceStatus";
 import { uuidSchema } from "./common";
 import { deviceStatusBadgeSchema, inviteStatusSchema, shiftStatusSchema } from "./enumSchemas";
 import { instantSchema, nullableInstantSchema } from "./primitives";
@@ -44,13 +44,13 @@ export const shiftSummarySchema = z
   .meta({ id: "ShiftSummary" });
 export type ShiftSummary = z.infer<typeof shiftSummarySchema>;
 
-/** `StatusSeverity` from `deriveDeviceStatus` (@workmode/shared): ok | info | warning | error. */
+/** `StatusSeverity` from `deriveDeviceStatus` (@clockoff/shared): ok | info | warning | error. */
 export { STATUS_SEVERITIES };
 export type StatusSeverityValue = (typeof STATUS_SEVERITIES)[number];
 export const statusSeveritySchema = z.enum(STATUS_SEVERITIES).meta({ id: "StatusSeverity" });
 
 /**
- * Derived device/work badge (§9), computed by `deriveDeviceStatus` in @workmode/shared. `reason` is a short
+ * Derived device/work badge (§9), computed by `deriveDeviceStatus` in @clockoff/shared. `reason` is a short
  * human explanation when the badge needs one; `since` is when the underlying state began, when known.
  */
 export const deviceStatusSchema = z

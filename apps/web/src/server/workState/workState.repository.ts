@@ -9,7 +9,7 @@ import {
   type ManagerOverride,
   type ScheduledBreak,
   type Shift,
-} from "@workmode/db";
+} from "@clockoff/db";
 
 /**
  * Organisation-scoped loaders for Work Mode state evaluation. Every function takes the organisation id

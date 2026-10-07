@@ -1,7 +1,7 @@
 "use client";
 
-import type { InviteChannel } from "@workmode/shared/enums";
-import type { CreateEmployeeInviteResponse } from "@workmode/validation/invites";
+import type { InviteChannel } from "@clockoff/shared/enums";
+import type { CreateEmployeeInviteResponse } from "@clockoff/validation/invites";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { useCreateInvite } from "@/components/employees/employee-api";
@@ -122,7 +122,7 @@ function CreateInviteForm({
         <DialogDescription>
           {isResend
             ? "This issues a new employee code and cancels the previous one. Choose how to deliver it."
-            : "The employee gets a personal code to enter in the Work Mode app together with your company code."}
+            : "The employee gets a personal code to enter in the ClockOff app together with your company code."}
         </DialogDescription>
       </DialogHeader>
 

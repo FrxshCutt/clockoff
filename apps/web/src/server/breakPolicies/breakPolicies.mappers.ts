@@ -1,9 +1,9 @@
-import { parseRelaxedCategories } from "@workmode/shared/breaks/breakRules";
+import { parseRelaxedCategories } from "@clockoff/shared/breaks/breakRules";
 import type {
   BreakPolicy,
   BreakPolicyAssignment,
   BreakPolicyRules,
-} from "@workmode/validation/breakPolicies";
+} from "@clockoff/validation/breakPolicies";
 import { isWindowActive, scopeKey } from "@/server/policies/scopes";
 import type { BreakPolicyAssignmentRow, BreakPolicyRow } from "./breakPolicies.repository";
 

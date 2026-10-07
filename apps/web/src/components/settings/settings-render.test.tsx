@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@workmode/validation/notifications";
+import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@clockoff/validation/notifications";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

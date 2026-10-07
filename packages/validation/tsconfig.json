@@ -1,5 +1,5 @@
 {
-  "extends": "@workmode/config/tsconfig/node-library.json",
+  "extends": "@clockoff/config/tsconfig/node-library.json",
   "compilerOptions": { "rootDir": ".", "types": ["node"] },
   "include": ["src/**/*.ts", "vitest.config.ts"]
 }

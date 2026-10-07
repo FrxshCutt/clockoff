@@ -1,4 +1,4 @@
-import { updateOrganisationSchema } from "@workmode/validation/organisation";
+import { updateOrganisationSchema } from "@clockoff/validation/organisation";
 import { describe, expect, it } from "vitest";
 import type { OrganisationSummary } from "@/hooks/api-shapes";
 import { organisationSettingsFormSchema, toOrganisationFormValues } from "./organisation-settings";

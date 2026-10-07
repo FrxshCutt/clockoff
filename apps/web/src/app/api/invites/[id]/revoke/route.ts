@@ -1,5 +1,5 @@
-import { revokeEmployeeInviteSchema } from "@workmode/validation/invites";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { revokeEmployeeInviteSchema } from "@clockoff/validation/invites";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { revokeEmployeeInvite } from "@/server/employeeInvites";
 import { createHandler } from "@/server/http/apiHandler";
 

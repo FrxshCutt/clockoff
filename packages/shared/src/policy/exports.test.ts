@@ -36,7 +36,7 @@ const RUNTIME_EXPORTS = [
   "isRestrictionConfig",
 ] as const;
 
-// Structural copies of the generated Prisma rows (shared must not depend on @workmode/db).
+// Structural copies of the generated Prisma rows (shared must not depend on @clockoff/db).
 interface PrismaPolicyVersionRow {
   id: string;
   policyId: string;
@@ -84,7 +84,7 @@ interface PrismaBreakPolicyRow {
 type PrismaBreakAssignmentRow = Omit<PrismaAssignmentRow, "policyId"> & { breakPolicyId: string };
 
 describe("policy module exports", () => {
-  it("exposes the full runtime API from '@workmode/shared/policy/resolvePolicy' and the '@workmode/shared' barrel", () => {
+  it("exposes the full runtime API from '@clockoff/shared/policy/resolvePolicy' and the '@clockoff/shared' barrel", () => {
     for (const name of RUNTIME_EXPORTS) {
       expect(policyEntry[name], name).toBeDefined();
       expect(barrel[name], name).toBe(policyEntry[name]);

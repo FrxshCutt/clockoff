@@ -1,6 +1,6 @@
 "use client";
 
-import { DATE_FORMATS } from "@workmode/shared/enums";
+import { DATE_FORMATS } from "@clockoff/shared/enums";
 import { useId } from "react";
 import { TimezoneCombobox } from "@/components/forms/timezone-select";
 import { LocationSelect } from "@/components/schedule/location-select";

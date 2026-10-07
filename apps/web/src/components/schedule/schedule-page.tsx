@@ -1,7 +1,7 @@
 "use client";
 
-import type { Shift } from "@workmode/validation/shifts";
-import type { LocalDateString } from "@workmode/shared/time/time";
+import type { Shift } from "@clockoff/validation/shifts";
+import type { LocalDateString } from "@clockoff/shared/time/time";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";

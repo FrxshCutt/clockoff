@@ -1,5 +1,5 @@
 /**
- * §6.4 acceptance checks through the public entry point (`@workmode/shared/time/time`, also re-exported by the
+ * §6.4 acceptance checks through the public entry point (`@clockoff/shared/time/time`, also re-exported by the
  * package barrel). Detailed cases live next to each module; this file pins the exported surface and the
  * headline DST scenarios.
  */

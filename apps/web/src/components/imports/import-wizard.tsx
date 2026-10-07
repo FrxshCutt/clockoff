@@ -1,6 +1,6 @@
 "use client";
 
-import type { CommitImportResponse } from "@workmode/validation/imports";
+import type { CommitImportResponse } from "@clockoff/validation/imports";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ErrorState } from "@/components/error-state";

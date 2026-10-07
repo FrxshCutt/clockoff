@@ -1,6 +1,6 @@
 "use client";
 
-import type { BreakRestrictionBehaviour, RestrictionCategory } from "@workmode/shared/enums";
+import type { BreakRestrictionBehaviour, RestrictionCategory } from "@clockoff/shared/enums";
 import { useId } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { CheckboxCardGroup } from "@/components/policies/checkbox-card-group";

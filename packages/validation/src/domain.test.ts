@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { ProviderAvailability } from "@workmode/shared/providers/workforceProvider";
+import type { ProviderAvailability } from "@clockoff/shared/providers/workforceProvider";
 import { activityQuerySchema } from "./activity";
 import { auditLogQuerySchema } from "./auditLogs";
 import {

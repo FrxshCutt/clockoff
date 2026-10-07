@@ -1,9 +1,9 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import type {
   ListNotificationsResponse,
   MarkAllNotificationsReadResponse,
   NotificationResponse,
-} from "@workmode/validation/notifications";
+} from "@clockoff/validation/notifications";
 import { describe, expect, it } from "vitest";
 import { POST as readRoute } from "@/app/api/notifications/[id]/read/route";
 import { POST as readAllRoute } from "@/app/api/notifications/read-all/route";

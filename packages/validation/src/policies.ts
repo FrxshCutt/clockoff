@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ASSIGNMENT_SCOPE_TYPES, RESTRICTION_CATEGORIES } from "@workmode/shared/enums";
+import { ASSIGNMENT_SCOPE_TYPES, RESTRICTION_CATEGORIES } from "@clockoff/shared/enums";
 import { isoDateTimeSchema, nonEmptyString, optionalString, uuidSchema } from "./common";
 import {
   activationModeSchema,

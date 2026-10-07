@@ -1,4 +1,4 @@
-import { createTeamSchema, teamQuerySchema } from "@workmode/validation/locationsTeams";
+import { createTeamSchema, teamQuerySchema } from "@clockoff/validation/locationsTeams";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { createTeam, listTeams } from "@/server/teams";
 

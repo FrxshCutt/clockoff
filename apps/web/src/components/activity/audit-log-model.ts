@@ -1,4 +1,4 @@
-import type { AuditLog } from "@workmode/validation/auditLogs";
+import type { AuditLog } from "@clockoff/validation/auditLogs";
 import { humanizeEnum } from "@/lib/format";
 
 /** Pure view-model helpers for the audit log page (unit tested in node). */

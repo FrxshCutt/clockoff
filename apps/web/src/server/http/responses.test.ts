@@ -1,4 +1,4 @@
-import { AppError } from "@workmode/shared/errors";
+import { AppError } from "@clockoff/shared/errors";
 import { describe, expect, it } from "vitest";
 import { errorResponse, json, noContent, sseResponse } from "./responses";
 

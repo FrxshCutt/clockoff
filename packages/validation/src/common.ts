@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isValidTimeZone } from "@workmode/shared/time/time";
+import { isValidTimeZone } from "@clockoff/shared/time/time";
 
 /** Reusable primitives shared by every API schema. */
 export const uuidSchema = z.uuid();

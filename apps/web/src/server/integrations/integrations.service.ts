@@ -1,12 +1,12 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { ActivationMode, IntegrationProvider } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { ActivationMode, IntegrationProvider } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
 import {
   getProvider,
   getProviderMetadata,
   listProviders,
   type ProviderMetadata,
-} from "@workmode/shared/providers/workforceProvider";
+} from "@clockoff/shared/providers/workforceProvider";
 import type {
   ConnectIntegrationInput,
   ConnectIntegrationResponse,
@@ -14,7 +14,7 @@ import type {
   IntegrationResponse,
   ListIntegrationsResponse,
   SyncIntegrationResponse,
-} from "@workmode/validation/integrations";
+} from "@clockoff/validation/integrations";
 import { encrypt } from "@/lib/crypto";
 import { errorSummary, logger } from "@/lib/logger";
 import { audit, toJsonValue } from "@/server/audit/audit";

@@ -2,7 +2,7 @@ import {
   COMPLIANCE_METRIC_KEYS,
   type ComplianceEmployeeRow,
   type UpcomingShift,
-} from "@workmode/validation/compliance";
+} from "@clockoff/validation/compliance";
 import { describe, expect, it } from "vitest";
 import {
   METRIC_CARDS,

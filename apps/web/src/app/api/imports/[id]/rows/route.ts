@@ -1,5 +1,5 @@
-import { importRowsQuerySchema } from "@workmode/validation/imports";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { importRowsQuerySchema } from "@clockoff/validation/imports";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { listImportRowsPage } from "@/server/imports";
 

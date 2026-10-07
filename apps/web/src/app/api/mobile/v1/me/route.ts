@@ -1,4 +1,4 @@
-import { emptyQuerySchema } from "@workmode/validation/primitives";
+import { emptyQuerySchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { getMe } from "@/server/sync/sync.service";
 

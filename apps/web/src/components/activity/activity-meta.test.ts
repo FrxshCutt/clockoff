@@ -1,4 +1,4 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@workmode/shared/enums";
+import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
 import { describe, expect, it } from "vitest";
 import {
   ACTIVITY_EVENT_META,
@@ -81,16 +81,16 @@ describe("ACTIVITY_EVENT_META", () => {
 describe("activitySentence", () => {
   it("names the employee, or falls back to 'An employee' when the event has none", () => {
     expect(activitySentence(event("EMPLOYEE_JOINED"))).toBe(
-      "Jane Smith joined from the Work Mode app",
+      "Jane Smith joined from the ClockOff app",
     );
     expect(activitySentence(event("EMPLOYEE_JOINED", { employee: null }))).toBe(
-      "An employee joined from the Work Mode app",
+      "An employee joined from the ClockOff app",
     );
     expect(
       activitySentence(
         event("EMPLOYEE_JOINED", { employee: { ...employee, firstName: " ", lastName: "" } }),
       ),
-    ).toBe("An employee joined from the Work Mode app");
+    ).toBe("An employee joined from the ClockOff app");
   });
 
   it("builds a possessive that handles names ending in s", () => {
@@ -174,12 +174,12 @@ describe("activityText", () => {
       "Jane joined (server)",
     );
     expect(activityText({ ...event("EMPLOYEE_JOINED"), summary: "   " })).toBe(
-      "Jane Smith joined from the Work Mode app",
+      "Jane Smith joined from the ClockOff app",
     );
     expect(activityText({ ...event("EMPLOYEE_JOINED"), summary: null })).toBe(
-      "Jane Smith joined from the Work Mode app",
+      "Jane Smith joined from the ClockOff app",
     );
-    expect(activityText(event("EMPLOYEE_JOINED"))).toBe("Jane Smith joined from the Work Mode app");
+    expect(activityText(event("EMPLOYEE_JOINED"))).toBe("Jane Smith joined from the ClockOff app");
   });
 });
 

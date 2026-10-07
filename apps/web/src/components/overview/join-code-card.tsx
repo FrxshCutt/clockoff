@@ -29,7 +29,7 @@ export function JoinCodeCard() {
             Company join code
           </h2>
           <p className="text-muted-foreground text-sm">
-            Employees enter this in the Work Mode app to join.{" "}
+            Employees enter this in the ClockOff app to join.{" "}
             <Link
               href={routeFor.settingsTab("join-code")}
               className="text-primary font-medium underline-offset-4 hover:underline"

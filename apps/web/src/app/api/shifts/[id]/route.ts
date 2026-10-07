@@ -1,5 +1,5 @@
-import { idParamsSchema } from "@workmode/validation/primitives";
-import { updateShiftSchema } from "@workmode/validation/shifts";
+import { idParamsSchema } from "@clockoff/validation/primitives";
+import { updateShiftSchema } from "@clockoff/validation/shifts";
 import { createHandler } from "@/server/http/apiHandler";
 import { deleteShift, getShift, updateShift } from "@/server/shifts";
 

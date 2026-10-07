@@ -1,5 +1,5 @@
-import type { Location } from "@workmode/validation/locationsTeams";
-import { localDateSchema, localTimeSchema } from "@workmode/validation/primitives";
+import type { Location } from "@clockoff/validation/locationsTeams";
+import { localDateSchema, localTimeSchema } from "@clockoff/validation/primitives";
 import {
   SHIFT_LIMITS,
   shiftOverlapDetailsSchema,
@@ -8,14 +8,14 @@ import {
   type ScheduledBreakInput,
   type Shift,
   type ShiftUpdateScope,
-} from "@workmode/validation/shifts";
-import { BREAK_POLICY_LIMITS } from "@workmode/validation/breakPolicies";
+} from "@clockoff/validation/shifts";
+import { BREAK_POLICY_LIMITS } from "@clockoff/validation/breakPolicies";
 import {
   buildShiftInstants,
   isValidTimeZone,
   type LocalDateString,
   type ShiftTimeWarning,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 import { z } from "zod";
 import {
   REPEAT_OPTIONS,

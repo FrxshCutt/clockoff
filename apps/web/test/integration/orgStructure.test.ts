@@ -1,4 +1,4 @@
-import { prisma, type Plan } from "@workmode/db";
+import { prisma, type Plan } from "@clockoff/db";
 import type {
   DepartmentResponse,
   ListDepartmentsResponse,
@@ -6,7 +6,7 @@ import type {
   ListTeamsResponse,
   LocationResponse,
   TeamResponse,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import { describe, expect, it } from "vitest";
 import {
   DELETE as deleteDepartmentRoute,

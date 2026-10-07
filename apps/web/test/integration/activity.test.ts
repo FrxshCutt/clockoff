@@ -1,5 +1,5 @@
-import { prisma } from "@workmode/db";
-import { listActivityResponseSchema } from "@workmode/validation/activity";
+import { prisma } from "@clockoff/db";
+import { listActivityResponseSchema } from "@clockoff/validation/activity";
 import { describe, expect, it } from "vitest";
 import { GET as activityRoute } from "@/app/api/activity/route";
 import { recordActivity } from "@/server/activity/recordActivity";

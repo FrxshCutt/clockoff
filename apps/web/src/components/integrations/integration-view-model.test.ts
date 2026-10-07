@@ -1,6 +1,6 @@
-import { ACTIVATION_MODES, INTEGRATION_PROVIDERS } from "@workmode/shared/enums";
-import { PROVIDERS } from "@workmode/shared/providers/registry";
-import { integrationProviderParamSchema } from "@workmode/validation/integrations";
+import { ACTIVATION_MODES, INTEGRATION_PROVIDERS } from "@clockoff/shared/enums";
+import { PROVIDERS } from "@clockoff/shared/providers/registry";
+import { integrationProviderParamSchema } from "@clockoff/validation/integrations";
 import { describe, expect, it } from "vitest";
 import {
   ACTIVATION_MODE_COPY,

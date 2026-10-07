@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as deactivateRoute } from "@/app/api/devices/[id]/deactivate/route";
 import { GET as getDeviceRoute } from "@/app/api/devices/[id]/route";

@@ -1,5 +1,5 @@
-import type { ActivityEventType } from "@workmode/shared/enums";
-import { COMPLIANCE_FILTERS, type ComplianceFilter } from "@workmode/validation/compliance";
+import type { ActivityEventType } from "@clockoff/shared/enums";
+import { COMPLIANCE_FILTERS, type ComplianceFilter } from "@clockoff/validation/compliance";
 import { DateTime } from "luxon";
 import type { ComplianceListParams } from "@/components/overview/compliance-keys";
 import { ROUTES, isResourceId } from "@/config/navigation";

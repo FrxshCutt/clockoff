@@ -1,6 +1,6 @@
-import { prisma } from "@workmode/db";
-import type { InviteStatus } from "@workmode/shared/enums";
-import { deriveInviteStatus } from "@workmode/shared/status/deriveInviteStatus";
+import { prisma } from "@clockoff/db";
+import type { InviteStatus } from "@clockoff/shared/enums";
+import { deriveInviteStatus } from "@clockoff/shared/status/deriveInviteStatus";
 import { publishEvent } from "@/server/events";
 import type { Db } from "./employees.repository";
 

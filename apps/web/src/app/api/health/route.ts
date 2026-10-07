@@ -1,4 +1,4 @@
-import { getMigrationStatus, prisma } from "@workmode/db";
+import { getMigrationStatus, prisma } from "@clockoff/db";
 import { errorSummary } from "@/lib/logger";
 import { createHandler, json } from "@/server/http/apiHandler";
 

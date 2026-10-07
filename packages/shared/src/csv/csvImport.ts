@@ -1,5 +1,5 @@
 /**
- * CSV shift import (§6.5) — public surface (`@workmode/shared/csv/csvImport`, also re-exported by the
+ * CSV shift import (§6.5) — public surface (`@clockoff/shared/csv/csvImport`, also re-exported by the
  * package barrel). Pure functions, no I/O; the API layer wires them together:
  *
  *   validateImportFile({ name, size })                         upload checks (5 MB, extension)

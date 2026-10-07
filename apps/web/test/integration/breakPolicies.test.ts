@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   BREAK_POLICY_DEFAULTS,
   breakPolicyAssignmentResponseSchema,
@@ -9,8 +9,8 @@ import {
   type BreakPolicyResponse,
   type ListBreakPoliciesResponse,
   type ListBreakPolicyAssignmentsResponse,
-} from "@workmode/validation/breakPolicies";
-import type { OrganisationResponse } from "@workmode/validation/organisation";
+} from "@clockoff/validation/breakPolicies";
+import type { OrganisationResponse } from "@clockoff/validation/organisation";
 import { describe, expect, it } from "vitest";
 import {
   GET as listAssignmentsRoute,

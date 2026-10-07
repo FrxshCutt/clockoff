@@ -1,4 +1,4 @@
-import { importRowParamsSchema, updateImportRowSchema } from "@workmode/validation/imports";
+import { importRowParamsSchema, updateImportRowSchema } from "@clockoff/validation/imports";
 import { createHandler } from "@/server/http/apiHandler";
 import { updateImportRow } from "@/server/imports";
 

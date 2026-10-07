@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /** Queries for the join / mobile auth lifecycle. The organisation is always derived from a verified row. */
 

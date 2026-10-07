@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { OverrideStatus } from "@workmode/validation/overrides";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { OverrideStatus } from "@clockoff/validation/overrides";
 import { overrideInclude, type OverrideRow } from "@/server/employees/employees.repository";
 
 /** Organisation-scoped manager-override reads/writes. `organisationId` always comes from the verified context. */

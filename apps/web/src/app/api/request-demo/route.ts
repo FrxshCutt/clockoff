@@ -1,4 +1,4 @@
-import { requestDemoSchema } from "@workmode/validation/organisation";
+import { requestDemoSchema } from "@clockoff/validation/organisation";
 import { DEMO_REQUEST_RATE_LIMIT, submitDemoRequest } from "@/server/demoRequests";
 import { createHandler } from "@/server/http/apiHandler";
 

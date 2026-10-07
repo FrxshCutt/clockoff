@@ -1,4 +1,4 @@
-import { COMPLIANCE_FILTERS } from "@workmode/validation/compliance";
+import { COMPLIANCE_FILTERS } from "@clockoff/validation/compliance";
 import { describe, expect, it } from "vitest";
 import { COMPLIANCE_FILTER_META, describeAttention, stateAgreement } from "./compliance-model";
 

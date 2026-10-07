@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as defaultPolicyRoute } from "@/app/api/organisations/current/default-policy/route";
 import { DELETE as endAssignmentRoute } from "@/app/api/policy-assignments/[id]/route";

@@ -3,7 +3,7 @@ import {
   RESTRICTION_CATEGORY_LABELS,
   type BreakRestrictionBehaviour,
   type RestrictionCategory,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 import {
   BREAK_POLICY_DEFAULTS,
   BREAK_POLICY_LIMITS,
@@ -12,7 +12,7 @@ import {
   type BreakPolicyRules,
   type CreateBreakPolicyInput,
   type UpdateBreakPolicyInput,
-} from "@workmode/validation/breakPolicies";
+} from "@clockoff/validation/breakPolicies";
 import { z } from "zod";
 import { formatDurationMinutes } from "@/lib/format";
 

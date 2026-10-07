@@ -1,4 +1,4 @@
-import { UNLIMITED } from "@workmode/shared/plans";
+import { UNLIMITED } from "@clockoff/shared/plans";
 import { describe, expect, it } from "vitest";
 import { usagePercent } from "./usage";
 

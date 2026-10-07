@@ -1,6 +1,6 @@
 "use client";
 
-import type { Department } from "@workmode/validation/locationsTeams";
+import type { Department } from "@clockoff/validation/locationsTeams";
 import { toast } from "sonner";
 import {
   SubmitButton,

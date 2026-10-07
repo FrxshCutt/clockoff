@@ -2,7 +2,7 @@ import {
   RECURRENCE_WEEKDAY_CODES,
   validateRecurrenceRule,
   type RecurrenceWeekdayCode,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 
 /**
  * Turns the drawer's "Repeat" controls into the RFC 5545 RRULE body the API expects (`FREQ=…;BYDAY=…`,

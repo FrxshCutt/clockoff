@@ -1,6 +1,6 @@
 "use client";
 
-import { listEmployeesResponseSchema, type Employee } from "@workmode/validation/employees";
+import { listEmployeesResponseSchema, type Employee } from "@clockoff/validation/employees";
 import {
   departmentResponseSchema,
   listDepartmentsResponseSchema,
@@ -19,7 +19,7 @@ import {
   type Team,
   type UpdateDepartmentInput,
   type UpdateTeamInput,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { breakPolicyQueryKeys, policyQueryKeys } from "@/components/policies/policy-query-keys";
 import { parseResponse } from "@/hooks/api-shapes";
@@ -29,7 +29,7 @@ import type { CreateLocationBody, UpdateLocationBody } from "./locations-view-mo
 
 /**
  * Queries and mutations for `/api/locations`, `/api/departments`, `/api/teams` and `/api/teams/:id/members`.
- * Every response is parsed with its `@workmode/validation` schema, so a contract drift surfaces as
+ * Every response is parsed with its `@clockoff/validation` schema, so a contract drift surfaces as
  * INVALID_RESPONSE naming the endpoint instead of `undefined` in a table cell.
  */
 

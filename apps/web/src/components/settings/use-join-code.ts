@@ -1,6 +1,6 @@
 "use client";
 
-import { joinCodeResponseSchema, type JoinCodeResponse } from "@workmode/validation/organisation";
+import { joinCodeResponseSchema, type JoinCodeResponse } from "@clockoff/validation/organisation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseResponse } from "@/hooks/api-shapes";
 import { api, hasErrorCode } from "@/lib/api-client";

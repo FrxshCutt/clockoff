@@ -1,6 +1,6 @@
 "use client";
 
-import type { ActivationMode, IntegrationProvider } from "@workmode/shared/enums";
+import type { ActivationMode, IntegrationProvider } from "@clockoff/shared/enums";
 import {
   connectIntegrationResponseSchema,
   integrationResponseSchema,
@@ -11,7 +11,7 @@ import {
   type Integration,
   type ListIntegrationsResponse,
   type SyncIntegrationResponse,
-} from "@workmode/validation/integrations";
+} from "@clockoff/validation/integrations";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { parseResponse } from "@/hooks/api-shapes";
 import { api } from "@/lib/api-client";

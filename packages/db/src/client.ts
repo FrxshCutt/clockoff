@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 declare global {
-  var __workmodePrisma: PrismaClient | undefined;
+  var __clockoffPrisma: PrismaClient | undefined;
 }
 
 /**
@@ -15,8 +15,8 @@ export function createPrismaClient(datasourceUrl?: string): PrismaClient {
   });
 }
 
-export const prisma: PrismaClient = globalThis.__workmodePrisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalThis.__clockoffPrisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalThis.__workmodePrisma = prisma;
+  globalThis.__clockoffPrisma = prisma;
 }

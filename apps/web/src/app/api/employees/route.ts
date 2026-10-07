@@ -1,4 +1,4 @@
-import { createEmployeeSchema, employeeQuerySchema } from "@workmode/validation/employees";
+import { createEmployeeSchema, employeeQuerySchema } from "@clockoff/validation/employees";
 import { createEmployee, listEmployees } from "@/server/employees";
 import { createHandler, json } from "@/server/http/apiHandler";
 

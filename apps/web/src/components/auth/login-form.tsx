@@ -1,6 +1,6 @@
 "use client";
 
-import { loginSchema } from "@workmode/validation/auth";
+import { loginSchema } from "@clockoff/validation/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -38,11 +38,11 @@ export function LoginForm({ next }: { next: string | null }) {
 
   return (
     <AuthCard
-      title="Sign in to Work Mode"
+      title="Sign in to ClockOff"
       description="Welcome back. Manage shifts, policies and your team's phones."
       footer={
         <>
-          New to Work Mode?{" "}
+          New to ClockOff?{" "}
           <Link href={registerHref} className={authLinkClass}>
             Create an account
           </Link>

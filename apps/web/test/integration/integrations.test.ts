@@ -1,9 +1,9 @@
-import { prisma } from "@workmode/db";
-import { INTEGRATION_PROVIDERS } from "@workmode/shared/enums";
+import { prisma } from "@clockoff/db";
+import { INTEGRATION_PROVIDERS } from "@clockoff/shared/enums";
 import type {
   IntegrationResponse,
   ListIntegrationsResponse,
-} from "@workmode/validation/integrations";
+} from "@clockoff/validation/integrations";
 import { describe, expect, it } from "vitest";
 import { POST as connectRoute } from "@/app/api/integrations/[provider]/connect/route";
 import { POST as disconnectRoute } from "@/app/api/integrations/[provider]/disconnect/route";

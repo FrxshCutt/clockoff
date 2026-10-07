@@ -1,4 +1,4 @@
-import type { ComplianceFilter } from "@workmode/validation/compliance";
+import type { ComplianceFilter } from "@clockoff/validation/compliance";
 
 /** List state behind `GET /api/compliance/employees` (also the URL state of the Compliance tab on /activity). */
 export interface ComplianceListParams {

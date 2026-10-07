@@ -4,7 +4,7 @@ import type {
   CommitImportResponse,
   ImportSummaryResponse,
   ShiftImport,
-} from "@workmode/validation/imports";
+} from "@clockoff/validation/imports";
 import { ArrowLeft, CalendarCheck, LoaderCircle } from "lucide-react";
 import { useId, useState } from "react";
 import { FormErrorAlert } from "@/components/forms/form-fields";

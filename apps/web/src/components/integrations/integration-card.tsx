@@ -1,6 +1,6 @@
 "use client";
 
-import type { Integration } from "@workmode/validation/integrations";
+import type { Integration } from "@clockoff/validation/integrations";
 import { BellRing, Check, ExternalLink, LoaderCircle, Plug, RefreshCw, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";

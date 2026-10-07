@@ -1,7 +1,7 @@
 "use client";
 
-import type { DateFormat } from "@workmode/shared/enums";
-import type { UpcomingShift } from "@workmode/validation/compliance";
+import type { DateFormat } from "@clockoff/shared/enums";
+import type { UpcomingShift } from "@clockoff/validation/compliance";
 import { ArrowUpRight, CalendarClock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { TonedBadge } from "@/components/devices/toned-badge";

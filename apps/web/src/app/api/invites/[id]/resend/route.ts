@@ -1,5 +1,5 @@
-import { resendEmployeeInviteSchema } from "@workmode/validation/invites";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { resendEmployeeInviteSchema } from "@clockoff/validation/invites";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { resendEmployeeInvite } from "@/server/employeeInvites";
 import { createHandler } from "@/server/http/apiHandler";
 import { RATE_LIMITS } from "@/server/rateLimit";

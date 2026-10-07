@@ -4,7 +4,7 @@ import {
   createBreakPolicySchema,
   updateBreakPolicySchema,
   type BreakPolicy,
-} from "@workmode/validation/breakPolicies";
+} from "@clockoff/validation/breakPolicies";
 import { describe, expect, it } from "vitest";
 import {
   BREAK_BEHAVIOUR_OPTIONS,

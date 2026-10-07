@@ -1,5 +1,5 @@
 {
-  "name": "@workmode/validation",
+  "name": "@clockoff/validation",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,12 +16,12 @@
     "openapi": "tsx src/openapi/generate.ts"
   },
   "dependencies": {
-    "@workmode/shared": "workspace:*",
+    "@clockoff/shared": "workspace:*",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "24.19.1",
-    "@workmode/config": "workspace:*",
+    "@clockoff/config": "workspace:*",
     "eslint": "9.39.5",
     "tsx": "4.23.15",
     "typescript": "5.9.3",

@@ -3,7 +3,7 @@ import {
   createOrganisationSchema,
   resetPasswordSchema,
   verifyEmailSchema,
-} from "@workmode/validation/auth";
+} from "@clockoff/validation/auth";
 import { describe, expect, it } from "vitest";
 import {
   acceptInviteAccountFormSchema,

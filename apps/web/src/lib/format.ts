@@ -1,4 +1,4 @@
-import type { DateFormat } from "@workmode/shared/enums";
+import type { DateFormat } from "@clockoff/shared/enums";
 
 /**
  * Display formatting. Every function takes UTC instants (ISO strings, epoch ms or Dates) and converts to a

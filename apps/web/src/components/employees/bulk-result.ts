@@ -1,7 +1,7 @@
 import type {
   BulkEmployeeActionResponse,
   EmployeeBulkAction,
-} from "@workmode/validation/employees";
+} from "@clockoff/validation/employees";
 import { API_ERROR_MESSAGES } from "@/lib/errorMessages";
 
 /** Copy for `POST /api/employees/bulk` results, shown as one toast per batch. */

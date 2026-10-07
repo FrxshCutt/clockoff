@@ -1,4 +1,4 @@
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
 import type { ReactNode } from "react";
 import { TONE_CLASSES, TONE_DOT_CLASSES } from "@/components/status/statusMeta";
 import { cn } from "@/lib/utils";

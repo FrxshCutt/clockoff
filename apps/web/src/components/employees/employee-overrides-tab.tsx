@@ -1,6 +1,6 @@
 "use client";
 
-import type { EmployeeDetail } from "@workmode/validation/employees";
+import type { EmployeeDetail } from "@clockoff/validation/employees";
 import { KeyRound } from "lucide-react";
 import { InlineAlert } from "@/components/inline-alert";
 import { CreateOverrideDialog } from "@/components/overrides/create-override-dialog";

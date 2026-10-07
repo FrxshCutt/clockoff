@@ -1,6 +1,6 @@
-import { Prisma, prisma } from "@workmode/db";
-import { resolveBreakBehaviour, type BreakBehaviour } from "@workmode/shared/breaks/breakRules";
-import { AppError } from "@workmode/shared/errors";
+import { Prisma, prisma } from "@clockoff/db";
+import { resolveBreakBehaviour, type BreakBehaviour } from "@clockoff/shared/breaks/breakRules";
+import { AppError } from "@clockoff/shared/errors";
 import {
   overrideTypeAcceptsPayload,
   resolveOverrideWindow,
@@ -10,7 +10,7 @@ import {
   type OverrideQuery,
   type OverridePayload,
   type RevokeOverrideInput,
-} from "@workmode/validation/overrides";
+} from "@clockoff/validation/overrides";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { toOverrideDto } from "@/server/employees/employees.mappers";

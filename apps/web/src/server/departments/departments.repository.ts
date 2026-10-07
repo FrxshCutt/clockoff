@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /** Department rows, scoped by the organisation id from the caller's verified membership. */
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { RelaxationSource } from "@workmode/shared/workMode/types";
+import type { RelaxationSource } from "@clockoff/shared/workMode/types";
 import { uuidSchema } from "./common";
 import {
   breakEndReasonSchema,
@@ -17,7 +17,7 @@ import { instantSchema, nullableInstantSchema } from "./primitives";
 /**
  * Work Mode state shapes shared by the manager API (`GET /employees/:id/state`) and the mobile API
  * (`GET /sync`, `POST /device/state`). `expectedStateSchema` is the wire form of `ExpectedStateJson` produced
- * by `toExpectedStateJson(computeExpectedState(...))` in @workmode/shared — the type equality is asserted in
+ * by `toExpectedStateJson(computeExpectedState(...))` in @clockoff/shared — the type equality is asserted in
  * workState.test.ts, so a change to the state machine output fails the build here first.
  */
 
@@ -59,7 +59,7 @@ export const workingIntervalSchema = z
   })
   .meta({ id: "WorkingInterval", description: "Union of overlapping/adjacent scheduled shifts." });
 
-/** Values of `RelaxationSource` (@workmode/shared, a type only); the ExpectedState type test pins equality. */
+/** Values of `RelaxationSource` (@clockoff/shared, a type only); the ExpectedState type test pins equality. */
 export const RELAXATION_SOURCES = [
   "BREAK",
   "OVERRIDE",
@@ -107,7 +107,7 @@ export type ExpectedStateResponse = z.infer<typeof expectedStateSchema>;
 
 // ── Breaks ──────────────────────────────────────────────────────────────────
 
-/** Allowance snapshot for the current shift (`computeBreakAllowance` in @workmode/shared). */
+/** Allowance snapshot for the current shift (`computeBreakAllowance` in @clockoff/shared). */
 export const breakAllowanceSchema = z
   .object({
     breaksTaken: z.int().min(0),

@@ -4,7 +4,7 @@ import {
   sseEventSchema,
   type RealtimeEventType,
   type SseEvent,
-} from "@workmode/validation/realtime";
+} from "@clockoff/validation/realtime";
 import { activityKeys } from "@/components/activity/activity-keys";
 import { deviceKeys } from "@/components/devices/device-keys";
 import { employeeKeys, overrideKeys } from "@/components/employees/employee-keys";

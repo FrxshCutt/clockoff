@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { REALTIME_EVENT_TYPES } from "@workmode/validation/realtime";
+import { REALTIME_EVENT_TYPES } from "@clockoff/validation/realtime";
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   REALTIME_ALL_KEYS,

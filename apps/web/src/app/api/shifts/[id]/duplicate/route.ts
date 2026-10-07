@@ -1,5 +1,5 @@
-import { idParamsSchema } from "@workmode/validation/primitives";
-import { duplicateShiftSchema } from "@workmode/validation/shifts";
+import { idParamsSchema } from "@clockoff/validation/primitives";
+import { duplicateShiftSchema } from "@clockoff/validation/shifts";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { duplicateShift } from "@/server/shifts";
 

@@ -1,7 +1,7 @@
 import {
   connectIntegrationSchema,
   integrationParamsSchema,
-} from "@workmode/validation/integrations";
+} from "@clockoff/validation/integrations";
 import { createHandler } from "@/server/http/apiHandler";
 import { connectIntegration } from "@/server/integrations";
 

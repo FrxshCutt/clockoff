@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { OverrideType, Role } from "@workmode/shared/enums";
+import type { OverrideType, Role } from "@clockoff/shared/enums";
 import {
   cursorPaginationQuerySchema,
   isoDateTimeSchema,
@@ -93,7 +93,7 @@ export function overrideTypeAcceptsPayload(type: OverrideType): boolean {
  * behaviour (`restrictionBehaviour` + `relaxedCategories` for RELAX_CATEGORIES; RELAX_ALL when omitted) OR a
  * `breakPolicyId` whose behaviour the handler resolves and merges in before storing — never both, so there
  * is no ambiguity about which one wins. The state machine reads only `restrictionBehaviour` /
- * `relaxedCategories` (`OverridePayloadLike` in @workmode/shared).
+ * `relaxedCategories` (`OverridePayloadLike` in @clockoff/shared).
  */
 export const overridePayloadSchema = z
   .object({

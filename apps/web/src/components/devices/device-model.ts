@@ -1,6 +1,6 @@
-import { PERMISSION_STATES, type PermissionState } from "@workmode/shared/enums";
-import type { DeviceSummary, SelectionCounts } from "@workmode/validation/devices";
-import type { EmployeeSummary } from "@workmode/validation/refs";
+import { PERMISSION_STATES, type PermissionState } from "@clockoff/shared/enums";
+import type { DeviceSummary, SelectionCounts } from "@clockoff/validation/devices";
+import type { EmployeeSummary } from "@clockoff/validation/refs";
 import { isResourceId } from "@/config/navigation";
 import { formatCount } from "@/lib/format";
 
@@ -170,7 +170,7 @@ export function describeOs(device: Pick<DeviceSummary, "platform" | "osVersion">
   return device.platform === "IOS" ? `iOS ${device.osVersion}` : device.osVersion;
 }
 
-/** "Work Mode 1.4.2" / "—". */
+/** "v1.4.2" / "—". */
 export function describeAppVersion(device: Pick<DeviceSummary, "appVersion">): string {
   return device.appVersion ? `v${device.appVersion}` : "—";
 }

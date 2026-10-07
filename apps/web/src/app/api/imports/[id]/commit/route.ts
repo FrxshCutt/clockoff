@@ -1,5 +1,5 @@
-import { commitImportSchema } from "@workmode/validation/imports";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { commitImportSchema } from "@clockoff/validation/imports";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { commitImport } from "@/server/imports";
 

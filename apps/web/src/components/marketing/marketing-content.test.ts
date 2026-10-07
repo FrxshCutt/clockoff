@@ -1,5 +1,5 @@
-import { WORK_MODE_STATES } from "@workmode/shared/enums";
-import { requestDemoSchema } from "@workmode/validation/organisation";
+import { WORK_MODE_STATES } from "@clockoff/shared/enums";
+import { requestDemoSchema } from "@clockoff/validation/organisation";
 import { describe, expect, it } from "vitest";
 import { isInternalPath } from "@/config/navigation";
 import {

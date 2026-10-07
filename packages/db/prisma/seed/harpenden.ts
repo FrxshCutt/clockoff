@@ -8,8 +8,8 @@ import type {
   PolicyStatus,
   RestrictionCategory,
   SelectionState,
-} from "@workmode/shared/enums";
-import { generateEmployeeInviteCode } from "@workmode/shared/joinCode";
+} from "@clockoff/shared/enums";
+import { generateEmployeeInviteCode } from "@clockoff/shared/joinCode";
 import {
   fromBreakPolicyAssignment,
   indexPoliciesById,
@@ -17,9 +17,9 @@ import {
   resolvePolicy,
   type AssignmentLike,
   type RestrictionConfig,
-} from "@workmode/shared/policy/resolvePolicy";
-import { deriveInviteStatus } from "@workmode/shared/status/deriveDeviceStatus";
-import { expandShiftSeries, validateRecurrenceRule } from "@workmode/shared/time/time";
+} from "@clockoff/shared/policy/resolvePolicy";
+import { deriveInviteStatus } from "@clockoff/shared/status/deriveDeviceStatus";
+import { expandShiftSeries, validateRecurrenceRule } from "@clockoff/shared/time/time";
 import {
   OrgBuilder,
   type ActorMeta,
@@ -215,7 +215,7 @@ function restrictionConfig(input: {
     activationMode: "SCHEDULED",
     preShiftWarningMinutes: input.preShiftWarningMinutes,
   };
-  // The seed cannot import @workmode/validation, so the schema's limits are asserted by hand.
+  // The seed cannot import @clockoff/validation, so the schema's limits are asserted by hand.
   invariant(isRestrictionConfig(config), "restriction config has the shared shape");
   invariant(
     config.categories.length >= 1 && new Set(config.categories).size === config.categories.length,
@@ -2336,7 +2336,7 @@ export function buildHarpenden(
   };
   notification({
     type: "EMPLOYEE_JOINED",
-    title: "Sophie Martin joined Work Mode",
+    title: "Sophie Martin joined ClockOff",
     body: "Sophie Martin connected a phone with the company join code and completed Screen Time setup.",
     href: `/employees/${sophie.id}`,
     metadata: { employeeId: sophie.id, deviceId: sophieDevice.id },

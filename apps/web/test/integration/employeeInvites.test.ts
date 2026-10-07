@@ -1,9 +1,9 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import type {
   EmployeeDetailResponse,
   EmployeeResponse,
   ListEmployeesResponse,
-} from "@workmode/validation/employees";
+} from "@clockoff/validation/employees";
 import {
   createEmployeeInviteResponseSchema,
   employeeInviteResponseSchema,
@@ -11,7 +11,7 @@ import {
   type CreateEmployeeInviteResponse,
   type EmployeeInviteResponse,
   type InviteInstructionsResponse,
-} from "@workmode/validation/invites";
+} from "@clockoff/validation/invites";
 import { describe, expect, it } from "vitest";
 import { POST as createInviteRoute } from "@/app/api/employees/[id]/invites/route";
 import { GET as getEmployeeRoute } from "@/app/api/employees/[id]/route";

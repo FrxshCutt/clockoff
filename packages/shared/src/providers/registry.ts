@@ -15,7 +15,7 @@ export interface ProviderMetadata {
   readonly website: string;
   readonly description: string;
   /**
-   * Activation modes Work Mode will support for this provider: SCHEDULED (Work Mode follows synced shifts)
+   * Activation modes ClockOff will support for this provider: SCHEDULED (Work Mode follows synced shifts)
    * and/or CLOCK_EVENT (Work Mode follows synced clock-in / clock-out events).
    */
   readonly activationModes: readonly ActivationMode[];

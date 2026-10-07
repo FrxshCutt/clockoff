@@ -7,7 +7,7 @@ import { SITE } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Request a demo",
-  description: "Book a 20-minute walkthrough of Work Mode on a rota like yours.",
+  description: "Book a 20-minute walkthrough of ClockOff on a rota like yours.",
   robots: { index: true, follow: true },
 };
 
@@ -42,7 +42,7 @@ export default async function RequestDemoPage({ searchParams }: { searchParams: 
             Request a demo
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            See Work Mode on your own rota.
+            See ClockOff on your own rota.
           </h1>
           <p className="text-muted-foreground text-lg text-pretty">
             Tell us a little about your team and we&apos;ll arrange a walkthrough. No card, no
@@ -68,7 +68,7 @@ export default async function RequestDemoPage({ searchParams }: { searchParams: 
         <p className="text-muted-foreground text-sm">
           Prefer email?{" "}
           <a
-            href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent("Work Mode demo")}`}
+            href={`mailto:${SITE.supportEmail}?subject=${encodeURIComponent("ClockOff demo")}`}
             className="hover:text-foreground underline underline-offset-4"
           >
             {SITE.supportEmail}

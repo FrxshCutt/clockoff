@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { INTEGRATION_PROVIDERS } from "@workmode/shared/enums";
+import { INTEGRATION_PROVIDERS } from "@clockoff/shared/enums";
 import {
   SYNC_ERROR_CODES,
   type ProviderAvailability,
-} from "@workmode/shared/providers/workforceProvider";
+} from "@clockoff/shared/providers/workforceProvider";
 import {
   activationModeSchema,
   integrationProviderSchema,
@@ -16,7 +16,7 @@ import { instantSchema, nullableInstantSchema } from "./primitives";
  * provider is AVAILABLE, `connect` and `sync` answer 501 COMING_SOON and managers can ask to be notified.
  */
 
-/** Values of `ProviderAvailability` (@workmode/shared, a type only); domain.test.ts asserts equality. */
+/** Values of `ProviderAvailability` (@clockoff/shared, a type only); domain.test.ts asserts equality. */
 export const PROVIDER_AVAILABILITIES = [
   "AVAILABLE",
   "COMING_SOON",
@@ -51,7 +51,7 @@ export const integrationSchema = z
     website: z.url(),
     availability: providerAvailabilitySchema,
     status: integrationStatusSchema,
-    /** Activation modes Work Mode supports for this provider. */
+    /** Activation modes ClockOff supports for this provider. */
     supportedActivationModes: z.array(activationModeSchema),
     activationMode: activationModeSchema,
     /** The manager asked to be told when this provider becomes available. */

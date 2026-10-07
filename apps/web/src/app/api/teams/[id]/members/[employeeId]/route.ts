@@ -1,4 +1,4 @@
-import { teamMemberParamsSchema } from "@workmode/validation/locationsTeams";
+import { teamMemberParamsSchema } from "@clockoff/validation/locationsTeams";
 import { createHandler } from "@/server/http/apiHandler";
 import { removeTeamMember } from "@/server/teams";
 

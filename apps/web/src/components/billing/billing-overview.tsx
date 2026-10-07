@@ -1,7 +1,7 @@
 "use client";
 
-import { PLAN_CONFIG, PLAN_LIMIT_METRICS, PLAN_ORDER, formatLimit } from "@workmode/shared/plans";
-import type { Plan } from "@workmode/shared/enums";
+import { PLAN_CONFIG, PLAN_LIMIT_METRICS, PLAN_ORDER, formatLimit } from "@clockoff/shared/plans";
+import type { Plan } from "@clockoff/shared/enums";
 import { Check, ExternalLink, Mail, Minus } from "lucide-react";
 import { ErrorState } from "@/components/error-state";
 import { InlineAlert } from "@/components/inline-alert";
@@ -37,7 +37,7 @@ const USAGE_LABELS: Record<(typeof PLAN_LIMIT_METRICS)[number], string> = {
 
 /**
  * Billing: the current plan and status (`GET /api/organisations/current`), usage against plan limits
- * (`GET /api/settings/billing`, when available) and the plan catalogue from `@workmode/shared/plans`.
+ * (`GET /api/settings/billing`, when available) and the plan catalogue from `@clockoff/shared/plans`.
  * There is no in-app checkout or card processing in the MVP: plan changes go through sales (mailto) or, once
  * wired up, the provider portal at `manageUrl`. "Upgrade" is shown disabled as coming soon, never as working.
  */
@@ -78,11 +78,11 @@ export function BillingOverview() {
       {billingStatus === "PAST_DUE" ? (
         <InlineAlert variant="warning" title="Payment overdue">
           The last payment didn&apos;t go through. Contact us to update your payment details and
-          keep Work Mode running for your team.
+          keep ClockOff running for your team.
         </InlineAlert>
       ) : null}
       <InlineAlert variant="info" title="No card payments in the dashboard yet">
-        Work Mode doesn&apos;t process payments here. Plans are set up and changed with our team:
+        ClockOff doesn&apos;t process payments here. Plans are set up and changed with our team:
         contact sales and we&apos;ll arrange it with your owner.
       </InlineAlert>
       <SectionCard

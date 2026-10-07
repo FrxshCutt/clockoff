@@ -64,7 +64,7 @@ const envSchema = z.object({
    * required in production by parseEnv) or `smtp` (not implemented yet).
    */
   EMAIL_PROVIDER: z.enum(["console", "smtp", "resend"]).default("console"),
-  EMAIL_FROM: z.string().min(3).default("Work Mode <no-reply@workmode.local>"),
+  EMAIL_FROM: z.string().min(3).default("ClockOff <noreply@clockoff.local>"),
   /** Resend API key (`re_…`), sending access is enough. Read only when EMAIL_PROVIDER=resend. */
   RESEND_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().optional(),
@@ -76,7 +76,7 @@ const envSchema = z.object({
   APNS_KEY_ID: z.string().optional(),
   APNS_TEAM_ID: z.string().optional(),
   APNS_P8_BASE64: z.string().optional(),
-  APNS_BUNDLE_ID: z.string().default("com.workmode.app"),
+  APNS_BUNDLE_ID: z.string().default("online.clockoff.app"),
   APNS_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
 
   // Rate limiting

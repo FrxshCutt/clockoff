@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
-import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@workmode/shared/privacyStatements";
+import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@clockoff/shared/privacyStatements";
 import {
   deviceEventsSchema,
   deviceStateReportSchema,

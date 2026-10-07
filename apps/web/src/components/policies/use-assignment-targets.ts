@@ -1,7 +1,7 @@
 "use client";
 
-import type { ListEmployeesResponse } from "@workmode/validation/employees";
-import type { ListLocationsResponse, ListTeamsResponse } from "@workmode/validation/locationsTeams";
+import type { ListEmployeesResponse } from "@clockoff/validation/employees";
+import type { ListLocationsResponse, ListTeamsResponse } from "@clockoff/validation/locationsTeams";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { assignmentTargetQueryKeys } from "./policy-query-keys";

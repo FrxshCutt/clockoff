@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { expect } from "vitest";
 import { POST as revokeRoute } from "@/app/api/overrides/[id]/revoke/route";
 import { POST as createRoute } from "@/app/api/overrides/route";

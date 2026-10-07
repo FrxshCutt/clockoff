@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "For businesses",
   description:
-    "How hospitality, retail and warehouse teams use Work Mode to keep phones out of service, off the shop floor and away from the loading bay.",
+    "How hospitality, retail and warehouse teams use ClockOff to keep phones out of service, off the shop floor and away from the loading bay.",
 };
 
 const ROLLOUT = [
@@ -21,7 +21,7 @@ const ROLLOUT = [
   },
   {
     title: "Agree the rules with the team",
-    body: "Share what will pause, what stays available and how breaks work. Work Mode is built to make agreed rules effortless, not to impose them.",
+    body: "Share what will pause, what stays available and how breaks work. ClockOff is built to make agreed rules effortless, not to impose them.",
   },
   {
     title: "Roll out by location",
@@ -35,7 +35,7 @@ export default function ForBusinessesPage() {
       <PageIntro
         eyebrow="For businesses"
         title="Built for teams on their feet."
-        lead="Hospitality, retail, warehouses and logistics share the same problem: phones out at the wrong moment. Work Mode fixes the moment, not the person."
+        lead="Hospitality, retail, warehouses and logistics share the same problem: phones out at the wrong moment. ClockOff fixes the moment, not the person."
       />
 
       <PageSection aria-label="Use cases">
@@ -76,7 +76,7 @@ export default function ForBusinessesPage() {
               <div className="bg-muted/50 mt-auto space-y-1.5 rounded-lg p-4">
                 <h3 className="text-primary flex items-center gap-1.5 text-xs font-medium tracking-wide uppercase">
                   <Sparkles className="size-3.5" aria-hidden="true" />
-                  With Work Mode
+                  With ClockOff
                 </h3>
                 <p className="text-sm leading-relaxed">{outcome}</p>
               </div>
@@ -115,7 +115,7 @@ export default function ForBusinessesPage() {
       <CtaBand
         source="for-businesses"
         title="Talk us through your floor"
-        description="Tell us how your shifts run and we'll show Work Mode on a rota like yours."
+        description="Tell us how your shifts run and we'll show ClockOff on a rota like yours."
       />
     </>
   );

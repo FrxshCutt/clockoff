@@ -17,7 +17,7 @@ beforeEach(async () => {
   resetEnvCache();
   await new ConsoleEmailProvider({ recordOutbox: true }).send({
     to: "manager@x.test",
-    subject: "Confirm your Work Mode email",
+    subject: "Confirm your ClockOff email",
     text: "http://localhost:3000/verify-email?token=abc",
   });
 });
@@ -35,7 +35,7 @@ describe("GET /api/dev/last-email", () => {
     expect(status).toBe(200);
     expect(body.email).toMatchObject({
       to: "manager@x.test",
-      subject: "Confirm your Work Mode email",
+      subject: "Confirm your ClockOff email",
       text: "http://localhost:3000/verify-email?token=abc",
     });
   });

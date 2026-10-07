@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import { LoaderCircle, X } from "lucide-react";
 import { useEmployee, useLocations } from "@/components/employees/employee-api";
 import { EmployeePicker } from "@/components/employees/employee-picker";

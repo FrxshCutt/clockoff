@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import {
   breakPolicyRulesSchema,
   type BreakPolicy,
@@ -11,8 +11,8 @@ import {
   type ListBreakPoliciesResponse,
   type SetDefaultBreakPolicyInput,
   type UpdateBreakPolicyInput,
-} from "@workmode/validation/breakPolicies";
-import type { Organisation } from "@workmode/validation/organisation";
+} from "@clockoff/validation/breakPolicies";
+import type { Organisation } from "@clockoff/validation/organisation";
 import { z } from "zod";
 import { audit } from "@/server/audit/audit";
 import { toOrganisationDto } from "@/server/organisations/mappers";

@@ -1,4 +1,4 @@
-import { prisma, type Device, type ManagerOverride, type Prisma } from "@workmode/db";
+import { prisma, type Device, type ManagerOverride, type Prisma } from "@clockoff/db";
 import type { ShiftWithScheduledBreaks } from "./mobileMappers";
 
 /** Organisation/employee-scoped queries for the mobile read endpoints. */

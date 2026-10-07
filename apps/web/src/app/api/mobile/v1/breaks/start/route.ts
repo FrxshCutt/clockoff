@@ -1,4 +1,4 @@
-import { mobileStartBreakSchema } from "@workmode/validation/mobile";
+import { mobileStartBreakSchema } from "@clockoff/validation/mobile";
 import { startBreakFromDevice } from "@/server/breaks/breaks.service";
 import { createHandler, json } from "@/server/http/apiHandler";
 

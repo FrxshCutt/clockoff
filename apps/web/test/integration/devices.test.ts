@@ -1,5 +1,5 @@
-import { prisma } from "@workmode/db";
-import type { DeviceResponse, ListDevicesResponse } from "@workmode/validation/devices";
+import { prisma } from "@clockoff/db";
+import type { DeviceResponse, ListDevicesResponse } from "@clockoff/validation/devices";
 import { describe, expect, it } from "vitest";
 import { POST as deactivateRoute } from "@/app/api/devices/[id]/deactivate/route";
 import { GET as getDeviceRoute } from "@/app/api/devices/[id]/route";

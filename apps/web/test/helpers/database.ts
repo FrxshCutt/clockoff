@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { assertTestDatabaseUrl } from "./testDatabase";
 
 /**

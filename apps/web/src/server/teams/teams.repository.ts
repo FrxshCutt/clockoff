@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /** Team rows and `EmployeeTeam` memberships, scoped by the organisation id from the verified membership. */
 

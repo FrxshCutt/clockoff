@@ -2,13 +2,13 @@ import {
   IMPORT_LIMITS,
   importFileErrorToAppError,
   validateImportFile,
-} from "@workmode/shared/csv/csvImport";
-import { AppError } from "@workmode/shared/errors";
+} from "@clockoff/shared/csv/csvImport";
+import { AppError } from "@clockoff/shared/errors";
 import {
   IMPORT_ACCEPTED_MIME_TYPES,
   importMetadataSchema,
   type ImportMetadataInput,
-} from "@workmode/validation/imports";
+} from "@clockoff/validation/imports";
 import { z } from "zod";
 
 /**

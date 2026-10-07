@@ -1,6 +1,6 @@
 "use client";
 
-import type { ShiftImportStatus } from "@workmode/shared/enums";
+import type { ShiftImportStatus } from "@clockoff/shared/enums";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {

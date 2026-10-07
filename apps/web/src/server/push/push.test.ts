@@ -24,7 +24,7 @@ describe("ApnsPushProvider token auth", () => {
       keyId: "KEY123",
       teamId: "TEAM456",
       privateKeyPem: privateKey,
-      bundleId: "com.workmode.app",
+      bundleId: "online.clockoff.app",
       environment: "sandbox",
     });
     const now = Date.UTC(2026, 9, 6, 9, 0, 0);
@@ -44,7 +44,7 @@ describe("ApnsPushProvider token auth", () => {
       keyId: "K",
       teamId: "T",
       p8Base64: Buffer.from(privateKey).toString("base64"),
-      bundleId: "com.workmode.app",
+      bundleId: "online.clockoff.app",
       environment: "production",
     });
     const headers = await provider.buildHeaders(OK_TOKEN, {
@@ -57,7 +57,7 @@ describe("ApnsPushProvider token auth", () => {
       ":method": "POST",
       ":path": `/3/device/${OK_TOKEN}`,
       ":authority": "api.push.apple.com",
-      "apns-topic": "com.workmode.app",
+      "apns-topic": "online.clockoff.app",
       "apns-push-type": "background",
       "apns-priority": "5",
       "apns-collapse-id": "sync",
@@ -120,7 +120,7 @@ describe("ApnsPushProvider delivery (local HTTP/2 server, no network)", () => {
       keyId: "K",
       teamId: "T",
       privateKeyPem: privateKey,
-      bundleId: "com.workmode.app",
+      bundleId: "online.clockoff.app",
       environment: "sandbox",
       host,
     });
@@ -140,7 +140,7 @@ describe("ApnsPushProvider delivery (local HTTP/2 server, no network)", () => {
     expect(received).toHaveLength(3);
     const first = received.find((r) => String(r.headers[":path"]).endsWith(OK_TOKEN))!;
     expect(first.headers["apns-push-type"]).toBe("background");
-    expect(first.headers["apns-topic"]).toBe("com.workmode.app");
+    expect(first.headers["apns-topic"]).toBe("online.clockoff.app");
     expect(String(first.headers.authorization)).toMatch(/^bearer /);
     expect(first.body).toEqual({
       scheduleVersion: 7,
@@ -155,7 +155,7 @@ describe("ApnsPushProvider delivery (local HTTP/2 server, no network)", () => {
       keyId: "K",
       teamId: "T",
       privateKeyPem: privateKey,
-      bundleId: "com.workmode.app",
+      bundleId: "online.clockoff.app",
       environment: "sandbox",
       host,
     });

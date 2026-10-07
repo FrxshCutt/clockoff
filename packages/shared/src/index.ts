@@ -1,4 +1,4 @@
-// Barrel for @workmode/shared. Subpath imports (`@workmode/shared/enums`) are preferred in hot paths.
+// Barrel for @clockoff/shared. Subpath imports (`@clockoff/shared/enums`) are preferred in hot paths.
 export * from "./enums";
 export * from "./permissions";
 export * from "./errors";

@@ -1,6 +1,6 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { AssignmentScopeType } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { AssignmentScopeType } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
 
 /**
  * Assignment scopes shared by Work Policy and Break Policy assignments (§6.1): validating that a scope

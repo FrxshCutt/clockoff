@@ -1,5 +1,5 @@
-import { prisma, type Device, type Prisma, type RefreshToken } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Device, type Prisma, type RefreshToken } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import { SignJWT, decodeProtectedHeader, errors as joseErrors, jwtVerify } from "jose";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -11,14 +11,14 @@ import { assertDeviceUsable } from "./deviceUsable";
  *
  * - Access token: HS256 JWT (`MOBILE_JWT_SECRET`, header `kid` = `MOBILE_JWT_KEY_ID`), 15 min by default.
  *   Claims: sub = mobileUserId, dev = deviceId, emp = employeeId, org = organisationId,
- *   iss "workmode", aud "workmode-mobile".
+ *   iss "clockoff", aud "clockoff-mobile".
  * - Refresh token: 32 random bytes (base64url), stored as sha256 in `refresh_tokens` with a `familyId`.
  *   Rotation marks the old row `replacedById`; presenting a replaced or revoked token is reuse and
  *   revokes the whole family (an attacker and the victim both lose access; the app re-joins).
  */
 
-export const MOBILE_JWT_ISSUER = "workmode";
-export const MOBILE_JWT_AUDIENCE = "workmode-mobile";
+export const MOBILE_JWT_ISSUER = "clockoff";
+export const MOBILE_JWT_AUDIENCE = "clockoff-mobile";
 
 export interface MobileAccessClaims {
   /** mobileUserId */

@@ -1,5 +1,5 @@
-import { Prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { Prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";

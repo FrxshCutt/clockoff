@@ -1,9 +1,9 @@
-import { planLimitsFor } from "@workmode/shared/plans";
+import { planLimitsFor } from "@clockoff/shared/plans";
 import type {
   AuditLog,
   AuditLogQuery,
   ListAuditLogsResponse,
-} from "@workmode/validation/auditLogs";
+} from "@clockoff/validation/auditLogs";
 import { decodeKeysetCursor, encodeKeysetCursor } from "@/server/notifications/cursor";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { findAuditLogs, type AuditLogRow } from "./auditLogs.repository";

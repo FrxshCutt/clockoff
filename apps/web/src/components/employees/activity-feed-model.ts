@@ -1,5 +1,5 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@workmode/shared/enums";
-import type { ActivityEvent } from "@workmode/validation/activity";
+import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import { humanizeEnum } from "@/lib/format";
 
 /** Pure helpers for the employee activity feed (unit tested in node). */
@@ -90,7 +90,7 @@ export function groupActivityByDay(
   return groups;
 }
 
-/** "Device", "Jane Smith" (manager) or "Work Mode" (system) — who caused the event. */
+/** "Device", "Jane Smith" (manager) or "ClockOff" (system) — who caused the event. */
 export function describeActor(event: Pick<ActivityEvent, "actorType" | "actor">): string {
   switch (event.actorType) {
     case "MANAGER":
@@ -98,7 +98,7 @@ export function describeActor(event: Pick<ActivityEvent, "actorType" | "actor">)
     case "EMPLOYEE_DEVICE":
       return "Device";
     case "SYSTEM":
-      return "Work Mode";
+      return "ClockOff";
     default:
       return humanizeEnum(String(event.actorType));
   }

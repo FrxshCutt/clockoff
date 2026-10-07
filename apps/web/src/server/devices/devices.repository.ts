@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { PermissionState } from "@workmode/shared/enums";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { PermissionState } from "@clockoff/shared/enums";
 import { employeeInclude } from "@/server/employees/employees.repository";
 
 /**

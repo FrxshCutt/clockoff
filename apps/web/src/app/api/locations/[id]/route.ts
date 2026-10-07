@@ -1,5 +1,5 @@
-import { updateLocationSchema } from "@workmode/validation/locationsTeams";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { updateLocationSchema } from "@clockoff/validation/locationsTeams";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { deleteLocation, getLocation, updateLocation } from "@/server/locations";
 

@@ -1,5 +1,5 @@
-// Barrel for @workmode/validation. Subpath imports (`@workmode/validation/employees`) are equally valid.
-// The OpenAPI registry/generator live under `@workmode/validation/openapi/*` and are deliberately NOT
+// Barrel for @clockoff/validation. Subpath imports (`@clockoff/validation/employees`) are equally valid.
+// The OpenAPI registry/generator live under `@clockoff/validation/openapi/*` and are deliberately NOT
 // re-exported here (they import every route and are only needed by tooling and tests).
 export * from "./common";
 export * from "./auth";

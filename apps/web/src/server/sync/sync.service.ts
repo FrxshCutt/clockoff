@@ -1,14 +1,14 @@
-import { prisma } from "@workmode/db";
-import { breakPolicyFromRecord, computeBreakAllowance } from "@workmode/shared/breaks/breakRules";
+import { prisma } from "@clockoff/db";
+import { breakPolicyFromRecord, computeBreakAllowance } from "@clockoff/shared/breaks/breakRules";
 import type {
   MobileMeResponse,
   MobileScheduleQuery,
   MobileScheduleResponse,
   MobileSyncResponse,
   PushTokenInput,
-} from "@workmode/validation/mobile";
-import { MOBILE_LIMITS } from "@workmode/validation/mobile";
-import type { OkResponse } from "@workmode/validation/primitives";
+} from "@clockoff/validation/mobile";
+import { MOBILE_LIMITS } from "@clockoff/validation/mobile";
+import type { OkResponse } from "@clockoff/validation/primitives";
 import { encrypt } from "@/lib/crypto";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";

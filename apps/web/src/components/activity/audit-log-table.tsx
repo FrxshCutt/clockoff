@@ -1,6 +1,6 @@
 "use client";
 
-import type { AuditLog } from "@workmode/validation/auditLogs";
+import type { AuditLog } from "@clockoff/validation/auditLogs";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ChevronDown, LoaderCircle, X } from "lucide-react";
 import { useMemo, useState } from "react";

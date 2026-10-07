@@ -1,5 +1,5 @@
-import { prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import {
   expandRecurrence,
   formatRecurrenceRule,
@@ -8,8 +8,8 @@ import {
   wallClockMinutesBetween,
   type ParsedRecurrenceRule,
   type RecurrenceOccurrence,
-} from "@workmode/shared/time/time";
-import { SHIFT_LIMITS } from "@workmode/validation/shifts";
+} from "@clockoff/shared/time/time";
+import { SHIFT_LIMITS } from "@clockoff/validation/shifts";
 import { errorSummary, logger, stackFrames } from "@/lib/logger";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { publishScheduleChanged } from "./shifts.events";

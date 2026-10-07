@@ -1,6 +1,6 @@
 "use client";
 
-import type { CreateAssignmentInput } from "@workmode/validation/policies";
+import type { CreateAssignmentInput } from "@clockoff/validation/policies";
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useBreakPolicies, usePolicies } from "@/components/employees/employee-api";

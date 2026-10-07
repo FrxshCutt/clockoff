@@ -9,12 +9,12 @@ import {
   ROLES,
   SHIFT_STATUSES,
   WORK_MODE_STATES,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 import {
   STATUS_BADGE_META,
   INVITE_STATUS_META,
   WORK_MODE_STATE_META,
-} from "@workmode/shared/status/statusMeta";
+} from "@clockoff/shared/status/statusMeta";
 import { describe, expect, it } from "vitest";
 import {
   STATUS_ENUM_VALUES,

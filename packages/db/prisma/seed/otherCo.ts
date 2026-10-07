@@ -1,6 +1,6 @@
-import type { RestrictionConfig } from "@workmode/shared/policy/resolvePolicy";
-import { isRestrictionConfig } from "@workmode/shared/policy/resolvePolicy";
-import { deriveInviteStatus } from "@workmode/shared/status/deriveDeviceStatus";
+import type { RestrictionConfig } from "@clockoff/shared/policy/resolvePolicy";
+import { isRestrictionConfig } from "@clockoff/shared/policy/resolvePolicy";
+import { deriveInviteStatus } from "@clockoff/shared/status/deriveDeviceStatus";
 import { OrgBuilder, type ActorMeta, type BuiltDevice, type BuiltEmployee } from "./builder";
 import type { SeedClock } from "./clock";
 import type { SeedRows } from "./collector";

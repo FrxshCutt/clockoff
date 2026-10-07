@@ -1,14 +1,14 @@
-import type { ActivityEventType, PermissionState, SelectionState } from "@workmode/shared/enums";
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
-import type { ActivityEvent } from "@workmode/validation/activity";
-import type { DeviceSummary } from "@workmode/validation/devices";
+import type { ActivityEventType, PermissionState, SelectionState } from "@clockoff/shared/enums";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
+import type { ActivityEvent } from "@clockoff/validation/activity";
+import type { DeviceSummary } from "@clockoff/validation/devices";
 import type {
   Employee,
   EmployeeDetail,
   EmployeeStateResponse,
-} from "@workmode/validation/employees";
-import type { ResolvedPolicyRef } from "@workmode/validation/policies";
-import type { ShiftSummary } from "@workmode/validation/refs";
+} from "@clockoff/validation/employees";
+import type { ResolvedPolicyRef } from "@clockoff/validation/policies";
+import type { ShiftSummary } from "@clockoff/validation/refs";
 import { formatDate, formatTime, toDate, type DateInput } from "@/lib/format";
 
 /** Pure view-model helpers for the employee list and detail pages (unit tested in node). */
@@ -169,7 +169,7 @@ export function buildSetupChecklist(
       label: "Joined from the app",
       done: joined,
       hint: joined
-        ? "The employee entered the company and invite codes in the Work Mode app."
+        ? "The employee entered the company and invite codes in the ClockOff app."
         : "Waiting for the employee to open the app and enter their codes.",
     },
     {
@@ -219,19 +219,19 @@ export const PERMISSION_STATE_GUIDANCE: Record<PermissionState, PermissionGuidan
     label: "Not asked yet",
     tone: "neutral",
     guidance:
-      "The app hasn't requested Screen Time access yet. Ask the employee to open Work Mode and continue setup.",
+      "The app hasn't requested Screen Time access yet. Ask the employee to open ClockOff and continue setup.",
   },
   DENIED: {
     label: "Denied",
     tone: "danger",
     guidance:
-      "The employee declined Screen Time access. They can allow it in Settings → Screen Time → Apps with Screen Time access, then reopen Work Mode.",
+      "The employee declined Screen Time access. They can allow it in Settings → Screen Time → Apps with Screen Time access, then reopen ClockOff.",
   },
   REVOKED: {
     label: "Revoked",
     tone: "danger",
     guidance:
-      "Screen Time access was removed after setup. Ask the employee to re-enable it in Settings → Screen Time, then reopen Work Mode.",
+      "Screen Time access was removed after setup. Ask the employee to re-enable it in Settings → Screen Time, then reopen ClockOff.",
   },
   UNKNOWN: {
     label: "Unknown",
@@ -246,7 +246,7 @@ export const SELECTION_STATE_GUIDANCE: Record<SelectionState, PermissionGuidance
     label: "Configured",
     tone: "success",
     guidance:
-      "The employee has chosen what to shield. Which apps they picked is never shared with Work Mode.",
+      "The employee has chosen what to shield. Which apps they picked is never shared with ClockOff.",
   },
   NONE: {
     label: "Nothing selected",

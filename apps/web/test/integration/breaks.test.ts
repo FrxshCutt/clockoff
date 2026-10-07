@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { prisma, type Device, type Prisma } from "@workmode/db";
-import { mobileBreakResponseSchema } from "@workmode/validation/mobile";
+import { prisma, type Device, type Prisma } from "@clockoff/db";
+import { mobileBreakResponseSchema } from "@clockoff/validation/mobile";
 import { describe, expect, it } from "vitest";
 import { POST as endRoute } from "@/app/api/mobile/v1/breaks/[id]/end/route";
 import { POST as startRoute } from "@/app/api/mobile/v1/breaks/start/route";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { OrganisationResponse } from "@workmode/validation/organisation";
+import type { OrganisationResponse } from "@clockoff/validation/organisation";
 import type {
   CreatePolicyAssignmentInput,
   CreatePolicyInput,
@@ -15,7 +15,7 @@ import type {
   PublishPolicyInput,
   SetDefaultPolicyInput,
   UpdatePolicyInput,
-} from "@workmode/validation/policies";
+} from "@clockoff/validation/policies";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-client";

@@ -1,4 +1,4 @@
-import { API_ERROR_CODES } from "@workmode/shared/errors";
+import { API_ERROR_CODES } from "@clockoff/shared/errors";
 import { describe, expect, it } from "vitest";
 import { ApiClientError, CLIENT_ERROR_CODES } from "@/lib/api-client";
 import {

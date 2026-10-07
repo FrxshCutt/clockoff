@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   addLocalDays,
   buildShiftInstants,
   instantToLocal,
   localDateOf,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 import {
   bulkShiftActionResponseSchema,
   createShiftResponseSchema,
@@ -15,7 +15,7 @@ import {
   type CreateShiftResponse,
   type ListShiftsResponse,
   type ShiftResponse,
-} from "@workmode/validation/shifts";
+} from "@clockoff/validation/shifts";
 import { describe, expect, it, vi } from "vitest";
 import { POST as bulkRoute } from "@/app/api/shifts/bulk/route";
 import { POST as cancelRoute } from "@/app/api/shifts/[id]/cancel/route";

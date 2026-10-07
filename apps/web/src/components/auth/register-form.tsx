@@ -1,6 +1,6 @@
 "use client";
 
-import { registerSchema } from "@workmode/validation/auth";
+import { registerSchema } from "@clockoff/validation/auth";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

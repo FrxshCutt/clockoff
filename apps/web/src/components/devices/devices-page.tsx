@@ -1,7 +1,7 @@
 "use client";
 
-import { PERMISSION_STATES } from "@workmode/shared/enums";
-import type { DeviceWithEmployee } from "@workmode/validation/devices";
+import { PERMISSION_STATES } from "@clockoff/shared/enums";
+import type { DeviceWithEmployee } from "@clockoff/validation/devices";
 import { functionalUpdate, type OnChangeFn, type PaginationState } from "@tanstack/react-table";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -56,7 +56,7 @@ export function DevicesPage() {
     <RealtimeProvider>
       <PageHeader
         title="Devices"
-        description="Phones connected to Work Mode, with Screen Time permission and sync status."
+        description="Phones connected to ClockOff, with Screen Time permission and sync status."
         actions={<RealtimeStatusIndicator />}
       />
       <Suspense fallback={<TableSkeleton />}>
@@ -194,7 +194,7 @@ function DevicesTable() {
       />
       <p className="text-muted-foreground text-xs">
         Devices report operational status only: setup, permission, selection counts, sync and app
-        version. Work Mode never receives which apps were chosen, messages, browsing, location or
+        version. ClockOff never receives which apps were chosen, messages, browsing, location or
         anything else on the phone.
       </p>
     </div>

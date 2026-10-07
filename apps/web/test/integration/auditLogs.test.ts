@@ -1,5 +1,5 @@
-import { prisma } from "@workmode/db";
-import type { ListAuditLogsResponse } from "@workmode/validation/auditLogs";
+import { prisma } from "@clockoff/db";
+import type { ListAuditLogsResponse } from "@clockoff/validation/auditLogs";
 import { describe, expect, it } from "vitest";
 import { GET as auditLogsRoute } from "@/app/api/audit-logs/route";
 import { audit } from "@/server/audit/audit";

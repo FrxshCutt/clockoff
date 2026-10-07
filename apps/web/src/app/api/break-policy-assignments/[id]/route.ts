@@ -1,4 +1,4 @@
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { endBreakPolicyAssignment } from "@/server/breakPolicies/breakPolicies.service";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -1,12 +1,12 @@
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import {
   createLocationSchema,
   updateLocationSchema,
   type Location,
   type ScopeAssignment,
   type Team,
-} from "@workmode/validation/locationsTeams";
-import type { Policy } from "@workmode/validation/policies";
+} from "@clockoff/validation/locationsTeams";
+import type { Policy } from "@clockoff/validation/policies";
 import { describe, expect, it } from "vitest";
 import { ApiClientError } from "@/lib/api-client";
 import {

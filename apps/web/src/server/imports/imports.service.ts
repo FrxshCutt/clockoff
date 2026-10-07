@@ -1,4 +1,4 @@
-import { Prisma, prisma, type ActivityEvent } from "@workmode/db";
+import { Prisma, prisma, type ActivityEvent } from "@clockoff/db";
 import {
   IMPORT_LIMITS,
   checkMapping,
@@ -19,10 +19,10 @@ import {
   type MappingSuggestion,
   type NormalisedRow,
   type ValidatedRow,
-} from "@workmode/shared/csv/csvImport";
-import { AppError } from "@workmode/shared/errors";
-import { minutesBetween } from "@workmode/shared/time/time";
-import type { CreateEmployeeInput } from "@workmode/validation/employees";
+} from "@clockoff/shared/csv/csvImport";
+import { AppError } from "@clockoff/shared/errors";
+import { minutesBetween } from "@clockoff/shared/time/time";
+import type { CreateEmployeeInput } from "@clockoff/validation/employees";
 import type {
   CommitImportInput,
   CommitImportResponse,
@@ -36,8 +36,8 @@ import type {
   ListImportsResponse,
   UpdateImportRowInput,
   ValidateImportResponse,
-} from "@workmode/validation/imports";
-import { SHIFT_LIMITS } from "@workmode/validation/shifts";
+} from "@clockoff/validation/imports";
+import { SHIFT_LIMITS } from "@clockoff/validation/shifts";
 import { errorSummary, logger, stackFrames } from "@/lib/logger";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit, toJsonValue, type AuditEntry } from "@/server/audit/audit";
@@ -84,7 +84,7 @@ import { readImportUpload } from "./imports.upload";
 /**
  * CSV shift import wizard (§5, §6.5): upload → mapping → validate → fix rows → commit.
  *
- * All parsing, header mapping, employee matching and row validation is the pure `@workmode/shared/csv`
+ * All parsing, header mapping, employee matching and row validation is the pure `@clockoff/shared/csv`
  * module; this service persists its results and applies the manager's row-level fixes
  * ({@link RowResolution}) on top. Validation is re-runnable and is what every row fix goes through, so a
  * fix to one row (e.g. skipping one of two overlapping rows) updates its siblings as well.

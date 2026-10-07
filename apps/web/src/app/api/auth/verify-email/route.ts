@@ -1,4 +1,4 @@
-import { verifyEmailSchema } from "@workmode/validation/auth";
+import { verifyEmailSchema } from "@clockoff/validation/auth";
 import { verifyEmail } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { RATE_LIMITS } from "@/server/rateLimit";

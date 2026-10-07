@@ -1,5 +1,5 @@
 {
-  "name": "@workmode/shared",
+  "name": "@clockoff/shared",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -24,7 +24,7 @@
     "@types/luxon": "3.7.6",
     "@types/node": "24.19.1",
     "@types/papaparse": "5.5.2",
-    "@workmode/config": "workspace:*",
+    "@clockoff/config": "workspace:*",
     "eslint": "9.39.5",
     "typescript": "5.9.3",
     "vitest": "3.2.7"

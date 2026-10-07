@@ -1,13 +1,13 @@
 "use client";
 
-import { DATE_FORMATS } from "@workmode/shared/enums";
+import { DATE_FORMATS } from "@clockoff/shared/enums";
 import {
   TIME_FORMATS,
   WEEK_STARTS,
   organisationSettingsSchema,
   updateOrganisationSchema,
   type UpdateOrganisationInput,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { ErrorState } from "@/components/error-state";

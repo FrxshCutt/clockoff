@@ -58,17 +58,17 @@ export function createEmailProvider(): EmailProvider {
 }
 
 declare global {
-  var __workmodeEmailProvider: EmailProvider | undefined;
+  var __clockoffEmailProvider: EmailProvider | undefined;
 }
 
 export function getEmailProvider(): EmailProvider {
-  if (!globalThis.__workmodeEmailProvider)
-    globalThis.__workmodeEmailProvider = createEmailProvider();
-  return globalThis.__workmodeEmailProvider;
+  if (!globalThis.__clockoffEmailProvider)
+    globalThis.__clockoffEmailProvider = createEmailProvider();
+  return globalThis.__clockoffEmailProvider;
 }
 
 export function setEmailProviderForTesting(provider: EmailProvider | undefined): void {
-  globalThis.__workmodeEmailProvider = provider;
+  globalThis.__clockoffEmailProvider = provider;
 }
 
 /**

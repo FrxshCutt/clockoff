@@ -4,7 +4,7 @@ import {
   IMPORT_LIMITS,
   IMPORT_PROBLEM_CODES,
   IMPORT_PROBLEM_SEVERITIES,
-} from "@workmode/shared/csv/types";
+} from "@clockoff/shared/csv/types";
 import {
   emailSchema,
   nonEmptyString,
@@ -28,7 +28,7 @@ import { namedRefSchema } from "./refs";
 
 /**
  * CSV shift import wizard (§5 imports, §6.5): upload → map columns → validate → fix rows → commit.
- * Parsing, matching and validation are the pure functions in `@workmode/shared/csv`; these schemas are the
+ * Parsing, matching and validation are the pure functions in `@clockoff/shared/csv`; these schemas are the
  * HTTP contract around them.
  */
 

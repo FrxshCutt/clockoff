@@ -1,6 +1,6 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { AssignmentScopeType } from "@workmode/shared/enums";
-import type { ScopeAssignment } from "@workmode/validation/locationsTeams";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { AssignmentScopeType } from "@clockoff/shared/enums";
+import type { ScopeAssignment } from "@clockoff/validation/locationsTeams";
 
 /**
  * The Work Policy / Break Policy assignment currently in force for LOCATION and TEAM scopes, so the

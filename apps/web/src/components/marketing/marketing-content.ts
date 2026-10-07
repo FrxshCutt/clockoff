@@ -1,4 +1,4 @@
-import type { WorkModeState } from "@workmode/shared/enums";
+import type { WorkModeState } from "@clockoff/shared/enums";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -68,7 +68,7 @@ export const HOW_IT_WORKS_STRIP: readonly Step[] = [
   },
   {
     title: "Employees connect their iPhone",
-    body: "They install Work Mode, enter your company code and approve Screen Time access. Their app choices stay on their phone.",
+    body: "They install ClockOff, enter your company code and approve Screen Time access. Their app choices stay on their phone.",
   },
   {
     title: "Shifts do the rest",
@@ -131,7 +131,7 @@ export interface FlowStep {
   readonly body: string;
   /** The Work Mode state the phone is in at this point, when there is one. */
   readonly state: WorkModeState | null;
-  readonly actor: "Manager" | "Employee" | "Work Mode";
+  readonly actor: "Manager" | "Employee" | "ClockOff";
 }
 
 /** The end-to-end flow on the How it works page, in order. */
@@ -147,7 +147,7 @@ export const FLOW: readonly FlowStep[] = [
     key: "connect",
     actor: "Employee",
     title: "Connect the phone",
-    body: "The employee installs Work Mode, enters the company code and their name, approves Screen Time and chooses what to pause. The choice never leaves the phone.",
+    body: "The employee installs ClockOff, enters the company code and their name, approves Screen Time and chooses what to pause. The choice never leaves the phone.",
     state: null,
   },
   {
@@ -159,14 +159,14 @@ export const FLOW: readonly FlowStep[] = [
   },
   {
     key: "starting",
-    actor: "Work Mode",
+    actor: "ClockOff",
     title: "Shift starts",
     body: "Shortly before the start the app shows a heads-up. At the start time the phone's own Screen Time schedule fires, even if the app is closed.",
     state: "SHIFT_STARTING_SOON",
   },
   {
     key: "shields",
-    actor: "Work Mode",
+    actor: "ClockOff",
     title: "Shields go up",
     body: "Restricted apps show a shield explaining that Work Mode is on. Calls, messages and anything not in the policy keep working.",
     state: "WORKING",
@@ -180,14 +180,14 @@ export const FLOW: readonly FlowStep[] = [
   },
   {
     key: "restore",
-    actor: "Work Mode",
+    actor: "ClockOff",
     title: "Back to work",
     body: "When the break ends, shields return automatically. Breaks that run long end themselves.",
     state: "WORKING",
   },
   {
     key: "end",
-    actor: "Work Mode",
+    actor: "ClockOff",
     title: "Shift ends",
     body: "Every shield lifts at the scheduled end. Off shift, the phone is the employee's own again and the app only checks in for schedule changes.",
     state: "OFF_SHIFT",
@@ -213,7 +213,7 @@ export const USE_CASES: readonly UseCase[] = [
       "Breaks drift when nobody is tracking them.",
     ],
     outcome:
-      "Work Mode follows the rota you already write, relaxes for the breaks you allow, and treats every shift the same way without a manager playing phone police.",
+      "ClockOff follows the rota you already write, relaxes for the breaks you allow, and treats every shift the same way without a manager playing phone police.",
   },
   {
     icon: ShoppingBag,
@@ -311,7 +311,7 @@ export const PRICING_FAQ: readonly PricingFaq[] = [
   {
     question: "Do employees need a company phone?",
     answer:
-      "No. Work Mode runs on the employee's own iPhone with their consent, using Apple Screen Time. It needs iOS 16.4 or later.",
+      "No. ClockOff runs on the employee's own iPhone with their consent, using Apple Screen Time. It needs iOS 16.4 or later.",
   },
   {
     question: "Can I change plan later?",
@@ -325,7 +325,7 @@ export interface PrivacyTechPoint {
   readonly body: string;
 }
 
-/** How Work Mode uses Apple Screen Time, stated precisely. Mirrors the technical section of docs/PRIVACY.md. */
+/** How ClockOff uses Apple Screen Time, stated precisely. Mirrors the technical section of docs/PRIVACY.md. */
 export const PRIVACY_TECH_POINTS: readonly PrivacyTechPoint[] = [
   {
     title: "Apple's Screen Time frameworks, nothing else",
@@ -337,7 +337,7 @@ export const PRIVACY_TECH_POINTS: readonly PrivacyTechPoint[] = [
   },
   {
     title: "Time-based schedules only",
-    body: "Shields are applied and lifted by the app's DeviceActivity extension at the shift and break times synced to the phone. Work Mode registers no usage thresholds and ships no activity-report extension, so it never learns which apps were used or for how long.",
+    body: "Shields are applied and lifted by the app's DeviceActivity extension at the shift and break times synced to the phone. ClockOff registers no usage thresholds and ships no activity-report extension, so it never learns which apps were used or for how long.",
   },
   {
     title: "Enforcement is local",

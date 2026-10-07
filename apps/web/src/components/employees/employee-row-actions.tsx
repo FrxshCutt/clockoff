@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import {
   Archive,
   Coffee,

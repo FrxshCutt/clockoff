@@ -1,11 +1,11 @@
-import type { Prisma } from "@workmode/db";
+import type { Prisma } from "@clockoff/db";
 import {
   formatShiftRange,
   instantToLocal,
   localDateOf,
   minutesBetween,
-} from "@workmode/shared/time/time";
-import type { Shift } from "@workmode/validation/shifts";
+} from "@clockoff/shared/time/time";
+import type { Shift } from "@clockoff/validation/shifts";
 
 /** Relations every shift response carries. */
 export const shiftInclude = {

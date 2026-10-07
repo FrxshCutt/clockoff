@@ -1,4 +1,4 @@
-import { UNLIMITED, type LimitValue } from "@workmode/shared/plans";
+import { UNLIMITED, type LimitValue } from "@clockoff/shared/plans";
 
 /** Percentage of a plan limit used, rounded and capped at 100; null for unlimited or zero limits. */
 export function usagePercent(used: number, limit: LimitValue): number | null {

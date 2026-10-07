@@ -1,11 +1,11 @@
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
 import {
   COMPLIANCE_METRIC_FILTER,
   COMPLIANCE_METRIC_KEYS,
   type ComplianceEmployeeRow,
   type ComplianceMetricKey,
   type UpcomingShift,
-} from "@workmode/validation/compliance";
+} from "@clockoff/validation/compliance";
 import { complianceListHref } from "@/components/activity/activity-filters";
 import {
   EMPLOYEE_URL_PARAMS,

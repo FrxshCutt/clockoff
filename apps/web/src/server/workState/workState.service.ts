@@ -5,20 +5,20 @@ import {
   type EmployeeWorkState,
   type ManagerOverride,
   type Prisma,
-} from "@workmode/db";
-import type { PermissionState, WorkModeState, WorkStateSource } from "@workmode/shared/enums";
+} from "@clockoff/db";
+import type { PermissionState, WorkModeState, WorkStateSource } from "@clockoff/shared/enums";
 import {
   deriveDeviceStatus,
   isShiftActive,
   toExpectedWorkState,
   type DeviceStatusResult,
   type ExpectedWorkState,
-} from "@workmode/shared/status/deriveDeviceStatus";
+} from "@clockoff/shared/status/deriveDeviceStatus";
 import {
   computeExpectedState,
   type ExpectedState,
   type WorkModeMachineOptions,
-} from "@workmode/shared/workMode/workModeMachine";
+} from "@clockoff/shared/workMode/workModeMachine";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { publishEvent } from "@/server/events";
 import { resolveForEmployees, type EmployeePolicyResolution } from "./externalServices";

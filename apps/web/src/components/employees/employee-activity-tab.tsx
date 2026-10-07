@@ -1,7 +1,7 @@
 "use client";
 
-import type { ActivityEventType } from "@workmode/shared/enums";
-import type { ActivityEvent } from "@workmode/validation/activity";
+import type { ActivityEventType } from "@clockoff/shared/enums";
+import type { ActivityEvent } from "@clockoff/validation/activity";
 import { useId, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";

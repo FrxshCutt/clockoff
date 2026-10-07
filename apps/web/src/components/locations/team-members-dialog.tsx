@@ -1,7 +1,7 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
-import type { Team } from "@workmode/validation/locationsTeams";
+import type { Employee } from "@clockoff/validation/employees";
+import type { Team } from "@clockoff/validation/locationsTeams";
 import { LoaderCircle, UserRoundMinus, UserRoundPlus, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

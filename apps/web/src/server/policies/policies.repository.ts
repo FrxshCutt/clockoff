@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { PolicyStatus } from "@workmode/shared/enums";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { PolicyStatus } from "@clockoff/shared/enums";
 import type { ScopeRef } from "./scopes";
 
 /**

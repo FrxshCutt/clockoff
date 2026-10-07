@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import { toast } from "sonner";
 import {
   FormErrorAlert,
@@ -160,7 +160,7 @@ function EmployeeForm({
           <SheetDescription>
             {mode === "edit"
               ? "Changes apply straight away. Policy changes reach the phone on its next sync."
-              : "Add the person first, then invite them to connect their phone from the Work Mode app."}
+              : "Add the person first, then invite them to connect their phone from the ClockOff app."}
           </SheetDescription>
         </SheetHeader>
 

@@ -1,5 +1,5 @@
-import type { Prisma } from "@workmode/db";
-import type { RestrictionConfig } from "@workmode/shared/policy/restrictionConfig";
+import type { Prisma } from "@clockoff/db";
+import type { RestrictionConfig } from "@clockoff/shared/policy/restrictionConfig";
 import {
   BREAK_BEHAVIOUR_DEFAULT,
   breakBehaviourDefaultSchema,
@@ -8,7 +8,7 @@ import {
   type Policy,
   type PolicyAssignment,
   type PolicyVersion,
-} from "@workmode/validation/policies";
+} from "@clockoff/validation/policies";
 import type { PolicyAssignmentRow, PolicyRow, PolicyVersionRow } from "./policies.repository";
 import { isWindowActive, scopeKey } from "./scopes";
 

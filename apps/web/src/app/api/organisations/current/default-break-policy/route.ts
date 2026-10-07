@@ -1,4 +1,4 @@
-import { setDefaultBreakPolicySchema } from "@workmode/validation/breakPolicies";
+import { setDefaultBreakPolicySchema } from "@clockoff/validation/breakPolicies";
 import { setDefaultBreakPolicy } from "@/server/breakPolicies/breakPolicies.service";
 import { createHandler } from "@/server/http/apiHandler";
 

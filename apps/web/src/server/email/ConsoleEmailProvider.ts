@@ -26,13 +26,13 @@ export interface DevOutboxEntry extends EmailMessage {
 export const DEV_OUTBOX_SIZE = 50;
 
 declare global {
-  var __workmodeDevOutbox: DevOutboxEntry[] | undefined;
+  var __clockoffDevOutbox: DevOutboxEntry[] | undefined;
 }
 
 /** Process-wide (on globalThis so Next dev HMR and separate route bundles share one buffer). */
 function devOutbox(): DevOutboxEntry[] {
-  if (!globalThis.__workmodeDevOutbox) globalThis.__workmodeDevOutbox = [];
-  return globalThis.__workmodeDevOutbox;
+  if (!globalThis.__clockoffDevOutbox) globalThis.__clockoffDevOutbox = [];
+  return globalThis.__clockoffDevOutbox;
 }
 
 function recordInDevOutbox(message: EmailMessage, now: Date = new Date()): void {

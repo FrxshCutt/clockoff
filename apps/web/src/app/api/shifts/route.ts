@@ -1,4 +1,4 @@
-import { createShiftSchema, shiftQuerySchema } from "@workmode/validation/shifts";
+import { createShiftSchema, shiftQuerySchema } from "@clockoff/validation/shifts";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { createShift, listShifts } from "@/server/shifts";
 

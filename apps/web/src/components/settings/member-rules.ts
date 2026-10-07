@@ -1,5 +1,5 @@
-import { ROLES, type Role } from "@workmode/shared/enums";
-import { hasPermission, outranksOrEquals } from "@workmode/shared/permissions";
+import { ROLES, type Role } from "@clockoff/shared/enums";
+import { hasPermission, outranksOrEquals } from "@clockoff/shared/permissions";
 
 /**
  * UI mirror of the server's manager-membership rules (apps/web/src/server/organisations/members.ts) so the

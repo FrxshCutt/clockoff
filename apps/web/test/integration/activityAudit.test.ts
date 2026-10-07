@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { describe, expect, it } from "vitest";
 import { GET as healthRoute } from "@/app/api/health/route";
 import { recordActivity } from "@/server/activity/recordActivity";

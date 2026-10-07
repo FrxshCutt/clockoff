@@ -1,6 +1,6 @@
 "use client";
 
-import { changePasswordSchema } from "@workmode/validation/auth";
+import { changePasswordSchema } from "@clockoff/validation/auth";
 import { toast } from "sonner";
 import { z } from "zod";
 import {

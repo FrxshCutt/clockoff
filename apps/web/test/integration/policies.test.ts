@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   listPoliciesResponseSchema,
   listPolicyAssignmentsResponseSchema,
@@ -10,9 +10,9 @@ import {
   type PolicyAssignmentResponse,
   type PolicyResponse,
   type PolicyVersionsResponse,
-} from "@workmode/validation/policies";
-import type { OrganisationResponse } from "@workmode/validation/organisation";
-import { REALTIME_EVENT_TYPES as CONTRACT_EVENT_TYPES } from "@workmode/validation/realtime";
+} from "@clockoff/validation/policies";
+import type { OrganisationResponse } from "@clockoff/validation/organisation";
+import { REALTIME_EVENT_TYPES as CONTRACT_EVENT_TYPES } from "@clockoff/validation/realtime";
 import { describe, expect, it } from "vitest";
 import { POST as defaultPolicyRoute } from "@/app/api/organisations/current/default-policy/route";
 import { DELETE as endAssignmentRoute } from "@/app/api/policy-assignments/[id]/route";

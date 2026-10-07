@@ -1,4 +1,4 @@
-import { joinConfirmSchema } from "@workmode/validation/mobile";
+import { joinConfirmSchema } from "@clockoff/validation/mobile";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { confirmJoin } from "@/server/mobileJoin";
 import { RATE_LIMITS } from "@/server/rateLimit";

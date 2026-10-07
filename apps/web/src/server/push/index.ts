@@ -30,14 +30,14 @@ export function createPushProvider(): PushProvider {
 }
 
 declare global {
-  var __workmodePushProvider: PushProvider | undefined;
+  var __clockoffPushProvider: PushProvider | undefined;
 }
 
 export function getPushProvider(): PushProvider {
-  if (!globalThis.__workmodePushProvider) globalThis.__workmodePushProvider = createPushProvider();
-  return globalThis.__workmodePushProvider;
+  if (!globalThis.__clockoffPushProvider) globalThis.__clockoffPushProvider = createPushProvider();
+  return globalThis.__clockoffPushProvider;
 }
 
 export function setPushProviderForTesting(provider: PushProvider | undefined): void {
-  globalThis.__workmodePushProvider = provider;
+  globalThis.__clockoffPushProvider = provider;
 }

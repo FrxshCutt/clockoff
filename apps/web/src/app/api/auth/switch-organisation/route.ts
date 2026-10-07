@@ -1,4 +1,4 @@
-import { switchOrganisationSchema } from "@workmode/validation/auth";
+import { switchOrganisationSchema } from "@clockoff/validation/auth";
 import { switchOrganisation } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 

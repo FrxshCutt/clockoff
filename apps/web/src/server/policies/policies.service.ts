@@ -1,7 +1,7 @@
-import { prisma, type Prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import { createDefaultRestrictionConfig } from "@workmode/shared/policy/restrictionConfig";
-import type { Organisation } from "@workmode/validation/organisation";
+import { prisma, type Prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import { createDefaultRestrictionConfig } from "@clockoff/shared/policy/restrictionConfig";
+import type { Organisation } from "@clockoff/validation/organisation";
 import {
   BREAK_BEHAVIOUR_DEFAULT,
   type CreatePolicyAssignmentInput,
@@ -16,7 +16,7 @@ import {
   type RestrictionConfig,
   type SetDefaultPolicyInput,
   type UpdatePolicyInput,
-} from "@workmode/validation/policies";
+} from "@clockoff/validation/policies";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { toOrganisationDto } from "@/server/organisations/mappers";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import type { JoinCode } from "@workmode/validation/organisation";
+import type { JoinCode } from "@clockoff/validation/organisation";
 import { KeyRound, RefreshCw, ShieldOff } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -146,7 +146,7 @@ export function JoinCodeSettings() {
       )}
       <SectionCard
         title="Company join code"
-        description="Employees enter this code and their name in the Work Mode app to join your organisation."
+        description="Employees enter this code and their name in the ClockOff app to join your organisation."
       >
         {code ? (
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -262,9 +262,9 @@ export function JoinCodeSettings() {
       <SectionCard title="How joining works">
         <ol className="text-muted-foreground list-decimal space-y-2 pl-5 text-sm">
           <li>Add the employee in Employees, with the name they&apos;ll type in the app.</li>
-          <li>They install Work Mode on their iPhone and enter the company join code.</li>
+          <li>They install ClockOff on their iPhone and enter the company join code.</li>
           <li>
-            Work Mode matches their name to your employee list. If more than one employee matches,
+            ClockOff matches their name to your employee list. If more than one employee matches,
             they also enter their personal invite code.
           </li>
           <li>

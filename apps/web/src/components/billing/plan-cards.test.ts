@@ -1,5 +1,5 @@
-import { PLANS } from "@workmode/shared/enums";
-import { PLAN_CONFIG } from "@workmode/shared/plans";
+import { PLANS } from "@clockoff/shared/enums";
+import { PLAN_CONFIG } from "@clockoff/shared/plans";
 import { describe, expect, it } from "vitest";
 import {
   PLAN_CTA_LABELS,
@@ -88,10 +88,10 @@ describe("plan limit formatting", () => {
 describe("salesMailto", () => {
   it("encodes the subject and body for a mailto link", () => {
     expect(salesMailto("Upgrade to Pro")).toBe(
-      "mailto:support@workmode.app?subject=Upgrade%20to%20Pro",
+      "mailto:support@clockoff.online?subject=Upgrade%20to%20Pro",
     );
     expect(salesMailto("Plan", "Hi there & thanks")).toBe(
-      "mailto:support@workmode.app?subject=Plan&body=Hi%20there%20%26%20thanks",
+      "mailto:support@clockoff.online?subject=Plan&body=Hi%20there%20%26%20thanks",
     );
   });
 });

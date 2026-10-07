@@ -1,7 +1,7 @@
 "use client";
 
-import { DEVICE_STATUS_THRESHOLDS } from "@workmode/shared/status/deriveDeviceStatus";
-import type { EmployeeDetail, EmployeeStateResponse } from "@workmode/validation/employees";
+import { DEVICE_STATUS_THRESHOLDS } from "@clockoff/shared/status/deriveDeviceStatus";
+import type { EmployeeDetail, EmployeeStateResponse } from "@clockoff/validation/employees";
 import {
   CalendarClock,
   Circle,
@@ -128,7 +128,7 @@ export function EmployeeOverviewTab({ employee }: EmployeeOverviewTabProps) {
             </InlineAlert>
           ) : (
             <p className="text-muted-foreground text-sm">
-              No device yet. Device details appear once the employee joins from the Work Mode app on
+              No device yet. Device details appear once the employee joins from the ClockOff app on
               their iPhone.
             </p>
           )}

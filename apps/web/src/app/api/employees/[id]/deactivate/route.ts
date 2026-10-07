@@ -1,5 +1,5 @@
-import { deactivateEmployeeSchema } from "@workmode/validation/employees";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { deactivateEmployeeSchema } from "@clockoff/validation/employees";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { deactivateEmployee } from "@/server/employees";
 import { createHandler } from "@/server/http/apiHandler";
 

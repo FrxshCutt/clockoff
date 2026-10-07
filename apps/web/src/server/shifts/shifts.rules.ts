@@ -1,11 +1,11 @@
-import type { BreakPolicyLike } from "@workmode/shared/breaks/breakRules";
-import { AppError } from "@workmode/shared/errors";
-import { minutesBetween, overlaps, type ShiftTimeWarning } from "@workmode/shared/time/time";
+import type { BreakPolicyLike } from "@clockoff/shared/breaks/breakRules";
+import { AppError } from "@clockoff/shared/errors";
+import { minutesBetween, overlaps, type ShiftTimeWarning } from "@clockoff/shared/time/time";
 import {
   SHIFT_LIMITS,
   type ScheduledBreakInput,
   type ShiftWarning,
-} from "@workmode/validation/shifts";
+} from "@clockoff/validation/shifts";
 
 /**
  * Pure shift rules shared by the shifts service and the CSV import commit: duration bounds, overlap

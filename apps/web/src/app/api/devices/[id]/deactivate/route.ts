@@ -1,5 +1,5 @@
-import { deactivateDeviceSchema } from "@workmode/validation/devices";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { deactivateDeviceSchema } from "@clockoff/validation/devices";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { deactivateDevice } from "@/server/devices";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -1,5 +1,5 @@
-import { prisma } from "@workmode/db";
-import type { DeviceStatusBadge } from "@workmode/shared/enums";
+import { prisma } from "@clockoff/db";
+import type { DeviceStatusBadge } from "@clockoff/shared/enums";
 import { buildAppLink, sendEmailSafely } from "@/server/email";
 import {
   createManagerNotification,
@@ -161,7 +161,7 @@ export async function sendOrganisationDigest(params: {
     if (!digestEmailEnabled(member.notificationPreferences)) continue;
     const ok = await sendEmailSafely({
       to: member.user.email,
-      subject: `[Work Mode] ${digestTitle(employees.length)}`,
+      subject: `[ClockOff] ${digestTitle(employees.length)}`,
       text: digestEmailText({
         recipientName: member.user.name,
         organisationName: outcome.organisationName,

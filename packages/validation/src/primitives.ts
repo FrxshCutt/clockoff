@@ -3,7 +3,7 @@ import {
   isValidJoinCodeFormat,
   normaliseInviteCode,
   normaliseJoinCode,
-} from "@workmode/shared/joinCode";
+} from "@clockoff/shared/joinCode";
 import { uuidSchema } from "./common";
 import { apiErrorCodeSchema } from "./enumSchemas";
 

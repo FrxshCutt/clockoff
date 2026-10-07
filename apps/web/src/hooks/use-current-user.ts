@@ -1,9 +1,9 @@
 "use client";
 
-import type { Permission } from "@workmode/shared/permissions";
-import { hasPermission } from "@workmode/shared/permissions";
-import type { Role } from "@workmode/shared/enums";
-import { currentUserSchema, type CurrentUser } from "@workmode/validation/auth";
+import type { Permission } from "@clockoff/shared/permissions";
+import { hasPermission } from "@clockoff/shared/permissions";
+import type { Role } from "@clockoff/shared/enums";
+import { currentUserSchema, type CurrentUser } from "@clockoff/validation/auth";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, isUnauthenticatedError, rememberCsrfToken } from "@/lib/api-client";
 import { queryKeys, shouldRetryQuery } from "@/lib/query-client";

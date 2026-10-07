@@ -1,5 +1,5 @@
-import type { Permission } from "@workmode/shared/permissions";
-import type { ManagerNotificationType } from "@workmode/validation/notifications";
+import type { Permission } from "@clockoff/shared/permissions";
+import type { ManagerNotificationType } from "@clockoff/validation/notifications";
 
 /** Settings page tabs, in display order. The `?tab=` query parameter selects one. */
 export const SETTINGS_TABS = [
@@ -20,7 +20,7 @@ export const SETTINGS_TAB_META: Record<SettingsTab, { label: string; description
   },
   "join-code": {
     label: "Join code",
-    description: "The company code employees enter in the Work Mode app to find your organisation.",
+    description: "The company code employees enter in the ClockOff app to find your organisation.",
   },
   members: {
     label: "Managers",
@@ -63,7 +63,7 @@ export const NOTIFICATION_TYPE_COPY: Record<
 > = {
   EMPLOYEE_JOINED: {
     label: "Employee joined",
-    description: "An employee joined your organisation from the Work Mode app.",
+    description: "An employee joined your organisation from the ClockOff app.",
   },
   PERMISSION_NEEDS_ATTENTION: {
     label: "Permissions need attention",

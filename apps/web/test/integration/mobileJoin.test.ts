@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
-import { generateEmployeeInviteCode } from "@workmode/shared/joinCode";
+import { prisma } from "@clockoff/db";
+import { generateEmployeeInviteCode } from "@clockoff/shared/joinCode";
 import {
   joinConfirmResponseSchema,
   joinLookupResponseSchema,
@@ -8,8 +8,8 @@ import {
   type JoinConfirmResponse,
   type JoinLookupResponse,
   type MobileRefreshResponse,
-} from "@workmode/validation/mobile";
-import type { OkResponse } from "@workmode/validation/primitives";
+} from "@clockoff/validation/mobile";
+import type { OkResponse } from "@clockoff/validation/primitives";
 import { describe, expect, it } from "vitest";
 import { POST as logoutRoute } from "@/app/api/mobile/v1/auth/logout/route";
 import { POST as refreshRoute } from "@/app/api/mobile/v1/auth/refresh/route";

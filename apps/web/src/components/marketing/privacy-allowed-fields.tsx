@@ -1,6 +1,6 @@
-import { INTEGRATION_PROVIDERS } from "@workmode/shared/enums";
-import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@workmode/shared/privacyStatements";
-import { PROVIDERS } from "@workmode/shared/providers/registry";
+import { INTEGRATION_PROVIDERS } from "@clockoff/shared/enums";
+import { DEVICE_TO_SERVER_ALLOWED_FIELDS } from "@clockoff/shared/privacyStatements";
+import { PROVIDERS } from "@clockoff/shared/providers/registry";
 
 /**
  * The exact fields the iPhone app is allowed to send (`DEVICE_TO_SERVER_ALLOWED_FIELDS`, the same list the
@@ -11,7 +11,7 @@ export function PrivacyAllowedFields() {
     <div className="overflow-x-auto rounded-xl border">
       <table className="w-full text-sm">
         <caption className="sr-only">
-          Fields the Work Mode app may send to the server, by group
+          Fields the ClockOff app may send to the server, by group
         </caption>
         <thead className="bg-muted/50 border-b">
           <tr>
@@ -71,12 +71,12 @@ function formatList(items: readonly string[]): string {
 
 /**
  * The integrations statement, derived from the provider registry so it can never claim a sync that does not
- * exist (mirrors `renderPrivacyMarkdown` in @workmode/shared).
+ * exist (mirrors `renderPrivacyMarkdown` in @clockoff/shared).
  */
 export function integrationsPrivacyStatement(): string {
   const names = formatList(INTEGRATION_PROVIDERS.map((id) => PROVIDERS[id].displayName));
   const anyAvailable = INTEGRATION_PROVIDERS.some((id) => PROVIDERS[id].status === "AVAILABLE");
   return anyAvailable
-    ? `Workforce integrations (${names}) only bring employees, teams, locations, shifts and clock events into Work Mode. Nothing about the phone is sent to them.`
-    : `Workforce integrations (${names}) are not available yet. When they are, they will only bring employees, teams, locations, shifts and clock events into Work Mode; nothing about the phone will be sent to them.`;
+    ? `Workforce integrations (${names}) only bring employees, teams, locations, shifts and clock events into ClockOff. Nothing about the phone is sent to them.`
+    : `Workforce integrations (${names}) are not available yet. When they are, they will only bring employees, teams, locations, shifts and clock events into ClockOff; nothing about the phone will be sent to them.`;
 }

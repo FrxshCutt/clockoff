@@ -1,4 +1,4 @@
-import { bulkShiftActionSchema } from "@workmode/validation/shifts";
+import { bulkShiftActionSchema } from "@clockoff/validation/shifts";
 import { createHandler } from "@/server/http/apiHandler";
 import { bulkShiftAction } from "@/server/shifts";
 

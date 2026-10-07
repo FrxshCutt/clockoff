@@ -1,4 +1,4 @@
-import { leaveWorkplaceSchema } from "@workmode/validation/mobile";
+import { leaveWorkplaceSchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { leaveWorkplace } from "@/server/mobileJoin";
 

@@ -1,12 +1,12 @@
-import { prisma, type ManagerOverride } from "@workmode/db";
+import { prisma, type ManagerOverride } from "@clockoff/db";
 import {
   expiredBreakSessionClosures,
   type BreakSessionClosure,
-} from "@workmode/shared/breaks/breakRules";
-import { isAppError } from "@workmode/shared/errors";
-import { resolutionWarningKey } from "@workmode/shared/policy/resolvePolicy";
-import { endOfLocalDay, startOfLocalDay } from "@workmode/shared/time/time";
-import { diffStates } from "@workmode/shared/workMode/workModeMachine";
+} from "@clockoff/shared/breaks/breakRules";
+import { isAppError } from "@clockoff/shared/errors";
+import { resolutionWarningKey } from "@clockoff/shared/policy/resolvePolicy";
+import { endOfLocalDay, startOfLocalDay } from "@clockoff/shared/time/time";
+import { diffStates } from "@clockoff/shared/workMode/workModeMachine";
 import { childLogger, errorSummary, type Logger } from "@/lib/logger";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { applyBreakClosures } from "@/server/breaks/breaks.repository";

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import type { Team } from "@workmode/validation/locationsTeams";
+import type { Team } from "@clockoff/validation/locationsTeams";
 import { MoreHorizontal, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";

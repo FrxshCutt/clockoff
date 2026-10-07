@@ -1,5 +1,5 @@
 {
-  "extends": "@workmode/config/tsconfig/nextjs.json",
+  "extends": "@clockoff/config/tsconfig/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

@@ -1,6 +1,6 @@
-import { prisma, type Prisma } from "@workmode/db";
-import type { Role } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Prisma } from "@clockoff/db";
+import type { Role } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
 import {
   MANAGER_NOTIFICATION_TYPES,
   mergeNotificationPreferences,
@@ -9,7 +9,7 @@ import {
   type MarkAllNotificationsReadResponse,
   type Notification,
   type NotificationQuery,
-} from "@workmode/validation/notifications";
+} from "@clockoff/validation/notifications";
 import { toJsonValue } from "@/server/audit/audit";
 import { publishEvent } from "@/server/events";
 import type { ManagerContext } from "@/server/tenancy/context";

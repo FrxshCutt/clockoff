@@ -1,4 +1,4 @@
-import { DEVICE_STATUS_BADGES } from "@workmode/shared/enums";
+import { DEVICE_STATUS_BADGES } from "@clockoff/shared/enums";
 import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import { PRODUCT_SECTIONS } from "@/components/marketing/marketing-content";
@@ -13,7 +13,7 @@ import { StatusBadge } from "@/components/status/status-badge";
 export const metadata: Metadata = {
   title: "Product",
   description:
-    "Work Policies, Break Rules, scheduling, CSV import and live device status: how Work Mode turns a rota into distraction-free shifts on iPhone.",
+    "Work Policies, Break Rules, scheduling, CSV import and live device status: how ClockOff turns a rota into distraction-free shifts on iPhone.",
 };
 
 export default function ProductPage() {
@@ -22,7 +22,7 @@ export default function ProductPage() {
       <PageIntro
         eyebrow="Product"
         title="A rota in, distraction-free shifts out."
-        lead="Work Mode sits between the schedule you already keep and the phones in your team's pockets. Set the rules once; every shift applies them."
+        lead="ClockOff sits between the schedule you already keep and the phones in your team's pockets. Set the rules once; every shift applies them."
       />
 
       {PRODUCT_SECTIONS.map((section, index) => (

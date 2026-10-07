@@ -1,6 +1,6 @@
 "use client";
 
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import { Eye, MoreHorizontal, Pencil, Star, StarOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";

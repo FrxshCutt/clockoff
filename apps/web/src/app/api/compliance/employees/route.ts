@@ -1,4 +1,4 @@
-import { complianceEmployeesQuerySchema } from "@workmode/validation/compliance";
+import { complianceEmployeesQuerySchema } from "@clockoff/validation/compliance";
 import { listComplianceEmployees } from "@/server/compliance/compliance.service";
 import { createHandler } from "@/server/http/apiHandler";
 

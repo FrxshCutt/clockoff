@@ -1,10 +1,10 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 import {
   clockSkewNeedsAttention,
   computeClockSkewSeconds,
-} from "@workmode/shared/breaks/breakRules";
-import type { PermissionState, SelectionState, WorkModeState } from "@workmode/shared/enums";
-import type { DeviceStateReportInput, DeviceStateResponse } from "@workmode/validation/mobile";
+} from "@clockoff/shared/breaks/breakRules";
+import type { PermissionState, SelectionState, WorkModeState } from "@clockoff/shared/enums";
+import type { DeviceStateReportInput, DeviceStateResponse } from "@clockoff/validation/mobile";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { publishEvent } from "@/server/events";
 import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";

@@ -10,18 +10,18 @@ import type {
   ShiftStatus,
   WorkModeState,
   WorkStateSource,
-} from "@workmode/shared/enums";
+} from "@clockoff/shared/enums";
 import {
   deriveDeviceStatus,
   isShiftActive,
   toExpectedWorkState,
   type DeviceStatusResult,
-} from "@workmode/shared/status/deriveDeviceStatus";
+} from "@clockoff/shared/status/deriveDeviceStatus";
 import {
   computeExpectedState,
   type ExpectedState,
   type WorkModeMachineOptions,
-} from "@workmode/shared/workMode/workModeMachine";
+} from "@clockoff/shared/workMode/workModeMachine";
 import { MINUTE_MS, ceilMinutes } from "./util";
 
 /**

@@ -1,9 +1,9 @@
 "use client";
 
-import { RESTRICTION_CATEGORY_LABELS } from "@workmode/shared/enums";
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
-import type { EmployeeDetail } from "@workmode/validation/employees";
-import type { Policy } from "@workmode/validation/policies";
+import { RESTRICTION_CATEGORY_LABELS } from "@clockoff/shared/enums";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
+import type { EmployeeDetail } from "@clockoff/validation/employees";
+import type { Policy } from "@clockoff/validation/policies";
 import { Coffee, ExternalLink, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";

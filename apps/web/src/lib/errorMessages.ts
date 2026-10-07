@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from "@workmode/shared/errors";
+import type { ApiErrorCode } from "@clockoff/shared/errors";
 import { isApiClientError, type ApiClientErrorCode, type ClientErrorCode } from "@/lib/api-client";
 
 /**
@@ -77,7 +77,7 @@ export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
 };
 
 export const CLIENT_ERROR_MESSAGES: Record<ClientErrorCode, string> = {
-  NETWORK_ERROR: "We couldn't reach Work Mode. Check your connection and try again.",
+  NETWORK_ERROR: "We couldn't reach ClockOff. Check your connection and try again.",
   INVALID_RESPONSE: "We received an unexpected response. Please try again.",
 };
 

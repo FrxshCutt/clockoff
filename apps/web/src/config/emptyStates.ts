@@ -138,7 +138,7 @@ export const EMPTY_STATES = {
   devices: {
     icon: Smartphone,
     title: "No devices connected",
-    description: "Devices appear here once employees join from the Work Mode app on their iPhone.",
+    description: "Devices appear here once employees join from the ClockOff app on their iPhone.",
     action: { label: "Go to employees", href: ROUTES.employees },
   },
   deviceDetail: {

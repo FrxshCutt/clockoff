@@ -1,4 +1,4 @@
-import type { ResolutionWarning } from "@workmode/shared/policy/resolvePolicy";
+import type { ResolutionWarning } from "@clockoff/shared/policy/resolvePolicy";
 import {
   computePolicyVersionString,
   resolveEmployeePolicies,

@@ -4,8 +4,8 @@ import {
   type Prisma,
   type ScheduledBreak,
   type Shift,
-} from "@workmode/db";
-import type { BreakSessionClosure } from "@workmode/shared/breaks/breakRules";
+} from "@clockoff/db";
+import type { BreakSessionClosure } from "@clockoff/shared/breaks/breakRules";
 
 /** Organisation-scoped break-session queries. `organisationId` always comes from a verified context. */
 

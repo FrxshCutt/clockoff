@@ -1,4 +1,4 @@
-import type { DateFormat, ShiftImportRowStatus, ShiftImportStatus } from "@workmode/shared/enums";
+import type { DateFormat, ShiftImportRowStatus, ShiftImportStatus } from "@clockoff/shared/enums";
 import {
   EMPLOYEE_IDENTIFIER_FIELDS,
   IMPORT_FIELD_INFO,
@@ -10,14 +10,14 @@ import {
   type ImportField,
   type ImportProblemCode,
   type ImportProblemSeverity,
-} from "@workmode/shared/csv/types";
-import { checkMapping, type MappingCheck } from "@workmode/shared/csv/headerMapping";
+} from "@clockoff/shared/csv/types";
+import { checkMapping, type MappingCheck } from "@clockoff/shared/csv/headerMapping";
 import {
   IMPORT_ACCEPTED_MIME_TYPES,
   type ImportRow,
   type ImportSummaryResponse,
   type ShiftImport,
-} from "@workmode/validation/imports";
+} from "@clockoff/validation/imports";
 import { z } from "zod";
 
 /**

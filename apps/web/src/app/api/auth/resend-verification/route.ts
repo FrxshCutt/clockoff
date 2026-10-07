@@ -1,4 +1,4 @@
-import { resendVerificationSchema } from "@workmode/validation/auth";
+import { resendVerificationSchema } from "@clockoff/validation/auth";
 import { resendVerification } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { RATE_LIMITS } from "@/server/rateLimit";

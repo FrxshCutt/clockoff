@@ -1,7 +1,7 @@
 "use client";
 
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
-import type { ComplianceMetrics } from "@workmode/validation/compliance";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
+import type { ComplianceMetrics } from "@clockoff/validation/compliance";
 import {
   CircleCheck,
   Clock,

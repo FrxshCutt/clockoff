@@ -1,6 +1,6 @@
-import { prisma } from "@workmode/db";
-import { JOIN_CODE_REGEX } from "@workmode/shared/joinCode";
-import type { JoinCodeResponse } from "@workmode/validation/organisation";
+import { prisma } from "@clockoff/db";
+import { JOIN_CODE_REGEX } from "@clockoff/shared/joinCode";
+import type { JoinCodeResponse } from "@clockoff/validation/organisation";
 import { describe, expect, it, vi } from "vitest";
 import { POST as regenerateRoute } from "@/app/api/organisations/current/join-code/regenerate/route";
 import { POST as revokeRoute } from "@/app/api/organisations/current/join-code/revoke/route";
@@ -22,8 +22,8 @@ const PATH = "/api/organisations/current/join-code";
  * force a collision with an existing code to exercise the P2002 retry without touching the database schema.
  */
 const { forcedDraws } = vi.hoisted(() => ({ forcedDraws: [] as string[] }));
-vi.mock("@workmode/shared/joinCode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@workmode/shared/joinCode")>();
+vi.mock("@clockoff/shared/joinCode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@clockoff/shared/joinCode")>();
   return {
     ...actual,
     generateJoinCode: (...args: Parameters<typeof actual.generateJoinCode>) =>

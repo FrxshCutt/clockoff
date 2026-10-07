@@ -1,10 +1,10 @@
-import type { Role } from "@workmode/shared/enums";
+import type { Role } from "@clockoff/shared/enums";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type {
   ComplianceEmployeeRow,
   ComplianceEmployeesResponse,
   ComplianceMetrics,
-} from "@workmode/validation/compliance";
+} from "@clockoff/validation/compliance";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";

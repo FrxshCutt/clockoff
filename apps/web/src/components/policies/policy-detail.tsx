@@ -1,6 +1,6 @@
 "use client";
 
-import type { Policy } from "@workmode/validation/policies";
+import type { Policy } from "@clockoff/validation/policies";
 import { Rocket, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

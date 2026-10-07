@@ -1,4 +1,4 @@
-import { activityQuerySchema } from "@workmode/validation/activity";
+import { activityQuerySchema } from "@clockoff/validation/activity";
 import { listActivity } from "@/server/activity/activity.service";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -18,7 +18,7 @@ import type {
  * All instants are UTC. The machine accepts `Date` or an ISO-8601 string *with* an offset (`Z` or `±hh:mm`)
  * and normalises internally; outputs always use `Date` (which `JSON.stringify` turns into ISO strings).
  *
- * Input types carry a `WorkMode` prefix because `@workmode/shared`'s barrel re-exports every module into one
+ * Input types carry a `WorkMode` prefix because `@clockoff/shared`'s barrel re-exports every module into one
  * namespace (`breaks/` already exports a narrower `BreakSessionLike`).
  */
 

@@ -1,4 +1,4 @@
-import { createPolicySchema, policyQuerySchema } from "@workmode/validation/policies";
+import { createPolicySchema, policyQuerySchema } from "@clockoff/validation/policies";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { createPolicy, listPolicies } from "@/server/policies/policies.service";
 

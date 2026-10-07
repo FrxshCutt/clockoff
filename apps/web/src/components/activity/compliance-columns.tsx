@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComplianceEmployeeRow } from "@workmode/validation/compliance";
+import type { ComplianceEmployeeRow } from "@clockoff/validation/compliance";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";

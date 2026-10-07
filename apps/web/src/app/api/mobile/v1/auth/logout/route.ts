@@ -1,4 +1,4 @@
-import { mobileLogoutSchema } from "@workmode/validation/mobile";
+import { mobileLogoutSchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { logoutDevice } from "@/server/mobileJoin";
 

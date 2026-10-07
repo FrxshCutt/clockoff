@@ -1,6 +1,6 @@
 "use client";
 
-import type { CommitImportResponse, ShiftImport } from "@workmode/validation/imports";
+import type { CommitImportResponse, ShiftImport } from "@clockoff/validation/imports";
 import { CalendarCheck, Download, FileUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

@@ -4,7 +4,7 @@ import type {
   BulkEmployeeActionInput,
   BulkEmployeeActionResponse,
   Employee,
-} from "@workmode/validation/employees";
+} from "@clockoff/validation/employees";
 import { MapPin, Power, PowerOff, Send, ShieldCheck, Users } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";

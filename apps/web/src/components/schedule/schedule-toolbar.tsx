@@ -1,6 +1,6 @@
 "use client";
 
-import type { LocalDateString } from "@workmode/shared/time/time";
+import type { LocalDateString } from "@clockoff/shared/time/time";
 import { CalendarDays, ChevronLeft, ChevronRight, EyeOff, FileUp, Globe, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

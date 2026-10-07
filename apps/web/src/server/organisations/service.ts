@@ -5,9 +5,9 @@ import {
   type Location,
   type Organisation as OrganisationRow,
   type OrganisationMembership,
-} from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import type { CreateOrganisationInput } from "@workmode/validation/auth";
+} from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import type { CreateOrganisationInput } from "@clockoff/validation/auth";
 import {
   ONBOARDING_STEP_KEYS,
   ONBOARDING_STEP_LABELS,
@@ -16,7 +16,7 @@ import {
   type OnboardingStepKey,
   type Organisation,
   type UpdateOrganisationInput,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 import { logger } from "@/lib/logger";
 import { audit } from "@/server/audit/audit";
 import type { ManagerContext } from "@/server/tenancy/context";

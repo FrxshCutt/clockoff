@@ -1,7 +1,7 @@
 /**
  * Company join codes (`WORD-####`, e.g. `BREW-4821`) for the organisations module.
  *
- * Thin adapter over the canonical generator in `@workmode/shared/joinCode` (curated word list, blocked
+ * Thin adapter over the canonical generator in `@clockoff/shared/joinCode` (curated word list, blocked
  * number list, uniform distribution). Kept as a module seam so tests can inject randomness.
  */
 import {
@@ -9,7 +9,7 @@ import {
   JOIN_CODE_WORDS,
   generateJoinCode,
   type RandomSource,
-} from "@workmode/shared/joinCode";
+} from "@clockoff/shared/joinCode";
 
 export const JOIN_CODE_PATTERN = JOIN_CODE_REGEX;
 export const JOIN_CODE_WORD_COUNT = JOIN_CODE_WORDS.length;

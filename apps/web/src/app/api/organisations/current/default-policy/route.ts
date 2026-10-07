@@ -1,4 +1,4 @@
-import { setDefaultPolicySchema } from "@workmode/validation/policies";
+import { setDefaultPolicySchema } from "@clockoff/validation/policies";
 import { createHandler } from "@/server/http/apiHandler";
 import { setDefaultPolicy } from "@/server/policies/policies.service";
 

@@ -1,7 +1,7 @@
 "use client";
 
-import type { DateFormat } from "@workmode/shared/enums";
-import type { Employee } from "@workmode/validation/employees";
+import type { DateFormat } from "@clockoff/shared/enums";
+import type { Employee } from "@clockoff/validation/employees";
 import type { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { createSelectColumn, DataTableColumnHeader } from "@/components/data-table";

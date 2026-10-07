@@ -1,6 +1,6 @@
 "use client";
 
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { BreakPolicyForm } from "./break-policy-form";
 

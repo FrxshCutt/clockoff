@@ -1,21 +1,21 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
-import { localDateOf, localToInstant } from "@workmode/shared/time/zone";
-import { listActivityResponseSchema, type ActivityEvent } from "@workmode/validation/activity";
-import { breakPolicyResponseSchema } from "@workmode/validation/breakPolicies";
+import { prisma } from "@clockoff/db";
+import { localDateOf, localToInstant } from "@clockoff/shared/time/zone";
+import { listActivityResponseSchema, type ActivityEvent } from "@clockoff/validation/activity";
+import { breakPolicyResponseSchema } from "@clockoff/validation/breakPolicies";
 import {
   complianceEmployeesResponseSchema,
   complianceSummaryResponseSchema,
   type ComplianceEmployeeRow,
-} from "@workmode/validation/compliance";
-import { deviceResponseSchema } from "@workmode/validation/devices";
+} from "@clockoff/validation/compliance";
+import { deviceResponseSchema } from "@clockoff/validation/devices";
 import {
   employeeDetailResponseSchema,
   employeeResponseSchema,
   listEmployeesResponseSchema,
   type EmployeeDetail,
-} from "@workmode/validation/employees";
-import { createEmployeeInviteResponseSchema } from "@workmode/validation/invites";
+} from "@clockoff/validation/employees";
+import { createEmployeeInviteResponseSchema } from "@clockoff/validation/invites";
 import {
   deviceEventsResponseSchema,
   deviceStateResponseSchema,
@@ -26,15 +26,15 @@ import {
   mobileTokensSchema,
   type MobileSyncResponse,
   type MobileTokens,
-} from "@workmode/validation/mobile";
+} from "@clockoff/validation/mobile";
 import {
   joinCodeResponseSchema,
   onboardingResponseSchema,
   ONBOARDING_STEP_KEYS,
   type OnboardingResponse,
-} from "@workmode/validation/organisation";
-import { policyResponseSchema } from "@workmode/validation/policies";
-import { createShiftResponseSchema } from "@workmode/validation/shifts";
+} from "@clockoff/validation/organisation";
+import { policyResponseSchema } from "@clockoff/validation/policies";
+import { createShiftResponseSchema } from "@clockoff/validation/shifts";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { GET as activityRoute } from "@/app/api/activity/route";
 import { POST as registerRoute } from "@/app/api/auth/register/route";

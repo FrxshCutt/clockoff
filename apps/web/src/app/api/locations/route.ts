@@ -1,4 +1,4 @@
-import { createLocationSchema } from "@workmode/validation/locationsTeams";
+import { createLocationSchema } from "@clockoff/validation/locationsTeams";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { createLocation, listLocations } from "@/server/locations";
 

@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { describe, expect, it } from "vitest";
 import { assertTestDatabaseName, assertTestDatabaseUrl } from "../helpers/testDatabase";
 

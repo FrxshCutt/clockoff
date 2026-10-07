@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { decryptToString } from "@/lib/crypto";
 import { childLogger, errorSummary } from "@/lib/logger";
 import { getEventBus, type EventBus, type RealtimeEvent, type Unsubscribe } from "@/server/events";
@@ -60,19 +60,19 @@ interface PushBridgeState {
 }
 
 declare global {
-  var __workmodePushBridge: PushBridgeState | undefined;
+  var __clockoffPushBridge: PushBridgeState | undefined;
 }
 
 function state(): PushBridgeState {
-  if (!globalThis.__workmodePushBridge) {
-    globalThis.__workmodePushBridge = {
+  if (!globalThis.__clockoffPushBridge) {
+    globalThis.__clockoffPushBridge = {
       bridged: new WeakMap(),
       pending: new Map(),
       inFlight: new Set(),
       delivered: 0,
     };
   }
-  return globalThis.__workmodePushBridge;
+  return globalThis.__clockoffPushBridge;
 }
 
 const log = childLogger({ module: "pushBridge" });

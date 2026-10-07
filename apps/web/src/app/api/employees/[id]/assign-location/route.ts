@@ -1,5 +1,5 @@
-import { assignEmployeeLocationSchema } from "@workmode/validation/employees";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { assignEmployeeLocationSchema } from "@clockoff/validation/employees";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { assignEmployeeLocation } from "@/server/employees";
 import { createHandler } from "@/server/http/apiHandler";
 

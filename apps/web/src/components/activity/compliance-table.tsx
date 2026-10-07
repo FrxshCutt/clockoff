@@ -1,7 +1,7 @@
 "use client";
 
-import { COMPLIANCE_FILTERS } from "@workmode/validation/compliance";
-import type { ComplianceEmployeeRow } from "@workmode/validation/compliance";
+import { COMPLIANCE_FILTERS } from "@clockoff/validation/compliance";
+import type { ComplianceEmployeeRow } from "@clockoff/validation/compliance";
 import { functionalUpdate, type OnChangeFn, type PaginationState } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";

@@ -1,4 +1,4 @@
-import type { RealtimeStreamQuery } from "@workmode/validation/realtime";
+import type { RealtimeStreamQuery } from "@clockoff/validation/realtime";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { ensureOrganisationBridged } from "./pushBridge";
 import { createOrganisationEventStream } from "./sse";

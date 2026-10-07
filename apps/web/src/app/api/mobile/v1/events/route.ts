@@ -1,4 +1,4 @@
-import { deviceEventsSchema } from "@workmode/validation/mobile";
+import { deviceEventsSchema } from "@clockoff/validation/mobile";
 import { ingestDeviceEvents } from "@/server/deviceEvents/deviceEvents.service";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -1,5 +1,5 @@
-import type { ActivationMode, IntegrationProvider } from "@workmode/shared/enums";
-import type { Integration } from "@workmode/validation/integrations";
+import type { ActivationMode, IntegrationProvider } from "@clockoff/shared/enums";
+import type { Integration } from "@clockoff/validation/integrations";
 
 /** Pure helpers behind the Integrations page: logo initials, URL segments, activation-mode copy and card state. */
 
@@ -84,7 +84,7 @@ export function websiteLabel(value: string): string {
 
 export const INTEGRATIONS_EXPLAINER = {
   title: "Keep shifts in sync automatically",
-  body: "Connect the software you already schedule in and Work Mode will import employees, locations, teams, shifts and clock events, so phones always know when a shift starts. Nothing about any phone is ever sent back to the provider.",
+  body: "Connect the software you already schedule in and ClockOff will import employees, locations, teams, shifts and clock events, so phones always know when a shift starts. Nothing about any phone is ever sent back to the provider.",
   comingSoon:
     "Every provider below is coming soon. Ask to be notified and we'll email you the moment yours is ready. In the meantime, CSV import brings in your rota in a couple of minutes.",
 } as const;

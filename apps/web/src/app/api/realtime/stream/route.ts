@@ -1,4 +1,4 @@
-import { realtimeStreamQuerySchema } from "@workmode/validation/realtime";
+import { realtimeStreamQuerySchema } from "@clockoff/validation/realtime";
 import { createHandler } from "@/server/http/apiHandler";
 import { openOrganisationStream } from "@/server/realtime/realtime.service";
 

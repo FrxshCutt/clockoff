@@ -1,9 +1,9 @@
-import { prisma } from "@workmode/db";
-import type { BreakPolicyLike } from "@workmode/shared/breaks/breakRules";
-import { AppError } from "@workmode/shared/errors";
-import type { ResolutionWarning } from "@workmode/shared/policy/resolvePolicy";
-import type { ResolvedPolicyRef } from "@workmode/validation/policies";
-import type { NamedRef } from "@workmode/validation/refs";
+import { prisma } from "@clockoff/db";
+import type { BreakPolicyLike } from "@clockoff/shared/breaks/breakRules";
+import { AppError } from "@clockoff/shared/errors";
+import type { ResolutionWarning } from "@clockoff/shared/policy/resolvePolicy";
+import type { ResolvedPolicyRef } from "@clockoff/validation/policies";
+import type { NamedRef } from "@clockoff/validation/refs";
 import { logger } from "@/lib/logger";
 import { resolveForEmployees, toResolvedPolicyRefs } from "@/server/policies";
 import {
@@ -19,7 +19,7 @@ import {
  * Policy data for a page of employees (§6.1). Resolution is delegated to the policies service
  * (`resolveForEmployees`, the batch form of `resolveEmployeePolicies`), which loads one organisation's
  * assignments and policies in a fixed number of queries and runs the pure resolver from
- * `@workmode/shared/policy`. This module adds the one thing the employee DTO needs on top: which
+ * `@clockoff/shared/policy`. This module adds the one thing the employee DTO needs on top: which
  * EMPLOYEE-scope override (if any) a manager set, independent of whether it currently wins.
  */
 

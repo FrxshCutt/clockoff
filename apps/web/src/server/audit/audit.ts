@@ -1,4 +1,4 @@
-import { prisma, type AuditLog, type Prisma } from "@workmode/db";
+import { prisma, type AuditLog, type Prisma } from "@clockoff/db";
 
 /**
  * Audit trail for manager-initiated changes (§13). `before` / `after` are JSON snapshots the caller

@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { ERROR_HTTP_STATUS, type ApiErrorCode } from "@workmode/shared/errors";
+import { ERROR_HTTP_STATUS, type ApiErrorCode } from "@clockoff/shared/errors";
 import { isoDateTimeSchema, timezoneSchema } from "../common";
 import { apiErrorResponseSchema, queryBooleanSchema } from "../primitives";
 import "./routes";
@@ -29,7 +29,7 @@ import {
  *   must ignore unknown fields so new response fields are non-breaking. Request bodies are strict.
  * - Output is deterministic: paths, methods, components and tags are emitted in a fixed order.
  *
- * Run: `pnpm --filter @workmode/validation openapi` (or `pnpm openapi` at the root).
+ * Run: `pnpm --filter @clockoff/validation openapi` (or `pnpm openapi` at the root).
  */
 
 export type JsonSchema = { [key: string]: unknown };
@@ -556,7 +556,7 @@ export function buildOpenApiDocument(
   return {
     openapi: OPENAPI_VERSION,
     info: {
-      title: "Work Mode API",
+      title: "ClockOff API",
       version: API_DOC_VERSION,
       summary: "Manager dashboard API and iOS employee app API (/api/mobile/v1).",
       description:

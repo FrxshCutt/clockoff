@@ -1,8 +1,8 @@
 {
-  "name": "workmode",
+  "name": "clockoff",
   "private": true,
   "version": "0.1.0",
-  "description": "Work Mode — B2B shift distraction-blocking platform (manager dashboard, API, iOS employee app)",
+  "description": "ClockOff — B2B shift distraction-blocking platform (manager dashboard, API, iOS employee app)",
   "packageManager": "pnpm@11.10.0",
   "engines": {
     "node": ">=22"
@@ -13,21 +13,21 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:integration": "pnpm --filter @workmode/web test:integration",
+    "test:integration": "pnpm --filter @clockoff/web test:integration",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml,css}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml,css}\" --ignore-path .prettierignore",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:generate": "pnpm --filter @workmode/db generate",
-    "db:migrate": "pnpm --filter @workmode/db migrate:dev",
-    "db:migrate:deploy": "pnpm --filter @workmode/db migrate:deploy",
-    "db:reset": "pnpm --filter @workmode/db migrate:reset",
-    "db:seed": "pnpm --filter @workmode/db seed",
-    "db:studio": "pnpm --filter @workmode/db studio",
-    "jobs": "pnpm --filter @workmode/web jobs",
-    "openapi": "pnpm --filter @workmode/validation openapi",
+    "db:generate": "pnpm --filter @clockoff/db generate",
+    "db:migrate": "pnpm --filter @clockoff/db migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @clockoff/db migrate:deploy",
+    "db:reset": "pnpm --filter @clockoff/db migrate:reset",
+    "db:seed": "pnpm --filter @clockoff/db seed",
+    "db:studio": "pnpm --filter @clockoff/db studio",
+    "jobs": "pnpm --filter @clockoff/web jobs",
+    "openapi": "pnpm --filter @clockoff/validation openapi",
     "setup:env": "node scripts/setup-env.mjs",
-    "postinstall": "pnpm --filter @workmode/db generate"
+    "postinstall": "pnpm --filter @clockoff/db generate"
   },
   "devDependencies": {
     "prettier": "3.9.9",

@@ -1,4 +1,4 @@
-import { changePasswordSchema } from "@workmode/validation/auth";
+import { changePasswordSchema } from "@clockoff/validation/auth";
 import { changePassword } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { RATE_LIMITS } from "@/server/rateLimit";

@@ -1,7 +1,7 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
-import type { DeviceStatus } from "@workmode/validation/refs";
+import type { Employee } from "@clockoff/validation/employees";
+import type { DeviceStatus } from "@clockoff/validation/refs";
 import { StatusBadge } from "@/components/status/status-badge";
 import { getStatusMeta } from "@/components/status/statusMeta";
 import { Badge } from "@/components/ui/badge";

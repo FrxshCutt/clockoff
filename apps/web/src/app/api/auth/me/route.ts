@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/server/auth/service";
 import { createHandler, json } from "@/server/http/apiHandler";
 
 /**
- * `GET /api/auth/me` → `currentUserSchema` (`@workmode/validation/auth`): the user, their
+ * `GET /api/auth/me` → `currentUserSchema` (`@clockoff/validation/auth`): the user, their
  * organisations, the selected organisation id and the CSRF token (cookie re-issued when missing).
  * Works for unverified users even when `REQUIRE_EMAIL_VERIFICATION=true`.
  */

@@ -1,4 +1,4 @@
-import { joinLookupSchema } from "@workmode/validation/mobile";
+import { joinLookupSchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { lookupJoin } from "@/server/mobileJoin";
 import { RATE_LIMITS } from "@/server/rateLimit";

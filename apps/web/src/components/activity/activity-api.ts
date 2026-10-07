@@ -4,11 +4,11 @@ import {
   listActivityResponseSchema,
   type ActivityEvent,
   type ListActivityResponse,
-} from "@workmode/validation/activity";
+} from "@clockoff/validation/activity";
 import {
   listAuditLogsResponseSchema,
   type ListAuditLogsResponse,
-} from "@workmode/validation/auditLogs";
+} from "@clockoff/validation/auditLogs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { parseResponse } from "@/hooks/api-shapes";
 import { api, type QueryParams } from "@/lib/api-client";

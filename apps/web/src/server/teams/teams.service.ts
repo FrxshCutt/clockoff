@@ -1,5 +1,5 @@
-import { prisma, type Prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { prisma, type Prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import type {
   AddTeamMembersInput,
   CreateTeamInput,
@@ -7,7 +7,7 @@ import type {
   Team,
   TeamQuery,
   UpdateTeamInput,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import { audit } from "@/server/audit/audit";
 import { findLocationInOrganisation } from "@/server/locations/locations.repository";
 import {

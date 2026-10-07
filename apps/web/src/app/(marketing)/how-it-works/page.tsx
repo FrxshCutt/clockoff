@@ -13,13 +13,13 @@ import { Badge } from "@/components/ui/badge";
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "From publishing a Work Policy to the shift ending: how Work Mode connects a phone, follows the schedule, shields distractions, relaxes for breaks and lifts again.",
+    "From publishing a Work Policy to the shift ending: how ClockOff connects a phone, follows the schedule, shields distractions, relaxes for breaks and lifts again.",
 };
 
 const ACTOR_TONE: Record<(typeof FLOW)[number]["actor"], string> = {
   Manager: "bg-primary/10 text-primary",
   Employee: "bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
-  "Work Mode": "bg-muted text-muted-foreground",
+  ClockOff: "bg-muted text-muted-foreground",
 };
 
 export default function HowItWorksPage() {

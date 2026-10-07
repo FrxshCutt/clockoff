@@ -1,4 +1,4 @@
-import { mobileSyncQuerySchema } from "@workmode/validation/mobile";
+import { mobileSyncQuerySchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { getSyncBundle } from "@/server/sync/sync.service";
 

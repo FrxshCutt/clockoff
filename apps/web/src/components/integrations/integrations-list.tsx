@@ -1,6 +1,6 @@
 "use client";
 
-import { ACTIVATION_MODES } from "@workmode/shared/enums";
+import { ACTIVATION_MODES } from "@clockoff/shared/enums";
 import { FileUp } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";

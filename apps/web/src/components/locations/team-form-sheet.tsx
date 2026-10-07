@@ -1,6 +1,6 @@
 "use client";
 
-import type { Team } from "@workmode/validation/locationsTeams";
+import type { Team } from "@clockoff/validation/locationsTeams";
 import { toast } from "sonner";
 import { ReferenceSelectField } from "@/components/employees/reference-select";
 import {

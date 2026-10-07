@@ -1,10 +1,10 @@
-import { prisma } from "@workmode/db";
-import { AppError, isAppError } from "@workmode/shared/errors";
+import { prisma } from "@clockoff/db";
+import { AppError, isAppError } from "@clockoff/shared/errors";
 import {
   isValidJoinCodeFormat,
   normaliseInviteCode,
   normaliseJoinCode,
-} from "@workmode/shared/joinCode";
+} from "@clockoff/shared/joinCode";
 import type {
   JoinConfirmInput,
   JoinConfirmResponse,
@@ -14,8 +14,8 @@ import type {
   MobileRefreshInput,
   MobileRefreshResponse,
   MobileTokens,
-} from "@workmode/validation/mobile";
-import type { OkResponse } from "@workmode/validation/primitives";
+} from "@clockoff/validation/mobile";
+import type { OkResponse } from "@clockoff/validation/primitives";
 import { hashToken } from "@/lib/tokens";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";

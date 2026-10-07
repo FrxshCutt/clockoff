@@ -37,7 +37,7 @@ import { getErrorMessage, getFieldErrors } from "@/lib/errorMessages";
 import { cn } from "@/lib/utils";
 
 /**
- * react-hook-form + Zod wrappers. Forms validate with the shared `@workmode/validation` schemas on the client
+ * react-hook-form + Zod wrappers. Forms validate with the shared `@clockoff/validation` schemas on the client
  * and map the API's `VALIDATION_ERROR` field errors back onto the same fields.
  *
  * ```tsx

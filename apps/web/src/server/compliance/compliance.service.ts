@@ -1,5 +1,5 @@
-import type { DeviceStatusBadge, InviteStatus } from "@workmode/shared/enums";
-import { isShiftActive } from "@workmode/shared/status/deriveDeviceStatus";
+import type { DeviceStatusBadge, InviteStatus } from "@clockoff/shared/enums";
+import { isShiftActive } from "@clockoff/shared/status/deriveDeviceStatus";
 import type {
   ComplianceEmployeeRow,
   ComplianceEmployeesQuery,
@@ -8,8 +8,8 @@ import type {
   ComplianceMetrics,
   ComplianceSummaryResponse,
   UpcomingShift,
-} from "@workmode/validation/compliance";
-import type { DeviceStatus, ShiftSummary } from "@workmode/validation/refs";
+} from "@clockoff/validation/compliance";
+import type { DeviceStatus, ShiftSummary } from "@clockoff/validation/refs";
 import { toEmployeeSummary } from "@/server/employees/employees.mappers";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {

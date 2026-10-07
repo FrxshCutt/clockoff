@@ -1,7 +1,7 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
-import type { InviteInstructions } from "@workmode/validation/invites";
+import type { Employee } from "@clockoff/validation/employees";
+import type { InviteInstructions } from "@clockoff/validation/invites";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";

@@ -1,4 +1,4 @@
-import { createOverrideSchema, overrideQuerySchema } from "@workmode/validation/overrides";
+import { createOverrideSchema, overrideQuerySchema } from "@clockoff/validation/overrides";
 import { createHandler, json } from "@/server/http/apiHandler";
 import { createOverride, listOverrides } from "@/server/overrides/overrides.service";
 

@@ -1,4 +1,4 @@
-import { requestDemoSchema } from "@workmode/validation/organisation";
+import { requestDemoSchema } from "@clockoff/validation/organisation";
 import { z } from "zod";
 
 /**

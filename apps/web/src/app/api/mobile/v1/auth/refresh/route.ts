@@ -1,4 +1,4 @@
-import { mobileRefreshSchema } from "@workmode/validation/mobile";
+import { mobileRefreshSchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { refreshMobileTokens } from "@/server/mobileJoin";
 import { RATE_LIMITS } from "@/server/rateLimit";

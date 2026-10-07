@@ -1,4 +1,4 @@
-import { MANAGER_NOTIFICATION_TYPES } from "@workmode/validation/notifications";
+import { MANAGER_NOTIFICATION_TYPES } from "@clockoff/validation/notifications";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SETTINGS_TAB,

@@ -49,11 +49,11 @@ export function verificationEmail(input: { name: string; token: string }): Email
   const link = buildAppLink(EMAIL_LINK_PATHS.verifyEmail, { token: input.token });
   const lines = [
     `Hi ${input.name},`,
-    "Confirm your email address to finish setting up your Work Mode account.",
+    "Confirm your email address to finish setting up your ClockOff account.",
     "This link is valid for 24 hours.",
   ];
   return {
-    subject: "Confirm your Work Mode email",
+    subject: "Confirm your ClockOff email",
     text: [
       ...lines,
       "",
@@ -69,11 +69,11 @@ export function passwordResetEmail(input: { name: string; token: string }): Emai
   const link = buildAppLink(EMAIL_LINK_PATHS.resetPassword, { token: input.token });
   const lines = [
     `Hi ${input.name},`,
-    "Someone requested a password reset for your Work Mode account.",
+    "Someone requested a password reset for your ClockOff account.",
     "This link is valid for 1 hour and can be used once.",
   ];
   return {
-    subject: "Reset your Work Mode password",
+    subject: "Reset your ClockOff password",
     text: [
       ...lines,
       "",
@@ -93,15 +93,15 @@ export function managerInviteEmail(input: {
 }): EmailContent {
   const link = buildAppLink(EMAIL_LINK_PATHS.acceptInvite, { token: input.token });
   const intro = input.inviterName
-    ? `${input.inviterName} has invited you to manage ${input.organisationName} on Work Mode`
-    : `You have been invited to manage ${input.organisationName} on Work Mode`;
+    ? `${input.inviterName} has invited you to manage ${input.organisationName} on ClockOff`
+    : `You have been invited to manage ${input.organisationName} on ClockOff`;
   const lines = [
     `${intro} as ${articleFor(input.role)} ${input.role.toLowerCase()}.`,
-    "Work Mode helps teams keep phones distraction-free during shifts without monitoring employees.",
+    "ClockOff helps teams keep phones distraction-free during shifts without monitoring employees.",
     "This invitation is valid for 7 days.",
   ];
   return {
-    subject: `You're invited to ${input.organisationName} on Work Mode`,
+    subject: `You're invited to ${input.organisationName} on ClockOff`,
     text: [...lines, "", link].join("\n"),
     html: wrapHtml(`Join ${input.organisationName}`, lines, {
       href: link,
@@ -120,12 +120,12 @@ export function accountExistsEmail(input: { name: string }): EmailContent {
   const forgot = buildAppLink(EMAIL_LINK_PATHS.forgotPassword, {});
   const lines = [
     `Hi ${input.name},`,
-    "Someone tried to create a Work Mode account with this email address, but you already have one.",
+    "Someone tried to create a ClockOff account with this email address, but you already have one.",
     `If it was you, sign in instead. Forgotten your password? Reset it at ${forgot}`,
     "If it was not you, you can ignore this email: nothing about your account has changed.",
   ];
   return {
-    subject: "You already have a Work Mode account",
+    subject: "You already have a ClockOff account",
     text: [...lines, "", login].join("\n"),
     html: wrapHtml("You already have an account", lines, { href: login, label: "Sign in" }),
   };

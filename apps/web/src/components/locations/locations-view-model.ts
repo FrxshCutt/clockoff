@@ -1,7 +1,7 @@
-import { PLANS, type AssignmentScopeType, type Plan } from "@workmode/shared/enums";
-import { PLAN_CONFIG } from "@workmode/shared/plans";
-import { isValidTimeZone } from "@workmode/shared/time/time";
-import type { BreakPolicy } from "@workmode/validation/breakPolicies";
+import { PLANS, type AssignmentScopeType, type Plan } from "@clockoff/shared/enums";
+import { PLAN_CONFIG } from "@clockoff/shared/plans";
+import { isValidTimeZone } from "@clockoff/shared/time/time";
+import type { BreakPolicy } from "@clockoff/validation/breakPolicies";
 import type {
   CreateTeamInput,
   Department,
@@ -11,8 +11,8 @@ import type {
   UpdateTeamInput,
   createLocationSchema,
   updateLocationSchema,
-} from "@workmode/validation/locationsTeams";
-import type { Policy } from "@workmode/validation/policies";
+} from "@clockoff/validation/locationsTeams";
+import type { Policy } from "@clockoff/validation/policies";
 import { z } from "zod";
 import { isApiClientError } from "@/lib/api-client";
 import { formatCount, formatTimeZoneLabel } from "@/lib/format";

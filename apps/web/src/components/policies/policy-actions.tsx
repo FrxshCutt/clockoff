@@ -1,6 +1,6 @@
 "use client";
 
-import type { Policy } from "@workmode/validation/policies";
+import type { Policy } from "@clockoff/validation/policies";
 import { Archive, Copy, MoreHorizontal, Pencil, Star, StarOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useId, useState } from "react";

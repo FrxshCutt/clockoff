@@ -1,4 +1,4 @@
-import { loginSchema } from "@workmode/validation/auth";
+import { loginSchema } from "@clockoff/validation/auth";
 import { SESSION_COOKIE } from "@/lib/cookies";
 import { getCookie } from "@/lib/request";
 import { loginManager } from "@/server/auth/service";

@@ -1,4 +1,4 @@
-import { prisma, type Prisma, type Session, type User } from "@workmode/db";
+import { prisma, type Prisma, type Session, type User } from "@clockoff/db";
 import { env } from "@/lib/env";
 import { generateToken, hashToken, DAY_MS, MINUTE_MS } from "@/lib/tokens";
 

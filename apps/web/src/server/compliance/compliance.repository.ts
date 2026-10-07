@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /** Organisation-scoped reads for the compliance dashboard. `organisationId` always comes from `ctx`. */
 

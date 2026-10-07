@@ -1,4 +1,4 @@
-import { Prisma, prisma, type ActivityEvent, type BreakSession } from "@workmode/db";
+import { Prisma, prisma, type ActivityEvent, type BreakSession } from "@clockoff/db";
 import {
   breakRefusalToAppError,
   breakStartInstant,
@@ -12,15 +12,15 @@ import {
   type BreakRefusalCode,
   type BreakSessionClosure,
   type BreakTrigger,
-} from "@workmode/shared/breaks/breakRules";
-import type { ActorType, BreakEndReason } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
-import { BREAK_POLICY_DEFAULTS } from "@workmode/validation/breakPolicies";
+} from "@clockoff/shared/breaks/breakRules";
+import type { ActorType, BreakEndReason } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
+import { BREAK_POLICY_DEFAULTS } from "@clockoff/validation/breakPolicies";
 import type {
   MobileBreakResponse,
   MobileEndBreakInput,
   MobileStartBreakInput,
-} from "@workmode/validation/mobile";
+} from "@clockoff/validation/mobile";
 import { toBreakAllowanceDto, toBreakSessionDto } from "@/server/sync/mobileMappers";
 import type { DeviceContext } from "@/server/tenancy/context";
 import { updateDevice } from "@/server/sync/sync.repository";
@@ -42,7 +42,7 @@ import {
 } from "./breaks.repository";
 
 /**
- * Break sessions (§6.3). The rules are the pure functions in @workmode/shared/breaks; this service owns the
+ * Break sessions (§6.3). The rules are the pure functions in @clockoff/shared/breaks; this service owns the
  * transaction: per-shift lock → idempotency → close expired rows → validate at the server-clock start
  * instant → insert → allowance. See docs/BREAK_RULES.md ("Starting a break through the API").
  */

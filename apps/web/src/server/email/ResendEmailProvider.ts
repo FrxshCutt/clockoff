@@ -13,7 +13,7 @@ export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 export interface ResendConfig {
   /** `RESEND_API_KEY`. Required: construction fails without it (surrounding whitespace is trimmed). */
   apiKey: string | undefined;
-  /** `EMAIL_FROM`, e.g. `Work Mode <noreply@clockoff.online>`. Its domain must be verified in Resend. */
+  /** `EMAIL_FROM`, e.g. `ClockOff <noreply@clockoff.online>`. Its domain must be verified in Resend. */
   from: string;
   /** Defaults to the global `fetch` (looked up per send, so `vi.stubGlobal("fetch", …)` also works). */
   fetch?: FetchLike;
@@ -116,7 +116,7 @@ export class ResendEmailProvider implements EmailProvider {
         headers: {
           Authorization: `Bearer ${this.#apiKey}`,
           "Content-Type": "application/json",
-          "User-Agent": "workmode-web",
+          "User-Agent": "clockoff-web",
         },
         body: JSON.stringify(body),
         // A redirect is never a valid answer from this endpoint. Following one would turn the POST into

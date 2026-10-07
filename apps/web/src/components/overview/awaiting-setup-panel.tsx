@@ -1,9 +1,9 @@
 "use client";
 
-import type { StatusTone } from "@workmode/shared/status/statusMeta";
-import type { ComplianceEmployeeRow } from "@workmode/validation/compliance";
-import { employeeDetailResponseSchema, type EmployeeDetail } from "@workmode/validation/employees";
-import { inviteInstructionsResponseSchema } from "@workmode/validation/invites";
+import type { StatusTone } from "@clockoff/shared/status/statusMeta";
+import type { ComplianceEmployeeRow } from "@clockoff/validation/compliance";
+import { employeeDetailResponseSchema, type EmployeeDetail } from "@clockoff/validation/employees";
+import { inviteInstructionsResponseSchema } from "@clockoff/validation/invites";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowUpRight, CircleCheck, Copy, LoaderCircle, Send } from "lucide-react";
 import Link from "next/link";

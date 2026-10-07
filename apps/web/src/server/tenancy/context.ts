@@ -7,9 +7,9 @@ import {
   type OrganisationMembership,
   type Session,
   type User,
-} from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import { permissionsForRole, type Permission } from "@workmode/shared/permissions";
+} from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import { permissionsForRole, type Permission } from "@clockoff/shared/permissions";
 import { ORG_COOKIE, SESSION_COOKIE } from "@/lib/cookies";
 import { env } from "@/lib/env";
 import { getBearerToken, getClientIp, getCookie, getRequestId, getUserAgent } from "@/lib/request";

@@ -1,12 +1,12 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import type { z } from "zod";
-import { computeBreakAllowance } from "@workmode/shared/breaks/breakRules";
-import type { BreakAllowance } from "@workmode/shared/breaks/breakTypes";
+import { computeBreakAllowance } from "@clockoff/shared/breaks/breakRules";
+import type { BreakAllowance } from "@clockoff/shared/breaks/breakTypes";
 import {
   computeExpectedState,
   toExpectedStateJson,
-} from "@workmode/shared/workMode/computeExpectedState";
-import type { ExpectedStateJson } from "@workmode/shared/workMode/types";
+} from "@clockoff/shared/workMode/computeExpectedState";
+import type { ExpectedStateJson } from "@clockoff/shared/workMode/types";
 import { BREAK_POLICY_DEFAULTS } from "./breakPolicies";
 import { mobileSyncResponseSchema } from "./mobile";
 import { breakAllowanceSchema, expectedStateSchema } from "./workState";

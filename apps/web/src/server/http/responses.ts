@@ -1,4 +1,4 @@
-import type { AppError, ApiErrorBody } from "@workmode/shared/errors";
+import type { AppError, ApiErrorBody } from "@clockoff/shared/errors";
 import { appendSetCookies } from "@/lib/cookies";
 import { REQUEST_ID_HEADER } from "@/lib/request";
 

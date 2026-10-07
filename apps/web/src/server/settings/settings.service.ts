@@ -1,19 +1,19 @@
-import { prisma, type Prisma } from "@workmode/db";
-import { PLANS } from "@workmode/shared/enums";
-import { AppError } from "@workmode/shared/errors";
-import { PLAN_CONFIG, planLimitsFor } from "@workmode/shared/plans";
+import { prisma, type Prisma } from "@clockoff/db";
+import { PLANS } from "@clockoff/shared/enums";
+import { AppError } from "@clockoff/shared/errors";
+import { PLAN_CONFIG, planLimitsFor } from "@clockoff/shared/plans";
 import {
   mergeNotificationPreferences,
   type NotificationPreferences,
   type UpdateNotificationPreferencesInput,
-} from "@workmode/validation/notifications";
-import type { Organisation } from "@workmode/validation/organisation";
+} from "@clockoff/validation/notifications";
+import type { Organisation } from "@clockoff/validation/organisation";
 import type {
   BillingResponse,
   PlanCatalogEntry,
   SettingsResponse,
   UpdateSettingsInput,
-} from "@workmode/validation/settings";
+} from "@clockoff/validation/settings";
 import { audit, toJsonValue } from "@/server/audit/audit";
 import { toOrganisationDto, updateCurrentOrganisation } from "@/server/organisations";
 import { requirePermission, type ManagerContext } from "@/server/tenancy/context";

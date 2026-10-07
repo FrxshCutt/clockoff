@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScopeAssignment } from "@workmode/validation/locationsTeams";
+import type { ScopeAssignment } from "@clockoff/validation/locationsTeams";
 import { Check, ChevronsUpDown, LoaderCircle, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

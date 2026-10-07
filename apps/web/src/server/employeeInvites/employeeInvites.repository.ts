@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /** Employee-invite queries, always scoped by `organisationId` (from the verified membership). */
 

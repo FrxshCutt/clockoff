@@ -141,7 +141,7 @@ export const ERROR_HTTP_STATUS: Record<ApiErrorCode, number> = {
 
 /**
  * Thrown by services; converted to the HTTP envelope by the API handler wrapper. Framework-free so it
- * can be used from @workmode/shared pure functions (e.g. break rules) as well.
+ * can be used from @clockoff/shared pure functions (e.g. break rules) as well.
  */
 export class AppError extends Error {
   readonly code: ApiErrorCode;

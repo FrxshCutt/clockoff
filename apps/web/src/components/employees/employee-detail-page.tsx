@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import { KeyRound, Pencil, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

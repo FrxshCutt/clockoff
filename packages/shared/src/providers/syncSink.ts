@@ -4,7 +4,7 @@ import type { ClockEventType } from "../enums";
  * How a provider writes what it fetched (§6.6). Providers never touch the database: the integration service
  * hands them a `WorkforceSyncSink` (via `ProviderContext.sink`) whose implementation goes through the normal
  * services — the shifts service validates, versions and publishes shift changes exactly as for manual or CSV
- * shifts. Records are already mapped to Work Mode's vocabulary and carry UTC instants.
+ * shifts. Records are already mapped to ClockOff's vocabulary and carry UTC instants.
  *
  * Every write is an idempotent upsert keyed by the provider's id, so re-running a sync is safe. Providers pass
  * their raw ids; the sink namespaces employee and shift ids as `<PROVIDER>:<id>` before storing them, because

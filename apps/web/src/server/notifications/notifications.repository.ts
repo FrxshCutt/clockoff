@@ -1,4 +1,4 @@
-import { prisma, type Notification, type Prisma, type Role } from "@workmode/db";
+import { prisma, type Notification, type Prisma, type Role } from "@clockoff/db";
 import { beforeCursorWhere, type KeysetCursor } from "./cursor";
 
 /**

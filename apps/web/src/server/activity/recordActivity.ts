@@ -1,5 +1,5 @@
-import { Prisma, prisma, type ActivityEvent } from "@workmode/db";
-import type { ActivityEventType, ActorType } from "@workmode/shared/enums";
+import { Prisma, prisma, type ActivityEvent } from "@clockoff/db";
+import type { ActivityEventType, ActorType } from "@clockoff/shared/enums";
 import { publishEvent } from "@/server/events";
 
 /**

@@ -20,7 +20,7 @@ import { SITE } from "@/config/site";
 export const metadata: Metadata = {
   title: "Privacy",
   description:
-    "What an employer can and cannot see with Work Mode, how the iPhone app uses Apple Screen Time, and the exact fields a phone sends to the server.",
+    "What an employer can and cannot see with ClockOff, how the iPhone app uses Apple Screen Time, and the exact fields a phone sends to the server.",
 };
 
 const SECTIONS = [
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
       <PageIntro
         eyebrow="Privacy"
         title="Block distractions. Don't monitor employees."
-        lead="Work Mode exists to make shift work less distracting, not to watch people. The employer sees operational status only. This page is the authoritative statement of what that means; the same definitions drive the dashboard, the employee app and the mobile API."
+        lead="ClockOff exists to make shift work less distracting, not to watch people. The employer sees operational status only. This page is the authoritative statement of what that means; the same definitions drive the dashboard, the employee app and the mobile API."
       >
         <nav aria-label="On this page">
           <ul className="flex flex-wrap gap-2">

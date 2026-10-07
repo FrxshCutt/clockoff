@@ -1,6 +1,6 @@
 "use client";
 
-import type { Shift } from "@workmode/validation/shifts";
+import type { Shift } from "@clockoff/validation/shifts";
 import { Coffee, MapPin, MoonStar, Repeat, TriangleAlert } from "lucide-react";
 import type { CSSProperties, DragEvent, KeyboardEvent } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

@@ -1,6 +1,6 @@
 "use client";
 
-import { forgotPasswordSchema } from "@workmode/validation/auth";
+import { forgotPasswordSchema } from "@clockoff/validation/auth";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

@@ -1,5 +1,5 @@
-import { localDateSchema, localTimeSchema } from "@workmode/validation/primitives";
-import { createShiftSchema, type CreateShiftByLocalTimeInput } from "@workmode/validation/shifts";
+import { localDateSchema, localTimeSchema } from "@clockoff/validation/primitives";
+import { createShiftSchema, type CreateShiftByLocalTimeInput } from "@clockoff/validation/shifts";
 import { z } from "zod";
 
 /**

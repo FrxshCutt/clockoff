@@ -1,7 +1,7 @@
-import { Prisma, prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import { generateJoinCode } from "@workmode/shared/joinCode";
-import type { JoinCode, JoinCodeResponse } from "@workmode/validation/organisation";
+import { Prisma, prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import { generateJoinCode } from "@clockoff/shared/joinCode";
+import type { JoinCode, JoinCodeResponse } from "@clockoff/validation/organisation";
 import { audit } from "@/server/audit/audit";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {

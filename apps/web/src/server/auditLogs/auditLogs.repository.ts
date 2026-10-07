@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 import { beforeCursorWhere, type KeysetCursor } from "@/server/notifications/cursor";
 
 /** Audit log rows with the acting manager joined, scoped by the verified organisation id. */

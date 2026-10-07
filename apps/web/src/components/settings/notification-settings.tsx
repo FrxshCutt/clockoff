@@ -5,7 +5,7 @@ import {
   NOTIFICATION_PREFERENCE_DEFAULTS,
   type ManagerNotificationType,
   type NotificationPreferences,
-} from "@workmode/validation/notifications";
+} from "@clockoff/validation/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/error-state";

@@ -1,5 +1,5 @@
-import { employeeActivityQuerySchema } from "@workmode/validation/activity";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { employeeActivityQuerySchema } from "@clockoff/validation/activity";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { listEmployeeActivity } from "@/server/employees";
 import { createHandler } from "@/server/http/apiHandler";
 

@@ -1,4 +1,4 @@
-import type { Policy } from "@workmode/validation/policies";
+import type { Policy } from "@clockoff/validation/policies";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DetailHeaderSkeleton } from "./detail-header-skeleton";

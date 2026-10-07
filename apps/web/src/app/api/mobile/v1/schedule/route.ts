@@ -1,4 +1,4 @@
-import { mobileScheduleQuerySchema } from "@workmode/validation/mobile";
+import { mobileScheduleQuerySchema } from "@clockoff/validation/mobile";
 import { createHandler } from "@/server/http/apiHandler";
 import { getSchedule } from "@/server/sync/sync.service";
 

@@ -4,7 +4,7 @@ import type {
   OrganisationMembership,
   Prisma,
   User,
-} from "@workmode/db";
+} from "@clockoff/db";
 import {
   ORGANISATION_SETTINGS_DEFAULTS,
   organisationSettingsSchema,
@@ -12,7 +12,7 @@ import {
   type Member,
   type Organisation,
   type OrganisationSettings,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 
 /**
  * Row → API DTO mappers for organisations, members and manager invites. Instants are emitted as UTC

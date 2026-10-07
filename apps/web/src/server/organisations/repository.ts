@@ -1,4 +1,4 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 
 /**
  * Organisation-scoped queries. Every function takes the `organisationId` explicitly (it always comes

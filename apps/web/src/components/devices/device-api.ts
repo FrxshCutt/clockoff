@@ -5,7 +5,7 @@ import {
   listDevicesResponseSchema,
   type DeviceWithEmployee,
   type ListDevicesResponse,
-} from "@workmode/validation/devices";
+} from "@clockoff/validation/devices";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { employeeKeys } from "@/components/employees/employee-keys";
 import { complianceKeys } from "@/components/overview/compliance-keys";

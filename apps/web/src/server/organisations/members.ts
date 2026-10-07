@@ -1,6 +1,6 @@
-import { Prisma, prisma, type Role, type User } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
-import { outranksOrEquals } from "@workmode/shared/permissions";
+import { Prisma, prisma, type Role, type User } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
+import { outranksOrEquals } from "@clockoff/shared/permissions";
 import type {
   AcceptManagerInviteResponse,
   InviteMemberInput,
@@ -8,7 +8,7 @@ import type {
   ManagerInvite,
   ManagerInvitePreviewResponse,
   Member,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 import { logger } from "@/lib/logger";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { MANAGER_INVITE_TTL_MS, expiresIn, generateToken, hashToken } from "@/lib/tokens";

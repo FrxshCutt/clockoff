@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { POST as changePasswordRoute } from "@/app/api/auth/change-password/route";
@@ -142,7 +142,7 @@ describe("register → verify email → login → me", () => {
 
     // The owner is told, with sign-in / reset links and no token.
     const notice = testEmails().last(user.email);
-    expect(notice?.subject).toBe("You already have a Work Mode account");
+    expect(notice?.subject).toBe("You already have a ClockOff account");
     expect(notice?.text).toContain("/forgot-password");
     expect(notice?.text).not.toContain("token=");
   });

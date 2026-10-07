@@ -1,6 +1,6 @@
 "use client";
 
-import type { Employee } from "@workmode/validation/employees";
+import type { Employee } from "@clockoff/validation/employees";
 import { Check, ChevronsUpDown, LoaderCircle, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { StatusBadge } from "@/components/status/status-badge";

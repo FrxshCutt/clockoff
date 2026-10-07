@@ -1,4 +1,4 @@
-import { bulkEmployeeActionSchema } from "@workmode/validation/employees";
+import { bulkEmployeeActionSchema } from "@clockoff/validation/employees";
 import { bulkEmployeeAction } from "@/server/employees";
 import { createHandler } from "@/server/http/apiHandler";
 

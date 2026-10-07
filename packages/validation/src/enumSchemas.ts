@@ -36,9 +36,9 @@ import {
   SHIFT_STATUSES,
   WORK_MODE_STATES,
   WORK_STATE_SOURCES,
-} from "@workmode/shared/enums";
-import { API_ERROR_CODES } from "@workmode/shared/errors";
-import { PERMISSIONS } from "@workmode/shared/permissions";
+} from "@clockoff/shared/enums";
+import { API_ERROR_CODES } from "@clockoff/shared/errors";
+import { PERMISSIONS } from "@clockoff/shared/permissions";
 
 /**
  * Zod schemas for every domain enum. Each carries a `meta.id` so the OpenAPI generator emits one named

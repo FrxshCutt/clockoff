@@ -1,6 +1,6 @@
 "use client";
 
-import { PRIVACY_PRINCIPLE } from "@workmode/shared/privacyStatements";
+import { PRIVACY_PRINCIPLE } from "@clockoff/shared/privacyStatements";
 import { Power, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
@@ -234,7 +234,7 @@ export function DeviceDetail({ id }: { id: string }) {
           <InlineAlert variant="warning" title="This device is deactivated">
             Deactivated{" "}
             <RelativeTime value={device.deactivatedAt} fallback="earlier" timeZone={timeZone} />. It
-            no longer syncs; the employee must join again from the Work Mode app to reconnect.
+            no longer syncs; the employee must join again from the ClockOff app to reconnect.
           </InlineAlert>
         ) : null}
 
@@ -381,7 +381,7 @@ export function DeviceDetail({ id }: { id: string }) {
         </div>
 
         <InlineAlert variant="info" title={PRIVACY_PRINCIPLE}>
-          This page shows operational signals only. Work Mode never receives which apps the employee
+          This page shows operational signals only. ClockOff never receives which apps the employee
           selected, their messages, photos, browsing, notifications, location or anything else on
           the phone.
         </InlineAlert>

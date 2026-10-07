@@ -1,11 +1,11 @@
-import { Prisma, prisma } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import { Prisma, prisma } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 import type {
   CreateDepartmentInput,
   Department,
   ListDepartmentsResponse,
   UpdateDepartmentInput,
-} from "@workmode/validation/locationsTeams";
+} from "@clockoff/validation/locationsTeams";
 import { audit } from "@/server/audit/audit";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {

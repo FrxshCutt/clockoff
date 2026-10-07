@@ -93,12 +93,12 @@ describe("parseEnv", () => {
       APP_URL: "https://app.clockoff.online",
       EMAIL_PROVIDER: "resend",
       RESEND_API_KEY: "re_test_key_123",
-      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+      EMAIL_FROM: "ClockOff <noreply@clockoff.online>",
     });
     expect(env).toMatchObject({
       EMAIL_PROVIDER: "resend",
       RESEND_API_KEY: "re_test_key_123",
-      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+      EMAIL_FROM: "ClockOff <noreply@clockoff.online>",
     });
     expect(warnings).toEqual([]);
     expect(parseEnv(VALID).env.RESEND_API_KEY).toBeUndefined();
@@ -111,7 +111,7 @@ describe("parseEnv", () => {
       NODE_ENV: "production",
       APP_URL: "https://app.clockoff.online",
       EMAIL_PROVIDER: "resend",
-      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+      EMAIL_FROM: "ClockOff <noreply@clockoff.online>",
     };
     expect(() => parseEnv(prod)).toThrow(
       /RESEND_API_KEY is required when EMAIL_PROVIDER=resend in production/,
@@ -124,7 +124,7 @@ describe("parseEnv", () => {
       ...VALID,
       NODE_ENV: "development",
       EMAIL_PROVIDER: "resend",
-      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+      EMAIL_FROM: "ClockOff <noreply@clockoff.online>",
     });
     expect(dev.env.EMAIL_PROVIDER).toBe("resend");
     expect(dev.warnings).toEqual([
@@ -140,7 +140,7 @@ describe("parseEnv", () => {
       APP_URL: "https://app.clockoff.online",
       EMAIL_PROVIDER: "resend",
       RESEND_API_KEY: key,
-      EMAIL_FROM: "Work Mode <noreply@clockoff.online>",
+      EMAIL_FROM: "ClockOff <noreply@clockoff.online>",
     };
     let message = "";
     try {
@@ -171,18 +171,18 @@ describe("parseEnv", () => {
       /EMAIL_FROM must use a domain verified in Resend.* in production/,
     );
     for (const from of [
-      "Work Mode <noreply@workmode.LOCAL>",
+      "ClockOff <noreply@clockoff.LOCAL>",
       "noreply@mail.example",
-      "Work Mode <noreply@app.test>",
+      "ClockOff <noreply@app.test>",
       "x@localhost.invalid",
     ]) {
       expect(() => parseEnv({ ...prod, EMAIL_FROM: from }), from).toThrow(/verified in Resend/);
     }
     for (const from of [
       "noreply",
-      "Work Mode",
-      "Work Mode <noreply>",
-      "Work Mode <noreply@clockoff.online",
+      "ClockOff",
+      "ClockOff <noreply>",
+      "ClockOff <noreply@clockoff.online",
       "noreply@localhost",
     ]) {
       expect(() => parseEnv({ ...prod, EMAIL_FROM: from }), from).toThrow(
@@ -191,9 +191,9 @@ describe("parseEnv", () => {
     }
     for (const from of [
       "noreply@clockoff.online",
-      "Work Mode <noreply@clockoff.online>",
-      '"Work Mode" <noreply@clockoff.online>',
-      "  Work Mode <noreply@mail.clockoff.online>  ",
+      "ClockOff <noreply@clockoff.online>",
+      '"ClockOff" <noreply@clockoff.online>',
+      "  ClockOff <noreply@mail.clockoff.online>  ",
       "Testing <onboarding@resend.dev>",
     ]) {
       expect(parseEnv({ ...prod, EMAIL_FROM: from }).warnings, from).toEqual([]);

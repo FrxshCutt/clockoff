@@ -1,5 +1,5 @@
-import type { ActivityEvent } from "@workmode/validation/activity";
-import type { EmployeeDetail, EmployeeStateResponse } from "@workmode/validation/employees";
+import type { ActivityEvent } from "@clockoff/validation/activity";
+import type { EmployeeDetail, EmployeeStateResponse } from "@clockoff/validation/employees";
 import { describe, expect, it } from "vitest";
 import {
   buildSetupChecklist,

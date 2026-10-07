@@ -5,7 +5,7 @@ import {
   complianceSummaryResponseSchema,
   type ComplianceEmployeesResponse,
   type ComplianceSummaryResponse,
-} from "@workmode/validation/compliance";
+} from "@clockoff/validation/compliance";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toComplianceApiQuery } from "@/components/activity/activity-filters";
 import { parseResponse } from "@/hooks/api-shapes";
@@ -13,7 +13,7 @@ import { api, type QueryParams } from "@/lib/api-client";
 import { complianceKeys, type ComplianceListParams } from "./compliance-keys";
 
 /**
- * Queries for `/api/compliance/*`, typed by the `@workmode/validation` response schemas (every response is
+ * Queries for `/api/compliance/*`, typed by the `@clockoff/validation` response schemas (every response is
  * parsed, so a contract drift surfaces as INVALID_RESPONSE naming the endpoint, never as `undefined` in the UI).
  */
 

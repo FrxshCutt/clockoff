@@ -1,4 +1,4 @@
-import { ROLES } from "@workmode/shared/enums";
+import { ROLES } from "@clockoff/shared/enums";
 import { describe, expect, it } from "vitest";
 import { assignableRoles, canInviteMembers, canManageMember, compareRoles } from "./member-rules";
 

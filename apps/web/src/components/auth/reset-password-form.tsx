@@ -65,7 +65,7 @@ export function ResetPasswordForm({ token: rawToken }: { token: string | null })
         <Button asChild className="w-full">
           {me ? (
             <Link href={getPostAuthRedirect({ organisationCount: me.organisations.length })}>
-              Continue to Work Mode
+              Continue to ClockOff
             </Link>
           ) : (
             <Link href={ROUTES.login}>Sign in</Link>

@@ -1,23 +1,23 @@
-import { DATE_FORMATS, PLANS, BILLING_STATUSES, ROLES, type Role } from "@workmode/shared/enums";
+import { DATE_FORMATS, PLANS, BILLING_STATUSES, ROLES, type Role } from "@clockoff/shared/enums";
 import {
   MANAGER_NOTIFICATION_TYPES,
   mergeNotificationPreferences,
   type NotificationPreferences,
-} from "@workmode/validation/notifications";
+} from "@clockoff/validation/notifications";
 import {
   MANAGER_INVITE_STATES,
   ORGANISATION_SETTINGS_DEFAULTS,
   TIME_FORMATS,
   WEEK_STARTS,
   type OrganisationSettings,
-} from "@workmode/validation/organisation";
+} from "@clockoff/validation/organisation";
 import { z } from "zod";
 import { ROUTES, isInternalPath } from "@/config/navigation";
 import { ApiClientError } from "@/lib/api-client";
 
 /**
  * Tolerant readers for API responses the dashboard shell consumes. The task contract and the
- * `@workmode/validation` schemas differ in a few envelope details (e.g. `{ items }` vs `{ members, invites }`);
+ * `@clockoff/validation` schemas differ in a few envelope details (e.g. `{ items }` vs `{ members, invites }`);
  * these normalisers accept either so the UI keeps working whichever one the handlers ship, and they fail
  * loudly (INVALID_RESPONSE) instead of rendering `undefined` when neither matches.
  */

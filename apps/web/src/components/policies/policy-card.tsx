@@ -1,4 +1,4 @@
-import type { Policy } from "@workmode/validation/policies";
+import type { Policy } from "@clockoff/validation/policies";
 import { Star, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";

@@ -1,5 +1,5 @@
-import { revokeOverrideSchema } from "@workmode/validation/overrides";
-import { idParamsSchema } from "@workmode/validation/primitives";
+import { revokeOverrideSchema } from "@clockoff/validation/overrides";
+import { idParamsSchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { revokeOverride } from "@/server/overrides/overrides.service";
 

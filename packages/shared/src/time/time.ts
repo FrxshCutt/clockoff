@@ -1,5 +1,5 @@
 /**
- * Time & timezone helpers (§6.4). Entry point for `@workmode/shared/time/time` and the package barrel.
+ * Time & timezone helpers (§6.4). Entry point for `@clockoff/shared/time/time` and the package barrel.
  *
  * Conventions: instants are UTC `Date`s; local values are `YYYY-MM-DD` / `HH:mm` strings plus an IANA
  * zone; every interval is half-open `[start, end)`; DST gaps shift forward, overlaps take the first

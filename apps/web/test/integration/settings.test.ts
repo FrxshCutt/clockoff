@@ -1,6 +1,6 @@
-import { prisma } from "@workmode/db";
-import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@workmode/validation/notifications";
-import type { BillingResponse, SettingsResponse } from "@workmode/validation/settings";
+import { prisma } from "@clockoff/db";
+import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@clockoff/validation/notifications";
+import type { BillingResponse, SettingsResponse } from "@clockoff/validation/settings";
 import { describe, expect, it } from "vitest";
 import { POST as requestDemoRoute } from "@/app/api/request-demo/route";
 import { GET as billingRoute } from "@/app/api/settings/billing/route";

@@ -1,5 +1,5 @@
-import { prisma, type BreakSession, type EmployeeWorkState } from "@workmode/db";
-import type { InviteStatus, WorkModeState } from "@workmode/shared/enums";
+import { prisma, type BreakSession, type EmployeeWorkState } from "@clockoff/db";
+import type { InviteStatus, WorkModeState } from "@clockoff/shared/enums";
 import {
   DEVICE_STATUS_THRESHOLDS,
   deriveDeviceStatus,
@@ -8,12 +8,12 @@ import {
   toExpectedWorkState,
   type DeviceStatusResult,
   type ExpectedWorkState,
-} from "@workmode/shared/status/deriveDeviceStatus";
-import { deriveInviteStatus } from "@workmode/shared/status/deriveInviteStatus";
+} from "@clockoff/shared/status/deriveDeviceStatus";
+import { deriveInviteStatus } from "@clockoff/shared/status/deriveInviteStatus";
 import {
   computeExpectedState,
   type ExpectedState,
-} from "@workmode/shared/workMode/workModeMachine";
+} from "@clockoff/shared/workMode/workModeMachine";
 import {
   findBreakSessionsForShifts,
   findDevicesForEmployees,

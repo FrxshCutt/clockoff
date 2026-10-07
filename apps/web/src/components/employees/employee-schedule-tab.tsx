@@ -1,7 +1,7 @@
 "use client";
 
-import type { EmployeeDetail } from "@workmode/validation/employees";
-import type { Shift } from "@workmode/validation/shifts";
+import type { EmployeeDetail } from "@clockoff/validation/employees";
+import type { Shift } from "@clockoff/validation/shifts";
 import type { ColumnDef } from "@tanstack/react-table";
 import { CalendarClock, CalendarPlus, ExternalLink } from "lucide-react";
 import Link from "next/link";

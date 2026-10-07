@@ -4,8 +4,8 @@ import type { ActivationMode, RestrictionCategory } from "../enums";
 /**
  * Shape of `PolicyVersion.restrictionConfig` (§3). THIS TYPE IS THE SOURCE OF TRUTH.
  *
- * The Zod schema that validates API input (`restrictionConfigSchema` in `@workmode/validation`) must stay
- * structurally identical to this interface — `@workmode/shared` cannot depend on `@workmode/validation`
+ * The Zod schema that validates API input (`restrictionConfigSchema` in `@clockoff/validation`) must stay
+ * structurally identical to this interface — `@clockoff/shared` cannot depend on `@clockoff/validation`
  * (it would be circular), so the validation package should assert equality at the type level, e.g.
  * `const _check: RestrictionConfig = {} as z.infer<typeof restrictionConfigSchema>;` and vice versa.
  *
@@ -79,7 +79,7 @@ function isStringArray(value: unknown): value is string[] {
 
 /**
  * Structural runtime guard for JSON read back from `PolicyVersion.restrictionConfig`. This is NOT the API
- * validator (that is the Zod schema in `@workmode/validation`); it exists so `resolvePolicyVersion` can
+ * validator (that is the Zod schema in `@clockoff/validation`); it exists so `resolvePolicyVersion` can
  * return a truthfully-typed `RestrictionConfig` instead of an unchecked cast of `Prisma.JsonValue`.
  */
 export function isRestrictionConfig(value: unknown): value is RestrictionConfig {

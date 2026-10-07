@@ -1,2 +1,2 @@
-import next from "@workmode/config/eslint/next";
+import next from "@clockoff/config/eslint/next";
 export default next;

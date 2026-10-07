@@ -1,6 +1,6 @@
 "use client";
 
-import type { ValidateImportResponse } from "@workmode/validation/imports";
+import type { ValidateImportResponse } from "@clockoff/validation/imports";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ErrorState } from "@/components/error-state";

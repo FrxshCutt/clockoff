@@ -1,16 +1,16 @@
-import { prisma, type Prisma } from "@workmode/db";
+import { prisma, type Prisma } from "@clockoff/db";
 import {
   DEVICE_REPORTABLE_EVENT_TYPES,
   type DeviceReportableEventType,
   type WorkModeState,
-} from "@workmode/shared/enums";
-import type { ApiErrorCode } from "@workmode/shared/errors";
+} from "@clockoff/shared/enums";
+import type { ApiErrorCode } from "@clockoff/shared/errors";
 import type {
   DeviceEventInput,
   DeviceEventMetadata,
   DeviceEventsInput,
   DeviceEventsResponse,
-} from "@workmode/validation/mobile";
+} from "@clockoff/validation/mobile";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { applyReportedState } from "@/server/deviceState/deviceState.service";
 import { updateDevice } from "@/server/sync/sync.repository";

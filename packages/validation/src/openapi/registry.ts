@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { ApiErrorCode } from "@workmode/shared/errors";
-import type { Permission } from "@workmode/shared/permissions";
+import type { ApiErrorCode } from "@clockoff/shared/errors";
+import type { Permission } from "@clockoff/shared/permissions";
 
 /**
  * In-house route registry for the OpenAPI document (D-008). `openapi/routes.ts` calls `defineRoute` once

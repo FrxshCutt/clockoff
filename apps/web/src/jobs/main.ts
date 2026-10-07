@@ -1,4 +1,4 @@
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import { schedule, type ScheduledTask } from "node-cron";
 import { env, envWarnings } from "@/lib/env";
 import { childLogger, errorSummary, stackFrames } from "@/lib/logger";
@@ -6,7 +6,7 @@ import { flushPushBridge, startPushBridge } from "@/server/realtime/pushBridge";
 import { runWorkModeTick } from "@/server/workState/workStateJob";
 
 /**
- * Background job runner — `pnpm --filter @workmode/web jobs` (tsx). Runs the Work Mode tick every minute
+ * Background job runner — `pnpm --filter @clockoff/web jobs` (tsx). Runs the Work Mode tick every minute
  * (node-cron `* * * * *`) while `JOBS_ENABLED` is true, with an in-process overlap guard (a tick that is
  * still running when the next minute fires is logged and the new one skipped — the tick is idempotent, so
  * nothing is lost), structured pino logging and a graceful SIGTERM/SIGINT shutdown that lets the running

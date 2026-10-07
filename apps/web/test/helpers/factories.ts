@@ -9,7 +9,7 @@ import {
   type OrganisationMembership,
   type Role,
   type User,
-} from "@workmode/db";
+} from "@clockoff/db";
 import { CSRF_COOKIE, ORG_COOKIE, SESSION_COOKIE } from "@/lib/cookies";
 import { createCsrfToken } from "@/lib/crypto";
 import { hashPassword } from "@/lib/password";

@@ -1,4 +1,4 @@
-import { DEVICE_STATUS_BADGES } from "@workmode/shared/enums";
+import { DEVICE_STATUS_BADGES } from "@clockoff/shared/enums";
 import { describe, expect, it } from "vitest";
 import { isInternalPath } from "@/config/navigation";
 import {
@@ -47,7 +47,7 @@ describe("FAQ", () => {
 
 describe("employee setup guide", () => {
   it("mirrors the iOS onboarding steps exactly and in order", () => {
-    // Source of truth: OnboardingViewModel.Step in apps/ios/WorkModeApp/Onboarding/OnboardingViewModel.swift.
+    // Source of truth: OnboardingViewModel.Step in apps/ios/ClockOffApp/Features/Onboarding/OnboardingViewModel.swift.
     expect(IOS_ONBOARDING_STEP_KEYS).toEqual([
       "welcome",
       "name",
@@ -73,7 +73,7 @@ describe("employee setup guide", () => {
 
   it("names the app's main tabs by their navigation titles", () => {
     expect(IOS_MAIN_SCREENS.map((screen) => screen.name)).toEqual([
-      "Work Mode",
+      "ClockOff",
       "Schedule",
       "Settings",
     ]);
@@ -108,7 +108,7 @@ describe("troubleshooting", () => {
 
 describe("support and anchors", () => {
   it("points at the configured support address", () => {
-    expect(SUPPORT.email).toBe("support@workmode.app");
+    expect(SUPPORT.email).toBe("support@clockoff.online");
     expect(SUPPORT.include.length).toBeGreaterThan(0);
   });
 

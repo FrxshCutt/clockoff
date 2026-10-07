@@ -5,7 +5,7 @@ import {
   localDateOf,
   localToInstant,
   type LocalDateString,
-} from "@workmode/shared/time/time";
+} from "@clockoff/shared/time/time";
 import { DAY_MS, HOUR_MS, MINUTE_MS } from "./util";
 
 /**

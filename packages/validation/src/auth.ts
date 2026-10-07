@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROLES } from "@workmode/shared/enums";
+import { ROLES } from "@clockoff/shared/enums";
 import { emailSchema, nonEmptyString, passwordSchema, timezoneSchema, uuidSchema } from "./common";
 
 // ── Manager auth (web, cookie sessions) ─────────────────────────────────────

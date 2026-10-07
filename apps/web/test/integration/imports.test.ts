@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@workmode/db";
+import { prisma } from "@clockoff/db";
 import {
   commitImportResponseSchema,
   createImportResponseSchema,
@@ -16,7 +16,7 @@ import {
   type ListImportRowsResponse,
   type ListImportsResponse,
   type ValidateImportResponse,
-} from "@workmode/validation/imports";
+} from "@clockoff/validation/imports";
 import { describe, expect, it, vi } from "vitest";
 import { POST as commitRoute } from "@/app/api/imports/[id]/commit/route";
 import { GET as errorsCsvRoute } from "@/app/api/imports/[id]/errors.csv/route";
@@ -76,7 +76,7 @@ function multipart(parts: ReadonlyArray<FilePart | FieldPart>): {
   body: string;
   contentType: string;
 } {
-  const boundary = `----workmode${randomUUID().replace(/-/g, "")}`;
+  const boundary = `----clockoff${randomUUID().replace(/-/g, "")}`;
   let body = "";
   for (const part of parts) {
     body += `--${boundary}\r\n`;

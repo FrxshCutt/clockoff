@@ -6,7 +6,7 @@ import type {
   ImportSummaryResponse,
   ShiftImport,
   UpdateImportRowInput,
-} from "@workmode/validation/imports";
+} from "@clockoff/validation/imports";
 import {
   ArrowLeft,
   ArrowRight,

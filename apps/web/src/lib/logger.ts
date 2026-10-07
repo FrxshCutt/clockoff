@@ -59,7 +59,7 @@ function resolveLevel(): string {
 export const LOGGER_OPTIONS: LoggerOptions = {
   level: resolveLevel(),
   redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
-  base: { service: "workmode-web" },
+  base: { service: "clockoff-web" },
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
     level: (label) => ({ level: label }),

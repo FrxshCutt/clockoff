@@ -12,17 +12,17 @@ export type {
 } from "./EventBus";
 
 declare global {
-  var __workmodeEventBus: EventBus | undefined;
+  var __clockoffEventBus: EventBus | undefined;
 }
 
 /** Process-wide bus (cached on globalThis so Next dev HMR keeps SSE subscriptions alive). */
 export function getEventBus(): EventBus {
-  if (!globalThis.__workmodeEventBus) globalThis.__workmodeEventBus = new InProcessEventBus();
-  return globalThis.__workmodeEventBus;
+  if (!globalThis.__clockoffEventBus) globalThis.__clockoffEventBus = new InProcessEventBus();
+  return globalThis.__clockoffEventBus;
 }
 
 export function setEventBusForTesting(bus: EventBus | undefined): void {
-  globalThis.__workmodeEventBus = bus;
+  globalThis.__clockoffEventBus = bus;
 }
 
 /** Convenience for publishing with `at` defaulted to now. */

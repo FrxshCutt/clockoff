@@ -1,4 +1,4 @@
-import { emptyBodySchema } from "@workmode/validation/primitives";
+import { emptyBodySchema } from "@clockoff/validation/primitives";
 import { createHandler } from "@/server/http/apiHandler";
 import { revokeJoinCode } from "@/server/joinCodes";
 

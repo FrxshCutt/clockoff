@@ -3,7 +3,7 @@ import {
   CAN_SEE,
   EMPLOYEE_PRIVACY_SUMMARY,
   type PrivacyStatement,
-} from "@workmode/shared/privacyStatements";
+} from "@clockoff/shared/privacyStatements";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { SITE } from "@/config/site";
@@ -18,7 +18,7 @@ export interface PrivacyStatementListProps {
   className?: string;
 }
 
-/** Renders CAN_SEE / CANNOT_SEE statements from `@workmode/shared/privacyStatements`, one `<li>` per statement. */
+/** Renders CAN_SEE / CANNOT_SEE statements from `@clockoff/shared/privacyStatements`, one `<li>` per statement. */
 export function PrivacyStatementList({ items, tone, limit, className }: PrivacyStatementListProps) {
   const shown = limit === undefined ? items : items.slice(0, limit);
   return (

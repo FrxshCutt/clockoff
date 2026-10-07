@@ -1,7 +1,7 @@
 "use client";
 
-import { CAN_SEE, CANNOT_SEE, PRIVACY_PRINCIPLE } from "@workmode/shared/privacyStatements";
-import type { InviteInstructions } from "@workmode/validation/invites";
+import { CAN_SEE, CANNOT_SEE, PRIVACY_PRINCIPLE } from "@clockoff/shared/privacyStatements";
+import type { InviteInstructions } from "@clockoff/validation/invites";
 import { Check, Copy, EyeOff, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -89,7 +89,7 @@ export function InviteInstructionsModal({
               : ""}
           </DialogTitle>
           <DialogDescription>
-            Share these with the employee. They install the Work Mode app on their iPhone and enter
+            Share these with the employee. They install the ClockOff app on their iPhone and enter
             both codes; Screen Time setup happens on their phone and stays private to them.
           </DialogDescription>
         </DialogHeader>

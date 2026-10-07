@@ -7,7 +7,7 @@ export * from "./syncSink";
 
 /**
  * §6.6 — Workforce provider abstraction. Each rota / time-and-attendance system (Planday, Deputy, 7shifts,
- * When I Work, Rotaready, Homebase) is wrapped in a `WorkforceProvider`. Providers pull data INTO Work Mode's
+ * When I Work, Rotaready, Homebase) is wrapped in a `WorkforceProvider`. Providers pull data INTO ClockOff's
  * own tables (Employee, Shift, Location, Team, ClockEvent) through a `WorkforceSyncSink`. Nothing else in the
  * system talks to a provider: the Work Mode state machine, break rules and dashboard consume `Shift` (and
  * `ClockEvent`) rows only — never provider objects — so a provider can be added, replaced or removed without

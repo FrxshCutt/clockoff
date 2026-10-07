@@ -1,5 +1,5 @@
-import type { DeviceStatusBadge, InviteStatus } from "@workmode/shared/enums";
-import { EMPLOYEE_SORT_FIELDS, type EmployeeSortField } from "@workmode/validation/employees";
+import type { DeviceStatusBadge, InviteStatus } from "@clockoff/shared/enums";
+import { EMPLOYEE_SORT_FIELDS, type EmployeeSortField } from "@clockoff/validation/employees";
 import { isResourceId } from "@/config/navigation";
 
 /**

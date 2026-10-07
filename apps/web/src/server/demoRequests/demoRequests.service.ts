@@ -1,4 +1,4 @@
-import type { RequestDemoInput, RequestDemoResponse } from "@workmode/validation/organisation";
+import type { RequestDemoInput, RequestDemoResponse } from "@clockoff/validation/organisation";
 import { logger, type Logger } from "@/lib/logger";
 import type { RateLimitRule } from "@/server/rateLimit";
 import { createDemoRequest } from "./demoRequests.repository";

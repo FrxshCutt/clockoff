@@ -1,5 +1,5 @@
-import { idParamsSchema } from "@workmode/validation/primitives";
-import { updatePolicySchema } from "@workmode/validation/policies";
+import { idParamsSchema } from "@clockoff/validation/primitives";
+import { updatePolicySchema } from "@clockoff/validation/policies";
 import { createHandler } from "@/server/http/apiHandler";
 import { deletePolicy, getPolicy, updatePolicy } from "@/server/policies/policies.service";
 

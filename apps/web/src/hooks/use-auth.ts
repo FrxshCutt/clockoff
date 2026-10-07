@@ -1,6 +1,6 @@
 "use client";
 
-import type { CreateOrganisationInput, LoginInput, RegisterInput } from "@workmode/validation/auth";
+import type { CreateOrganisationInput, LoginInput, RegisterInput } from "@clockoff/validation/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";

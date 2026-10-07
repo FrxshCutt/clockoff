@@ -1,5 +1,5 @@
-import type { Employee, Organisation } from "@workmode/db";
-import { AppError } from "@workmode/shared/errors";
+import type { Employee, Organisation } from "@clockoff/db";
+import { AppError } from "@clockoff/shared/errors";
 
 /**
  * A device credential (access token or refresh token) is only honoured while the device is active, its
