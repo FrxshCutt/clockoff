@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DATABASE_URL: postgresql://workmode:workmode@localhost:5432/workmode?schema=public
-  TEST_DATABASE_URL: postgresql://workmode:workmode@localhost:5432/workmode_test?schema=public
+  DATABASE_URL: postgresql://clockoff:clockoff@localhost:5432/clockoff?schema=public
+  TEST_DATABASE_URL: postgresql://clockoff:clockoff@localhost:5432/clockoff_test?schema=public
   SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret-0000000000000000
   MOBILE_JWT_SECRET: ci-mobile-secret-ci-mobile-secret-ci-mobile-secret-000000000000000000
   INTEGRATION_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
@@ -30,12 +30,12 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: workmode
-          POSTGRES_PASSWORD: workmode
-          POSTGRES_DB: workmode
+          POSTGRES_USER: clockoff
+          POSTGRES_PASSWORD: clockoff
+          POSTGRES_DB: clockoff
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U workmode -d workmode"
+          --health-cmd "pg_isready -U clockoff -d clockoff"
           --health-interval 5s --health-timeout 3s --health-retries 20
     steps:
       - uses: actions/checkout@v4
@@ -50,9 +50,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Create test database + extensions
         run: |
-          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode -c "CREATE DATABASE workmode_test;"
-          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-          PGPASSWORD=workmode psql -h localhost -U workmode -d workmode_test -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          PGPASSWORD=clockoff psql -h localhost -U clockoff -d clockoff -c "CREATE DATABASE clockoff_test;"
+          PGPASSWORD=clockoff psql -h localhost -U clockoff -d clockoff -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+          PGPASSWORD=clockoff psql -h localhost -U clockoff -d clockoff_test -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
       - name: Prisma migrate (dev DB)
         run: pnpm --filter @clockoff/db exec prisma migrate deploy
       - name: Lint

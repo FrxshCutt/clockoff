@@ -1,26 +1,27 @@
 # Local infrastructure for ClockOff.
 #   pnpm db:up       -> starts Postgres on localhost:5433 (5432 avoided to not clash with other local DBs)
 #   pnpm db:down     -> stops it
-# Two databases are created on first start: `workmode` (dev) and `workmode_test` (integration tests).
+# Two databases are created on first start: `clockoff` (dev) and `clockoff_test` (integration tests).
+name: clockoff
 services:
   postgres:
     image: postgres:16-alpine
     container_name: clockoff-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: workmode
-      POSTGRES_PASSWORD: workmode
-      POSTGRES_DB: workmode
+      POSTGRES_USER: clockoff
+      POSTGRES_PASSWORD: clockoff
+      POSTGRES_DB: clockoff
     ports:
       - "5433:5432"
     volumes:
-      - workmode-pgdata:/var/lib/postgresql/data
+      - clockoff-pgdata:/var/lib/postgresql/data
       - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U workmode -d workmode"]
+      test: ["CMD-SHELL", "pg_isready -U clockoff -d clockoff"]
       interval: 5s
       timeout: 3s
       retries: 20
 
 volumes:
-  workmode-pgdata:
+  clockoff-pgdata:
