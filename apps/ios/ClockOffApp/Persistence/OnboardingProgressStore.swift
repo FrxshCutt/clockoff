@@ -1,11 +1,11 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Remembers how far the employee got through onboarding so a relaunch resumes at the right screen. The step
 /// is only a hint: `OnboardingResume` clamps it to what the Keychain, cache and Screen Time state allow.
 final class OnboardingProgressStore {
     enum Keys {
-        static let step = "wm.onboarding.step"
+        static let step = "clockoff.onboarding.step"
     }
 
     private let store: KeyValueStore

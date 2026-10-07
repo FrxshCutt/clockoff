@@ -1,7 +1,7 @@
 import Combine
 import SwiftUI
 import UIKit
-import WorkModeCore
+import ClockOffCore
 
 /// Root state of the app: which flow is showing, the cached state the tabs read, and the live Work Mode state
 /// (`WorkModeController`). Owns the sync triggers (launch, foreground, pull-to-refresh, connectivity) and
@@ -190,7 +190,7 @@ final class AppModel: ObservableObject {
             _ = try configurator.configureSelection(kind: .breakKept)
             return true
         } catch {
-            WorkModeLog.app.error("break selection failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.error("break selection failed: \(String(describing: error), privacy: .public)")
             return false
         }
     }

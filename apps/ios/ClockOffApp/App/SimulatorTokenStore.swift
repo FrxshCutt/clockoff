@@ -8,7 +8,7 @@
 // `KeychainTokenStore` directly and cannot reach this code.
 #if DEBUG && targetEnvironment(simulator)
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 final class SimulatorTokenStore: TokenStore {
     private let primary: TokenStore
@@ -36,14 +36,14 @@ final class SimulatorTokenStore: TokenStore {
     func loadTokens() throws -> TokenPair? {
         try withFallback(primary: { try primary.loadTokens() }, fallback: {
             guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-            return try JSONDecoder.workMode.decode(TokenPair.self, from: Data(contentsOf: fileURL))
+            return try JSONDecoder.clockOff.decode(TokenPair.self, from: Data(contentsOf: fileURL))
         })
     }
 
     func saveTokens(_ tokens: TokenPair) throws {
         try withFallback(primary: { try primary.saveTokens(tokens) }, fallback: {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try JSONEncoder.workMode.encode(tokens).write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            try JSONEncoder.clockOff.encode(tokens).write(to: fileURL, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
         })
     }
 
@@ -63,7 +63,7 @@ final class SimulatorTokenStore: TokenStore {
                 lock.lock()
                 usingFallback = true
                 lock.unlock()
-                WorkModeLog.app.error("Keychain unavailable in this unsigned simulator build; using the development token file")
+                ClockOffLog.app.error("Keychain unavailable in this unsigned simulator build; using the development token file")
             }
         }
         return try fallback()

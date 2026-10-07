@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// The provider the app runs with: §8.3 `RestrictionProvider` plus selection counts for `/device/state`.
 typealias AppRestrictionProvider = RestrictionProvider & SelectionCountsProviding
@@ -9,7 +9,7 @@ typealias AppRestrictionProvider = RestrictionProvider & SelectionCountsProvidin
 /// Apple's picker is a SwiftUI view (`FamilyActivityPicker`), so the real configurator
 /// (`ScreenTimeSelectionConfigurator`) presents a sheet when `configureSelection()` is called and returns the
 /// counts stored so far (usually zero until the sheet is saved). Callers re-read `RestrictionProvider.hasSelection()`
-/// afterwards — `Notification.Name.workModeSelectionDidChange` is posted when a selection is saved.
+/// afterwards — `Notification.Name.clockOffSelectionDidChange` is posted when a selection is saved.
 protocol SelectionConfiguring: AnyObject {
     /// Short label for the onboarding button.
     var actionTitle: String { get }

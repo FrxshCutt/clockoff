@@ -13,7 +13,7 @@ enum PrivacyStatements {
 
     static let canSee: [PrivacyStatement] = [
         PrivacyStatement(id: "connection", label: "Whether you have joined and your phone is connected",
-                         detail: "Your setup stage (not invited, invited, joined, setup incomplete, connected or deactivated) and whether Work Mode is active on your phone."),
+                         detail: "Your setup stage (not invited, invited, joined, setup incomplete, connected or deactivated) and whether the ClockOff app is active on your phone."),
         PrivacyStatement(id: "permissionState", label: "Whether Screen Time access is granted",
                          detail: "Only the state of the authorisation: not determined, approved, denied or revoked. Never anything the permission gives access to."),
         PrivacyStatement(id: "selectionCounts", label: "Whether apps have been selected, and how many",

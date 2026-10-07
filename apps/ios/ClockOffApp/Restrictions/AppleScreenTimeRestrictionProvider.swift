@@ -3,8 +3,8 @@ import DeviceActivity
 import FamilyControls
 import Foundation
 import ManagedSettings
-import WorkModeCore
-import WorkModeScreenTime
+import ClockOffCore
+import ClockOffScreenTime
 
 /// Screen Time implementation of `RestrictionProvider` (FamilyControls / ManagedSettings / DeviceActivity).
 /// See docs/SCREEN_TIME_IMPLEMENTATION.md.
@@ -12,7 +12,7 @@ import WorkModeScreenTime
 /// - Authorisation: `AuthorizationCenter.shared.requestAuthorization(for: .individual)`; `$authorizationStatus`
 ///   is observed so a revocation in Settings › Screen Time is noticed while the app runs. On a revocation the
 ///   shields are cleared, PERMISSION_ERROR is recorded in the App Group cache and
-///   `Notification.Name.workModeAuthorizationStatusDidChange` is posted (plus `onAuthorizationStatusChange`).
+///   `Notification.Name.clockOffAuthorizationStatusDidChange` is posted (plus `onAuthorizationStatusChange`).
 /// - Selection: the employee's `FamilyActivitySelection`s live in the App Group (`SelectionStore`, `work` and
 ///   `breakKept`); only their counts are ever read for reporting (§12).
 /// - Shields: two named stores — `.work` holds the full set during a shift, `.breakRelaxed` the "kept" subset
@@ -72,7 +72,7 @@ final class AppleScreenTimeRestrictionProvider: RestrictionProvider, SelectionCo
             return previous
         }
         guard previous != status else { return }
-        WorkModeLog.restrictions.info("Screen Time authorisation \(previous.rawValue, privacy: .public) → \(status.rawValue, privacy: .public)")
+        ClockOffLog.restrictions.info("Screen Time authorisation \(previous.rawValue, privacy: .public) → \(status.rawValue, privacy: .public)")
         if status != .approved {
             // iOS removes an unauthorised app's ManagedSettings; make sure nothing on our side claims otherwise
             // and the next report says PERMISSION_ERROR until the employee re-allows access.
@@ -84,7 +84,7 @@ final class AppleScreenTimeRestrictionProvider: RestrictionProvider, SelectionCo
         }
         onAuthorizationStatusChange?(status)
         NotificationCenter.default.post(
-            name: .workModeAuthorizationStatusDidChange,
+            name: .clockOffAuthorizationStatusDidChange,
             object: nil,
             userInfo: [RestrictionAuthorizationNotification.statusKey: status.rawValue]
         )
@@ -105,18 +105,18 @@ final class AppleScreenTimeRestrictionProvider: RestrictionProvider, SelectionCo
     func applyWorkRestrictions(plan: RestrictionPlan) throws {
         try requireAuthorization()
         try applier.applyWork()
-        WorkModeLog.restrictions.info("work shields applied for shift \(plan.shiftId, privacy: .public)")
+        ClockOffLog.restrictions.info("work shields applied for shift \(plan.shiftId, privacy: .public)")
     }
 
     func applyBreakRestrictions(plan: RestrictionPlan, behaviour: BreakBehaviour) throws {
         try requireAuthorization()
         let applied = try applier.applyBreak(behaviour)
-        WorkModeLog.restrictions.info("break relaxation applied for shift \(plan.shiftId, privacy: .public): \(String(describing: applied), privacy: .public)")
+        ClockOffLog.restrictions.info("break relaxation applied for shift \(plan.shiftId, privacy: .public): \(String(describing: applied), privacy: .public)")
     }
 
     func clearRestrictions() throws {
         applier.clearAll()
-        WorkModeLog.restrictions.info("shields cleared")
+        ClockOffLog.restrictions.info("shields cleared")
     }
 
     // MARK: DeviceActivity
@@ -140,7 +140,7 @@ final class AppleScreenTimeRestrictionProvider: RestrictionProvider, SelectionCo
                 failures.append("\(plan.name): \(error)")
             }
         }
-        WorkModeLog.restrictions.info("DeviceActivity: \(registered) activities registered, \(failures.count) failed")
+        ClockOffLog.restrictions.info("DeviceActivity: \(registered) activities registered, \(failures.count) failed")
         if !failures.isEmpty {
             throw RestrictionProviderError.schedulingFailed(failures.joined(separator: "; "))
         }

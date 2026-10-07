@@ -1,14 +1,14 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Small operational facts about syncing that the extensions never need, kept in the App Group `UserDefaults`
 /// suite rather than `state.json`: whether DeviceActivity registration still has to be retried, and when the
 /// server was last reached. Operational only (§12).
 final class SyncMetadataStore {
     enum Keys {
-        static let activitiesNeedReschedule = "wm.sync.activitiesNeedReschedule"
-        static let lastServerContactAt = "wm.sync.lastServerContactAt"
-        static let lastScheduleChangeNoticeVersion = "wm.sync.lastScheduleChangeNoticeVersion"
+        static let activitiesNeedReschedule = "clockoff.sync.activitiesNeedReschedule"
+        static let lastServerContactAt = "clockoff.sync.lastServerContactAt"
+        static let lastScheduleChangeNoticeVersion = "clockoff.sync.lastScheduleChangeNoticeVersion"
     }
 
     private struct DateBox: Codable {

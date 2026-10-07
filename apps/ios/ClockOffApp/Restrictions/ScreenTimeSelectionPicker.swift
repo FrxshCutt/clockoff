@@ -1,8 +1,8 @@
 import FamilyControls
 import SwiftUI
 import UIKit
-import WorkModeCore
-import WorkModeScreenTime
+import ClockOffCore
+import ClockOffScreenTime
 
 /// The employee's app picker. Apple's `FamilyActivityPicker` returns opaque tokens: the app cannot pre-select
 /// the categories the policy names, cannot read which apps were chosen, and never sends the selection anywhere.
@@ -82,7 +82,7 @@ struct SelectionPickerSheet: View {
 extension Notification.Name {
     /// Posted on the main thread after a selection is saved (`userInfo[SelectionChangeNotification.kindKey]`
     /// = `SelectionKind.rawValue`). `WorkModeController` reconciles so a shift already in progress is shielded.
-    static let workModeSelectionDidChange = Notification.Name("online.clockoff.selectionDidChange")
+    static let clockOffSelectionDidChange = Notification.Name("online.clockoff.selectionDidChange")
 }
 
 enum SelectionChangeNotification {
@@ -91,7 +91,7 @@ enum SelectionChangeNotification {
 
 /// `SelectionConfiguring` over Apple's picker. `configureSelection()` presents `SelectionPickerSheet` on the
 /// top-most view controller and returns the counts stored so far; the sheet saves into the App Group and posts
-/// `.workModeSelectionDidChange`, after which `hasSelection()` is true.
+/// `.clockOffSelectionDidChange`, after which `hasSelection()` is true.
 final class ScreenTimeSelectionConfigurator: SelectionConfiguring {
     let actionTitle = "Choose apps"
 
@@ -118,7 +118,7 @@ final class ScreenTimeSelectionConfigurator: SelectionConfiguring {
     @MainActor
     private func present(kind: SelectionKind) {
         guard let presenter = Self.topViewController() else {
-            WorkModeLog.restrictions.error("cannot present the Screen Time picker: no window")
+            ClockOffLog.restrictions.error("cannot present the Screen Time picker: no window")
             return
         }
         var host: UIHostingController<SelectionPickerSheet>?
@@ -142,10 +142,10 @@ final class ScreenTimeSelectionConfigurator: SelectionConfiguring {
         do {
             let summary = try SelectionCodec.save(selection, kind: kind, to: selections)
             if kind == .breakKept { flags?.selectionIncomplete = false }
-            WorkModeLog.restrictions.info("selection saved (\(kind.rawValue, privacy: .public)): \(summary.categoryCount) categories, \(summary.applicationCount) apps, \(summary.webDomainCount) websites")
-            NotificationCenter.default.post(name: .workModeSelectionDidChange, object: nil, userInfo: [SelectionChangeNotification.kindKey: kind.rawValue])
+            ClockOffLog.restrictions.info("selection saved (\(kind.rawValue, privacy: .public)): \(summary.categoryCount) categories, \(summary.applicationCount) apps, \(summary.webDomainCount) websites")
+            NotificationCenter.default.post(name: .clockOffSelectionDidChange, object: nil, userInfo: [SelectionChangeNotification.kindKey: kind.rawValue])
         } catch {
-            WorkModeLog.restrictions.error("saving the selection failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.restrictions.error("saving the selection failed: \(String(describing: error), privacy: .public)")
         }
     }
 

@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-import WorkModeCore
+import ClockOffCore
 
 // Screens 5–8: Screen Time explainer, authorisation, app selection (Apple's FamilyActivityPicker through
 // `SelectionConfiguring`; "Simulate selection" with the mock) and the policy confirmation.
@@ -16,7 +16,7 @@ struct ScreenTimeExplainedView: View {
             InfoRow(systemImage: "calendar", text: "It follows the shifts your employer schedules, even when this app is closed.")
             InfoRow(systemImage: "cup.and.saucer.fill", text: "Breaks relax the blocks, and everything lifts when your shift ends.")
             Text("Your privacy").font(.headline).padding(.top, 4)
-            InfoRow(systemImage: "eye", text: "Your employer can see whether Work Mode is set up and working, when you take breaks and when your phone last synced.")
+            InfoRow(systemImage: "eye", text: "Your employer can see whether ClockOff is set up and working, when you take breaks and when your phone last synced.")
             InfoRow(systemImage: "eye.slash.fill", text: "Your employer cannot see your messages, photos, browsing, notifications, how you use your phone or which apps you chose.")
             InfoRow(systemImage: "iphone", text: "Your app choices stay on this iPhone as Apple tokens that nobody else can read — only counts are sent.")
         } actions: {
@@ -34,7 +34,7 @@ struct AuthoriseScreenTimeView: View {
     var body: some View {
         OnboardingScreen(title: "Allow Screen Time", showsBack: model.canGoBack, onBack: model.back) {
             Text("iOS will ask you to allow ClockOff to use Screen Time. This lets it block apps during your shifts on this iPhone.")
-            Text("You can turn it off at any time in Settings › Screen Time. Your manager will see that Work Mode needs attention, but nothing else.")
+            Text("You can turn it off at any time in Settings › Screen Time. Your manager will see that ClockOff needs attention, but nothing else.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
             switch model.authorisation {
@@ -195,7 +195,7 @@ struct ConfirmPolicyView: View {
                         Text(policy.restrictionConfig.alwaysAllowedNote.joined(separator: ", "))
                     }
                     Text("Break allowance").font(.headline)
-                    Text(model.breakAllowanceSummary ?? "Breaks are not available in Work Mode.")
+                    Text(model.breakAllowanceSummary ?? "Breaks aren't available in ClockOff at your workplace.")
                     if let message = policy.restrictionConfig.shieldMessage, !message.isEmpty {
                         Text("Shield message").font(.headline)
                         Text("“\(message)”").italic()

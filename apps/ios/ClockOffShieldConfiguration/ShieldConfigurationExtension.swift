@@ -2,7 +2,7 @@ import Foundation
 import ManagedSettings
 import ManagedSettingsUI
 import UIKit
-import WorkModeCore
+import ClockOffCore
 
 /// Renders the neutral card shown over a shielded app during a shift. The copy comes from `plans.json` in the
 /// App Group (`ShieldCopy`): the employer's name, the policy's shield message or "Work Mode is active until

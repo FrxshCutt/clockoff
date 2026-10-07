@@ -1,14 +1,14 @@
 import Foundation
 import ManagedSettings
 import os
-import WorkModeCore
+import ClockOffCore
 
 /// Handles taps on the shield's buttons. "OK" closes the shielded app. "Open ClockOff" cannot launch the app
 /// from here; it sets the App Group flag `openStatusRequested`, which the app consumes on its next foreground
 /// to show the status screen, then closes the shielded app. Nothing about which app was shielded or tapped is
 /// recorded or sent anywhere (§12).
 final class ShieldActionExtension: ShieldActionDelegate {
-    private let logger = Logger(subsystem: WorkModeLog.subsystem, category: "shieldaction")
+    private let logger = Logger(subsystem: ClockOffLog.subsystem, category: "shieldaction")
 
     override func handle(action: ShieldAction, for application: ApplicationToken, completionHandler: @escaping (ShieldActionResponse) -> Void) {
         completionHandler(response(for: action))
@@ -34,7 +34,7 @@ final class ShieldActionExtension: ShieldActionDelegate {
             }
             return .close
         default:
-            // Work Mode's shield has no submenu. Newer SDKs add submenu actions (absent from older SDKs such as
+            // ClockOff's shield has no submenu. Newer SDKs add submenu actions (absent from older SDKs such as
             // the Xcode 26.3 CI image), so they are handled here rather than by name: any of them closes.
             logger.info("other shield action")
             return .close

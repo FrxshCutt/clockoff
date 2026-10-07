@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// What replaying the queued offline breaks did (see docs/SYNC_AND_OFFLINE.md and
 /// docs/SCREEN_TIME_IMPLEMENTATION.md §6).
@@ -59,7 +59,7 @@ struct BreakReplayer {
                     try await replayEnd(record, outcome: &outcome)
                 }
             } catch let error as APIError where Self.shouldRetryLater(error) {
-                WorkModeLog.sync.info("break replay paused (\(error.code.rawValue, privacy: .public)); \(records.count - outcome.replayed - outcome.dropped.count) record(s) kept")
+                ClockOffLog.sync.info("break replay paused (\(error.code.rawValue, privacy: .public)); \(records.count - outcome.replayed - outcome.dropped.count) record(s) kept")
                 outcome.error = error
                 return outcome
             } catch let error as APIError {
@@ -118,7 +118,7 @@ struct BreakReplayer {
                 try await api.endBreak(id: session.id, endedAt: endedAt, reason: reason)
             } catch let error as APIError where !Self.shouldRetryLater(error) {
                 // Already ended on the server (sweep, manager): nothing left to say.
-                WorkModeLog.sync.info("break end replay refused (\(error.code.rawValue, privacy: .public)); treating as ended")
+                ClockOffLog.sync.info("break end replay refused (\(error.code.rawValue, privacy: .public)); treating as ended")
             }
             try cache.update { state in
                 if isCurrent { state.activeBreakSession = final }
@@ -140,7 +140,7 @@ struct BreakReplayer {
         do {
             try await api.endBreak(id: serverId, endedAt: endedAt, reason: record.endReason ?? .employeeEnded)
         } catch let error as APIError where !Self.shouldRetryLater(error) {
-            WorkModeLog.sync.info("break end replay refused (\(error.code.rawValue, privacy: .public)); treating as ended")
+            ClockOffLog.sync.info("break end replay refused (\(error.code.rawValue, privacy: .public)); treating as ended")
         }
         try cache.update { Self.remove(record, from: &$0) }
         outcome.replayed += 1
@@ -156,7 +156,7 @@ struct BreakReplayer {
         try? cache.update { Self.remove(record, from: &$0) }
         switch record.status {
         case .pendingStart:
-            WorkModeLog.sync.error("offline break refused by the server: \(error.code.rawValue, privacy: .public)")
+            ClockOffLog.sync.error("offline break refused by the server: \(error.code.rawValue, privacy: .public)")
             outcome.dropped.append(.init(clientBreakId: record.clientBreakId, code: error.code, message: error.message))
         case .pendingEnd:
             outcome.replayed += 1

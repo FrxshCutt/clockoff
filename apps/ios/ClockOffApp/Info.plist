@@ -35,7 +35,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFamilyControlsUsageDescription</key>
-	<string>ClockOff uses Screen Time to block the apps you choose only while you are on shift, relaxes the blocks on breaks and lifts them when your shift ends. Your employer can see whether Work Mode is set up and working, but never which apps you choose, your messages, photos, browsing or how you use your phone.</string>
+	<string>ClockOff uses Screen Time to block the apps you choose only while you are on shift, relaxes the blocks on breaks and lifts them when your shift ends. Your employer can see whether ClockOff is set up and working, but never which apps you choose, your messages, photos, browsing or how you use your phone.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

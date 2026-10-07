@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// `BreakReplayer` against the stubbed API and temporary App Group storage (the controller's offline records).
 final class BreakReplayerTests: XCTestCase {

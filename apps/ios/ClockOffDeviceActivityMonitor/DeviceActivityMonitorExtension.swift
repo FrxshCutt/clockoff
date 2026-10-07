@@ -1,18 +1,18 @@
 import DeviceActivity
 import Foundation
 import os
-import WorkModeCore
-import WorkModeScreenTime
+import ClockOffCore
+import ClockOffScreenTime
 
 /// DeviceActivityMonitor extension. iOS wakes it at the boundaries of the schedules the app registered
 /// (`shift-<id>-v<version>`, `break-<clientBreakId>`), even when the app is not running or after a reboot.
 ///
-/// Every decision lives in `MonitorEventHandler` (WorkModeCore, unit-tested in the simulator); this class only
+/// Every decision lives in `MonitorEventHandler` (ClockOffCore, unit-tested in the simulator); this class only
 /// wires it to the App Group files and the real ManagedSettings stores. It links Foundation, DeviceActivity,
-/// WorkModeCore and the thin WorkModeScreenTime adapter (ManagedSettings + FamilyControls, needed to decode the
+/// ClockOffCore and the thin ClockOffScreenTime adapter (ManagedSettings + FamilyControls, needed to decode the
 /// selection tokens) — no UIKit, no networking — because extensions have a small memory budget.
 final class DeviceActivityMonitorExtension: DeviceActivityMonitor {
-    private let logger = Logger(subsystem: WorkModeLog.subsystem, category: "devicemonitor")
+    private let logger = Logger(subsystem: ClockOffLog.subsystem, category: "devicemonitor")
 
     private lazy var handler: MonitorEventHandler? = {
         guard let fileStore = AppGroupFileStore.appGroup() else {

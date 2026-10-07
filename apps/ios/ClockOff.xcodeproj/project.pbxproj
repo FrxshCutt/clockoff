@@ -19,7 +19,7 @@
 		1F391D2ABCDA7D760BEF4397 /* UIWorkState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14913B6E29D19ED67699B7BF /* UIWorkState.swift */; };
 		20335E503E6CF3DAF9FE9F5A /* WorkModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53ED6C8346BD70192BE03148 /* WorkModeController.swift */; };
 		24B5C2604DCA9AEE08C9C1D3 /* SimulatorTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42379DED5EC45B1BCAAFF6B3 /* SimulatorTokenStore.swift */; };
-		250D13E7FE6887455CFBC61A /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0753D1CA1162834FD7BABA9D /* WorkModeCore */; };
+		250D13E7FE6887455CFBC61A /* ClockOffCore in Frameworks */ = {isa = PBXBuildFile; productRef = FADA1187474CA6180A8895E0 /* ClockOffCore */; };
 		2896287F261E02989C20C5F3 /* LocalNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429E5761DA40F9DD51FF5875 /* LocalNotificationScheduler.swift */; };
 		28A0494FB0AB6AB0349A3675 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E32ACB8A7FC30B53D2C7BA /* AppModel.swift */; };
 		2B45D879C3B13033DAE0A9DB /* OnboardingResume.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39617ECBDD64BBE6D22370F /* OnboardingResume.swift */; };
@@ -32,8 +32,8 @@
 		3BD90A03E906AA3B1AC68E2F /* TimeFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46DF428FB0549DF771A4E5A0 /* TimeFormatting.swift */; };
 		3CEB6E771DB42F4AA7D6BC15 /* BreakReplayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1FA1171B8F1D84C912FAC2 /* BreakReplayerTests.swift */; };
 		3F39FF263565FA26C24870CD /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41AEC95F1507ACB05261E87 /* ScheduleView.swift */; };
-		424CD00894BBE945796901F1 /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */; };
-		450B48276CA99BB35098D547 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 70322A8087EB2EF9D543FF8F /* WorkModeCore */; };
+		424CD00894BBE945796901F1 /* ClockOffScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = A1DDC486097665E474172945 /* ClockOffScreenTime */; };
+		450B48276CA99BB35098D547 /* ClockOffCore in Frameworks */ = {isa = PBXBuildFile; productRef = F06D6E278530838C271860B6 /* ClockOffCore */; };
 		4B7E248673601C9EE481372A /* ClockOffApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1D7F1D09745DB048ABDE76 /* ClockOffApp.swift */; };
 		4BE6393049614F528E493E5C /* MockRestrictionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F40837D5C2B884F4C144DB /* MockRestrictionProvider.swift */; };
 		503B6983EFBDE922E7C52A69 /* PrivacyParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649AC669F3EA07C8F948D67B /* PrivacyParityTests.swift */; };
@@ -54,7 +54,7 @@
 		7349F229507AD8E8DEBF85E9 /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE22350F9953B717E363791 /* SyncCoordinator.swift */; };
 		7B7943CC289015527D62E70C /* JoinErrorMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB7115C8A7EF8FD1E9A0490 /* JoinErrorMessages.swift */; };
 		7D4803D978C2EBA68C0A7543 /* SyncCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B443A3E6DDA676EC2E40D0 /* SyncCoordinatorTests.swift */; };
-		7F3D7FC450848F6166AC3498 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 379433806F1C5C600419A883 /* WorkModeCore */; };
+		7F3D7FC450848F6166AC3498 /* ClockOffCore in Frameworks */ = {isa = PBXBuildFile; productRef = 745B6F673F00A8C12406CA94 /* ClockOffCore */; };
 		830C794FC6D1F2B2D9AD37F9 /* ScheduleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CB3A3D113AE5A4D13CB3FB /* ScheduleViewModel.swift */; };
 		84C40CBAF1AC2073CD9FD3DA /* ClockOffShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8642FD568D9F29D8E983F471 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAE702F0526B1C26CBA40B8 /* AppDelegate.swift */; };
@@ -66,7 +66,7 @@
 		A9C8E57B215BDFBA6EFF8834 /* HomeCardModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31623D1F2A916D8372EB0D75 /* HomeCardModelTests.swift */; };
 		AA8E3C393DB4B342B38100F5 /* NotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C57AC01D963631B0DD65F7B /* NotificationPlanner.swift */; };
 		B733B21CC869C6EA1A00B264 /* AppRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6C68269E6EE9636C18754D /* AppRuntime.swift */; };
-		C41C227D6755C101003B901C /* WorkModeScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = 3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */; };
+		C41C227D6755C101003B901C /* ClockOffScreenTime in Frameworks */ = {isa = PBXBuildFile; productRef = BA201EE7F9FE24BAD58DA2E4 /* ClockOffScreenTime */; };
 		C4E1FD2F7C57DC821F17209A /* BreakSessionMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57B3331C647B8B08EA23F5C9 /* BreakSessionMerge.swift */; };
 		C602F19FDF1E23CE13D103CE /* OnboardingResumeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6695A4BBE919A32C53EAF61B /* OnboardingResumeTests.swift */; };
 		C94A8F10D03D3C61D289E847 /* SyncStaleness.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF950740FB463335C3EB0D26 /* SyncStaleness.swift */; };
@@ -76,7 +76,7 @@
 		D75A57AD73F92F1D0BCC3A66 /* DeviceInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DCE18006533B22F1F7CF0C3 /* DeviceInfo.swift */; };
 		DDA568BDCCAEE9E3111239DA /* SelectionCountsText.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC853CAD27D9AEB1B751F613 /* SelectionCountsText.swift */; };
 		DF0F97FB0F19B498637B230A /* ClockOffDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		DF9EF76EF83F0A6388402E59 /* WorkModeCore in Frameworks */ = {isa = PBXBuildFile; productRef = 4F4074585205C997C69445A0 /* WorkModeCore */; };
+		DF9EF76EF83F0A6388402E59 /* ClockOffCore in Frameworks */ = {isa = PBXBuildFile; productRef = E18C980A0DEFBA21A3461D8E /* ClockOffCore */; };
 		F0F3E818EE89CC9CD3483C62 /* KeychainTokenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD2E079A1F45BD204C49477 /* KeychainTokenStoreTests.swift */; };
 		F1F90F0FF764FD884E60911F /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C40F97DE9F2EEC869FE036F /* Components.swift */; };
 		F9C3ACE8A7FC959554FF2F05 /* SetupRepairView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A761FBDA1A734B559F39BA39 /* SetupRepairView.swift */; };
@@ -152,6 +152,7 @@
 		42B443A3E6DDA676EC2E40D0 /* SyncCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinatorTests.swift; sourceTree = "<group>"; };
 		46DF428FB0549DF771A4E5A0 /* TimeFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatting.swift; sourceTree = "<group>"; };
 		4DB7115C8A7EF8FD1E9A0490 /* JoinErrorMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinErrorMessages.swift; sourceTree = "<group>"; };
+		4DE5407B3E0D6F28C5AE6B52 /* ClockOffCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ClockOffCore; path = Packages/ClockOffCore; sourceTree = SOURCE_ROOT; };
 		51F40837D5C2B884F4C144DB /* MockRestrictionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRestrictionProvider.swift; sourceTree = "<group>"; };
 		53ED6C8346BD70192BE03148 /* WorkModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeController.swift; sourceTree = "<group>"; };
 		57B3331C647B8B08EA23F5C9 /* BreakSessionMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakSessionMerge.swift; sourceTree = "<group>"; };
@@ -181,7 +182,6 @@
 		8A70A4AF11BB1A6FBF9EB25B /* WorkModeControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkModeControllerTests.swift; sourceTree = "<group>"; };
 		92E6E33D2C1D25B6DC8DBD7F /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		95F0DA89EBA44E728FD569F5 /* NotificationPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlannerTests.swift; sourceTree = "<group>"; };
-		96A859DB657AF5B16409AB12 /* WorkModeCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WorkModeCore; path = Packages/WorkModeCore; sourceTree = SOURCE_ROOT; };
 		9BBC3D8A5585F70969050362 /* ClockOffShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ClockOffShieldConfiguration.entitlements; sourceTree = "<group>"; };
 		9C1D7F1D09745DB048ABDE76 /* ClockOffApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockOffApp.swift; sourceTree = "<group>"; };
 		9E350CA577C6E533AE5815FD /* ClockOffAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ClockOffAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -217,8 +217,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				250D13E7FE6887455CFBC61A /* WorkModeCore in Frameworks */,
-				C41C227D6755C101003B901C /* WorkModeScreenTime in Frameworks */,
+				250D13E7FE6887455CFBC61A /* ClockOffCore in Frameworks */,
+				C41C227D6755C101003B901C /* ClockOffScreenTime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,7 +226,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				450B48276CA99BB35098D547 /* WorkModeCore in Frameworks */,
+				450B48276CA99BB35098D547 /* ClockOffCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,7 +234,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DF9EF76EF83F0A6388402E59 /* WorkModeCore in Frameworks */,
+				DF9EF76EF83F0A6388402E59 /* ClockOffCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,8 +242,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7F3D7FC450848F6166AC3498 /* WorkModeCore in Frameworks */,
-				424CD00894BBE945796901F1 /* WorkModeScreenTime in Frameworks */,
+				7F3D7FC450848F6166AC3498 /* ClockOffCore in Frameworks */,
+				424CD00894BBE945796901F1 /* ClockOffScreenTime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -386,7 +386,7 @@
 		80103257A5B4BED1A882322F /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				96A859DB657AF5B16409AB12 /* WorkModeCore */,
+				4DE5407B3E0D6F28C5AE6B52 /* ClockOffCore */,
 			);
 			path = Packages;
 			sourceTree = "<group>";
@@ -579,7 +579,7 @@
 			);
 			name = ClockOffShieldConfiguration;
 			packageProductDependencies = (
-				4F4074585205C997C69445A0 /* WorkModeCore */,
+				E18C980A0DEFBA21A3461D8E /* ClockOffCore */,
 			);
 			productName = ClockOffShieldConfiguration;
 			productReference = ECEA2B90ACBD9A50CC2EFED7 /* ClockOffShieldConfiguration.appex */;
@@ -604,8 +604,8 @@
 			);
 			name = ClockOffApp;
 			packageProductDependencies = (
-				379433806F1C5C600419A883 /* WorkModeCore */,
-				AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */,
+				745B6F673F00A8C12406CA94 /* ClockOffCore */,
+				A1DDC486097665E474172945 /* ClockOffScreenTime */,
 			);
 			productName = ClockOffApp;
 			productReference = E5227BF44538BDC036CC8FD9 /* ClockOffApp.app */;
@@ -624,8 +624,8 @@
 			);
 			name = ClockOffDeviceActivityMonitor;
 			packageProductDependencies = (
-				0753D1CA1162834FD7BABA9D /* WorkModeCore */,
-				3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */,
+				FADA1187474CA6180A8895E0 /* ClockOffCore */,
+				BA201EE7F9FE24BAD58DA2E4 /* ClockOffScreenTime */,
 			);
 			productName = ClockOffDeviceActivityMonitor;
 			productReference = 9E3950B02C7E791C4A9C64DF /* ClockOffDeviceActivityMonitor.appex */;
@@ -644,7 +644,7 @@
 			);
 			name = ClockOffShieldAction;
 			packageProductDependencies = (
-				70322A8087EB2EF9D543FF8F /* WorkModeCore */,
+				F06D6E278530838C271860B6 /* ClockOffCore */,
 			);
 			productName = ClockOffShieldAction;
 			productReference = 83EEC96B871EBADC2AAC48DB /* ClockOffShieldAction.appex */;
@@ -691,7 +691,7 @@
 			mainGroup = C05BF81A214C17662E6EAD7E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				14185C39986034ACED33D37E /* XCLocalSwiftPackageReference "Packages/WorkModeCore" */,
+				F7862ACEC599BE46975BE6C9 /* XCLocalSwiftPackageReference "Packages/ClockOffCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0C81C6CFE86EFCBE4462A8C9 /* Products */;
@@ -1221,36 +1221,36 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		14185C39986034ACED33D37E /* XCLocalSwiftPackageReference "Packages/WorkModeCore" */ = {
+		F7862ACEC599BE46975BE6C9 /* XCLocalSwiftPackageReference "Packages/ClockOffCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages/WorkModeCore;
+			relativePath = Packages/ClockOffCore;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0753D1CA1162834FD7BABA9D /* WorkModeCore */ = {
+		745B6F673F00A8C12406CA94 /* ClockOffCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeCore;
+			productName = ClockOffCore;
 		};
-		379433806F1C5C600419A883 /* WorkModeCore */ = {
+		A1DDC486097665E474172945 /* ClockOffScreenTime */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeCore;
+			productName = ClockOffScreenTime;
 		};
-		3A07886BE05A865F8AD4B3E3 /* WorkModeScreenTime */ = {
+		BA201EE7F9FE24BAD58DA2E4 /* ClockOffScreenTime */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeScreenTime;
+			productName = ClockOffScreenTime;
 		};
-		4F4074585205C997C69445A0 /* WorkModeCore */ = {
+		E18C980A0DEFBA21A3461D8E /* ClockOffCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeCore;
+			productName = ClockOffCore;
 		};
-		70322A8087EB2EF9D543FF8F /* WorkModeCore */ = {
+		F06D6E278530838C271860B6 /* ClockOffCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeCore;
+			productName = ClockOffCore;
 		};
-		AB60EA651D93C3BD8D2E5749 /* WorkModeScreenTime */ = {
+		FADA1187474CA6180A8895E0 /* ClockOffCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = WorkModeScreenTime;
+			productName = ClockOffCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

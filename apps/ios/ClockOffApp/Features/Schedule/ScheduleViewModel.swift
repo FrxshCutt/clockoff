@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// One day of the Schedule tab.
 struct ScheduleDaySection: Equatable, Identifiable {

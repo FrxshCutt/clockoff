@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// `AppModel` with the `WorkModeController` mounted: routing, Home state from the controller, breaks, setup repair,
 /// leave/sign-out and connectivity-driven syncs.

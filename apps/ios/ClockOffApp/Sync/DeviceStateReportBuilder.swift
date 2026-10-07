@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Builds `POST /device/state` bodies from local state. Only §12 operational fields.
 enum DeviceStateReportBuilder {

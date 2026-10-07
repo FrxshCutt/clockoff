@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 final class NotificationPlannerTests: XCTestCase {
     private let london = TimeZone(identifier: "Europe/London")!
@@ -12,7 +12,7 @@ final class NotificationPlannerTests: XCTestCase {
 
     func testPlansWarningStartAndEndWithDeterministicIds() {
         let planned = NotificationPlanner.plan(cache: cache(), now: iso("2026-10-06T07:00:00Z"), timeZone: london)
-        XCTAssertEqual(planned.map(\.id), ["wm.shift-\(Fixtures.shift.id)-warning", "wm.shift-\(Fixtures.shift.id)-start", "wm.shift-\(Fixtures.shift.id)-end"])
+        XCTAssertEqual(planned.map(\.id), ["clockoff.shift-\(Fixtures.shift.id)-warning", "clockoff.shift-\(Fixtures.shift.id)-start", "clockoff.shift-\(Fixtures.shift.id)-end"])
         XCTAssertEqual(planned.map(\.fireAt), [iso("2026-10-06T07:45:00Z"), iso("2026-10-06T08:00:00Z"), iso("2026-10-06T16:00:00Z")])
         XCTAssertEqual(planned.map(\.title), ["Shift begins soon", "Work Mode activated", "Work Mode ended"])
         let again = NotificationPlanner.plan(cache: cache(), now: iso("2026-10-06T07:00:00Z"), timeZone: london)
@@ -36,7 +36,7 @@ final class NotificationPlannerTests: XCTestCase {
     func testBackToBackShiftsAreOneInterval() {
         let second = Shift(id: "00000000-0000-4000-8000-000000000031", startsAt: iso("2026-10-06T16:00:00Z"), endsAt: iso("2026-10-06T20:00:00Z"), timezone: "Europe/London")
         let planned = NotificationPlanner.plan(cache: cache(shifts: [Fixtures.shift, second]), now: iso("2026-10-06T07:00:00Z"), timeZone: london)
-        XCTAssertEqual(planned.map(\.id), ["wm.shift-\(Fixtures.shift.id)-warning", "wm.shift-\(Fixtures.shift.id)-start", "wm.shift-\(Fixtures.shift.id)-end"])
+        XCTAssertEqual(planned.map(\.id), ["clockoff.shift-\(Fixtures.shift.id)-warning", "clockoff.shift-\(Fixtures.shift.id)-start", "clockoff.shift-\(Fixtures.shift.id)-end"])
         XCTAssertEqual(planned.last?.fireAt, iso("2026-10-06T20:00:00Z"), "Work Mode ends when the merged interval ends")
     }
 
@@ -44,25 +44,25 @@ final class NotificationPlannerTests: XCTestCase {
         let session = BreakSession(id: "srv", clientBreakId: "c-1", shiftId: Fixtures.shift.id, startedAt: iso("2026-10-06T10:00:00Z"),
                                    plannedEndsAt: iso("2026-10-06T10:15:00Z"), restrictionBehaviour: .relaxAll)
         let planned = NotificationPlanner.plan(cache: cache(activeBreak: session), now: iso("2026-10-06T10:05:00Z"), timeZone: london)
-        XCTAssertEqual(planned.map(\.id), ["wm.break-c-1-ending", "wm.break-c-1-ended", "wm.shift-\(Fixtures.shift.id)-end"])
+        XCTAssertEqual(planned.map(\.id), ["clockoff.break-c-1-ending", "clockoff.break-c-1-ended", "clockoff.shift-\(Fixtures.shift.id)-end"])
         XCTAssertEqual(planned[0].fireAt, iso("2026-10-06T10:13:00Z"))
         XCTAssertEqual(planned[1].fireAt, iso("2026-10-06T10:15:00Z"))
 
         let late = NotificationPlanner.plan(cache: cache(activeBreak: session), now: iso("2026-10-06T10:14:00Z"), timeZone: london)
-        XCTAssertEqual(late.map(\.id), ["wm.break-c-1-ended", "wm.shift-\(Fixtures.shift.id)-end"], "the warning moment has passed")
+        XCTAssertEqual(late.map(\.id), ["clockoff.break-c-1-ended", "clockoff.shift-\(Fixtures.shift.id)-end"], "the warning moment has passed")
 
         var ended = session
         ended.status = .ended
         ended.endedAt = iso("2026-10-06T10:06:00Z")
         let after = NotificationPlanner.plan(cache: cache(activeBreak: ended), now: iso("2026-10-06T10:07:00Z"), timeZone: london)
-        XCTAssertEqual(after.map(\.id), ["wm.shift-\(Fixtures.shift.id)-end"], "an ended break is not announced")
+        XCTAssertEqual(after.map(\.id), ["clockoff.shift-\(Fixtures.shift.id)-end"], "an ended break is not announced")
     }
 
     func testBreakCutShortByTheShiftEndHasNoBreakNotifications() {
         let session = BreakSession(id: "srv", clientBreakId: "c-late", shiftId: Fixtures.shift.id, startedAt: iso("2026-10-06T15:50:00Z"),
                                    plannedEndsAt: iso("2026-10-06T16:05:00Z"), restrictionBehaviour: .relaxAll)
         let planned = NotificationPlanner.plan(cache: cache(activeBreak: session), now: iso("2026-10-06T15:52:00Z"), timeZone: london)
-        XCTAssertEqual(planned.map(\.id), ["wm.shift-\(Fixtures.shift.id)-end"], "\"Work Mode ended\" covers the break too")
+        XCTAssertEqual(planned.map(\.id), ["clockoff.shift-\(Fixtures.shift.id)-end"], "\"Work Mode ended\" covers the break too")
     }
 
     func testCapsAtTheIOSPendingLimitSoonestFirst() {
@@ -76,11 +76,11 @@ final class NotificationPlannerTests: XCTestCase {
     }
 
     func testImmediateNoticesHaveFixedIdentifiers() {
-        XCTAssertEqual(NotificationPlanner.scheduleChangedIdentifier, "wm.schedule-changed")
-        XCTAssertEqual(NotificationPlanner.permissionAttentionIdentifier, "wm.permission-attention")
-        XCTAssertTrue(NotificationPlanner.isOurs("wm.shift-x-start"))
+        XCTAssertEqual(NotificationPlanner.scheduleChangedIdentifier, "clockoff.schedule-changed")
+        XCTAssertEqual(NotificationPlanner.permissionAttentionIdentifier, "clockoff.permission-attention")
+        XCTAssertTrue(NotificationPlanner.isOurs("clockoff.shift-x-start"))
         XCTAssertFalse(NotificationPlanner.isOurs("other.app"))
         XCTAssertEqual(NotificationPlanner.scheduleChanged().title, "Schedule changed")
-        XCTAssertEqual(NotificationPlanner.permissionAttention().title, "Work Mode needs attention")
+        XCTAssertEqual(NotificationPlanner.permissionAttention().title, "ClockOff needs attention")
     }
 }

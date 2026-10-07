@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// The single state card on Home, derived from `WorkModeController.state` (never from the schedule directly, so
 /// the card and the shields can never disagree). Pure, so it is unit-tested per state.
@@ -122,7 +122,7 @@ struct HomeCardModel: Equatable {
     /// Why "Start Break" is not offered right now.
     static func breakUnavailableReason(rules: BreakPolicyRules?, allowance: BreakAllowance?, time: TimeFormatting) -> String? {
         guard let rules, rules.breaksEnabled, rules.maxBreakDurationMinutes > 0 else {
-            return "Breaks aren't available in Work Mode at your workplace."
+            return "Breaks aren't available in ClockOff at your workplace."
         }
         guard rules.employeeTriggeredAllowed else { return "Only scheduled or manager breaks are allowed at your workplace." }
         guard let allowance else { return "Break allowance not available yet — pull down to sync." }

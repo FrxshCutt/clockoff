@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Whether the employee's selections exist, and their counts (numbers only, §12). `RestrictionProvider` only
 /// exposes the work selection; the "keep blocked on breaks" subset (`SelectionKind.breakKept`) is read here so

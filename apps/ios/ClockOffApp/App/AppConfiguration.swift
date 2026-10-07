@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Build-time configuration read from Info.plist (values come from Config/*.xcconfig).
 struct AppConfiguration: Equatable {

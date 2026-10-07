@@ -15,7 +15,7 @@ CLOCKOFF_SHIELD_CONFIG_BUNDLE_ID = online.clockoff.app.shieldconfig
 CLOCKOFF_SHIELD_ACTION_BUNDLE_ID = online.clockoff.app.shieldaction
 CLOCKOFF_TESTS_BUNDLE_ID = online.clockoff.app.tests
 
-// Must match WorkModeCore `AppGroup.identifier` and every *.entitlements file.
+// Must match ClockOffCore `AppGroup.identifier` and every *.entitlements file.
 CLOCKOFF_APP_GROUP = group.online.clockoff.app.shared
 
 // Optional, git-ignored: DEVELOPMENT_TEAM (and, for a personal team, bundle id overrides).

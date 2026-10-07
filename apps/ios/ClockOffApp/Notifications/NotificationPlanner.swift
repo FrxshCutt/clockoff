@@ -1,7 +1,7 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
-/// One local notification to schedule. Identifiers are deterministic (`wm.shift-<id>-start`, …) so a re-plan
+/// One local notification to schedule. Identifiers are deterministic (`clockoff.shift-<id>-start`, …) so a re-plan
 /// replaces the previous request for the same moment instead of duplicating it.
 struct PlannedNotification: Equatable, Identifiable, Sendable {
     let id: String
@@ -13,7 +13,7 @@ struct PlannedNotification: Equatable, Identifiable, Sendable {
 /// Pure planner: turns the cached schedule into the local notifications the employee should receive alongside
 /// the DeviceActivity schedules. Never per phone interaction — only shift and break boundaries (§12).
 enum NotificationPlanner {
-    static let identifierPrefix = "wm."
+    static let identifierPrefix = "clockoff."
     /// iOS keeps at most 64 pending requests per app; leave room for the immediate ones.
     static let maxPending = 60
     static let breakEndingWarning: TimeInterval = 2 * 60
@@ -106,6 +106,6 @@ enum NotificationPlanner {
 
     /// Immediate notice when Screen Time access is lost.
     static func permissionAttention() -> (title: String, body: String) {
-        ("Work Mode needs attention", "Screen Time access is off, so apps can't be blocked during your shifts. Open ClockOff to fix it.")
+        ("ClockOff needs attention", "Screen Time access is off, so apps can't be blocked during your shifts. Open ClockOff to fix it.")
     }
 }

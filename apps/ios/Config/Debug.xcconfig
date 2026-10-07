@@ -12,7 +12,7 @@ GCC_OPTIMIZATION_LEVEL = 0
 ONLY_ACTIVE_ARCH = YES
 ENABLE_TESTABILITY = YES
 DEBUG_INFORMATION_FORMAT = dwarf
-// The hosted unit tests resolve WorkModeCore symbols from the app binary: keep unused ones.
+// The hosted unit tests resolve ClockOffCore symbols from the app binary: keep unused ones.
 DEAD_CODE_STRIPPING = NO
 
 // Root of the mobile API on the local Next.js dev server (the client appends endpoint paths such as /sync).

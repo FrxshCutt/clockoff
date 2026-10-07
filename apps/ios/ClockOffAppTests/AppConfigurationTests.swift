@@ -1,5 +1,5 @@
 import XCTest
-import WorkModeCore
+import ClockOffCore
 @testable import ClockOffApp
 
 /// `API_BASE_URL` is the mobile API root; help pages live on the web app of the same server.

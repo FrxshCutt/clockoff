@@ -20,8 +20,8 @@ configFiles:
   Release: Config/Release.xcconfig
 
 packages:
-  WorkModeCore:
-    path: Packages/WorkModeCore
+  ClockOffCore:
+    path: Packages/ClockOffCore
 
 targets:
   ClockOffApp:
@@ -60,7 +60,7 @@ targets:
           - online.clockoff.app.refresh
         NSFamilyControlsUsageDescription: >-
           ClockOff uses Screen Time to block the apps you choose only while you are on shift, relaxes the blocks
-          on breaks and lifts them when your shift ends. Your employer can see whether Work Mode is set up and
+          on breaks and lifts them when your shift ends. Your employer can see whether ClockOff is set up and
           working, but never which apps you choose, your messages, photos, browsing or how you use your phone.
         API_BASE_URL: $(API_BASE_URL)
         ClockOffPushEnvironment: $(CLOCKOFF_PUSH_ENVIRONMENT)
@@ -73,11 +73,11 @@ targets:
           - group.online.clockoff.app.shared
         aps-environment: development
     dependencies:
-      - package: WorkModeCore
-        product: WorkModeCore
+      - package: ClockOffCore
+        product: ClockOffCore
       # Shared ManagedSettings/FamilyControls adapter (also linked by the DeviceActivityMonitor extension).
-      - package: WorkModeCore
-        product: WorkModeScreenTime
+      - package: ClockOffCore
+        product: ClockOffScreenTime
       - target: ClockOffDeviceActivityMonitor
       - target: ClockOffShieldConfiguration
       - target: ClockOffShieldAction
@@ -130,10 +130,10 @@ targets:
         com.apple.security.application-groups:
           - group.online.clockoff.app.shared
     dependencies:
-      - package: WorkModeCore
-        product: WorkModeCore
-      - package: WorkModeCore
-        product: WorkModeScreenTime
+      - package: ClockOffCore
+        product: ClockOffCore
+      - package: ClockOffCore
+        product: ClockOffScreenTime
 
   ClockOffShieldConfiguration:
     type: app-extension
@@ -165,8 +165,8 @@ targets:
         com.apple.security.application-groups:
           - group.online.clockoff.app.shared
     dependencies:
-      - package: WorkModeCore
-        product: WorkModeCore
+      - package: ClockOffCore
+        product: ClockOffCore
 
   ClockOffShieldAction:
     type: app-extension
@@ -198,8 +198,8 @@ targets:
         com.apple.security.application-groups:
           - group.online.clockoff.app.shared
     dependencies:
-      - package: WorkModeCore
-        product: WorkModeCore
+      - package: ClockOffCore
+        product: ClockOffCore
 
   ClockOffAppTests:
     type: bundle.unit-test
@@ -215,7 +215,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/ClockOffApp.app/ClockOffApp
         BUNDLE_LOADER: $(TEST_HOST)
-    # WorkModeCore is deliberately NOT linked here: the tests use the host app's copy, so types such as
+    # ClockOffCore is deliberately NOT linked here: the tests use the host app's copy, so types such as
     # APIError are the same type in test and app code (two static copies would break dynamic casts).
     dependencies:
       - target: ClockOffApp
@@ -233,8 +233,8 @@ schemes:
       gatherCoverageData: false
       targets:
         - name: ClockOffAppTests
-        - package: WorkModeCore/WorkModeCoreTests
-        - package: WorkModeCore/WorkModeScreenTimeTests
+        - package: ClockOffCore/ClockOffCoreTests
+        - package: ClockOffCore/ClockOffScreenTimeTests
     profile:
       config: Release
     analyze:

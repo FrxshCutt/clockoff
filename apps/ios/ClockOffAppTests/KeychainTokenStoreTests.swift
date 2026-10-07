@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// Exercises the real Keychain where the test host has one. Unsigned simulator builds (`make test` runs with
 /// CODE_SIGNING_ALLOWED=NO) may have no keychain access group; the test is skipped there rather than faked.

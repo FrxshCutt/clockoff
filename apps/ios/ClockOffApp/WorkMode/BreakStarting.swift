@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// The networking seam `WorkModeController` uses for breaks. The app-flows engineer may supply their own
 /// implementation (retries, telemetry); `MobileAPIBreakClient` is the plain adapter over `MobileAPI`.

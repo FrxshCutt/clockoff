@@ -69,10 +69,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WorkModeCoreTests"
-               BuildableName = "WorkModeCoreTests"
-               BlueprintName = "WorkModeCoreTests"
-               ReferencedContainer = "container:Packages/WorkModeCore">
+               BlueprintIdentifier = "ClockOffCoreTests"
+               BuildableName = "ClockOffCoreTests"
+               BlueprintName = "ClockOffCoreTests"
+               ReferencedContainer = "container:Packages/ClockOffCore">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -80,10 +80,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WorkModeScreenTimeTests"
-               BuildableName = "WorkModeScreenTimeTests"
-               BlueprintName = "WorkModeScreenTimeTests"
-               ReferencedContainer = "container:Packages/WorkModeCore">
+               BlueprintIdentifier = "ClockOffScreenTimeTests"
+               BuildableName = "ClockOffScreenTimeTests"
+               BlueprintName = "ClockOffScreenTimeTests"
+               ReferencedContainer = "container:Packages/ClockOffCore">
             </BuildableReference>
          </TestableReference>
       </Testables>

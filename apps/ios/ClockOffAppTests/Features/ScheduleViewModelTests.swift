@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 final class ScheduleViewModelTests: XCTestCase {
     private let london = TimeZone(identifier: "Europe/London")!

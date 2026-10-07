@@ -1,6 +1,6 @@
 import BackgroundTasks
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// `BGAppRefreshTask` registration (identifier in Info.plist `BGTaskSchedulerPermittedIdentifiers`).
 /// iOS decides when refreshes actually run; DeviceActivity schedules — not this — are what enforce shifts
@@ -26,7 +26,7 @@ enum BackgroundRefresh {
             }
         }
         if !registered {
-            WorkModeLog.app.error("BGTaskScheduler refused \(identifier, privacy: .public): check Info.plist")
+            ClockOffLog.app.error("BGTaskScheduler refused \(identifier, privacy: .public): check Info.plist")
         }
     }
 
@@ -38,7 +38,7 @@ enum BackgroundRefresh {
             try BGTaskScheduler.shared.submit(request)
         } catch {
             // Expected in the Simulator (BGTaskSchedulerErrorDomain code 1, unavailable).
-            WorkModeLog.app.info("background refresh not scheduled: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.info("background refresh not scheduled: \(String(describing: error), privacy: .public)")
         }
     }
 }

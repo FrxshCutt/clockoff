@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// What the employee sees, derived from the on-device engine output plus local health signals. Published by
 /// `WorkModeController.state`; the Home card and status widgets render it.

@@ -7,7 +7,7 @@
 // "DEVELOPMENT MODE — restrictions are simulated" banner whenever it is active.
 #if DEBUG_MOCK_RESTRICTIONS
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProviding, SelectionConfiguring, BreakScheduling, RestrictionAuthorizationObserving {
     enum AuthorizationOutcome: Equatable {
@@ -179,7 +179,7 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
             }
             _scheduledActivities.append(plan)
             _scheduledBreaks.append(plan)
-            appendLog("schedule break activity \(plan.name) until \(WorkModeDateCoding.format(plan.intervalEnd ?? plannedEndsAt))")
+            appendLog("schedule break activity \(plan.name) until \(ClockOffDateCoding.format(plan.intervalEnd ?? plannedEndsAt))")
             return plan
         }
     }
@@ -299,7 +299,7 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
         }
         guard changed else { return }
         onAuthorizationStatusChange?(status)
-        NotificationCenter.default.post(name: .workModeAuthorizationStatusDidChange, object: nil,
+        NotificationCenter.default.post(name: .clockOffAuthorizationStatusDidChange, object: nil,
                                         userInfo: [RestrictionAuthorizationNotification.statusKey: status.rawValue])
     }
 
@@ -314,7 +314,7 @@ final class MockRestrictionProvider: RestrictionProvider, SelectionCountsProvidi
 
     private func appendLog(_ message: String) {
         _log.append(message)
-        WorkModeLog.restrictions.debug("[MOCK] \(message, privacy: .public)")
+        ClockOffLog.restrictions.debug("[MOCK] \(message, privacy: .public)")
     }
 
     private func locked<T>(_ body: () throws -> T) rethrows -> T {

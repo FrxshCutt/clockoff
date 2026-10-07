@@ -1,6 +1,6 @@
 import Combine
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Drives onboarding screens 1–8 (`mode == .setup`) and the "Setup Repair" flow (`mode == .repair`, screens 6–7
 /// only) when Screen Time access or the app selection regressed after setup.
@@ -101,7 +101,7 @@ final class OnboardingViewModel: ObservableObject, Identifiable {
         if dependencies.provider.authorizationStatus == .approved { authorisation = .approved }
         refreshSelectionState()
         // Apple's picker saves asynchronously (a sheet); the mock saves at once. Either way the save is announced.
-        observers.append(NotificationCenter.default.addObserver(forName: .workModeSelectionDidChange, object: nil, queue: .main) { [weak self] _ in
+        observers.append(NotificationCenter.default.addObserver(forName: .clockOffSelectionDidChange, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.refreshSelectionState() }
         })
     }
@@ -356,7 +356,7 @@ final class OnboardingViewModel: ObservableObject, Identifiable {
     // MARK: Screen 7 — choose apps
 
     /// Opens Apple's picker for the work selection (or simulates one). The save is announced by
-    /// `.workModeSelectionDidChange`; `hasSelection` follows it.
+    /// `.clockOffSelectionDidChange`; `hasSelection` follows it.
     func chooseApps() {
         clearError()
         selectionIncompleteShown = false
@@ -496,7 +496,7 @@ final class OnboardingViewModel: ObservableObject, Identifiable {
             }
         } catch {
             // The next sync reports it; the local repair is done regardless.
-            WorkModeLog.app.info("repair check-in deferred: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.info("repair check-in deferred: \(String(describing: error), privacy: .public)")
         }
         onFinished()
     }
@@ -526,7 +526,7 @@ final class OnboardingViewModel: ObservableObject, Identifiable {
                 state.clockSkewSeconds = response.clockSkewSeconds
             }
         } catch {
-            WorkModeLog.app.info("permission check-in deferred: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.info("permission check-in deferred: \(String(describing: error), privacy: .public)")
         }
     }
 
@@ -537,7 +537,7 @@ final class OnboardingViewModel: ObservableObject, Identifiable {
         do {
             try deps.outbox.append(event)
         } catch {
-            WorkModeLog.app.error("could not queue \(event.type.rawValue, privacy: .public): \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.error("could not queue \(event.type.rawValue, privacy: .public): \(String(describing: error), privacy: .public)")
         }
     }
 

@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-import WorkModeCore
+import ClockOffCore
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
@@ -100,7 +100,7 @@ struct SettingsView: View {
                         .frame(minHeight: 44)
                         .disabled(isLeaving)
                 } footer: {
-                    Text("Leaving lifts every Work Mode restriction on this iPhone, removes your saved schedule and app choices, and disconnects it from your workplace.")
+                    Text("Leaving lifts every ClockOff restriction on this iPhone, removes your saved schedule and app choices, and disconnects it from your workplace.")
                 }
             }
             .navigationTitle("Settings")

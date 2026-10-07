@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 final class BreakSessionMergeTests: XCTestCase {
     private let local = BreakSession(id: "c-1", clientBreakId: "c-1", shiftId: Fixtures.shift.id, startedAt: iso("2026-10-06T10:00:00Z"),

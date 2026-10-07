@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 final class MockRestrictionProviderTests: XCTestCase {
     private let london = TimeZone(identifier: "Europe/London")!
@@ -36,8 +36,8 @@ final class MockRestrictionProviderTests: XCTestCase {
         XCTAssertTrue(mock.hasSelection())
         XCTAssertEqual(mock.selectionCounts(), MockRestrictionProvider.defaultSelection)
 
-        try mock.scheduleActivities([activity("wm.shift.s", "2026-10-06T08:00:00Z", "2026-10-06T16:00:00Z")])
-        XCTAssertEqual(mock.scheduledActivities.map(\.name), ["wm.shift.s"])
+        try mock.scheduleActivities([activity("clockoff.shift.s", "2026-10-06T08:00:00Z", "2026-10-06T16:00:00Z")])
+        XCTAssertEqual(mock.scheduledActivities.map(\.name), ["clockoff.shift.s"])
 
         try mock.applyWorkRestrictions(plan: plan)
         XCTAssertEqual(mock.activeRestriction, .work(plan))

@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 @MainActor
 final class OnboardingViewModelTests: XCTestCase {

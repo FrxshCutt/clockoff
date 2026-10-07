@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Decides which break session the cache keeps after `GET /sync`. The server is authoritative, except for a
 /// break the phone started or ended while offline and has not managed to replay yet: that one must survive

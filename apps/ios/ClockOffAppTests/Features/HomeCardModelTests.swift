@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// The Home card for every `WorkModeController` state (pure mapping, no provider or network).
 final class HomeCardModelTests: XCTestCase {
@@ -87,7 +87,7 @@ final class HomeCardModelTests: XCTestCase {
         let disabled = BreakPolicy(id: "d", name: "None", rules: BreakPolicyRules(breaksEnabled: false))
         let noBreaks = card(.working(shift: shiftRef, endsAt: shiftRef.endsAt, allowance: allowance(canStart: true), relaxedByManager: false),
                             cache: cache(breakPolicy: disabled))
-        XCTAssertEqual(noBreaks.note, "Breaks aren't available in Work Mode at your workplace.")
+        XCTAssertEqual(noBreaks.note, "Breaks aren't available in ClockOff at your workplace.")
         XCTAssertFalse(noBreaks.details.contains { $0.hasPrefix("Breaks:") })
 
         let unsynced = card(.working(shift: shiftRef, endsAt: shiftRef.endsAt, allowance: nil, relaxedByManager: false))

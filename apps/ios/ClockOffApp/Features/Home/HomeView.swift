@@ -1,5 +1,5 @@
 import SwiftUI
-import WorkModeCore
+import ClockOffCore
 
 struct HomeView: View {
     @EnvironmentObject private var model: AppModel

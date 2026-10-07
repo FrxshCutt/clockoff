@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Employee-facing copy for join/lookup failures (screens 3–4).
 enum JoinErrorMessages {

@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Why a sync was requested (for logs and for deciding whether to refresh the profile).
 enum SyncReason: String, Sendable {
@@ -115,7 +115,7 @@ actor SyncCoordinator {
 
     private func performSync(reason: SyncReason) async -> SyncOutcome {
         let instant = now()
-        WorkModeLog.sync.info("sync started (\(reason.rawValue, privacy: .public))")
+        ClockOffLog.sync.info("sync started (\(reason.rawValue, privacy: .public))")
         guard api.hasCredentials() else {
             return enforce(state: cache.load() ?? CachedState(), at: instant, policyChanged: false, scheduleChanged: false, error: .notSignedIn())
         }
@@ -138,7 +138,7 @@ actor SyncCoordinator {
             bundle = try await api.sync()
         } catch {
             let apiError = error as? APIError ?? .network(error)
-            WorkModeLog.sync.error("sync failed: \(apiError.code.rawValue, privacy: .public)")
+            ClockOffLog.sync.error("sync failed: \(apiError.code.rawValue, privacy: .public)")
             let state = (try? cache.update { $0.lastSyncErrorCode = apiError.code.rawValue }) ?? cache.load() ?? CachedState()
             var outcome = enforce(state: state, at: instant, policyChanged: false, scheduleChanged: false, error: apiError)
             outcome.breakReplay = replay
@@ -180,7 +180,7 @@ actor SyncCoordinator {
                 if scheduleChanged { state.lastScheduleSyncAt = instant }
             }
         } catch {
-            WorkModeLog.sync.error("cache update failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.sync.error("cache update failed: \(String(describing: error), privacy: .public)")
             return enforce(state: cache.load() ?? CachedState(), at: instant, policyChanged: false, scheduleChanged: false,
                            error: APIError(code: .invalidResponse, message: "ClockOff could not save your schedule on this phone.", status: 0))
         }
@@ -204,7 +204,7 @@ actor SyncCoordinator {
         }
         outcome.eventsFlushed = await flushOutbox()
         await reportDeviceState(engineState: outcome.engineState.state, at: instant)
-        WorkModeLog.sync.info("sync finished: \(outcome.expectedState.state.rawValue, privacy: .public), rescheduled=\(outcome.activitiesRescheduled), replayed=\(replay.replayed), notifications=\(outcome.notificationsPlanned)")
+        ClockOffLog.sync.info("sync finished: \(outcome.expectedState.state.rawValue, privacy: .public), rescheduled=\(outcome.activitiesRescheduled), replayed=\(replay.replayed), notifications=\(outcome.notificationsPlanned)")
         return outcome
     }
 
@@ -217,7 +217,7 @@ actor SyncCoordinator {
                 state.deviceId = me.deviceId
             }
         } catch {
-            WorkModeLog.sync.error("profile refresh failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.sync.error("profile refresh failed: \(String(describing: error), privacy: .public)")
         }
     }
 
@@ -263,7 +263,7 @@ actor SyncCoordinator {
                 } catch {
                     // The plan is on disk; the app's own reconcile/timers keep enforcing and the next sync retries.
                     metadata?.activitiesNeedReschedule = true
-                    WorkModeLog.sync.error("scheduling activities failed: \(String(describing: error), privacy: .public)")
+                    ClockOffLog.sync.error("scheduling activities failed: \(String(describing: error), privacy: .public)")
                 }
             }
         }
@@ -288,7 +288,7 @@ actor SyncCoordinator {
                 } catch RestrictionProviderError.noSelection {
                     applied = .permissionError
                 } catch {
-                    WorkModeLog.sync.error("applying restrictions failed: \(String(describing: error), privacy: .public)")
+                    ClockOffLog.sync.error("applying restrictions failed: \(String(describing: error), privacy: .public)")
                     applied = .unknown
                 }
             }
@@ -316,7 +316,7 @@ actor SyncCoordinator {
             }
             if !events.isEmpty { try outbox.append(contentsOf: events) }
         } catch {
-            WorkModeLog.sync.error("recording engine state failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.sync.error("recording engine state failed: \(String(describing: error), privacy: .public)")
         }
         return outcome
     }
@@ -364,7 +364,7 @@ actor SyncCoordinator {
             if flushed > 0 { touchServerContact(at: now()) }
             return flushed
         } catch {
-            WorkModeLog.sync.error("event flush failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.sync.error("event flush failed: \(String(describing: error), privacy: .public)")
             return 0
         }
     }
@@ -380,7 +380,7 @@ actor SyncCoordinator {
             }
             touchServerContact(at: instant)
         } catch {
-            WorkModeLog.sync.error("device state report failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.sync.error("device state report failed: \(String(describing: error), privacy: .public)")
         }
     }
 

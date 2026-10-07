@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-import WorkModeCore
+import ClockOffCore
 
 /// Owns the live Work Mode state on the phone (§6.2 on device). It never guesses: every decision starts from
 /// the cached schedule (`WorkModeEngine`), what the provider reports is really applied, and the stores.
@@ -119,10 +119,10 @@ final class WorkModeController: ObservableObject {
         observe(UIApplication.significantTimeChangeNotification) { [weak self] _ in self?.handleTimeChange() }
         observe(.NSSystemTimeZoneDidChange) { [weak self] _ in self?.handleTimeChange() }
         observe(UIApplication.didBecomeActiveNotification) { [weak self] _ in self?.handleDidBecomeActive() }
-        observe(.workModeAuthorizationStatusDidChange) { [weak self] notification in
+        observe(.clockOffAuthorizationStatusDidChange) { [weak self] notification in
             self?.handleAuthorizationChange(RestrictionAuthorizationNotification.status(from: notification))
         }
-        observe(.workModeSelectionDidChange) { [weak self] _ in _ = self?.reconcile(reason: WorkModeController.reasonSelectionChanged) }
+        observe(.clockOffSelectionDidChange) { [weak self] _ in _ = self?.reconcile(reason: WorkModeController.reasonSelectionChanged) }
         reconcile(reason: WorkModeController.reasonLaunch)
     }
 
@@ -153,7 +153,7 @@ final class WorkModeController: ObservableObject {
         do {
             try replanActivities()
         } catch {
-            WorkModeLog.restrictions.error("re-planning after a time change failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.restrictions.error("re-planning after a time change failed: \(String(describing: error), privacy: .public)")
         }
         reconcile(reason: WorkModeController.reasonTimeChange)
     }
@@ -215,7 +215,7 @@ final class WorkModeController: ObservableObject {
             } catch RestrictionProviderError.notAuthorized {
                 applied = .permissionError
             } catch {
-                WorkModeLog.restrictions.error("reconcile: applying \(String(describing: decision.action), privacy: .public) failed: \(String(describing: error), privacy: .public)")
+                ClockOffLog.restrictions.error("reconcile: applying \(String(describing: decision.action), privacy: .public) failed: \(String(describing: error), privacy: .public)")
                 applied = .unknown
                 enforcementFailed = true
             }
@@ -224,7 +224,7 @@ final class WorkModeController: ObservableObject {
             outcome.note = decision.reason == ReconcileDecision.reasonUnknownCorrected
                 ? "UNKNOWN → corrected: \(providerState.state.rawValue) → \(applied.rawValue)"
                 : "\(providerState.state.rawValue) → \(applied.rawValue) (\(decision.action))"
-            WorkModeLog.restrictions.info("reconcile (\(reason, privacy: .public)): \(outcome.note, privacy: .public)")
+            ClockOffLog.restrictions.info("reconcile (\(reason, privacy: .public)): \(outcome.note, privacy: .public)")
         } else {
             _ = try? cache.update { $0.lastReconcileAt = instant }
         }
@@ -287,7 +287,7 @@ final class WorkModeController: ObservableObject {
         let instant = now()
         guard let cached = cache.load(), cached.isJoined else { throw APIError.notSignedIn() }
         guard let rules = cached.breakPolicy?.rules else {
-            throw BreakRefusal(code: .breaksDisabled, message: "Your workplace has not set up breaks for Work Mode.", details: .breaksDisabled(reason: .breaksDisabled))
+            throw BreakRefusal(code: .breaksDisabled, message: "Your workplace has not set up breaks in ClockOff.", details: .breaksDisabled(reason: .breaksDisabled))
         }
         let permission = provider.authorizationStatus.permissionState(previous: cached.lastPermissionState)
         let expected = evaluate(cached, permission: permission, at: instant)
@@ -310,7 +310,7 @@ final class WorkModeController: ObservableObject {
                 session = try await breakAPI.startBreak(clientBreakId: clientBreakId, shiftId: shift.id, requestedAt: instant, requestedDurationMinutes: requestedDurationMinutes)
                 try ledger.recordServerBreak(session)
             } catch let error as APIError where error.isTransient || error.code == .credentialsUnavailable {
-                WorkModeLog.restrictions.info("break start offline (\(error.code.rawValue, privacy: .public)): using the cached policy")
+                ClockOffLog.restrictions.info("break start offline (\(error.code.rawValue, privacy: .public)): using the cached policy")
                 session = try ledger.startLocalBreak(approval: approval, shiftId: shift.id, clientBreakId: clientBreakId, requestedAt: instant, requestedDurationMinutes: requestedDurationMinutes)
                 isLocal = true
             }
@@ -329,7 +329,7 @@ final class WorkModeController: ObservableObject {
             applied = .permissionError
             flags?.selectionIncomplete = true
         } catch {
-            WorkModeLog.restrictions.error("applying the break relaxation failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.restrictions.error("applying the break relaxation failed: \(String(describing: error), privacy: .public)")
             applied = .unknown
         }
         scheduleBreakActivity(for: session, policy: updated.policy, breakPolicy: updated.breakPolicy, at: instant)
@@ -359,7 +359,7 @@ final class WorkModeController: ObservableObject {
             do {
                 try await breakAPI.endBreak(id: session.id, endedAt: endedAt, reason: .employeeEnded)
             } catch let error as APIError where error.isTransient || error.code == .credentialsUnavailable {
-                WorkModeLog.restrictions.info("break end offline (\(error.code.rawValue, privacy: .public)): queued for replay")
+                ClockOffLog.restrictions.info("break end offline (\(error.code.rawValue, privacy: .public)): queued for replay")
                 queueEnd = true
             }
         }
@@ -419,7 +419,7 @@ final class WorkModeController: ObservableObject {
                 if state.outbox.count > EventOutbox.maxEvents { state.outbox.removeFirst(state.outbox.count - EventOutbox.maxEvents) }
             }
         } catch {
-            WorkModeLog.restrictions.error("recording engine state failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.restrictions.error("recording engine state failed: \(String(describing: error), privacy: .public)")
         }
         return queued
     }
@@ -437,7 +437,7 @@ final class WorkModeController: ObservableObject {
             try scheduler.scheduleBreak(clientBreakId: clientBreakId, shiftId: session.shiftId, startedAt: session.startedAt, plannedEndsAt: session.plannedEndsAt)
         } catch {
             // The app's own timer and the next sync still end the break; the extension would only have been a backstop.
-            WorkModeLog.restrictions.error("scheduling the break activity failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.restrictions.error("scheduling the break activity failed: \(String(describing: error), privacy: .public)")
         }
     }
 

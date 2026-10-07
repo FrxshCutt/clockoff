@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// A provider whose DeviceActivity registration can be made to fail (everything else forwards to the mock).
 final class FailingSchedulingProvider: RestrictionProvider, SelectionCountsProviding {

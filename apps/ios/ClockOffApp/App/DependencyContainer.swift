@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Wires the app's dependencies. `shared` is the production graph; tests build their own with stubs.
 final class DependencyContainer {

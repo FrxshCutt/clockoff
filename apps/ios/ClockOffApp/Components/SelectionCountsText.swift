@@ -1,5 +1,5 @@
 import Foundation
-import WorkModeCore
+import ClockOffCore
 
 /// Human copy for the counts of a Screen Time selection ("3 categories, 1 app and 1 website").
 /// Only counts exist here — the app never knows (or sends) which apps were chosen.

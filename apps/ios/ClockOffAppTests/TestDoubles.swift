@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// Stubbed `MobileAPI`: each endpoint answers from a closure; every call is recorded.
 final class StubMobileAPI: MobileAPI {
@@ -229,7 +229,7 @@ final class StubConnectivityMonitor: ConnectivityMonitoring {
 }
 
 func iso(_ string: String) -> Date {
-    guard let date = WorkModeDateCoding.parse(string) else { fatalError("bad ISO literal \(string)") }
+    guard let date = ClockOffDateCoding.parse(string) else { fatalError("bad ISO literal \(string)") }
     return date
 }
 

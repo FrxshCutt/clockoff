@@ -1,5 +1,5 @@
 import XCTest
-import WorkModeCore
+import ClockOffCore
 @testable import ClockOffApp
 
 final class CopyFormattingTests: XCTestCase {

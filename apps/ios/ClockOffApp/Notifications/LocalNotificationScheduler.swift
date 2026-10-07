@@ -1,8 +1,8 @@
 import Foundation
 import UserNotifications
-import WorkModeCore
+import ClockOffCore
 
-/// Local notifications (UNUserNotificationCenter). Only ClockOff's own identifiers (`wm.*`) are ever touched.
+/// Local notifications (UNUserNotificationCenter). Only ClockOff's own identifiers (`clockoff.*`) are ever touched.
 protocol LocalNotificationScheduling: AnyObject, Sendable {
     /// Asks for permission (alerts + sounds). Returns true when granted. Called once, after Screen Time is allowed.
     func requestPermission() async -> Bool
@@ -23,7 +23,7 @@ final class UserNotificationScheduler: LocalNotificationScheduling, @unchecked S
         do {
             return try await center.requestAuthorization(options: [.alert, .sound])
         } catch {
-            WorkModeLog.app.info("notification permission request failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.info("notification permission request failed: \(String(describing: error), privacy: .public)")
             return false
         }
     }
@@ -43,10 +43,10 @@ final class UserNotificationScheduler: LocalNotificationScheduling, @unchecked S
             do {
                 try await center.add(UNNotificationRequest(identifier: item.id, content: content, trigger: trigger))
             } catch {
-                WorkModeLog.app.error("scheduling \(item.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+                ClockOffLog.app.error("scheduling \(item.id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
             }
         }
-        WorkModeLog.app.info("local notifications planned: \(planned.count)")
+        ClockOffLog.app.info("local notifications planned: \(planned.count)")
     }
 
     func postNow(id: String, title: String, body: String) async {
@@ -58,7 +58,7 @@ final class UserNotificationScheduler: LocalNotificationScheduling, @unchecked S
         do {
             try await center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
         } catch {
-            WorkModeLog.app.error("posting \(id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+            ClockOffLog.app.error("posting \(id, privacy: .public) failed: \(String(describing: error), privacy: .public)")
         }
     }
 

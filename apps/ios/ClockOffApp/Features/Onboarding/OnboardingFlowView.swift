@@ -1,5 +1,5 @@
 import SwiftUI
-import WorkModeCore
+import ClockOffCore
 
 struct OnboardingFlowView: View {
     @ObservedObject var model: OnboardingViewModel
@@ -51,7 +51,7 @@ struct WelcomeView: View {
             Text("Your employer uses ClockOff to reduce phone distractions while you're working.")
                 .font(.title2.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
-            InfoRow(systemImage: "eye.slash.fill", text: "Work Mode cannot see your messages, photos or browsing history.")
+            InfoRow(systemImage: "eye.slash.fill", text: "ClockOff cannot see your messages, photos or browsing history.")
             InfoRow(systemImage: "clock.fill", text: "Distracting apps are blocked only during your shifts, and relax on breaks.")
         } actions: {
             PrimaryButton(title: "Get Started") { model.getStarted() }

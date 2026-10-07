@@ -1,6 +1,6 @@
 import XCTest
 @testable import ClockOffApp
-import WorkModeCore
+import ClockOffCore
 
 /// A `BreakStarting` double: answers from closures and records every call.
 final class StubBreakAPI: BreakStarting {

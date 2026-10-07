@@ -1,5 +1,5 @@
 import SwiftUI
-import WorkModeCore
+import ClockOffCore
 
 /// Today + the next 14 days from the cache (works offline), grouped by day in the phone's timezone. Informational
 /// only: shifts are enforced by DeviceActivity and the controller, never from here.

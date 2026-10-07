@@ -2,12 +2,12 @@
 #
 #   make generate        regenerate ClockOff.xcodeproj from project.yml (XcodeGen)
 #   make build           Debug build of the app + 3 extensions for the simulator (mock restrictions)
-#   make test            WorkModeCore tests + hosted app tests on the simulator
+#   make test            ClockOffCore tests + hosted app tests on the simulator
 #   make build-release   Release build for the simulator, then Scripts/verify-release.sh: fails if the
 #                        mock provider, DEBUG/DEBUG_MOCK_RESTRICTIONS or the Debug-only ATS keys reach
 #                        Release, a target's bundle id / App Group / Family Controls entitlement is wrong,
 #                        or API_BASE_URL is not the https mobile API root (…/api/mobile/v1)
-#   make sync-fixtures   copy docs/fixtures/workmode-cases.json into the WorkModeCore test bundle (the engine
+#   make sync-fixtures   copy docs/fixtures/workmode-cases.json into the ClockOffCore test bundle (the engine
 #                        fixture test fails when the copy is stale)
 #   make clean           remove build output
 #
@@ -34,7 +34,7 @@ XCODEBUILD = set -o pipefail && xcodebuild -project $(PROJECT) -scheme $(SCHEME)
 RELEASE_APP = $(RELEASE_DATA)/Build/Products/Release-iphonesimulator/ClockOffApp.app
 
 FIXTURE_SRC   := ../../docs/fixtures/workmode-cases.json
-FIXTURE_DST   := Packages/WorkModeCore/Tests/WorkModeCoreTests/Fixtures/workmode-cases.json
+FIXTURE_DST   := Packages/ClockOffCore/Tests/ClockOffCoreTests/Fixtures/workmode-cases.json
 
 .PHONY: generate build test build-release sync-fixtures clean check-project
 

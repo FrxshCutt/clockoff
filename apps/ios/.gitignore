@@ -9,4 +9,4 @@ Config/Signing.local.xcconfig
 *.xcuserstate
 xcuserdata/
 .swiftpm/
-Packages/WorkModeCore/.build/
+Packages/ClockOffCore/.build/
