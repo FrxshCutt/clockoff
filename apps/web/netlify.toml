@@ -4,7 +4,7 @@
 # Function, src/middleware.ts becomes an Edge Function. pnpm installs the whole workspace.
 
 [build]
-  command = "pnpm --filter @workmode/web run build:netlify"   # prisma generate → next build
+  command = "pnpm --filter @clockoff/web run build:netlify"   # prisma generate → next build
   publish = "apps/web/.next"   # relative to the base directory (repo root)
 
 [build.environment]

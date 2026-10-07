@@ -54,7 +54,7 @@ jobs:
           PGPASSWORD=workmode psql -h localhost -U workmode -d workmode -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
           PGPASSWORD=workmode psql -h localhost -U workmode -d workmode_test -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
       - name: Prisma migrate (dev DB)
-        run: pnpm --filter @workmode/db exec prisma migrate deploy
+        run: pnpm --filter @clockoff/db exec prisma migrate deploy
       - name: Lint
         run: pnpm lint
       - name: Typecheck

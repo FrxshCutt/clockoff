@@ -1,11 +1,11 @@
-# Local infrastructure for Work Mode.
+# Local infrastructure for ClockOff.
 #   pnpm db:up       -> starts Postgres on localhost:5433 (5432 avoided to not clash with other local DBs)
 #   pnpm db:down     -> stops it
 # Two databases are created on first start: `workmode` (dev) and `workmode_test` (integration tests).
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: workmode-postgres
+    container_name: clockoff-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: workmode
