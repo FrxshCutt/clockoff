@@ -21,8 +21,30 @@ export const MANAGER_NOTIFICATION_TYPES = [
   "OVERRIDE_EXPIRED",
   "IMPORT_COMPLETED",
   "INTEGRATION_ERROR",
+  /** Workforce integrations (Planday, plan §8.4): sync delayed, new or missing employees, a new department, recovered. */
+  "INTEGRATION_DEGRADED",
+  "INTEGRATION_NEW_EMPLOYEES",
+  "INTEGRATION_DEPARTMENT_FOUND",
+  "INTEGRATION_RECOVERED",
 ] as const;
 export type ManagerNotificationType = (typeof MANAGER_NOTIFICATION_TYPES)[number];
+
+/**
+ * The types only a syncing workforce integration raises (plan §8.4). The dashboard hides their preference rows
+ * while Planday is switched off (`plandayEnabled` on `GET /api/auth/me`, plan §0); stored preferences and the
+ * API keep every type. `INTEGRATION_ERROR` predates them and is always shown.
+ */
+export const INTEGRATION_SYNC_NOTIFICATION_TYPES = [
+  "INTEGRATION_DEGRADED",
+  "INTEGRATION_NEW_EMPLOYEES",
+  "INTEGRATION_DEPARTMENT_FOUND",
+  "INTEGRATION_RECOVERED",
+] as const satisfies readonly ManagerNotificationType[];
+
+export function isIntegrationSyncNotificationType(type: string): boolean {
+  return (INTEGRATION_SYNC_NOTIFICATION_TYPES as readonly string[]).includes(type);
+}
+
 export const managerNotificationTypeSchema = z
   .enum(MANAGER_NOTIFICATION_TYPES)
   .meta({ id: "ManagerNotificationType" });
@@ -45,6 +67,10 @@ export const NOTIFICATION_PREFERENCE_DEFAULTS: NotificationPreferences = {
   OVERRIDE_EXPIRED: { inApp: true, email: false },
   IMPORT_COMPLETED: { inApp: true, email: false },
   INTEGRATION_ERROR: { inApp: true, email: true },
+  INTEGRATION_DEGRADED: { inApp: true, email: true },
+  INTEGRATION_NEW_EMPLOYEES: { inApp: true, email: false },
+  INTEGRATION_DEPARTMENT_FOUND: { inApp: true, email: false },
+  INTEGRATION_RECOVERED: { inApp: true, email: false },
 };
 
 /** PATCH form: any subset of types, any subset of channels. */

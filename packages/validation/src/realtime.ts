@@ -1,5 +1,12 @@
 import { z } from "zod";
 import { uuidSchema } from "./common";
+import {
+  integrationConnectionStatusSchema,
+  integrationProviderSchema,
+  integrationSyncRunKindSchema,
+  integrationSyncRunStatusSchema,
+  integrationSyncTriggerSchema,
+} from "./enumSchemas";
 import { instantSchema, jsonObjectSchema } from "./primitives";
 
 /**
@@ -41,8 +48,88 @@ export const REALTIME_EVENT_TYPES = [
    */
   "POLICY_CHANGED",
   "BREAK_POLICY_CHANGED",
+  /**
+   * Workforce integration runs and health (Planday; docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §7.11).
+   * Hints only: the dashboard refetches the run / card / banner. Payloads carry ids, enums, numbers and
+   * labels ClockOff writes itself, never names, emails or Planday values. `integration.run.cancelled` also
+   * tells the worker's integration runner to abort that run's slice.
+   */
+  "integration.run.queued",
+  "integration.run.cancelled",
+  "integration.sync.progress",
+  "integration.health.changed",
 ] as const;
 export type RealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number];
+
+// ── Integration events (§7.11) ──────────────────────────────────────────────
+
+export const INTEGRATION_REALTIME_EVENT_TYPES = [
+  "integration.run.queued",
+  "integration.run.cancelled",
+  "integration.sync.progress",
+  "integration.health.changed",
+] as const satisfies readonly RealtimeEventType[];
+export type IntegrationRealtimeEventType = (typeof INTEGRATION_REALTIME_EVENT_TYPES)[number];
+
+/**
+ * Payloads of the integration events. Strict: ids, enums, numbers and ClockOff's own labels only, so a payload
+ * that picked up a name, an email or a Planday value fails to parse (the progress-events test relies on it).
+ */
+export const integrationRunQueuedPayloadSchema = z
+  .object({
+    provider: integrationProviderSchema,
+    integrationId: uuidSchema,
+    runId: uuidSchema,
+    kind: integrationSyncRunKindSchema,
+    trigger: integrationSyncTriggerSchema,
+  })
+  .strict();
+export type IntegrationRunQueuedPayload = z.infer<typeof integrationRunQueuedPayloadSchema>;
+
+export const integrationRunCancelledPayloadSchema = z
+  .object({ provider: integrationProviderSchema, integrationId: uuidSchema, runId: uuidSchema })
+  .strict();
+export type IntegrationRunCancelledPayload = z.infer<typeof integrationRunCancelledPayloadSchema>;
+
+export const integrationSyncProgressPayloadSchema = z
+  .object({
+    provider: integrationProviderSchema,
+    integrationId: uuidSchema,
+    runId: uuidSchema,
+    kind: integrationSyncRunKindSchema,
+    trigger: integrationSyncTriggerSchema,
+    status: integrationSyncRunStatusSchema,
+    phase: z.string().max(64),
+    /** ClockOff's own label, e.g. "Reading employees (page 3)". */
+    label: z.string().max(200),
+    completedPhases: z.int().min(0),
+    totalPhases: z.int().min(0),
+    pagesRead: z.int().min(0),
+    /** Not claimed by the worker yet ("Waiting to start"). */
+    queued: z.boolean(),
+    resumeAfter: instantSchema.nullable(),
+    finished: z.boolean(),
+  })
+  .strict();
+export type IntegrationSyncProgressPayload = z.infer<typeof integrationSyncProgressPayloadSchema>;
+
+/** Only transitions that change the banner or the compliance flag (into or out of DEGRADED, AUTH_ERROR, DISCONNECTED). */
+export const integrationHealthChangedPayloadSchema = z
+  .object({
+    provider: integrationProviderSchema,
+    integrationId: uuidSchema,
+    status: integrationConnectionStatusSchema,
+  })
+  .strict();
+export type IntegrationHealthChangedPayload = z.infer<typeof integrationHealthChangedPayloadSchema>;
+
+/** Payload schema of each integration event kind. */
+export const INTEGRATION_EVENT_PAYLOAD_SCHEMAS = {
+  "integration.run.queued": integrationRunQueuedPayloadSchema,
+  "integration.run.cancelled": integrationRunCancelledPayloadSchema,
+  "integration.sync.progress": integrationSyncProgressPayloadSchema,
+  "integration.health.changed": integrationHealthChangedPayloadSchema,
+} as const satisfies Record<IntegrationRealtimeEventType, z.ZodType>;
 
 export const sseEventSchema = z
   .object({

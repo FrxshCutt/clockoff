@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isoDateTimeSchema, timezoneSchema, uuidSchema } from "./common";
 import { BREAK_POLICY_LIMITS } from "./breakPolicies";
 import { apiErrorCodeSchema, shiftSourceSchema, shiftStatusSchema } from "./enumSchemas";
+import { managedBySchema } from "./integrations";
 import {
   emptyBodySchema,
   instantSchema,
@@ -274,6 +275,8 @@ export const shiftSchema = z
     localEndTime: localTimeSchema,
     /** Human-readable range in `timezone`, e.g. `Tue 6 Oct, 09:00–15:00` or `Sat 24 Oct, 22:00–06:00 (+1)`. */
     displayRange: z.string(),
+    /** Set while a connected integration owns the shift: every field is read-only ("Edit this shift in Planday"). */
+    managedBy: managedBySchema.nullable(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })

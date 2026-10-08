@@ -80,7 +80,9 @@ export async function findUpcomingShifts(
 export async function findIntegrationStatuses(organisationId: string, db: Db = prisma) {
   return db.integration.findMany({
     where: { organisationId },
-    include: { connection: { select: { lastSyncAt: true, lastError: true } } },
+    include: {
+      connection: { select: { status: true, lastSuccessfulSyncAt: true, lastErrorMessage: true } },
+    },
     orderBy: [{ provider: "asc" }],
   });
 }

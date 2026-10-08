@@ -7,6 +7,7 @@ import {
   permissionSchema,
   planSchema,
   roleSchema,
+  rotaSourceSchema,
 } from "./enumSchemas";
 import { instantSchema, nullableInstantSchema, okResponseSchema } from "./primitives";
 import { namedRefSchema } from "./refs";
@@ -50,6 +51,10 @@ export const organisationSchema = z
     plan: planSchema,
     settings: organisationSettingsSchema,
     onboardingDismissedAt: nullableInstantSchema,
+    /** "How do you schedule your team?" answer; null until answered. */
+    rotaSource: rotaSourceSchema.nullable(),
+    /** Free text when `rotaSource` is OTHER, else null. */
+    rotaSourceOtherText: z.string().nullable(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })
@@ -122,6 +127,38 @@ export const updateOrganisationSchema = z
   .strict();
 export type UpdateOrganisationInput = z.infer<typeof updateOrganisationSchema>;
 
+// ── Rota source (onboarding: "How do you schedule your team?") ─────────────
+
+export const ROTA_SOURCE_OTHER_TEXT_MAX = 200;
+
+/**
+ * `PUT /api/organisations/current/rota-source` (org:manage). `otherText` (1–200 characters, trimmed) is
+ * required with OTHER and refused with anything else.
+ */
+export const setRotaSourceSchema = z
+  .object({
+    rotaSource: rotaSourceSchema,
+    otherText: nonEmptyString(ROTA_SOURCE_OTHER_TEXT_MAX).optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.rotaSource === "OTHER" && value.otherText === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["otherText"],
+        message: "Tell us which system you use",
+      });
+    }
+    if (value.rotaSource !== "OTHER" && value.otherText !== undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["otherText"],
+        message: "Only used when the answer is something else",
+      });
+    }
+  });
+export type SetRotaSourceInput = z.infer<typeof setRotaSourceSchema>;
+
 // ── Onboarding checklist ────────────────────────────────────────────────────
 
 export const ONBOARDING_STEP_KEYS = [
@@ -169,6 +206,8 @@ export const onboardingResponseSchema = z
     totalCount: z.int().min(0),
     allDone: z.boolean(),
     dismissedAt: nullableInstantSchema,
+    /** The organisation's rota source (null: not answered yet; the overview then asks). */
+    rotaSource: rotaSourceSchema.nullable(),
   })
   .meta({ id: "OnboardingResponse" });
 export type OnboardingResponse = z.infer<typeof onboardingResponseSchema>;

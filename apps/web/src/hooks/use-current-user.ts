@@ -68,6 +68,14 @@ export function useTestToolsEnabled(): boolean {
 }
 
 /**
+ * Whether Planday is switched on (`plandayEnabled` on `GET /api/auth/me`, from `PLANDAY_ENABLED`). Planday-only
+ * surfaces stay hidden while it is off, and while the session is loading.
+ */
+export function usePlandayEnabled(): boolean {
+  return useCurrentMembership()?.plandayEnabled === true;
+}
+
+/**
  * Whether to show "Create test shift…": the current organisation has the phone test tools and the
  * manager may create shifts (`schedule:write`, the permission `POST /api/test-tools/test-shift` checks).
  */

@@ -5,6 +5,7 @@ import {
   localDateOf,
   minutesBetween,
 } from "@clockoff/shared/time/time";
+import { managedByFromIntegrationId } from "@clockoff/validation/integrations";
 import type { Shift } from "@clockoff/validation/shifts";
 
 /** Relations every shift response carries. */
@@ -66,6 +67,7 @@ export function toShiftDto(row: ShiftRow): Shift {
     localStartTime: start.time,
     localEndTime: end.time,
     displayRange: formatShiftRange(row.startsAt, row.endsAt, row.timezone),
+    managedBy: managedByFromIntegrationId(row.managedByIntegrationId),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

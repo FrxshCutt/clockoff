@@ -1,4 +1,8 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import {
+  ACTIVITY_EVENT_TYPES,
+  INTEGRATION_ACTIVITY_EVENT_TYPES,
+  type ActivityEventType,
+} from "@clockoff/shared/enums";
 import { describe, expect, it } from "vitest";
 import {
   ACTIVITY_EVENT_META,
@@ -10,6 +14,7 @@ import {
   activitySentence,
   activitySentenceContext,
   activityText,
+  activityTypeOptions,
   isActivityEventType,
   type ActivityEventLike,
 } from "./activity-meta";
@@ -70,6 +75,18 @@ describe("ACTIVITY_EVENT_META", () => {
       expect(option.label).toBe(ACTIVITY_EVENT_META[option.value].label);
       expect(option.group).toBe(ACTIVITY_EVENT_META[option.value].group);
     }
+  });
+
+  it("offers the integration-only types only while Planday is switched on", () => {
+    expect(activityTypeOptions(true)).toBe(ACTIVITY_TYPE_OPTIONS);
+    const dark = activityTypeOptions(false).map((option) => option.value);
+    expect(dark).toEqual(
+      ACTIVITY_EVENT_TYPES.filter(
+        (type) => !(INTEGRATION_ACTIVITY_EVENT_TYPES as readonly string[]).includes(type),
+      ),
+    );
+    expect(dark).toContain("INTEGRATION_ERROR");
+    for (const type of INTEGRATION_ACTIVITY_EVENT_TYPES) expect(dark).not.toContain(type);
   });
 
   it("labels are unique so the filter picker never shows two identical rows", () => {
@@ -165,6 +182,33 @@ describe("activitySentence", () => {
     expect(activitySentence(event("INTEGRATION_ERROR", { employee: null }))).toBe(
       "An integration reported a sync error",
     );
+  });
+
+  it("attributes integration deactivations and reactivations to the integration", () => {
+    // The Planday writers record `{ source: "PLANDAY", reason }` (plan §6.5); `provider` is read too.
+    expect(
+      activitySentence(
+        event("EMPLOYEE_DEACTIVATED", { actorType: "SYSTEM", metadata: { source: "PLANDAY" } }),
+      ),
+    ).toBe("Jane Smith was deactivated (inactive in Planday)");
+    expect(
+      activitySentence(
+        event("EMPLOYEE_REACTIVATED", { actorType: "SYSTEM", metadata: { provider: "PLANDAY" } }),
+      ),
+    ).toBe("Jane Smith was reactivated (active again in Planday)");
+    expect(activitySentence(event("EMPLOYEE_DEACTIVATED", { actorType: "SYSTEM" }))).toBe(
+      "Jane Smith was deactivated by an integration",
+    );
+    expect(activitySentence(event("EMPLOYEE_REACTIVATED", { actorType: "SYSTEM" }))).toBe(
+      "Jane Smith was reactivated by an integration",
+    );
+    expect(ACTIVITY_EVENT_META.EMPLOYEE_DEACTIVATED.label).toBe("Deactivated by integration");
+    expect(ACTIVITY_EVENT_META.EMPLOYEE_REACTIVATED.label).toBe("Reactivated by integration");
+    expect(
+      activitySentence(
+        event("INTEGRATION_SYNCED", { employee: null, metadata: { source: "PLANDAY" } }),
+      ),
+    ).toBe("Planday synced the rota");
   });
 });
 

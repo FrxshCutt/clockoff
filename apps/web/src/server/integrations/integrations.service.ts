@@ -20,11 +20,12 @@ import { errorSummary, logger } from "@/lib/logger";
 import { audit, toJsonValue } from "@/server/audit/audit";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {
-  deleteIntegrationConnection,
   findIntegration,
   findIntegrations,
+  lockIntegrationRow,
   saveIntegrationConnection,
   upsertIntegration,
+  wipeIntegrationConnection,
   type IntegrationRow,
 } from "./integrations.repository";
 
@@ -33,7 +34,8 @@ import {
  * registry merged with the organisation's `Integration` rows. While a provider is COMING_SOON (every
  * provider in the MVP) connect and sync answer 501 COMING_SOON and managers can ask to be notified;
  * once a real `WorkforceProvider` is registered, connect persists the encrypted credentials and
- * disconnect deletes them. Scheduling never talks to providers (docs/INTEGRATIONS.md).
+ * disconnect wipes them (the connection row is kept). Scheduling never talks to providers
+ * (docs/INTEGRATIONS.md).
  */
 
 function readSettings(value: Prisma.JsonValue | undefined): Record<string, unknown> {
@@ -55,9 +57,13 @@ export function toIntegrationDto(meta: ProviderMetadata, row: IntegrationRow | n
     supportedActivationModes: [...meta.activationModes],
     activationMode: row?.activationMode ?? meta.activationModes[0] ?? "SCHEDULED",
     notifyRequested: row?.notifyRequested ?? false,
-    lastSyncAt: row?.connection?.lastSyncAt?.toISOString() ?? null,
-    lastError: row?.connection?.lastError ?? null,
+    lastSyncAt: row?.connection?.lastSuccessfulSyncAt?.toISOString() ?? null,
+    lastError: row?.connection?.lastErrorMessage ?? null,
     externalAccountName: typeof externalAccountName === "string" ? externalAccountName : null,
+    // True for Planday while PLANDAY_ENABLED=false and the organisation has a live connection; the list's
+    // `paused` flag is computed with the Planday connect work (plan §9.2, build stage 5). No organisation
+    // has a Planday connection before that.
+    paused: false,
   };
 }
 
@@ -134,8 +140,10 @@ export async function connectIntegration(
   };
   const connected = await prisma.$transaction(async (tx) => {
     await saveIntegrationConnection(tx, row.id, {
-      encryptedCredentials: encrypt(JSON.stringify(result.credentials ?? null)),
-      tokenExpiresAt: result.tokenExpiresAt,
+      legacyEncryptedCredentials: encrypt(JSON.stringify(result.credentials ?? null)),
+      accessTokenExpiresAt: result.tokenExpiresAt,
+      connectedByUserId: ctx.user.id,
+      now: new Date(),
     });
     const updated = await upsertIntegration(
       organisationId,
@@ -168,10 +176,23 @@ export async function connectIntegration(
   return { integration: toIntegrationDto(meta, connected), authorizationUrl: null };
 }
 
+/** Whether there is anything to disconnect: a connected or failing integration, or a live connection row. */
+function hasLiveConnection(row: IntegrationRow): boolean {
+  return (
+    row.status === "CONNECTED" ||
+    row.status === "ERROR" ||
+    (row.connection !== null && row.connection.status !== "DISCONNECTED")
+  );
+}
+
 /**
- * `POST /api/integrations/:provider/disconnect` (integrations:write). Deletes stored credentials and marks
- * the integration DISCONNECTED; imported shifts are kept. Idempotent: a provider that was never connected
- * is returned unchanged (200), whatever its availability.
+ * `POST /api/integrations/:provider/disconnect` (integrations:write). Wipes the stored credentials, keeps the
+ * connection row (status DISCONNECTED, portal id retained for a reconnect) and marks the integration
+ * DISCONNECTED; imported shifts are kept. Idempotent: a provider that was never connected, or is already
+ * disconnected, is returned unchanged (200), whatever its availability. Concurrent disconnects serialise on the
+ * integration row and the decision is re-made under that lock, so exactly one wipes, audits and asks the
+ * provider to revoke access (plan §2.2: the caller that loses the race does nothing else). The body's `mode`
+ * only matters to a provider that synced records (Planday, stage 5); no generic provider has synced any.
  */
 export async function disconnectIntegration(
   ctx: ManagerContext,
@@ -180,12 +201,31 @@ export async function disconnectIntegration(
   const organisationId = ctx.organisation.id;
   const meta = getProviderMetadata(provider);
   const row = await findIntegration(organisationId, provider);
-  const hasConnection =
-    row !== null &&
-    (row.status === "CONNECTED" || row.status === "ERROR" || row.connection !== null);
-  if (!row || !hasConnection) return { integration: toIntegrationDto(meta, row) };
+  if (!row || !hasLiveConnection(row)) return { integration: toIntegrationDto(meta, row) };
 
-  if (meta.status === "AVAILABLE") {
+  const outcome = await prisma.$transaction(async (tx) => {
+    await lockIntegrationRow(tx, row.id);
+    const current = await findIntegration(organisationId, provider, tx);
+    if (!current || !hasLiveConnection(current)) return { row: current, disconnected: false };
+    const removed = await wipeIntegrationConnection(tx, current.id, new Date());
+    const after = await upsertIntegration(organisationId, provider, { status: "DISCONNECTED" }, tx);
+    await audit(
+      ctx,
+      {
+        action: "integration.disconnected",
+        entityType: "Integration",
+        entityId: current.id,
+        before: { provider, status: current.status },
+        after: { provider, status: after.status, credentialsRemoved: removed > 0 },
+      },
+      tx,
+    );
+    return { row: after, disconnected: true };
+  });
+
+  // After commit, and only for the call that disconnected (plan §5.8 step 3). Best effort: the local
+  // credentials are already gone whatever the provider answers.
+  if (outcome.disconnected && meta.status === "AVAILABLE") {
     try {
       await getProvider(provider).disconnect({
         organisationId,
@@ -194,31 +234,13 @@ export async function disconnectIntegration(
         now: new Date(),
       });
     } catch (err) {
-      // The provider-side revocation is best effort: the local credentials are removed regardless.
       logger.warn(
         { organisationId, provider, error: errorSummary(err) },
-        "provider disconnect failed; removing local credentials anyway",
+        "provider disconnect failed; local credentials were removed",
       );
     }
   }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const removed = await deleteIntegrationConnection(tx, row.id);
-    const after = await upsertIntegration(organisationId, provider, { status: "DISCONNECTED" }, tx);
-    await audit(
-      ctx,
-      {
-        action: "integration.disconnected",
-        entityType: "Integration",
-        entityId: row.id,
-        before: { provider, status: row.status },
-        after: { provider, status: after.status, credentialsRemoved: removed > 0 },
-      },
-      tx,
-    );
-    return after;
-  });
-  return { integration: toIntegrationDto(meta, updated) };
+  return { integration: toIntegrationDto(meta, outcome.row) };
 }
 
 /**

@@ -2,6 +2,7 @@ import type { ActivityEvent } from "@clockoff/validation/activity";
 import type { EmployeeDetail, EmployeeStateResponse } from "@clockoff/validation/employees";
 import { describe, expect, it } from "vitest";
 import {
+  activityTone,
   buildSetupChecklist,
   buildTodayTimeline,
   describeExpectedVsReported,
@@ -306,5 +307,17 @@ describe("employeeScheduleWindow", () => {
 describe("employeeFullName", () => {
   it("joins first and last names", () => {
     expect(employeeFullName({ firstName: "Ada", lastName: "Lovelace" })).toBe("Ada Lovelace");
+  });
+});
+
+describe("activityTone", () => {
+  it("marks integration deactivation as a warning and reactivation as a success", () => {
+    expect(activityTone("EMPLOYEE_DEACTIVATED")).toBe("warning");
+    expect(activityTone("EMPLOYEE_REACTIVATED")).toBe("success");
+  });
+
+  it("falls back to neutral for types without a tone", () => {
+    expect(activityTone("INTEGRATION_SYNCED")).toBe("neutral");
+    expect(activityTone("NOT_A_TYPE")).toBe("neutral");
   });
 });

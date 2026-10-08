@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { offsetPaginationQuerySchema, uuidSchema } from "./common";
 import {
+  integrationConnectionStatusSchema,
   integrationProviderSchema,
   integrationStatusSchema,
   permissionStateSchema,
@@ -63,6 +64,8 @@ export const integrationStatusSummarySchema = z
   .object({
     provider: integrationProviderSchema,
     status: integrationStatusSchema,
+    /** Fine-grained state of the provider connection (DEGRADED, AUTH_ERROR, …); null without a connection. */
+    connectionStatus: integrationConnectionStatusSchema.nullable(),
     lastSyncAt: nullableInstantSchema,
     lastError: z.string().nullable(),
   })
@@ -126,6 +129,11 @@ export const complianceEmployeeRowSchema = z
     activeShift: shiftSummarySchema.nullable(),
     lastSyncAt: nullableInstantSchema,
     attentionReason: z.string().nullable(),
+    /**
+     * The employee's shifts come from an integration whose connection is DEGRADED or AUTH_ERROR, so the rota
+     * the phone enforces may be stale ("Rota may be out of date").
+     */
+    rotaMayBeOutOfDate: z.boolean(),
   })
   .meta({ id: "ComplianceEmployeeRow" });
 export type ComplianceEmployeeRow = z.infer<typeof complianceEmployeeRowSchema>;

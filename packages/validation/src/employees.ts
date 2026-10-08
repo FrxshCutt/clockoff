@@ -14,8 +14,10 @@ import {
   employmentStatusSchema,
   inviteChannelSchema,
   inviteStatusSchema,
+  recordSourceSchema,
   workModeStateSchema,
 } from "./enumSchemas";
+import { managedBySchema } from "./integrations";
 import { employeeInviteSchema } from "./invites";
 import { overrideSchema } from "./overrides";
 import { resolvedPolicyRefSchema } from "./policies";
@@ -301,6 +303,13 @@ export const employeeSchema = z
     nextShift: shiftSummarySchema.nullable(),
     /** Last device check-in (Device.lastDeviceSyncAt). */
     lastSyncAt: nullableInstantSchema,
+    /** How the record was created (provenance; stays INTEGRATION after a disconnect). */
+    source: recordSourceSchema,
+    /**
+     * Set while a connected integration owns the name, email and primary location ("Managed in Planday");
+     * policy, break policy, teams and the other ClockOff fields stay editable.
+     */
+    managedBy: managedBySchema.nullable(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })

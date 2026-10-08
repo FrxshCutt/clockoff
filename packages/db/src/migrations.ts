@@ -5,7 +5,7 @@ import type { PrismaClient } from "@prisma/client";
  * database has applied (GET /api/health), so a deploy whose migrations were not run shows up as
  * `pending`. `migrations.test.ts` fails if a migration is added without updating this constant.
  */
-export const LATEST_MIGRATION = "20261008090000_worker_runtime";
+export const LATEST_MIGRATION = "20261008140100_planday_integration";
 
 export type MigrationStatus = "up_to_date" | "pending" | "failed" | "unknown";
 

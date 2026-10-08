@@ -8,6 +8,7 @@ import type {
   TeamQuery,
   UpdateTeamInput,
 } from "@clockoff/validation/locationsTeams";
+import { managedByFromIntegrationId } from "@clockoff/validation/integrations";
 import { audit } from "@/server/audit/audit";
 import { findLocationInOrganisation } from "@/server/locations/locations.repository";
 import {
@@ -48,6 +49,8 @@ export function toTeamDto(row: TeamRow, assignments: ScopeAssignments | undefine
     memberCount: row._count.members,
     policyAssignment: assignments?.policy ?? null,
     breakPolicyAssignment: assignments?.breakPolicy ?? null,
+    source: row.source,
+    managedBy: managedByFromIntegrationId(row.managedByIntegrationId),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

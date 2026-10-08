@@ -57,6 +57,7 @@ const shift: Shift = {
   localStartTime: "22:00",
   localEndTime: "06:00",
   displayRange: "Tue 6 Oct, 22:00–06:00 (+1)",
+  managedBy: null,
   createdAt: "2026-10-01T00:00:00.000Z",
   updatedAt: "2026-10-01T00:00:00.000Z",
 };

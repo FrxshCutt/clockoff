@@ -3,6 +3,7 @@ import {
   apnsConfigured,
   isPooledPostgresUrl,
   parseEnv,
+  PLANDAY_MOCK_DEFAULT_URL,
   SHUTDOWN_GRACE_MAX_MS,
   testToolsConfigured,
   testToolsEnabledFor,
@@ -433,5 +434,94 @@ describe("parseEnv", () => {
     const prodWithDevTools = { ...prod, DEV_TOOLS_ENABLED: true, TEST_TOOLS_ORGANISATION_IDS: [] };
     expect(testToolsConfigured(prodWithDevTools)).toBe(false);
     expect(testToolsEnabledFor(other, prodWithDevTools)).toBe(false);
+  });
+});
+
+describe("Planday (appendix A)", () => {
+  const PROD = { ...VALID, NODE_ENV: "production", APP_URL: "https://app.example.com" } as const;
+  const APP_ID = "f2370889-3ffe-46b6-83e7-1a20f5a20d2f";
+
+  it("is dark in production and on elsewhere unless set explicitly", () => {
+    expect(parseEnv(PROD).env.PLANDAY_ENABLED).toBe(false);
+    expect(parseEnv({ ...VALID, NODE_ENV: "development" }).env.PLANDAY_ENABLED).toBe(true);
+    expect(parseEnv({ ...VALID, NODE_ENV: "test" }).env.PLANDAY_ENABLED).toBe(true);
+    expect(parseEnv({ ...PROD, PLANDAY_ENABLED: "true" }).env.PLANDAY_ENABLED).toBe(true);
+    expect(parseEnv({ ...VALID, PLANDAY_ENABLED: "false" }).env.PLANDAY_ENABLED).toBe(false);
+    // The commented .env template ("") means unset, not false.
+    expect(parseEnv({ ...VALID, PLANDAY_ENABLED: "" }).env.PLANDAY_ENABLED).toBe(true);
+    expect(() => parseEnv({ ...VALID, PLANDAY_ENABLED: "yes" })).toThrowError(/PLANDAY_ENABLED/);
+  });
+
+  it("resolves the mode: live in production, mock elsewhere", () => {
+    expect(parseEnv(PROD).env.PLANDAY_MODE).toBe("live");
+    expect(parseEnv({ ...VALID, NODE_ENV: "development" }).env.PLANDAY_MODE).toBe("mock");
+    expect(parseEnv({ ...VALID, NODE_ENV: "test" }).env.PLANDAY_MODE).toBe("mock");
+    expect(parseEnv({ ...VALID, PLANDAY_MODE: "live" }).env.PLANDAY_MODE).toBe("live");
+    expect(parseEnv({ ...PROD, PLANDAY_MODE: "live" }).env.PLANDAY_MODE).toBe("live");
+    expect(() => parseEnv({ ...VALID, PLANDAY_MODE: "staging" })).toThrowError(/PLANDAY_MODE/);
+  });
+
+  it("refuses Mock Planday in production (the deployment never starts)", () => {
+    expect(() => parseEnv({ ...PROD, PLANDAY_MODE: "mock" })).toThrowError(
+      /PLANDAY_MODE=mock is not allowed in production/,
+    );
+    // Even with Planday switched off: a mock mode must never reach a production process.
+    expect(() =>
+      parseEnv({ ...PROD, PLANDAY_MODE: "mock", PLANDAY_ENABLED: "false" }),
+    ).toThrowError(/PLANDAY_MODE=mock/);
+    expect(() => parseEnv({ ...PROD, PLANDAY_MOCK_URL: "http://127.0.0.1:4010" })).toThrowError(
+      /PLANDAY_MOCK_URL must not be set in production/,
+    );
+  });
+
+  it("points mock mode at the shared mock server outside tests", () => {
+    const dev = parseEnv({ ...VALID, NODE_ENV: "development" }).env;
+    expect(dev.PLANDAY_MOCK_URL).toBe(PLANDAY_MOCK_DEFAULT_URL);
+    expect(PLANDAY_MOCK_DEFAULT_URL).toBe("http://127.0.0.1:4010");
+    // Tests inject the in-process mock; live mode has no mock server; production never has one.
+    expect(parseEnv({ ...VALID, NODE_ENV: "test" }).env.PLANDAY_MOCK_URL).toBeUndefined();
+    expect(
+      parseEnv({ ...VALID, NODE_ENV: "development", PLANDAY_MODE: "live" }).env.PLANDAY_MOCK_URL,
+    ).toBeUndefined();
+    expect(parseEnv(PROD).env.PLANDAY_MOCK_URL).toBeUndefined();
+    const custom = parseEnv({ ...VALID, PLANDAY_MOCK_URL: "http://localhost:4999" }).env;
+    expect(custom.PLANDAY_MOCK_URL).toBe("http://localhost:4999");
+    expect(() => parseEnv({ ...VALID, PLANDAY_MOCK_URL: "not a url" })).toThrowError(
+      /PLANDAY_MOCK_URL/,
+    );
+  });
+
+  it("validates ClockOff's App IDs (methods A and B), unset by default", () => {
+    const unset = parseEnv(PROD).env;
+    expect(unset.PLANDAY_CLIENT_ID).toBeUndefined();
+    expect(unset.PLANDAY_APP_ID).toBeUndefined();
+    const set = parseEnv({ ...PROD, PLANDAY_CLIENT_ID: ` ${APP_ID} `, PLANDAY_APP_ID: APP_ID }).env;
+    expect(set.PLANDAY_CLIENT_ID).toBe(APP_ID);
+    expect(set.PLANDAY_APP_ID).toBe(APP_ID);
+    expect(() => parseEnv({ ...VALID, PLANDAY_CLIENT_ID: "clockoff" })).toThrowError(
+      /PLANDAY_CLIENT_ID: must be a Planday App ID/,
+    );
+    expect(() => parseEnv({ ...VALID, PLANDAY_APP_ID: "123" })).toThrowError(/PLANDAY_APP_ID/);
+  });
+
+  it("keeps clock-in mode and PKCE off unless turned on", () => {
+    const { env, warnings } = parseEnv(PROD);
+    expect(env.PLANDAY_CLOCK_MODE_ENABLED).toBe(false);
+    expect(env.PLANDAY_OAUTH_PKCE).toBe(false);
+    expect(warnings.filter((w) => w.includes("PLANDAY"))).toEqual([]);
+    const on = parseEnv({
+      ...VALID,
+      PLANDAY_CLOCK_MODE_ENABLED: "true",
+      PLANDAY_OAUTH_PKCE: "1",
+    }).env;
+    expect(on.PLANDAY_CLOCK_MODE_ENABLED).toBe(true);
+    expect(on.PLANDAY_OAUTH_PKCE).toBe(true);
+  });
+
+  it("never needs a client secret", () => {
+    // Planday's token endpoint takes no client_secret (notes §3.4): a stray one is ignored, never exposed.
+    const { env } = parseEnv({ ...PROD, PLANDAY_CLIENT_SECRET: "s3cret" });
+    expect(env).not.toHaveProperty("PLANDAY_CLIENT_SECRET");
+    expect(JSON.stringify(env)).not.toContain("s3cret");
   });
 });

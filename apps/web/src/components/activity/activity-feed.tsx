@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { EMPTY_STATES } from "@/config/emptyStates";
 import { isResourceId } from "@/config/navigation";
+import { usePlandayEnabled } from "@/hooks/use-current-user";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { useActivityFeed } from "./activity-api";
 import {
@@ -24,7 +25,7 @@ import {
   type ActivityFeedParams,
 } from "./activity-filters";
 import { ActivityList, ActivityListSkeleton } from "./activity-item";
-import { ACTIVITY_GROUP_LABELS, ACTIVITY_TYPE_OPTIONS } from "./activity-meta";
+import { ACTIVITY_GROUP_LABELS, activityTypeOptions } from "./activity-meta";
 import { DateRangeFilter } from "./date-range-filter";
 import { MultiSelectFilter } from "./multi-select-filter";
 
@@ -44,6 +45,7 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
   const timeZone = organisation.data?.organisation.timezone ?? "UTC";
   const query = useActivityFeed(feed, timeZone, { enabled: !organisation.isPending });
   const locations = useLocations();
+  const typeOptions = activityTypeOptions(usePlandayEnabled());
   // The URL only carries the employee id; the picker needs a name to show the selection.
   const selectedEmployee = useEmployee(feed.employeeId ?? "", {
     enabled: isResourceId(feed.employeeId),
@@ -79,7 +81,7 @@ export function ActivityFeed({ feed, onChange }: ActivityFeedProps) {
         />
         <MultiSelectFilter
           title="Type"
-          options={ACTIVITY_TYPE_OPTIONS}
+          options={typeOptions}
           groupLabels={ACTIVITY_GROUP_LABELS}
           value={feed.types}
           onChange={(types) => onChange({ ...feed, types })}

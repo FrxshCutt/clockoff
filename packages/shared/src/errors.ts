@@ -69,6 +69,18 @@ export const API_ERROR_CODES = [
   // devices / sync
   "CLOCK_SKEW",
   "UNKNOWN_EVENT_TYPE",
+  // workforce integrations (Planday; docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §4.6)
+  "INTEGRATION_AUTH_FAILED",
+  "INTEGRATION_SCOPE_MISSING",
+  "INTEGRATION_UNAVAILABLE",
+  "INTEGRATION_INVALID_RESPONSE",
+  "INTEGRATION_PORTAL_MISMATCH",
+  "INTEGRATION_PORTAL_IN_USE",
+  "INTEGRATION_MANAGED",
+  "INTEGRATION_NOT_CONNECTED",
+  "INTEGRATION_ONBOARDING_INCOMPLETE",
+  "OAUTH_STATE_INVALID",
+  "CONNECT_METHOD_UNAVAILABLE",
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -137,6 +149,27 @@ export const ERROR_HTTP_STATUS: Record<ApiErrorCode, number> = {
   OVERRIDE_EXPIRED: 409,
   CLOCK_SKEW: 400,
   UNKNOWN_EVENT_TYPE: 400,
+  /** The provider refused the credentials (token endpoint 400/401, API 401 after one forced refresh). */
+  INTEGRATION_AUTH_FAILED: 422,
+  /** A required read scope was not granted (API 403, or the OAuth `scope` lacks it); `details.missingScopes`. */
+  INTEGRATION_SCOPE_MISSING: 422,
+  /** The provider is down, timed out or rate limited the request; also "ClockOff is updating" during a deploy. */
+  INTEGRATION_UNAVAILABLE: 503,
+  /** The provider answered 2xx with a body ClockOff could not read safely. */
+  INTEGRATION_INVALID_RESPONSE: 502,
+  /** The credentials belong to a different portal than the one this organisation is bound to. */
+  INTEGRATION_PORTAL_MISMATCH: 409,
+  /** The portal is already connected to another ClockOff organisation (nothing about it is revealed). */
+  INTEGRATION_PORTAL_IN_USE: 409,
+  /** The record is managed by a connected integration: edit it there. */
+  INTEGRATION_MANAGED: 409,
+  INTEGRATION_NOT_CONNECTED: 409,
+  /** Sync and settings need the setup wizard finished first. */
+  INTEGRATION_ONBOARDING_INCOMPLETE: 409,
+  /** OAuth `state` tampered with, expired, replayed or issued to someone else. */
+  OAUTH_STATE_INVALID: 400,
+  /** The connect method is not offered (not configured), or the generic connect route for a provider with its own. */
+  CONNECT_METHOD_UNAVAILABLE: 404,
 };
 
 /**

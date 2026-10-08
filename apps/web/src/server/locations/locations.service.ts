@@ -7,6 +7,7 @@ import type {
   Location,
   UpdateLocationInput,
 } from "@clockoff/validation/locationsTeams";
+import { managedByFromIntegrationId } from "@clockoff/validation/integrations";
 import { audit } from "@/server/audit/audit";
 import { lockOrganisationRow } from "@/server/joinCodes/joinCodes.repository";
 import { publishBreakPolicyChanged, publishPolicyChanged } from "@/server/policies/events";
@@ -51,6 +52,8 @@ export function toLocationDto(
     teamCount: row._count.teams,
     policyAssignment: assignments?.policy ?? null,
     breakPolicyAssignment: assignments?.breakPolicy ?? null,
+    source: row.source,
+    managedBy: managedByFromIntegrationId(row.managedByIntegrationId),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

@@ -65,6 +65,8 @@ describe("mappers", () => {
       plan: "STARTER",
       onboardingState: { createCompany: true, dismissedAt: "2026-10-06T10:00:00+01:00" },
       settings: {},
+      rotaSource: null,
+      rotaSourceOtherText: null,
       deletedAt: null,
       createdAt: new Date("2026-10-01T00:00:00Z"),
       updatedAt: new Date("2026-10-02T00:00:00Z"),

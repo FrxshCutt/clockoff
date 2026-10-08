@@ -61,6 +61,7 @@ function makeShift(overrides: Partial<Shift> & { startsAt: string; endsAt: strin
     localStartTime: "09:00",
     localEndTime: "15:00",
     displayRange: "",
+    managedBy: null,
     createdAt: "2026-10-01T00:00:00.000Z",
     updatedAt: "2026-10-01T00:00:00.000Z",
     ...overrides,

@@ -78,6 +78,7 @@ describe("organisation", () => {
         totalCount: 8,
         allDone: false,
         dismissedAt: null,
+        rotaSource: null,
       }).success,
     ).toBe(true);
   });

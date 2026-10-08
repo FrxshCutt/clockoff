@@ -1,4 +1,8 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import {
+  ACTIVITY_EVENT_TYPES,
+  isIntegrationActivityEventType,
+  type ActivityEventType,
+} from "@clockoff/shared/enums";
 import type { ActivityEvent } from "@clockoff/validation/activity";
 import { humanizeEnum } from "@/lib/format";
 
@@ -26,6 +30,12 @@ export const ACTIVITY_TYPE_LABELS: Partial<Record<ActivityEventType, string>> = 
   OVERRIDE_CREATED: "Override created",
   OVERRIDE_EXPIRED: "Override expired",
   POLICY_RESOLUTION_WARNING: "Policy resolution warning",
+  INTEGRATION_CONNECTED: "Integration connected",
+  INTEGRATION_DISCONNECTED: "Integration disconnected",
+  INTEGRATION_SYNCED: "Integration synced",
+  // Integration-only: a manager's own deactivation records no activity.
+  EMPLOYEE_DEACTIVATED: "Deactivated by integration",
+  EMPLOYEE_REACTIVATED: "Reactivated by integration",
 };
 
 export function activityTypeLabel(type: string): string {
@@ -41,6 +51,18 @@ export interface ActivityTypeOption {
 export const ACTIVITY_TYPE_OPTIONS: readonly ActivityTypeOption[] = [...ACTIVITY_EVENT_TYPES]
   .map((type) => ({ id: type, name: activityTypeLabel(type) }))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+const ACTIVITY_TYPE_OPTIONS_WITHOUT_INTEGRATION = ACTIVITY_TYPE_OPTIONS.filter(
+  (option) => !isIntegrationActivityEventType(option.id),
+);
+
+/**
+ * The options to offer: every type while Planday is switched on (`plandayEnabled` on `GET /api/auth/me`),
+ * otherwise all but the integration-only types, which nothing can record yet (plan §0).
+ */
+export function activityTypeSelectOptions(plandayEnabled: boolean): readonly ActivityTypeOption[] {
+  return plandayEnabled ? ACTIVITY_TYPE_OPTIONS : ACTIVITY_TYPE_OPTIONS_WITHOUT_INTEGRATION;
+}
 
 export function isActivityEventType(value: unknown): value is ActivityEventType {
   return typeof value === "string" && (ACTIVITY_EVENT_TYPES as readonly string[]).includes(value);

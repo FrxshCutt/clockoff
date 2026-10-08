@@ -286,6 +286,11 @@ const ACTIVITY_VERBS: Record<ActivityEventType, string> = {
   INTEGRATION_ERROR: "integration error",
   IMPORT_COMPLETED: "shift import completed",
   POLICY_RESOLUTION_WARNING: "has an ambiguous policy assignment",
+  INTEGRATION_CONNECTED: "integration connected",
+  INTEGRATION_DISCONNECTED: "integration disconnected",
+  INTEGRATION_SYNCED: "integration synced",
+  EMPLOYEE_DEACTIVATED: "was deactivated",
+  EMPLOYEE_REACTIVATED: "was reactivated",
 };
 
 /** Plain-English one-liner for the feed. Metadata is operational only, so nothing sensitive can leak. */

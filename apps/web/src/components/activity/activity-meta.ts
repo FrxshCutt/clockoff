@@ -1,4 +1,8 @@
-import { ACTIVITY_EVENT_TYPES, type ActivityEventType } from "@clockoff/shared/enums";
+import {
+  ACTIVITY_EVENT_TYPES,
+  isIntegrationActivityEventType,
+  type ActivityEventType,
+} from "@clockoff/shared/enums";
 import type { StatusTone } from "@clockoff/shared/status/statusMeta";
 import type { ActivityEvent } from "@clockoff/validation/activity";
 import { formatDurationMinutes, humanizeEnum } from "@/lib/format";
@@ -82,6 +86,36 @@ function num(metadata: Readonly<Record<string, unknown>>, key: string): number |
 function str(metadata: Readonly<Record<string, unknown>>, key: string): string | null {
   const value = metadata[key];
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+}
+
+/**
+ * The integration's display name ("Planday") from `metadata.provider`, or `metadata.source` (the key the
+ * employee deactivation writer uses, plan §6.5); null when neither is set.
+ */
+function integrationName(metadata: Readonly<Record<string, unknown>>): string | null {
+  const provider = str(metadata, "provider") ?? str(metadata, "source");
+  return provider ? humanizeEnum(provider) : null;
+}
+
+/** "Planday", else "an integration". */
+function providerName(metadata: Readonly<Record<string, unknown>>): string {
+  return integrationName(metadata) ?? "an integration";
+}
+
+/**
+ * Shifts an integration sync created, updated or cancelled, from the run's `counts` in the activity metadata
+ * (`counts.shifts` of `PlandaySyncRunCounts`); null when the metadata carries no well-formed shift counts.
+ */
+function syncedShiftChanges(metadata: Readonly<Record<string, unknown>>): number | null {
+  const counts = metadata.counts;
+  if (typeof counts !== "object" || counts === null) return null;
+  const shifts = (counts as Record<string, unknown>).shifts;
+  if (typeof shifts !== "object" || shifts === null) return null;
+  const parts = ["created", "updated", "cancelled"].map((key) =>
+    num(shifts as Record<string, unknown>, key),
+  );
+  if (parts.some((part) => part === null)) return null;
+  return parts.reduce<number>((total, part) => total + (part ?? 0), 0);
 }
 
 function byManager(actor: string | null): string {
@@ -264,6 +298,56 @@ export const ACTIVITY_EVENT_META: Record<ActivityEventType, ActivityEventMeta> =
     group: "policy",
     sentence: ({ possessive }) => `${possessive} Work Policy couldn't be resolved unambiguously`,
   },
+  INTEGRATION_CONNECTED: {
+    label: "Integration connected",
+    icon: "plug",
+    tone: "success",
+    group: "system",
+    sentence: ({ actor, metadata }) => `${byManager(actor)} connected ${providerName(metadata)}`,
+  },
+  INTEGRATION_DISCONNECTED: {
+    label: "Integration disconnected",
+    icon: "plug",
+    tone: "warning",
+    group: "system",
+    sentence: ({ actor, metadata }) => `${byManager(actor)} disconnected ${providerName(metadata)}`,
+  },
+  INTEGRATION_SYNCED: {
+    label: "Integration synced",
+    icon: "refresh",
+    tone: "neutral",
+    group: "system",
+    sentence: ({ metadata }) => {
+      const shifts = syncedShiftChanges(metadata);
+      return `${integrationName(metadata) ?? "An integration"} synced the rota${shifts !== null ? ` (${shifts} shift${shifts === 1 ? "" : "s"} changed)` : ""}`;
+    },
+  },
+  // Recorded only by an integration (its deactivation and reactivation writers); a manager's own deactivation
+  // is audited, not recorded as activity, so the labels name the integration.
+  EMPLOYEE_DEACTIVATED: {
+    label: "Deactivated by integration",
+    icon: "circle-x",
+    tone: "warning",
+    group: "setup",
+    sentence: ({ subject, metadata }) => {
+      const provider = integrationName(metadata);
+      return provider
+        ? `${subject} was deactivated (inactive in ${provider})`
+        : `${subject} was deactivated by an integration`;
+    },
+  },
+  EMPLOYEE_REACTIVATED: {
+    label: "Reactivated by integration",
+    icon: "user-check",
+    tone: "success",
+    group: "setup",
+    sentence: ({ subject, metadata }) => {
+      const provider = integrationName(metadata);
+      return provider
+        ? `${subject} was reactivated (active again in ${provider})`
+        : `${subject} was reactivated by an integration`;
+    },
+  },
 };
 
 const UNKNOWN_EVENT_META = (type: string): ActivityEventMeta => ({
@@ -324,6 +408,18 @@ export const ACTIVITY_TYPE_OPTIONS: readonly ActivityTypeOption[] = ACTIVITY_EVE
     group: ACTIVITY_EVENT_META[value].group,
   }),
 );
+
+const ACTIVITY_TYPE_OPTIONS_WITHOUT_INTEGRATION = ACTIVITY_TYPE_OPTIONS.filter(
+  (option) => !isIntegrationActivityEventType(option.value),
+);
+
+/**
+ * The filter options to offer: every type while Planday is switched on (`plandayEnabled` on `GET /api/auth/me`),
+ * otherwise all but the integration-only types, which nothing can record yet (plan §0).
+ */
+export function activityTypeOptions(plandayEnabled: boolean): readonly ActivityTypeOption[] {
+  return plandayEnabled ? ACTIVITY_TYPE_OPTIONS : ACTIVITY_TYPE_OPTIONS_WITHOUT_INTEGRATION;
+}
 
 export function isActivityEventType(value: unknown): value is ActivityEventType {
   return typeof value === "string" && (ACTIVITY_EVENT_TYPES as readonly string[]).includes(value);

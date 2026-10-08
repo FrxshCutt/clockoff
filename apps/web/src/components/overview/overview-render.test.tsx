@@ -226,6 +226,7 @@ describe("AwaitingSetupPanel", () => {
     activeShift: null,
     lastSyncAt: null,
     attentionReason: null,
+    rotaMayBeOutOfDate: false,
     ...overrides,
   });
 

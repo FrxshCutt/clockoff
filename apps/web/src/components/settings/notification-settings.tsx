@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  MANAGER_NOTIFICATION_TYPES,
   NOTIFICATION_PREFERENCE_DEFAULTS,
   type ManagerNotificationType,
   type NotificationPreferences,
@@ -13,8 +12,9 @@ import { InlineAlert } from "@/components/inline-alert";
 import { CardSkeleton } from "@/components/loading-skeletons";
 import { SectionCard } from "@/components/section";
 import { Switch } from "@/components/ui/switch";
-import { NOTIFICATION_TYPE_COPY } from "@/config/settings";
+import { NOTIFICATION_TYPE_COPY, visibleNotificationTypes } from "@/config/settings";
 import { useApiErrorToast } from "@/hooks/use-api-error-toast";
+import { usePlandayEnabled } from "@/hooks/use-current-user";
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -32,13 +32,14 @@ const CHANNELS: readonly { key: Channel; label: string }[] = [
  * Settings → Notifications: the caller's own alert preferences (`GET` / `PATCH /api/settings`). Each switch
  * saves immediately and flips optimistically (a preference toggle is safe to show before the server
  * confirms); a failed save puts the previous value back. Until the endpoint ships, the defaults are shown
- * read-only with an explanation.
+ * read-only with an explanation. The integration sync rows appear only while Planday is switched on.
  */
 export function NotificationSettings() {
   const queryClient = useQueryClient();
   const { data, isPending, isError, error, refetch, isRefetching } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
   const toastError = useApiErrorToast();
+  const types = visibleNotificationTypes(usePlandayEnabled());
 
   if (isPending) return <CardSkeleton lines={6} />;
   if (isError) {
@@ -115,7 +116,7 @@ export function NotificationSettings() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {MANAGER_NOTIFICATION_TYPES.map((type) => (
+              {types.map((type) => (
                 <PreferenceRow
                   key={type}
                   type={type}

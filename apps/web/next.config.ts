@@ -19,7 +19,12 @@ const nextConfig: NextConfig = {
     "/**": [`${PRISMA_CLIENT_DIR}/libquery_engine-*.so.node`, `${PRISMA_CLIENT_DIR}/schema.prisma`],
   },
   // Workspace packages are consumed as TypeScript source.
-  transpilePackages: ["@clockoff/shared", "@clockoff/validation", "@clockoff/db"],
+  transpilePackages: [
+    "@clockoff/shared",
+    "@clockoff/validation",
+    "@clockoff/db",
+    "@clockoff/integrations",
+  ],
   serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "pino"],
   eslint: {
     // Linting runs as its own CI step (`pnpm lint`); don't duplicate it in `next build`.

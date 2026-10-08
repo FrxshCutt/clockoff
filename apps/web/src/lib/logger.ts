@@ -34,6 +34,16 @@ const SENSITIVE_KEYS = [
   "name",
   "firstName",
   "lastName",
+  // Workforce integrations (Planday, plan §4.9): OAuth / token-endpoint field names, codes, App IDs and the
+  // employee email Planday sends. A second line of defence: integration code logs ids, codes and counts only.
+  "access_token",
+  "refresh_token",
+  "id_token",
+  "authorizationCode",
+  "codeVerifier",
+  "clientId",
+  "appId",
+  "workEmail",
 ] as const;
 
 function pathSegment(key: string): string {

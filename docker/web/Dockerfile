@@ -29,6 +29,7 @@ COPY apps/web/package.json apps/web/
 COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/prisma.config.ts packages/db/
 COPY packages/db/prisma packages/db/prisma
+COPY packages/integrations/package.json packages/integrations/
 COPY packages/shared/package.json packages/shared/
 COPY packages/validation/package.json packages/validation/
 # The root postinstall runs `prisma generate`, producing the engine for this image's platform.

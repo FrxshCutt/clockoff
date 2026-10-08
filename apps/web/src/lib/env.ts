@@ -46,6 +46,18 @@ const base64Key32 = z.string().refine(
   { message: "must be 32 random bytes encoded as base64 (e.g. `openssl rand -base64 32`)" },
 );
 
+/** A Planday App ID (a UUID), surrounding whitespace ignored. */
+const plandayAppId = z
+  .string()
+  .trim()
+  .regex(UUID, { message: "must be a Planday App ID (a UUID)" });
+
+export const PLANDAY_MODES = ["mock", "live"] as const;
+export type PlandayMode = (typeof PLANDAY_MODES)[number];
+
+/** Where `apps/web/scripts/mock-planday.mts` listens by default (PLANDAY_MOCK_PORT 4010). */
+export const PLANDAY_MOCK_DEFAULT_URL = "http://127.0.0.1:4010";
+
 /**
  * SHUTDOWN_GRACE_MS's maximum: the longest grace that still fits both Railway draining periods (web
  * 30 s; worker 60 s minus its ~21 s of fixed shutdown steps). Raise it only together with those.
@@ -173,6 +185,33 @@ const envSchema = z.object({
    */
   SHUTDOWN_GRACE_MS: z.coerce.number().int().min(1_000).max(SHUTDOWN_GRACE_MAX_MS).default(20_000),
 
+  // Workforce integrations: Planday (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md appendix A)
+  /**
+   * Release and kill switch: registers the Planday provider in web and worker. Off → Planday routes answer
+   * 404, both integration jobs report NO_AVAILABLE_PROVIDER, the runner claims no Planday run, organisations
+   * with a live connection see "Paused"; data stays. Resolved: default `false` in production, `true` elsewhere.
+   */
+  PLANDAY_ENABLED: booleanString.optional(),
+  /**
+   * `mock` (Mock Planday, development and tests) or `live` (openapi.planday.com). Resolved: `live` in
+   * production, `mock` elsewhere. parseEnv refuses `mock` in production, so such a deploy never starts.
+   */
+  PLANDAY_MODE: z.enum(PLANDAY_MODES).optional(),
+  /**
+   * The shared Mock Planday server (`apps/web/scripts/mock-planday.mts`) that web and worker both talk to in
+   * mock mode. Default {@link PLANDAY_MOCK_DEFAULT_URL} in mock mode outside tests (tests inject the in-process
+   * mock). Refused in production.
+   */
+  PLANDAY_MOCK_URL: z.url({ message: "must be the Mock Planday server's URL" }).optional(),
+  /** ClockOff's Planday App ID for method A ("Connect with Planday", OAuth). Web only; unset hides method A. */
+  PLANDAY_CLIENT_ID: plandayAppId.optional(),
+  /** ClockOff's Planday App ID customers add in Planday (method B); shown to them. Web only; unset hides B. */
+  PLANDAY_APP_ID: plandayAppId.optional(),
+  /** Beta clock-in mode: the wizard's Clock-in option, CLOCK runs and the punch-clock scope probe. */
+  PLANDAY_CLOCK_MODE_ENABLED: booleanString.default(false),
+  /** S256 PKCE on method A, turned on only after the demo-portal check (PKCE is undocumented for API apps). */
+  PLANDAY_OAUTH_PKCE: booleanString.default(false),
+
   // Logging
   LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
 
@@ -191,13 +230,27 @@ type RawEnv = z.infer<typeof envSchema>;
 
 export interface Env extends Omit<
   RawEnv,
-  "REQUIRE_EMAIL_VERIFICATION" | "NEXT_PUBLIC_APP_URL" | "TEST_TOOLS_ORGANISATION_IDS"
+  | "REQUIRE_EMAIL_VERIFICATION"
+  | "NEXT_PUBLIC_APP_URL"
+  | "TEST_TOOLS_ORGANISATION_IDS"
+  | "PLANDAY_ENABLED"
+  | "PLANDAY_MODE"
+  | "PLANDAY_MOCK_URL"
 > {
   /** Resolved: explicit value, otherwise `true` in production and `false` elsewhere. */
   REQUIRE_EMAIL_VERIFICATION: boolean;
   NEXT_PUBLIC_APP_URL: string;
   /** Lowercased organisation ids with the test tools (empty when unset). See {@link testToolsEnabledFor}. */
   TEST_TOOLS_ORGANISATION_IDS: readonly string[];
+  /** Resolved: explicit value, otherwise `false` in production and `true` elsewhere. */
+  PLANDAY_ENABLED: boolean;
+  /** Resolved: explicit value, otherwise `live` in production and `mock` elsewhere (never `mock` in production). */
+  PLANDAY_MODE: PlandayMode;
+  /**
+   * Resolved: explicit value, otherwise {@link PLANDAY_MOCK_DEFAULT_URL} in mock mode outside tests; undefined in
+   * live mode without one, in tests without one, and always in production.
+   */
+  PLANDAY_MOCK_URL: string | undefined;
   /** `new URL(APP_URL).origin` — used for CSRF origin checks and absolute links. */
   APP_ORIGIN: string;
   isProduction: boolean;
@@ -377,6 +430,18 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
   if (source.CRON_SECRET?.trim()) {
     warnings.push("CRON_SECRET is no longer used (the worker runs the jobs): remove it.");
   }
+  if (isProduction && raw.PLANDAY_MODE === "mock") {
+    // Mock Planday must never serve a real organisation: refuse to start (the worker exits 1, web fails its
+    // health check, so Railway never promotes the deployment).
+    throw new Error(
+      "Invalid environment configuration:\n - PLANDAY_MODE=mock is not allowed in production",
+    );
+  }
+  if (isProduction && raw.PLANDAY_MOCK_URL) {
+    throw new Error(
+      "Invalid environment configuration:\n - PLANDAY_MOCK_URL must not be set in production (Mock Planday is for development and tests)",
+    );
+  }
   if (raw.RATE_LIMIT_BACKEND === "redis" && !raw.REDIS_URL) {
     throw new Error(
       "Invalid environment configuration:\n - REDIS_URL is required when RATE_LIMIT_BACKEND=redis",
@@ -386,14 +451,21 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
     warnings.push("APP_URL should use https:// in production (session cookies are marked Secure).");
   }
 
+  const isTest = raw.NODE_ENV === "test";
+  const plandayMode: PlandayMode = raw.PLANDAY_MODE ?? (isProduction ? "live" : "mock");
   const env: Env = {
     ...raw,
     REQUIRE_EMAIL_VERIFICATION: raw.REQUIRE_EMAIL_VERIFICATION ?? isProduction,
     NEXT_PUBLIC_APP_URL: raw.NEXT_PUBLIC_APP_URL ?? raw.APP_URL,
     TEST_TOOLS_ORGANISATION_IDS: [...new Set(raw.TEST_TOOLS_ORGANISATION_IDS ?? [])],
+    PLANDAY_ENABLED: raw.PLANDAY_ENABLED ?? !isProduction,
+    PLANDAY_MODE: plandayMode,
+    PLANDAY_MOCK_URL:
+      raw.PLANDAY_MOCK_URL ??
+      (plandayMode === "mock" && !isTest ? PLANDAY_MOCK_DEFAULT_URL : undefined),
     APP_ORIGIN: new URL(raw.APP_URL).origin,
     isProduction,
-    isTest: raw.NODE_ENV === "test",
+    isTest,
     isDevelopment: raw.NODE_ENV === "development",
   };
   return { env, warnings };

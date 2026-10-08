@@ -15,20 +15,31 @@ import {
   EFFECTIVE_RESTRICTIONS,
   EMPLOYEE_INVITE_STATUSES,
   EMPLOYMENT_STATUSES,
+  EXTERNAL_ENTITY_TYPES,
+  INTEGRATION_AUTH_METHODS,
+  INTEGRATION_CONNECTION_STATUSES,
   INTEGRATION_PROVIDERS,
   INTEGRATION_STATUSES,
+  INTEGRATION_SYNC_RUN_KINDS,
+  INTEGRATION_SYNC_RUN_STATUSES,
+  INTEGRATION_SYNC_TRIGGERS,
+  INTEGRATION_WIZARD_STEPS,
   INVITE_CHANNELS,
   INVITE_STATUSES,
   JOIN_CODE_STATUSES,
   NOTIFICATION_CHANNELS,
   NOTIFICATION_RECIPIENT_TYPES,
+  ONBOARDING_SESSION_STATUSES,
   OVERRIDE_TYPES,
+  PENDING_EXTERNAL_EMPLOYEE_REASONS,
   PERMISSION_STATES,
   PLANS,
   PLATFORMS,
   POLICY_STATUSES,
+  RECORD_SOURCES,
   RESTRICTION_CATEGORIES,
   ROLES,
+  ROTA_SOURCES,
   SELECTION_STATES,
   SHIFT_IMPORT_ROW_STATUSES,
   SHIFT_IMPORT_STATUSES,
@@ -111,5 +122,36 @@ export const restrictionCategorySchema = z
 export const deviceStatusBadgeSchema = z
   .enum(DEVICE_STATUS_BADGES)
   .meta({ id: "DeviceStatusBadge" });
+// ── Workforce integrations (Planday; docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §2.2) ─────────────
+export const rotaSourceSchema = z.enum(ROTA_SOURCES).meta({ id: "RotaSource" });
+export const recordSourceSchema = z.enum(RECORD_SOURCES).meta({ id: "RecordSource" });
+export const integrationAuthMethodSchema = z
+  .enum(INTEGRATION_AUTH_METHODS)
+  .meta({ id: "IntegrationAuthMethod" });
+export const integrationConnectionStatusSchema = z
+  .enum(INTEGRATION_CONNECTION_STATUSES)
+  .meta({ id: "IntegrationConnectionStatus" });
+export const externalEntityTypeSchema = z
+  .enum(EXTERNAL_ENTITY_TYPES)
+  .meta({ id: "ExternalEntityType" });
+export const integrationSyncTriggerSchema = z
+  .enum(INTEGRATION_SYNC_TRIGGERS)
+  .meta({ id: "IntegrationSyncTrigger" });
+export const integrationSyncRunStatusSchema = z
+  .enum(INTEGRATION_SYNC_RUN_STATUSES)
+  .meta({ id: "IntegrationSyncRunStatus" });
+export const integrationSyncRunKindSchema = z
+  .enum(INTEGRATION_SYNC_RUN_KINDS)
+  .meta({ id: "IntegrationSyncRunKind" });
+export const pendingExternalEmployeeReasonSchema = z
+  .enum(PENDING_EXTERNAL_EMPLOYEE_REASONS)
+  .meta({ id: "PendingExternalEmployeeReason" });
+export const onboardingSessionStatusSchema = z
+  .enum(ONBOARDING_SESSION_STATUSES)
+  .meta({ id: "OnboardingSessionStatus" });
+export const integrationWizardStepSchema = z
+  .enum(INTEGRATION_WIZARD_STEPS)
+  .meta({ id: "IntegrationWizardStep" });
+
 export const apiErrorCodeSchema = z.enum(API_ERROR_CODES).meta({ id: "ApiErrorCode" });
 export const permissionSchema = z.enum(PERMISSIONS).meta({ id: "Permission" });

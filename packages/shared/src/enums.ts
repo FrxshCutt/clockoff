@@ -188,6 +188,13 @@ export const ACTIVITY_EVENT_TYPES = [
   "IMPORT_COMPLETED",
   /** §6.1: policy resolution was ambiguous (e.g. multiple team assignments) — operational warning only. */
   "POLICY_RESOLUTION_WARNING",
+  /** Workforce integrations (Planday): connection lifecycle and sync outcomes, organisation-level. */
+  "INTEGRATION_CONNECTED",
+  "INTEGRATION_DISCONNECTED",
+  "INTEGRATION_SYNCED",
+  /** An integration deactivated or reactivated an employee (Planday deactivation / reactivation). */
+  "EMPLOYEE_DEACTIVATED",
+  "EMPLOYEE_REACTIVATED",
 ] as const;
 export type ActivityEventType = (typeof ACTIVITY_EVENT_TYPES)[number];
 
@@ -206,6 +213,116 @@ export const DEVICE_REPORTABLE_EVENT_TYPES = [
   "POLICY_SYNCED",
 ] as const satisfies readonly ActivityEventType[];
 export type DeviceReportableEventType = (typeof DEVICE_REPORTABLE_EVENT_TYPES)[number];
+
+/**
+ * Activity types only a workforce integration records (Planday connect, disconnect and sync, and its employee
+ * deactivations and reactivations; a manager's own deactivation records none). The dashboard leaves them out of
+ * its type filters while Planday is switched off (`plandayEnabled` on `GET /api/auth/me`, plan §0).
+ */
+export const INTEGRATION_ACTIVITY_EVENT_TYPES = [
+  "INTEGRATION_CONNECTED",
+  "INTEGRATION_DISCONNECTED",
+  "INTEGRATION_SYNCED",
+  "EMPLOYEE_DEACTIVATED",
+  "EMPLOYEE_REACTIVATED",
+] as const satisfies readonly ActivityEventType[];
+
+export function isIntegrationActivityEventType(type: string): boolean {
+  return (INTEGRATION_ACTIVITY_EVENT_TYPES as readonly string[]).includes(type);
+}
+
+// ── Workforce integrations (Planday; docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §2.2) ─────────────
+
+/** How the organisation schedules its team (onboarding question). Null until answered. */
+export const ROTA_SOURCES = [
+  "PLANDAY",
+  "DEPUTY",
+  "SEVENSHIFTS",
+  "WHEN_I_WORK",
+  "ROTAREADY",
+  "HOMEBASE",
+  "CSV",
+  "MANUAL",
+  "OTHER",
+] as const;
+export type RotaSource = (typeof ROTA_SOURCES)[number];
+
+/** Provenance of an Employee / Location / Team row. Shift keeps its own ShiftSource. */
+export const RECORD_SOURCES = ["MANUAL", "CSV_IMPORT", "INTEGRATION"] as const;
+export type RecordSource = (typeof RECORD_SOURCES)[number];
+
+/** How a Planday connection was made: A (OAuth), B (customer added ClockOff's App ID), C (customer's own app). */
+export const INTEGRATION_AUTH_METHODS = [
+  "OAUTH",
+  "CUSTOMER_ADDED_APP_ID",
+  "CUSTOMER_OWN_APP",
+] as const;
+export type IntegrationAuthMethod = (typeof INTEGRATION_AUTH_METHODS)[number];
+
+/** Fine-grained connection state. `Integration.status` keeps the coarse IntegrationStatus. */
+export const INTEGRATION_CONNECTION_STATUSES = [
+  "CONNECTING",
+  "CONNECTED",
+  "SYNCING",
+  "DEGRADED",
+  "AUTH_ERROR",
+  "DISCONNECTED",
+] as const;
+export type IntegrationConnectionStatus = (typeof INTEGRATION_CONNECTION_STATUSES)[number];
+
+export const EXTERNAL_ENTITY_TYPES = [
+  "EMPLOYEE",
+  "LOCATION",
+  "DEPARTMENT",
+  "TEAM",
+  "SHIFT",
+] as const;
+export type ExternalEntityType = (typeof EXTERNAL_ENTITY_TYPES)[number];
+
+export const INTEGRATION_SYNC_TRIGGERS = ["INITIAL", "SCHEDULED", "MANUAL", "RECOVERY"] as const;
+export type IntegrationSyncTrigger = (typeof INTEGRATION_SYNC_TRIGGERS)[number];
+
+export const INTEGRATION_SYNC_RUN_STATUSES = ["RUNNING", "SUCCEEDED", "PARTIAL", "FAILED"] as const;
+export type IntegrationSyncRunStatus = (typeof INTEGRATION_SYNC_RUN_STATUSES)[number];
+
+/** What a sync run does (plan §7.2). SYNC is the ordinary full sync. */
+export const INTEGRATION_SYNC_RUN_KINDS = [
+  "STRUCTURE",
+  "DIRECTORY",
+  "IMPORT_EMPLOYEES",
+  "SYNC",
+  "CLOCK",
+] as const;
+export type IntegrationSyncRunKind = (typeof INTEGRATION_SYNC_RUN_KINDS)[number];
+
+export const PENDING_EXTERNAL_EMPLOYEE_REASONS = [
+  "ONBOARDING",
+  "NEW_EMPLOYEE",
+  "AMBIGUOUS_MATCH",
+  /** One weak candidate (exact name only, or a raw CSV id nothing corroborates): the manager confirms. */
+  "POSSIBLE_MATCH",
+  "PLAN_LIMIT",
+  /** A mapped employee Planday stopped returning without positive deactivation evidence for 24 h. */
+  "MISSING_IN_PLANDAY",
+] as const;
+export type PendingExternalEmployeeReason = (typeof PENDING_EXTERNAL_EMPLOYEE_REASONS)[number];
+
+export const ONBOARDING_SESSION_STATUSES = ["ACTIVE", "COMPLETED", "ABANDONED"] as const;
+export type OnboardingSessionStatus = (typeof ONBOARDING_SESSION_STATUSES)[number];
+
+/** The nine Planday wizard steps, in order (the page's `?step=` is the kebab-case spelling). */
+export const INTEGRATION_WIZARD_STEPS = [
+  "CONNECT",
+  "CONFIRM_PORTAL",
+  "LOCATIONS",
+  "TEAMS",
+  "EMPLOYEES",
+  "SHIFT_PREVIEW",
+  "POLICIES",
+  "ACTIVATION",
+  "FINISH",
+] as const;
+export type IntegrationWizardStep = (typeof INTEGRATION_WIZARD_STEPS)[number];
 
 export const NOTIFICATION_RECIPIENT_TYPES = ["MANAGER_USER", "EMPLOYEE_DEVICE"] as const;
 export type NotificationRecipientType = (typeof NOTIFICATION_RECIPIENT_TYPES)[number];

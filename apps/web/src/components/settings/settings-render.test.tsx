@@ -1,5 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { NOTIFICATION_PREFERENCE_DEFAULTS } from "@clockoff/validation/notifications";
+import {
+  INTEGRATION_SYNC_NOTIFICATION_TYPES,
+  NOTIFICATION_PREFERENCE_DEFAULTS,
+} from "@clockoff/validation/notifications";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -20,7 +23,7 @@ import { OrganisationSettings } from "./organisation-settings";
  */
 const ORG_ID = "6f1c2c1e-4d1b-4a8e-9b51-2f6f0f1c9a10";
 
-function me(role: "OWNER" | "ADMIN" | "MANAGER"): CurrentUser {
+function me(role: "OWNER" | "ADMIN" | "MANAGER", plandayEnabled = false): CurrentUser {
   return {
     user: {
       id: "0b3c9a6e-8a55-4f0e-a3f8-7f3c1d2e4b5a",
@@ -37,6 +40,7 @@ function me(role: "OWNER" | "ADMIN" | "MANAGER"): CurrentUser {
         role,
         timezone: "Europe/London",
         testToolsEnabled: false,
+        plandayEnabled,
       },
     ],
     currentOrganisationId: ORG_ID,
@@ -105,11 +109,12 @@ function render(
   node: ReactNode,
   role: "OWNER" | "ADMIN" | "MANAGER",
   seed: (client: QueryClient) => void = () => undefined,
+  options: { plandayEnabled?: boolean } = {},
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(queryKeys.currentUser, me(role));
+  client.setQueryData(queryKeys.currentUser, me(role, options.plandayEnabled));
   client.setQueryData(queryKeys.currentOrganisation, { ...ORGANISATION, role });
   seed(client);
   return renderToStaticMarkup(
@@ -226,9 +231,33 @@ describe("Settings → Notifications", () => {
       }),
     );
     expect(html).toContain("aren&#x27;t available yet");
+    // Planday is switched off here, so the integration sync rows are hidden (plan §0).
     expect((html.match(/role="switch"/g) ?? []).length).toBe(
-      Object.keys(NOTIFICATION_PREFERENCE_DEFAULTS).length * 2,
+      (Object.keys(NOTIFICATION_PREFERENCE_DEFAULTS).length -
+        INTEGRATION_SYNC_NOTIFICATION_TYPES.length) *
+        2,
     );
     expect(html).toMatch(/role="switch"[^>]*disabled=""/);
+  });
+
+  it("shows the integration sync rows only while Planday is switched on", () => {
+    const seed = (client: QueryClient) =>
+      client.setQueryData<Availability<typeof NOTIFICATION_PREFERENCE_DEFAULTS>>(
+        queryKeys.notificationPreferences,
+        { available: true, data: NOTIFICATION_PREFERENCE_DEFAULTS },
+      );
+    const dark = render(<NotificationSettings />, "OWNER", seed);
+    expect(dark).toContain("Integration error");
+    expect(dark).not.toContain("Integration sync delayed");
+    expect(dark).not.toContain("Employees to review");
+    expect(dark).not.toContain("New department found");
+    expect(dark).not.toContain("Integration reconnected");
+
+    const live = render(<NotificationSettings />, "OWNER", seed, { plandayEnabled: true });
+    expect(live).toContain("Integration sync delayed");
+    expect(live).toContain("Integration reconnected");
+    expect((live.match(/role="switch"/g) ?? []).length).toBe(
+      Object.keys(NOTIFICATION_PREFERENCE_DEFAULTS).length * 2,
+    );
   });
 });

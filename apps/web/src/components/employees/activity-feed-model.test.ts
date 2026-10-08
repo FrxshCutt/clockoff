@@ -1,9 +1,10 @@
-import { ACTIVITY_EVENT_TYPES } from "@clockoff/shared/enums";
+import { ACTIVITY_EVENT_TYPES, INTEGRATION_ACTIVITY_EVENT_TYPES } from "@clockoff/shared/enums";
 import type { ActivityEvent } from "@clockoff/validation/activity";
 import { describe, expect, it } from "vitest";
 import {
   ACTIVITY_TYPE_OPTIONS,
   activityTypeLabel,
+  activityTypeSelectOptions,
   describeActor,
   groupActivityByDay,
   isActivityEventType,
@@ -37,6 +38,17 @@ describe("activity type labels", () => {
     expect(activityTypeLabel("SOMETHING_NEW")).toBe("Something new");
     expect(isActivityEventType("BREAK_ENDED")).toBe(true);
     expect(isActivityEventType("nope")).toBe(false);
+  });
+
+  it("offers the integration-only types only while Planday is switched on", () => {
+    expect(activityTypeSelectOptions(true)).toBe(ACTIVITY_TYPE_OPTIONS);
+    const dark = activityTypeSelectOptions(false).map((o) => o.id);
+    expect(dark).toHaveLength(
+      ACTIVITY_EVENT_TYPES.length - INTEGRATION_ACTIVITY_EVENT_TYPES.length,
+    );
+    for (const type of INTEGRATION_ACTIVITY_EVENT_TYPES) expect(dark).not.toContain(type);
+    expect(dark).toContain("INTEGRATION_ERROR");
+    expect(activityTypeLabel("EMPLOYEE_DEACTIVATED")).toBe("Deactivated by integration");
   });
 });
 

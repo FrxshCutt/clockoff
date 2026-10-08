@@ -431,6 +431,7 @@ export async function getCurrentUser(
     cookies.push(orgCookie(selected.organisationId));
   if (!selected && requestedOrganisationId) cookies.push(clearCookie(ORG_COOKIE));
 
+  const plandayEnabled = env().PLANDAY_ENABLED;
   return {
     body: {
       user: {
@@ -447,6 +448,7 @@ export async function getCurrentUser(
         role: m.role,
         timezone: m.organisation.timezone,
         testToolsEnabled: testToolsEnabledFor(m.organisation.id),
+        plandayEnabled,
       })),
       currentOrganisationId: selected?.organisationId ?? null,
       csrfToken: csrf.token,

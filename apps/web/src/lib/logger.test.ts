@@ -46,6 +46,55 @@ describe("logger", () => {
     expect(line.level).toBe("info");
   });
 
+  it("redacts integration secrets and identifiers (Planday, plan §4.9)", async () => {
+    const { lines, logger } = capture();
+    logger.info(
+      {
+        access_token: "at",
+        refresh_token: "rt",
+        id_token: "idt",
+        authorizationCode: "code",
+        codeVerifier: "verifier",
+        clientId: "f2370889-3ffe-46b6-83e7-1a20f5a20d2f",
+        appId: "f2370889-3ffe-46b6-83e7-1a20f5a20d2f",
+        workEmail: "sam@example.com",
+        integrationId: "int-1",
+        response: { refresh_token: "rt2", expires_in: 3600 },
+        pending: { employee: { workEmail: "x@example.com" } },
+      },
+      "planday.token.refreshed",
+    );
+    await new Promise((r) => setImmediate(r));
+    const line = lines[0]!;
+    for (const key of [
+      "access_token",
+      "refresh_token",
+      "id_token",
+      "authorizationCode",
+      "codeVerifier",
+      "clientId",
+      "appId",
+      "workEmail",
+    ])
+      expect(line[key], key).toBe("[REDACTED]");
+    expect(line.response).toEqual({ refresh_token: "[REDACTED]", expires_in: 3600 });
+    expect(line.pending).toEqual({ employee: { workEmail: "[REDACTED]" } });
+    expect(line.integrationId).toBe("int-1");
+    const text = JSON.stringify(line);
+    for (const value of [
+      '"at"',
+      '"rt"',
+      '"rt2"',
+      '"idt"',
+      '"code"',
+      '"verifier"',
+      "sam@example.com",
+      "x@example.com",
+      "f2370889-3ffe",
+    ])
+      expect(text, value).not.toContain(value);
+  });
+
   it("child(logger, bindings) carries bindings", async () => {
     const { lines, logger } = capture();
     child(logger, { requestId: "req-1" }).info("x");

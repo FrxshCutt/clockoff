@@ -1,5 +1,9 @@
 import type { Permission } from "@clockoff/shared/permissions";
-import type { ManagerNotificationType } from "@clockoff/validation/notifications";
+import {
+  MANAGER_NOTIFICATION_TYPES,
+  isIntegrationSyncNotificationType,
+  type ManagerNotificationType,
+} from "@clockoff/validation/notifications";
 
 /** Settings page tabs, in display order. The `?tab=` query parameter selects one. */
 export const SETTINGS_TABS = [
@@ -85,4 +89,34 @@ export const NOTIFICATION_TYPE_COPY: Record<
     label: "Integration error",
     description: "A rota integration failed to sync.",
   },
+  INTEGRATION_DEGRADED: {
+    label: "Integration sync delayed",
+    description: "A rota integration hasn't synced for a while; ClockOff keeps retrying.",
+  },
+  INTEGRATION_NEW_EMPLOYEES: {
+    label: "Employees to review",
+    description: "A rota integration found new employees, or employees it can no longer find.",
+  },
+  INTEGRATION_DEPARTMENT_FOUND: {
+    label: "New department found",
+    description: "A rota integration found a new department to map.",
+  },
+  INTEGRATION_RECOVERED: {
+    label: "Integration reconnected",
+    description: "A rota integration that had lost access is syncing again.",
+  },
 };
+
+const NOTIFICATION_TYPES_WITHOUT_INTEGRATION_SYNC: readonly ManagerNotificationType[] =
+  MANAGER_NOTIFICATION_TYPES.filter((type) => !isIntegrationSyncNotificationType(type));
+
+/**
+ * The preference rows the Notifications tab shows, in enum order. While Planday is switched off
+ * (`plandayEnabled` on `GET /api/auth/me`) the integration sync types are left out: nothing can raise them, and
+ * Planday stays invisible until release (plan §0). Their stored preferences are untouched.
+ */
+export function visibleNotificationTypes(
+  plandayEnabled: boolean,
+): readonly ManagerNotificationType[] {
+  return plandayEnabled ? MANAGER_NOTIFICATION_TYPES : NOTIFICATION_TYPES_WITHOUT_INTEGRATION_SYNC;
+}

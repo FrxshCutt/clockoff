@@ -11,12 +11,13 @@ import { TONE_DOT_CLASSES } from "@/components/status/statusMeta";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePlandayEnabled } from "@/hooks/use-current-user";
 import { useCurrentOrganisation } from "@/hooks/use-organisation";
 import { formatDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
-  ACTIVITY_TYPE_OPTIONS,
   activityTypeLabel,
+  activityTypeSelectOptions,
   describeActor,
   groupActivityByDay,
   isActivityEventType,
@@ -38,6 +39,7 @@ export function EmployeeActivityTab({ employeeId }: EmployeeActivityTabProps) {
   const timeZone = organisation.data?.organisation.timezone;
   const dateFormat = organisation.data?.organisation.dateFormat;
   const query = useEmployeeActivity(employeeId, type ? { type: [type] } : {});
+  const typeOptions = activityTypeSelectOptions(usePlandayEnabled());
 
   const events = query.data?.pages.flatMap((page) => page.items) ?? [];
   const groups = groupActivityByDay(events, timeZone);
@@ -55,7 +57,7 @@ export function EmployeeActivityTab({ employeeId }: EmployeeActivityTabProps) {
             id={`${ids}-type`}
             value={type ?? ""}
             onChange={(next) => setType(isActivityEventType(next) ? next : null)}
-            options={ACTIVITY_TYPE_OPTIONS}
+            options={typeOptions}
             noneLabel="All event types"
             className="h-9 w-56"
           />

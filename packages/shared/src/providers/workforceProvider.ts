@@ -1,8 +1,11 @@
 import type { ActivationMode, IntegrationProvider, IntegrationStatus } from "../enums";
+import type { CredentialStore } from "./credentialStore";
 import type { UpsertOutcome, WorkforceSyncSink } from "./syncSink";
 
 export * from "./comingSoonProvider";
+export * from "./credentialStore";
 export * from "./registry";
+export * from "./resumable";
 export * from "./syncSink";
 
 /**
@@ -17,6 +20,17 @@ export * from "./syncSink";
 export type ProviderId = IntegrationProvider;
 
 export type ProviderAvailability = "AVAILABLE" | "COMING_SOON";
+
+/**
+ * Structured logger handed to providers (the web layer passes a pino child logger). Objects carry ids, codes,
+ * counts and path templates only: never tokens, client ids, codes, names, emails or response bodies.
+ */
+export interface ProviderLogger {
+  debug(obj: Readonly<Record<string, unknown>>, msg: string): void;
+  info(obj: Readonly<Record<string, unknown>>, msg: string): void;
+  warn(obj: Readonly<Record<string, unknown>>, msg: string): void;
+  error(obj: Readonly<Record<string, unknown>>, msg: string): void;
+}
 
 /** Everything a provider needs for one call. Credentials arrive decrypted; the caller handles AES-256-GCM. */
 export interface ProviderContext {
@@ -33,6 +47,16 @@ export interface ProviderContext {
    * methods; not needed for connect / disconnect / getConnectionStatus.
    */
   readonly sink?: WorkforceSyncSink;
+  /** Credential persistence with an atomic refresh hook. Required by sync and refresh of a token provider. */
+  readonly credentialStore?: CredentialStore;
+  /** The connect proof's bound in web: providers start no request they cannot finish before it. */
+  readonly deadline?: { remainingMs(): number };
+  /**
+   * Worker shutdown or a lost lease: checked before every request and combined with each API request's
+   * timeout. Token, code-exchange and revocation requests ignore it (their answer may carry a rotated token).
+   */
+  readonly signal?: AbortSignal;
+  readonly log?: ProviderLogger;
 }
 
 export interface ConnectParams {
@@ -51,7 +75,11 @@ export interface ConnectParams {
 export type ConnectResult =
   | {
       readonly kind: "CONNECTED";
-      /** Plain credentials to encrypt and persist in IntegrationConnection.encryptedCredentials. */
+      /**
+       * Plain credentials to encrypt and persist in the generic connect flow's
+       * IntegrationConnection.legacyEncryptedCredentials column. Planday never uses it: its connection
+       * stores the client id and tokens in their own encrypted columns (planday.service.ts).
+       */
       readonly credentials: unknown;
       readonly tokenExpiresAt: Date | null;
       readonly externalAccountId?: string;
@@ -75,6 +103,8 @@ export const SYNC_ERROR_CODES = [
   "INVALID_TIME",
   "MAPPING_FAILED",
   "CONFLICT",
+  /** The provider answered 2xx with a body that failed validation. Not retryable: the next schedule retries. */
+  "INVALID_RESPONSE",
 ] as const;
 export type SyncErrorCode = (typeof SYNC_ERROR_CODES)[number];
 

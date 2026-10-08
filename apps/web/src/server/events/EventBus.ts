@@ -24,6 +24,16 @@ export const REALTIME_EVENT_TYPES = [
    */
   "POLICY_CHANGED",
   "BREAK_POLICY_CHANGED",
+  /**
+   * Workforce integration runs and health (Planday; docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §7.11).
+   * Hints only: the dashboard refetches the run / card / banner. Payloads carry ids, enums, numbers and
+   * labels ClockOff writes itself, never names, emails or Planday values. `integration.run.cancelled` also
+   * tells the worker's integration runner to abort that run's slice.
+   */
+  "integration.run.queued",
+  "integration.run.cancelled",
+  "integration.sync.progress",
+  "integration.health.changed",
 ] as const;
 export type KnownRealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number];
 

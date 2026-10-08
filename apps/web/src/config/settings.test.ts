@@ -1,4 +1,7 @@
-import { MANAGER_NOTIFICATION_TYPES } from "@clockoff/validation/notifications";
+import {
+  INTEGRATION_SYNC_NOTIFICATION_TYPES,
+  MANAGER_NOTIFICATION_TYPES,
+} from "@clockoff/validation/notifications";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SETTINGS_TAB,
@@ -8,6 +11,7 @@ import {
   SETTINGS_TAB_META,
   isSettingsTab,
   parseSettingsTab,
+  visibleNotificationTypes,
 } from "./settings";
 
 describe("settings tabs", () => {
@@ -48,6 +52,22 @@ describe("settings tabs", () => {
     for (const type of MANAGER_NOTIFICATION_TYPES) {
       expect(NOTIFICATION_TYPE_COPY[type].label, type).toBeTruthy();
       expect(NOTIFICATION_TYPE_COPY[type].description, type).toMatch(/\.$/);
+    }
+  });
+
+  it("shows the integration sync rows only while Planday is switched on", () => {
+    expect(visibleNotificationTypes(true)).toEqual(MANAGER_NOTIFICATION_TYPES);
+    expect(visibleNotificationTypes(false)).toEqual([
+      "EMPLOYEE_JOINED",
+      "PERMISSION_NEEDS_ATTENTION",
+      "DEVICE_SYNC_DELAYED",
+      "OVERRIDE_EXPIRED",
+      "IMPORT_COMPLETED",
+      "INTEGRATION_ERROR",
+    ]);
+    for (const type of INTEGRATION_SYNC_NOTIFICATION_TYPES) {
+      expect(MANAGER_NOTIFICATION_TYPES).toContain(type);
+      expect(visibleNotificationTypes(false)).not.toContain(type);
     }
   });
 });

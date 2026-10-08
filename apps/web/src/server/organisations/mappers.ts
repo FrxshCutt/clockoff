@@ -73,6 +73,8 @@ export function toOrganisationDto(org: OrganisationRow): Organisation {
     plan: org.plan,
     settings: readOrganisationSettings(org.settings),
     onboardingDismissedAt: onboardingDismissedAt(org.onboardingState),
+    rotaSource: org.rotaSource,
+    rotaSourceOtherText: org.rotaSourceOtherText,
     createdAt: org.createdAt.toISOString(),
     updatedAt: org.updatedAt.toISOString(),
   };

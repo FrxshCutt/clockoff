@@ -74,6 +74,26 @@ export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   CLOCK_SKEW:
     "The device clock is out of sync. Ask the employee to enable automatic date and time.",
   UNKNOWN_EVENT_TYPE: "The device sent an event this version doesn't recognise.",
+  // workforce integrations (Planday)
+  INTEGRATION_AUTH_FAILED:
+    "Planday refused the connection. Authorise ClockOff again, or paste a fresh token from Planday.",
+  INTEGRATION_SCOPE_MISSING:
+    "ClockOff is missing a read permission in Planday. Tick the listed permissions on the app and try again.",
+  INTEGRATION_UNAVAILABLE: "Planday isn't responding right now. Try again in a minute.",
+  INTEGRATION_INVALID_RESPONSE:
+    "Planday sent data ClockOff couldn't read. Try again later, or contact support if it keeps happening.",
+  INTEGRATION_PORTAL_MISMATCH:
+    "This token belongs to a different Planday portal. Use one from the portal you connected before.",
+  INTEGRATION_PORTAL_IN_USE:
+    "This Planday portal is already connected to another ClockOff organisation. Disconnect it there first, or contact support.",
+  INTEGRATION_MANAGED:
+    "This is managed in Planday. Make the change there and it will sync to ClockOff.",
+  INTEGRATION_NOT_CONNECTED: "Planday isn't connected. Connect it first.",
+  INTEGRATION_ONBOARDING_INCOMPLETE: "Finish setting up Planday first.",
+  OAUTH_STATE_INVALID:
+    "This Planday sign-in has expired or was already used. Start connecting again.",
+  CONNECT_METHOD_UNAVAILABLE:
+    "That way of connecting isn't available. Choose another connection method.",
 };
 
 export const CLIENT_ERROR_MESSAGES: Record<ClientErrorCode, string> = {

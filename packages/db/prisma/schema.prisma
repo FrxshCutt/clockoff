@@ -248,6 +248,11 @@ enum ActivityEventType {
   INTEGRATION_ERROR
   IMPORT_COMPLETED
   POLICY_RESOLUTION_WARNING
+  INTEGRATION_CONNECTED
+  INTEGRATION_DISCONNECTED
+  INTEGRATION_SYNCED
+  EMPLOYEE_DEACTIVATED
+  EMPLOYEE_REACTIVATED
 }
 
 enum NotificationRecipientType {
@@ -259,6 +264,105 @@ enum NotificationChannel {
   IN_APP
   PUSH
   EMAIL
+}
+
+/// How the organisation schedules its team (onboarding question, spec §7). Null until answered.
+enum RotaSource {
+  PLANDAY
+  DEPUTY
+  SEVENSHIFTS
+  WHEN_I_WORK
+  ROTAREADY
+  HOMEBASE
+  CSV
+  MANUAL
+  OTHER
+}
+
+/// Provenance of an Employee / Location / Team row. Shift keeps its own ShiftSource.
+enum RecordSource {
+  MANUAL
+  CSV_IMPORT
+  INTEGRATION
+}
+
+enum IntegrationAuthMethod {
+  OAUTH
+  CUSTOMER_ADDED_APP_ID
+  CUSTOMER_OWN_APP
+}
+
+/// Fine-grained connection state (spec §2). Integration.status keeps the coarse state:
+/// CONNECTING → NOT_CONNECTED; CONNECTED, SYNCING, DEGRADED → CONNECTED; AUTH_ERROR → ERROR;
+/// DISCONNECTED → DISCONNECTED.
+enum IntegrationConnectionStatus {
+  CONNECTING
+  CONNECTED
+  SYNCING
+  DEGRADED
+  AUTH_ERROR
+  DISCONNECTED
+}
+
+enum ExternalEntityType {
+  EMPLOYEE
+  LOCATION
+  DEPARTMENT
+  TEAM
+  SHIFT
+}
+
+enum IntegrationSyncTrigger {
+  INITIAL
+  SCHEDULED
+  MANUAL
+  RECOVERY
+}
+
+enum IntegrationSyncRunStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+/// What a run does (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md section 7.2). SYNC is the ordinary full sync.
+enum IntegrationSyncRunKind {
+  STRUCTURE
+  DIRECTORY
+  IMPORT_EMPLOYEES
+  SYNC
+  CLOCK
+}
+
+enum PendingExternalEmployeeReason {
+  ONBOARDING
+  NEW_EMPLOYEE
+  AMBIGUOUS_MATCH
+  /// One candidate, but the evidence is weak: an exact name only (after onboarding) or a raw CSV id that
+  /// neither the email nor the name corroborates. The manager confirms; never auto-linked.
+  POSSIBLE_MATCH
+  PLAN_LIMIT
+  /// A mapped employee Planday stopped returning without positive deactivation evidence for 24 h.
+  MISSING_IN_PLANDAY
+}
+
+enum OnboardingSessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+enum IntegrationWizardStep {
+  CONNECT
+  CONFIRM_PORTAL
+  LOCATIONS
+  TEAMS
+  EMPLOYEES
+  SHIFT_PREVIEW
+  POLICIES
+  ACTIVATION
+  FINISH
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -288,6 +392,12 @@ model User {
   shiftImports            ShiftImport[]            @relation("ShiftImportUploadedBy")
   overridesCreated        ManagerOverride[]        @relation("OverrideCreatedBy")
   managerInvitesSent      ManagerInvite[]          @relation("ManagerInviteInvitedBy")
+
+  integrationConnectionsConnected IntegrationConnection[]        @relation("IntegrationConnectedBy")
+  integrationSyncRunsRequested    IntegrationSyncRun[]           @relation("IntegrationSyncRunRequestedBy")
+  onboardingSessionsStarted       IntegrationOnboardingSession[] @relation("OnboardingSessionStartedBy")
+  integrationOAuthStates          IntegrationOAuthState[]        @relation("IntegrationOAuthStateUser")
+  integrationConnectLinksCreated  IntegrationConnectLink[]       @relation("IntegrationConnectLinkCreatedBy")
 
   @@map("users")
 }
@@ -359,6 +469,10 @@ model Organisation {
   /// Onboarding checklist, e.g. { "createCompany": true, "createPolicy": false, ..., "dismissedAt": null }
   onboardingState      Json          @default("{}") @map("onboarding_state")
   settings             Json          @default("{}")
+  /// Spec §7 onboarding answer ("How do you schedule your team?"); null until answered.
+  rotaSource           RotaSource?   @map("rota_source")
+  /// Free text when rotaSource = OTHER (≤ 200 chars, trimmed). Check constraint: null unless OTHER.
+  rotaSourceOtherText  String?       @map("rota_source_other_text") @db.VarChar(200)
   deletedAt            DateTime?     @map("deleted_at") @db.Timestamptz(6)
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -388,6 +502,15 @@ model Organisation {
   activityEvents         ActivityEvent[]
   notifications          Notification[]
   auditLogs              AuditLog[]
+
+  externalEntityMaps            ExternalEntityMap[]
+  integrationMappingConfigs     IntegrationMappingConfig[]
+  integrationSyncRuns           IntegrationSyncRun[]
+  pendingExternalEmployees      PendingExternalEmployee[]
+  integrationPreviewShifts      IntegrationPreviewShift[]
+  integrationOnboardingSessions IntegrationOnboardingSession[]
+  integrationOAuthStates        IntegrationOAuthState[]
+  integrationConnectLinks       IntegrationConnectLink[]
 
   @@map("organisations")
 }
@@ -422,8 +545,9 @@ model ManagerInvite {
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  invitedBy    User?        @relation("ManagerInviteInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  organisation Organisation             @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  invitedBy    User?                    @relation("ManagerInviteInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  connectLinks IntegrationConnectLink[]
 
   @@index([organisationId, email])
   @@map("manager_invites")
@@ -453,22 +577,27 @@ model CompanyJoinCode {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Location {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organisationId String    @map("organisation_id") @db.Uuid
-  name           String
-  timezone       String?
-  address        String?
-  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId         String       @map("organisation_id") @db.Uuid
+  name                   String
+  timezone               String?
+  address                String?
+  source                 RecordSource @default(MANUAL)
+  /// Set while a connected integration owns this row's managed fields.
+  managedByIntegrationId String?      @map("managed_by_integration_id") @db.Uuid
+  deletedAt              DateTime?    @map("deleted_at") @db.Timestamptz(6)
+  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation      Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  teams             Team[]
-  primaryEmployees  Employee[]         @relation("EmployeePrimaryLocation")
-  employeeLocations EmployeeLocation[]
-  shifts            Shift[]
+  organisation         Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  managedByIntegration Integration?       @relation("LocationManagedBy", fields: [managedByIntegrationId], references: [id], onDelete: SetNull)
+  teams                Team[]
+  primaryEmployees     Employee[]         @relation("EmployeePrimaryLocation")
+  employeeLocations    EmployeeLocation[]
+  shifts               Shift[]
 
   @@index([organisationId])
+  @@index([organisationId, managedByIntegrationId])
   @@map("locations")
 }
 
@@ -487,19 +616,24 @@ model Department {
 }
 
 model Team {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organisationId String   @map("organisation_id") @db.Uuid
-  name           String
-  locationId     String?  @map("location_id") @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId         String       @map("organisation_id") @db.Uuid
+  name                   String
+  locationId             String?      @map("location_id") @db.Uuid
+  source                 RecordSource @default(MANUAL)
+  /// Set while a connected integration owns this row's managed fields.
+  managedByIntegrationId String?      @map("managed_by_integration_id") @db.Uuid
+  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  location     Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  members      EmployeeTeam[]
+  organisation         Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  location             Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  managedByIntegration Integration?   @relation("TeamManagedBy", fields: [managedByIntegrationId], references: [id], onDelete: SetNull)
+  members              EmployeeTeam[]
 
   @@index([organisationId])
   @@index([locationId])
+  @@index([organisationId, managedByIntegrationId])
   @@map("teams")
 }
 
@@ -508,43 +642,49 @@ model Team {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Employee {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organisationId     String           @map("organisation_id") @db.Uuid
-  firstName          String           @map("first_name")
-  lastName           String           @map("last_name")
-  email              String?          @db.Citext
-  phone              String?
-  externalEmployeeId String?          @map("external_employee_id")
-  jobTitle           String?          @map("job_title")
-  departmentId       String?          @map("department_id") @db.Uuid
-  primaryLocationId  String?          @map("primary_location_id") @db.Uuid
-  employmentStatus   EmploymentStatus @default(ACTIVE) @map("employment_status")
-  inviteStatus       InviteStatus     @default(NOT_INVITED) @map("invite_status")
-  deletedAt          DateTime?        @map("deleted_at") @db.Timestamptz(6)
-  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                     String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId         String           @map("organisation_id") @db.Uuid
+  firstName              String           @map("first_name")
+  lastName               String           @map("last_name")
+  email                  String?          @db.Citext
+  phone                  String?
+  externalEmployeeId     String?          @map("external_employee_id")
+  jobTitle               String?          @map("job_title")
+  departmentId           String?          @map("department_id") @db.Uuid
+  primaryLocationId      String?          @map("primary_location_id") @db.Uuid
+  employmentStatus       EmploymentStatus @default(ACTIVE) @map("employment_status")
+  inviteStatus           InviteStatus     @default(NOT_INVITED) @map("invite_status")
+  source                 RecordSource     @default(MANUAL)
+  /// Set while a connected integration owns this row's managed fields (name, email, primary location).
+  managedByIntegrationId String?          @map("managed_by_integration_id") @db.Uuid
+  deletedAt              DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation    Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  department      Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  primaryLocation Location?          @relation("EmployeePrimaryLocation", fields: [primaryLocationId], references: [id], onDelete: SetNull)
-  teams           EmployeeTeam[]
-  locations       EmployeeLocation[]
-  invites         EmployeeInvite[]
-  userLink        EmployeeUserLink?
-  devices         Device[]
-  shifts          Shift[]
-  breakSessions   BreakSession[]
-  workState       EmployeeWorkState?
-  clockEvents     ClockEvent[]
-  overrides       ManagerOverride[]
-  activityEvents  ActivityEvent[]
-  importRows      ShiftImportRow[]
+  organisation         Organisation              @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  department           Department?               @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  primaryLocation      Location?                 @relation("EmployeePrimaryLocation", fields: [primaryLocationId], references: [id], onDelete: SetNull)
+  managedByIntegration Integration?              @relation("EmployeeManagedBy", fields: [managedByIntegrationId], references: [id], onDelete: SetNull)
+  pendingMatches       PendingExternalEmployee[] @relation("PendingExternalEmployeeMatch")
+  teams                EmployeeTeam[]
+  locations            EmployeeLocation[]
+  invites              EmployeeInvite[]
+  userLink             EmployeeUserLink?
+  devices              Device[]
+  shifts               Shift[]
+  breakSessions        BreakSession[]
+  workState            EmployeeWorkState?
+  clockEvents          ClockEvent[]
+  overrides            ManagerOverride[]
+  activityEvents       ActivityEvent[]
+  importRows           ShiftImportRow[]
 
   @@unique([organisationId, externalEmployeeId])
   @@index([organisationId, inviteStatus])
   @@index([organisationId, email])
   @@index([organisationId, primaryLocationId])
   @@index([organisationId, departmentId])
+  @@index([organisationId, managedByIntegrationId])
   @@map("employees")
 }
 
@@ -826,40 +966,44 @@ model BreakPolicyAssignment {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Shift {
-  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organisationId     String      @map("organisation_id") @db.Uuid
-  employeeId         String      @map("employee_id") @db.Uuid
-  locationId         String?     @map("location_id") @db.Uuid
-  startsAt           DateTime    @map("starts_at") @db.Timestamptz(6)
-  endsAt             DateTime    @map("ends_at") @db.Timestamptz(6)
+  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId         String      @map("organisation_id") @db.Uuid
+  employeeId             String      @map("employee_id") @db.Uuid
+  locationId             String?     @map("location_id") @db.Uuid
+  startsAt               DateTime    @map("starts_at") @db.Timestamptz(6)
+  endsAt                 DateTime    @map("ends_at") @db.Timestamptz(6)
   /// IANA zone captured at creation for display / DST reasoning.
-  timezone           String
-  status             ShiftStatus @default(SCHEDULED)
-  source             ShiftSource @default(MANUAL)
-  externalShiftId    String?     @map("external_shift_id")
-  notes              String?
-  recurrenceRule     String?     @map("recurrence_rule")
-  parentRecurrenceId String?     @map("parent_recurrence_id") @db.Uuid
-  version            Int         @default(1)
-  deletedAt          DateTime?   @map("deleted_at") @db.Timestamptz(6)
-  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  timezone               String
+  status                 ShiftStatus @default(SCHEDULED)
+  source                 ShiftSource @default(MANUAL)
+  externalShiftId        String?     @map("external_shift_id")
+  notes                  String?
+  recurrenceRule         String?     @map("recurrence_rule")
+  parentRecurrenceId     String?     @map("parent_recurrence_id") @db.Uuid
+  version                Int         @default(1)
+  /// Set while a connected integration owns this shift (source = INTEGRATION).
+  managedByIntegrationId String?     @map("managed_by_integration_id") @db.Uuid
+  deletedAt              DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation     Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  employee         Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  location         Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  parentRecurrence Shift?              @relation("ShiftRecurrence", fields: [parentRecurrenceId], references: [id], onDelete: SetNull)
-  occurrences      Shift[]             @relation("ShiftRecurrence")
-  scheduledBreaks  ScheduledBreak[]
-  breakSessions    BreakSession[]
-  importRows       ShiftImportRow[]
-  activeWorkStates EmployeeWorkState[]
+  organisation         Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  employee             Employee            @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  location             Location?           @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  managedByIntegration Integration?        @relation("ShiftManagedBy", fields: [managedByIntegrationId], references: [id], onDelete: SetNull)
+  parentRecurrence     Shift?              @relation("ShiftRecurrence", fields: [parentRecurrenceId], references: [id], onDelete: SetNull)
+  occurrences          Shift[]             @relation("ShiftRecurrence")
+  scheduledBreaks      ScheduledBreak[]
+  breakSessions        BreakSession[]
+  importRows           ShiftImportRow[]
+  activeWorkStates     EmployeeWorkState[]
 
   @@unique([organisationId, externalShiftId])
   @@index([organisationId, employeeId, startsAt])
   @@index([organisationId, startsAt])
   @@index([organisationId, locationId, startsAt])
   @@index([parentRecurrenceId])
+  @@index([organisationId, managedByIntegrationId, startsAt])
   @@map("shifts")
 }
 
@@ -997,41 +1141,406 @@ model ShiftImportRow {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Integrations (schema now, providers Phase 2)
+// Integrations (Planday: docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md section 2)
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Integration {
   id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organisationId  String              @map("organisation_id") @db.Uuid
   provider        IntegrationProvider
+  /// Coarse status shown in GET /api/integrations; IntegrationConnection.status holds the fine-grained one.
   status          IntegrationStatus   @default(NOT_CONNECTED)
+  /// Not written for Planday (portal data lives on the connection).
   settings        Json                @default("{}")
+  /// Activation mode for the integration's staff (spec §2 IntegrationMappingConfig.activation_mode lives here;
+  /// Decision D-035). CLOCK_EVENT is accepted only when PLANDAY_CLOCK_MODE_ENABLED=true.
   activationMode  ActivationMode      @default(SCHEDULED) @map("activation_mode")
   notifyRequested Boolean             @default(false) @map("notify_requested")
   createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  organisation Organisation           @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  connection   IntegrationConnection?
+  organisation       Organisation                   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  connection         IntegrationConnection?
+  mappingConfig      IntegrationMappingConfig?
+  syncRuns           IntegrationSyncRun[]
+  entityMaps         ExternalEntityMap[]
+  pendingEmployees   PendingExternalEmployee[]
+  previewShifts      IntegrationPreviewShift[]
+  onboardingSessions IntegrationOnboardingSession[]
+  oauthStates        IntegrationOAuthState[]
+  managedEmployees   Employee[]                     @relation("EmployeeManagedBy")
+  managedLocations   Location[]                     @relation("LocationManagedBy")
+  managedTeams       Team[]                         @relation("TeamManagedBy")
+  managedShifts      Shift[]                        @relation("ShiftManagedBy")
 
   @@unique([organisationId, provider])
   @@map("integrations")
 }
 
+/// One row per integration for its lifetime: secrets are wiped on disconnect, the row (and its portal id) is
+/// kept so a reconnect can be checked against the same portal. Existing columns are reused under new Prisma
+/// field names (token_expires_at, last_sync_at, last_error) so older deployments keep reading them.
 model IntegrationConnection {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  integrationId        String    @unique @map("integration_id") @db.Uuid
-  /// AES-256-GCM ciphertext (iv || tag || data) — see apps/web/src/lib/crypto.ts
-  encryptedCredentials Bytes     @map("encrypted_credentials")
-  tokenExpiresAt       DateTime? @map("token_expires_at") @db.Timestamptz(6)
-  lastSyncAt           DateTime? @map("last_sync_at") @db.Timestamptz(6)
-  lastError            String?   @map("last_error")
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                          String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  integrationId               String                      @unique @map("integration_id") @db.Uuid
+  status                      IntegrationConnectionStatus @default(CONNECTING)
+  statusChangedAt             DateTime                    @default(now()) @map("status_changed_at") @db.Timestamptz(6)
+  authMethod                  IntegrationAuthMethod?      @map("auth_method")
+  /// True when made against Mock Planday (PLANDAY_MODE=mock). A mock connection never reaches live Planday.
+  isMock                      Boolean                     @default(false) @map("is_mock")
+  /// Deprecated and unused (pre-Planday blob, AES-256-GCM iv || tag || data). Nullable now; dropped by a later
+  /// contract migration.
+  legacyEncryptedCredentials  Bytes?                      @map("encrypted_credentials")
+  /// AES-256-GCM (iv | tag | data), AAD "integration:<integrationId>:client_id". Stored for every method:
+  /// a token is bound to the App ID that issued it (ClockOff's for A/B, the customer's for C).
+  encryptedClientId           Bytes?                      @map("encrypted_client_id")
+  /// AAD "integration:<integrationId>:refresh_token".
+  encryptedRefreshToken       Bytes?                      @map("encrypted_refresh_token")
+  /// Cached access token, AAD "integration:<integrationId>:access_token". Never logged.
+  encryptedAccessToken        Bytes?                      @map("encrypted_access_token")
+  accessTokenExpiresAt        DateTime?                   @map("token_expires_at") @db.Timestamptz(6)
+  /// Last four characters of the refresh token, for "ending ••••4f2a". Nothing else is ever shown.
+  credentialHint              String?                     @map("credential_hint") @db.VarChar(4)
+  /// Incremented on every credential write (connect, refresh, rotation, wipe).
+  credentialVersion           Int                         @default(0) @map("credential_version")
+  refreshTokenRotatedAt       DateTime?                   @map("refresh_token_rotated_at") @db.Timestamptz(6)
+  /// The bare Planday portal id ("4100001"). One live, non-mock connection per portal across all
+  /// organisations (partial unique index integration_connections_one_live_portal, Decision D-054).
+  externalPortalId            String?                     @map("external_portal_id")
+  externalPortalName          String?                     @map("external_portal_name")
+  externalPortalTimezone      String?                     @map("external_portal_timezone")
+  scopesGranted               String[]                    @default([]) @map("scopes_granted")
+  connectedByUserId           String?                     @map("connected_by_user_id") @db.Uuid
+  connectedAt                 DateTime?                   @map("connected_at") @db.Timestamptz(6)
+  disconnectedAt              DateTime?                   @map("disconnected_at") @db.Timestamptz(6)
+  lastSuccessfulSyncAt        DateTime?                   @map("last_sync_at") @db.Timestamptz(6)
+  /// Next quarter-hour slot (display) or, while consecutiveFailureCount > 0, when the recovery run is due.
+  nextSyncAt                  DateTime?                   @map("next_sync_at") @db.Timestamptz(6)
+  consecutiveFailureCount     Int                         @default(0) @map("consecutive_failure_count")
+  lastErrorCode               String?                     @map("last_error_code")
+  /// Sanitised: built from ClockOff's own message table, never from Planday response bodies. ≤ 300 chars.
+  lastErrorMessage            String?                     @map("last_error")
+  authErrorNotifiedAt         DateTime?                   @map("auth_error_notified_at") @db.Timestamptz(6)
+  degradedNotifiedAt          DateTime?                   @map("degraded_notified_at") @db.Timestamptz(6)
+  degradedEmailSentAt         DateTime?                   @map("degraded_email_sent_at") @db.Timestamptz(6)
+  /// Lease that serialises every Planday request stream for this portal across web and worker.
+  /// sync_lease_id is the holder's uuid and doubles as the fencing token checked in every write.
+  syncLeaseId                 String?                     @map("sync_lease_id") @db.Uuid
+  syncLeaseExpiresAt          DateTime?                   @map("sync_lease_expires_at") @db.Timestamptz(6)
+  /// High-water mark for GET /hr/v1.0/employees/deactivated?deactivatedFrom=.
+  deactivationCheckedAt       DateTime?                   @map("deactivation_checked_at") @db.Timestamptz(6)
+  /// High-water mark for GET /scheduling/v1.0/shifts/deleted?deletedFrom=; moved only when DELETED_SHIFTS
+  /// completes.
+  deletedShiftsCheckedAt      DateTime?                   @map("deleted_shifts_checked_at") @db.Timestamptz(6)
+  /// "Next run" slot: a request for a run of another kind (or a fresh SYNC) made while a run is active.
+  /// Drained by the active run's terminal write, in the same transaction.
+  pendingRunKind              IntegrationSyncRunKind?     @map("pending_run_kind")
+  pendingRunTrigger           IntegrationSyncTrigger?     @map("pending_run_trigger")
+  pendingRunRetryAuth         Boolean                     @default(false) @map("pending_run_retry_auth")
+  pendingRunRequestedByUserId String?                     @map("pending_run_requested_by_user_id") @db.Uuid
+  pendingRunRequestedAt       DateTime?                   @map("pending_run_requested_at") @db.Timestamptz(6)
+  /// Automatic auth probes made since the connection entered AUTH_ERROR.
+  authProbeAttempts           Int                         @default(0) @map("auth_probe_attempts")
+  createdAt                   DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integration     Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  connectedByUser User?       @relation("IntegrationConnectedBy", fields: [connectedByUserId], references: [id], onDelete: SetNull)
 
+  @@index([status, nextSyncAt])
   @@map("integration_connections")
+}
+
+/// Planday id ↔ ClockOff id for every synced entity. Makes syncs idempotent (spec §2).
+model ExternalEntityMap {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId       String              @map("organisation_id") @db.Uuid
+  integrationId        String              @map("integration_id") @db.Uuid
+  provider             IntegrationProvider
+  entityType           ExternalEntityType  @map("entity_type")
+  /// The provider's id as a decimal string (Planday int64 ids; ids are unique only within the portal).
+  externalId           String              @map("external_id")
+  /// Employee / Location / Department / Team / Shift id, by entityType. Polymorphic: no FK. One map row per
+  /// EMPLOYEE / SHIFT internal id (partial unique index external_entity_maps_internal_unique).
+  internalId           String              @map("internal_id") @db.Uuid
+  lastSeenAt           DateTime            @map("last_seen_at") @db.Timestamptz(6)
+  /// HMAC-SHA256 (key derived from INTEGRATION_ENCRYPTION_KEY) of the decision inputs: the canonical mapped
+  /// record, its classification and its resolved ClockOff targets. Null = re-decide.
+  lastHash             String?             @map("last_hash")
+  /// The integration removed or cancelled the entity (shift cancelled by a sync or by a CANCEL_FUTURE_SHIFTS
+  /// disconnect, employee deactivated, department missing). Marks the entity as eligible for REINSTATE /
+  /// reactivation; a manager action never sets it.
+  upstreamRemovedAt    DateTime?           @map("upstream_removed_at") @db.Timestamptz(6)
+  /// EMPLOYEE only: first run in which Planday stopped returning a mapped employee without positive
+  /// deactivation evidence. Cleared when the employee is seen again.
+  upstreamMissingSince DateTime?           @map("upstream_missing_since") @db.Timestamptz(6)
+  /// EMPLOYEE only: the manager chose "Keep" on the MISSING_IN_PLANDAY review; no new review until seen again.
+  reviewDismissedAt    DateTime?           @map("review_dismissed_at") @db.Timestamptz(6)
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, entityType, externalId])
+  @@index([integrationId, entityType, internalId])
+  @@index([integrationId, entityType, lastSeenAt])
+  @@index([organisationId, entityType, internalId])
+  @@map("external_entity_maps")
+}
+
+model IntegrationMappingConfig {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId          String    @map("organisation_id") @db.Uuid
+  integrationId           String    @unique @map("integration_id") @db.Uuid
+  /// Planday department ids (decimal strings) whose employees and shifts are synced. Source of truth for
+  /// inclusion; a department not listed is excluded. The pseudo-id "none" stands for "not in any department"
+  /// (employees with an empty departments[], shifts with departmentId null).
+  includedDepartmentIds   String[]  @default([]) @map("included_department_ids")
+  /// { "<deptId>": { "target": "LOCATION", "locationId": uuid } | { "target": "DEPARTMENT", "departmentId": uuid } }
+  /// for included departments only. Validated by departmentMappingsSchema (@clockoff/validation/planday).
+  departmentMappings      Json      @default("{}") @map("department_mappings")
+  /// { "<groupId>": { "target": "TEAM", "teamId": uuid } }; a group not listed is not mapped to a team.
+  groupMappings           Json      @default("{}") @map("group_mappings")
+  /// Planday employee ids the manager left unticked (wizard step 5) or dismissed from the pending queue.
+  excludedEmployeeIds     String[]  @default([]) @map("excluded_employee_ids")
+  autoIncludeNewEmployees Boolean   @default(true) @map("auto_include_new_employees")
+  /// Persist Planday's `email` on employees (step 5 toggle, settings). Off: the address is used in memory for
+  /// matching only and never stored; email is then not a managed field. Default pending owner decision D-042.
+  importEmails            Boolean   @default(true) @map("import_emails")
+  /// Check constraint: 7 to 56.
+  syncWindowDays          Int       @default(28) @map("sync_window_days")
+  /// Skip published shifts on days Planday hides from employees (scheduleDay.isVisible = false). Off by default
+  /// until the owner signs off notes §10.1 rule 3 (Decision D-040, owner decision).
+  respectHiddenDays       Boolean   @default(false) @map("respect_hidden_days")
+  /// Department and employee-group catalogue from the last structure read (names, numbers, employee counts).
+  /// Not personal data. Validated by plandayCatalogSchema.
+  catalog                 Json      @default("{}")
+  /// Incremented on every mapping or settings change. Not part of lastHash; a run compares its snapshot at
+  /// FINALISE and queues a follow-up of its own kind when it moved.
+  mappingVersion          Int       @default(1) @map("mapping_version")
+  /// Set at wizard Finish. SYNC and CLOCK runs, scheduled syncs, recovery, auth probes and health monitoring
+  /// require it; before it only the wizard's STRUCTURE, DIRECTORY and IMPORT_EMPLOYEES runs exist.
+  onboardingCompletedAt   DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@map("integration_mapping_configs")
+}
+
+/// The run queue: a run is active while status = RUNNING (queued while firstClaimedAt is null, else started).
+/// At most one active run per integration (partial unique index integration_sync_runs_one_running).
+model IntegrationSyncRun {
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId    String                   @map("organisation_id") @db.Uuid
+  integrationId     String                   @map("integration_id") @db.Uuid
+  trigger           IntegrationSyncTrigger
+  kind              IntegrationSyncRunKind   @default(SYNC)
+  status            IntegrationSyncRunStatus @default(RUNNING)
+  /// Current phase name and its resumable cursor.
+  phase             String                   @default("START")
+  cursor            Json                     @default("{}")
+  /// { completedPhases: string[], totalPhases: number, label: string, pagesRead: number } for the wizard.
+  progress          Json                     @default("{}")
+  /// Per entity type: { employees: { created, updated, cancelled, skipped }, locations, teams, shifts, clockEvents,
+  /// pending, excluded: { drafts, open, hiddenDays, unknownStatus, outOfScope } }.
+  counts            Json                     @default("{}")
+  /// Record-level problems, at most 100: [{ code, message, externalId }]. No personal data in message.
+  warnings          Json                     @default("[]")
+  requestCount      Int                      @default(0) @map("request_count")
+  attempt           Int                      @default(0)
+  /// Not claimable before this instant: scheduled jitter, rate-limit park, retry backoff.
+  resumeAfter       DateTime?                @map("resume_after") @db.Timestamptz(6)
+  /// Last committed step (written by the step transaction's fence).
+  heartbeatAt       DateTime?                @map("heartbeat_at") @db.Timestamptz(6)
+  /// Queue order, lower first: 0 interactive (wizard, manual, settings), 1 clock, 2 recovery, 3 scheduled.
+  /// Applies to a run's first slice; a started run competes at max(priority, 3). Check constraint: 0 to 3.
+  priority          Int                      @default(3) @db.SmallInt
+  /// IntegrationMappingConfig.mappingVersion when the run was queued; FINALISE enqueues a follow-up if it moved.
+  mappingVersion    Int                      @default(1) @map("mapping_version")
+  /// Manual auth retry or automatic auth probe: the only runs allowed to start on AUTH_ERROR.
+  retryAuth         Boolean                  @default(false) @map("retry_auth")
+  /// INITIAL SYNC only: manual/CSV shifts the manager ticked at wizard step 6, cancelled one by one in the
+  /// transaction that creates their Planday replacement.
+  replaceShiftIds   String[]                 @default([]) @map("replace_shift_ids") @db.Uuid
+  /// First time a worker claimed the run; null = still queued ("Waiting to start").
+  firstClaimedAt    DateTime?                @map("first_claimed_at") @db.Timestamptz(6)
+  /// End of the last slice; runs of equal priority are claimed round-robin by it.
+  lastSliceAt       DateTime?                @map("last_slice_at") @db.Timestamptz(6)
+  /// Worker instance id executing the run (diagnostics only; the connection lease is authoritative).
+  claimedBy         String?                  @map("claimed_by") @db.VarChar(128)
+  requestedByUserId String?                  @map("requested_by_user_id") @db.Uuid
+  startedAt         DateTime                 @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt        DateTime?                @map("finished_at") @db.Timestamptz(6)
+  errorCode         String?                  @map("error_code")
+  errorMessage      String?                  @map("error_message")
+  createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation  Organisation              @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration   Integration               @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  requestedBy   User?                     @relation("IntegrationSyncRunRequestedBy", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  previewShifts IntegrationPreviewShift[]
+
+  @@index([integrationId, startedAt(sort: Desc)])
+  @@index([status, resumeAfter])
+  @@index([organisationId, startedAt(sort: Desc)])
+  @@map("integration_sync_runs")
+}
+
+/// A Planday employee waiting for a manager: wizard candidates (ONBOARDING), new employees when
+/// autoIncludeNewEmployees is off, ambiguous and possible matches, plan-limit overflow, and mapped employees
+/// missing from Planday (MISSING_IN_PLANDAY: names copied from the ClockOff employee, matchedEmployeeId = it).
+/// A row exists only while pending; resolving it (import, link, dismiss, deactivate, keep) deletes it in the
+/// same transaction (data minimisation).
+model PendingExternalEmployee {
+  id                          String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId              String                        @map("organisation_id") @db.Uuid
+  integrationId               String                        @map("integration_id") @db.Uuid
+  provider                    IntegrationProvider
+  externalId                  String                        @map("external_id")
+  firstName                   String                        @map("first_name")
+  lastName                    String                        @map("last_name")
+  /// Planday `email` while the row is pending (D-042, owner decision). Null when Planday has none, and after
+  /// onboarding also when importEmails is off (hasEmail keeps the "missing email" flag).
+  workEmail                   String?                       @map("work_email") @db.Citext
+  hasEmail                    Boolean                       @default(false) @map("has_email")
+  externalDepartmentIds       String[]                      @default([]) @map("external_department_ids")
+  primaryExternalDepartmentId String?                       @map("primary_external_department_id")
+  externalGroupIds            String[]                      @default([]) @map("external_group_ids")
+  reason                      PendingExternalEmployeeReason
+  /// Existing ClockOff employee matched by external id or email (wizard "matched" flag), the single candidate
+  /// of a POSSIBLE_MATCH, or the mapped employee of a MISSING_IN_PLANDAY row.
+  matchedEmployeeId           String?                       @map("matched_employee_id") @db.Uuid
+  /// EXTERNAL_ID | EXTERNAL_ID_RAW | EMAIL | NAME.
+  matchSignal                 String?                       @map("match_signal")
+  /// ClockOff employees sharing the exact full name when the match is ambiguous.
+  candidateEmployeeIds        String[]                      @default([]) @map("candidate_employee_ids") @db.Uuid
+  firstSeenAt                 DateTime                      @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt                  DateTime                      @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  createdAt                   DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration     Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  matchedEmployee Employee?    @relation("PendingExternalEmployeeMatch", fields: [matchedEmployeeId], references: [id], onDelete: SetNull)
+
+  @@unique([integrationId, externalId])
+  @@index([organisationId, integrationId, reason])
+  @@map("pending_external_employees")
+}
+
+/// Shift preview for wizard step 6 (next 14 days). Spec §8 shift fields only; purged at Finish, abandon and
+/// disconnect.
+model IntegrationPreviewShift {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId       String   @map("organisation_id") @db.Uuid
+  integrationId        String   @map("integration_id") @db.Uuid
+  syncRunId            String   @map("sync_run_id") @db.Uuid
+  externalShiftId      String   @map("external_shift_id")
+  externalEmployeeId   String   @map("external_employee_id")
+  externalDepartmentId String?  @map("external_department_id")
+  startsAt             DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt               DateTime @map("ends_at") @db.Timestamptz(6)
+  timezone             String
+  isOvernight          Boolean  @map("is_overnight")
+  /// DST warning from the shared resolver, e.g. AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE.
+  timeWarning          String?  @map("time_warning")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organisation Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration  Integration        @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  syncRun      IntegrationSyncRun @relation(fields: [syncRunId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, externalShiftId])
+  @@index([integrationId, startsAt])
+  @@map("integration_preview_shifts")
+}
+
+/// Resumable wizard (spec §7). At most one ACTIVE session per organisation and provider (partial unique index
+/// integration_onboarding_sessions_one_active).
+model IntegrationOnboardingSession {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId  String                  @map("organisation_id") @db.Uuid
+  integrationId   String                  @map("integration_id") @db.Uuid
+  provider        IntegrationProvider
+  status          OnboardingSessionStatus @default(ACTIVE)
+  currentStep     IntegrationWizardStep   @default(CONNECT) @map("current_step")
+  completedSteps  IntegrationWizardStep[] @default([]) @map("completed_steps")
+  /// Step drafts and choices; validated by plandayOnboardingStateSchema.
+  state           Json                    @default("{}")
+  structureRunId  String?                 @map("structure_run_id") @db.Uuid
+  directoryRunId  String?                 @map("directory_run_id") @db.Uuid
+  importRunId     String?                 @map("import_run_id") @db.Uuid
+  finalRunId      String?                 @map("final_run_id") @db.Uuid
+  startedByUserId String?                 @map("started_by_user_id") @db.Uuid
+  lastActivityAt  DateTime                @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  completedAt     DateTime?               @map("completed_at") @db.Timestamptz(6)
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  startedBy    User?        @relation("OnboardingSessionStartedBy", fields: [startedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, provider, status])
+  @@map("integration_onboarding_sessions")
+}
+
+/// OAuth `state` for method A: signed, single-use, 10-minute expiry, bound to organisation + user (spec §1A).
+model IntegrationOAuthState {
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId        String              @map("organisation_id") @db.Uuid
+  integrationId         String              @map("integration_id") @db.Uuid
+  provider              IntegrationProvider
+  userId                String              @map("user_id") @db.Uuid
+  /// sha256 hex of the full state token.
+  stateHash             String              @unique @map("state_hash")
+  redirectUri           String              @map("redirect_uri")
+  /// PKCE verifier (only when PLANDAY_OAUTH_PKCE=true), AES-256-GCM with AAD "oauth_state:<id>".
+  encryptedCodeVerifier Bytes?              @map("encrypted_code_verifier")
+  /// Allow-listed in-app path to return to: "/onboarding/planday" or "/integrations".
+  returnTo              String              @map("return_to")
+  /// The manager confirmed "Use a different portal"; honoured only while the connection is DISCONNECTED.
+  allowPortalSwitch     Boolean             @default(false) @map("allow_portal_switch")
+  expiresAt             DateTime            @map("expires_at") @db.Timestamptz(6)
+  consumedAt            DateTime?           @map("consumed_at") @db.Timestamptz(6)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  integration  Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  user         User         @relation("IntegrationOAuthStateUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("integration_oauth_states")
+}
+
+/// Shareable "connect Planday" link (spec §7). Opens the wizard for an authenticated OWNER/ADMIN of this org.
+model IntegrationConnectLink {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organisationId  String              @map("organisation_id") @db.Uuid
+  provider        IntegrationProvider
+  createdByUserId String?             @map("created_by_user_id") @db.Uuid
+  /// sha256 hex of the random token in the URL.
+  tokenHash       String              @unique @map("token_hash")
+  /// Set when the link was sent with an ADMIN invite to someone not yet in the organisation.
+  managerInviteId String?             @map("manager_invite_id") @db.Uuid
+  expiresAt       DateTime            @map("expires_at") @db.Timestamptz(6)
+  revokedAt       DateTime?           @map("revoked_at") @db.Timestamptz(6)
+  lastUsedAt      DateTime?           @map("last_used_at") @db.Timestamptz(6)
+  useCount        Int                 @default(0) @map("use_count")
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organisation  Organisation   @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  createdBy     User?          @relation("IntegrationConnectLinkCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  managerInvite ManagerInvite? @relation(fields: [managerInviteId], references: [id], onDelete: SetNull)
+
+  @@index([organisationId, provider])
+  @@map("integration_connect_links")
 }
 
 model ClockEvent {

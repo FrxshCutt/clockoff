@@ -62,6 +62,80 @@ tenant data or PII.
 | `worker_heartbeats` | `instance_id` | One row per worker process, upserted every minute (`last_beat_at`, counters and flags in `details`); `stopped_at` is set by a graceful shutdown. `GET /api/health` reads it; rows older than 7 days are pruned. |
 | `worker_job_runs`   | `job`         | The last minute slot each job claimed (`last_slot`) and its outcome. The claim makes a scheduled slot run once across workers; `last_ok_at` of `work-mode-tick` feeds `worker.jobs` in `/api/health`.           |
 
+## Workforce integration tables (Planday)
+
+Two migrations add the Planday data model (`docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md` section 2). Both are
+expand-only: they add enums, nullable or defaulted columns, tables, indexes and checks, and drop or rename nothing.
+
+| Migration                                | Content                                                                                                                                                                                                    |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261008140000_integration_enum_values` | Five `ActivityEventType` values (`INTEGRATION_CONNECTED`, `_DISCONNECTED`, `_SYNCED`, `EMPLOYEE_DEACTIVATED`, `_REACTIVATED`), alone: PostgreSQL cannot use an enum value in the transaction that adds it. |
+| `20261008140100_planday_integration`     | New enums, columns, tables, partial unique indexes, check constraints and the backfill below.                                                                                                              |
+
+New tables (all tenant-owned through `organisation_id`; all but `integration_connect_links` also carry
+`integration_id` and are deleted with their integration):
+
+| Table                             | Purpose                                                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `external_entity_maps`            | Provider id ↔ ClockOff id for every synced employee, location, department, team and shift, with the `last_hash` that makes syncs idempotent.      |
+| `integration_mapping_configs`     | One per integration: included departments, department and group mappings, excluded employees, sync window (7 to 56 days) and the sync options.    |
+| `integration_sync_runs`           | The run queue the worker's integration runner claims; at most one `RUNNING` run per integration. Holds counts, warnings and the resumable cursor. |
+| `pending_external_employees`      | Provider employees waiting for a manager decision. A row exists only while pending; resolving it deletes it.                                      |
+| `integration_preview_shifts`      | The wizard's 14-day shift preview, purged at finish, abandon and disconnect.                                                                      |
+| `integration_onboarding_sessions` | The resumable connect wizard; at most one `ACTIVE` session per organisation and provider.                                                         |
+| `integration_oauth_states`        | Single-use OAuth `state` rows (10-minute expiry) bound to an organisation and user.                                                               |
+| `integration_connect_links`       | Shareable "connect Planday" links for an organisation's owners and admins.                                                                        |
+
+Changed tables:
+
+- `integration_connections`: one row per integration for its lifetime. Disconnect wipes the secrets
+  (`encrypted_access_token`, `encrypted_refresh_token`, `encrypted_client_id`, all AES-256-GCM with per-column
+  associated data) and keeps the row and `external_portal_id`. Adds the fine-grained `status`, portal fields, auth
+  method, `credential_version`, the per-portal sync lease (`sync_lease_*`), the pending-run slot (`pending_run_*`)
+  and the health bookkeeping (`*_notified_at`, `consecutive_failure_count`). The existing `token_expires_at`,
+  `last_sync_at` and `last_error` columns are reused under the Prisma names `accessTokenExpiresAt`,
+  `lastSuccessfulSyncAt` and `lastErrorMessage`, so older deployments keep reading them.
+- `employees`, `locations`, `teams`: `source` (`MANUAL`, `CSV_IMPORT`, `INTEGRATION`) and
+  `managed_by_integration_id`. `shifts`: `managed_by_integration_id` (shifts keep their own `source`).
+- `organisations`: `rota_source` and `rota_source_other_text` (the onboarding answer, null until answered).
+
+Hand-written SQL in `20261008140100_planday_integration`:
+
+| Object                                               | Purpose                                                                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `integration_sync_runs_one_running`                  | partial unique: one `RUNNING` (queued or started) run per integration                                      |
+| `external_entity_maps_internal_unique`               | partial unique: one external record per ClockOff employee or shift (`entity_type IN ('EMPLOYEE','SHIFT')`) |
+| `integration_onboarding_sessions_one_active`         | partial unique: one `ACTIVE` wizard per organisation and provider                                          |
+| `integration_connections_one_live_portal`            | partial unique: one live, non-mock connection per Planday portal across organisations                      |
+| `integration_mapping_configs_sync_window_days_check` | `sync_window_days BETWEEN 7 AND 56`                                                                        |
+| `organisations_rota_source_other_text_check`         | free text only with `rota_source = 'OTHER'` (null-safe)                                                    |
+| `integration_connections_credential_hint_check`      | `credential_hint` at most four characters                                                                  |
+| `integration_sync_runs_priority_check`               | `priority BETWEEN 0 AND 3`                                                                                 |
+
+Backfill: every existing employee, location and team takes `source = MANUAL`. Employees created by a CSV import
+cannot be told apart reliably (imports create them through the ordinary create path), so they stay `MANUAL`.
+`managed_by_integration_id` and `rota_source` stay null. Any pre-existing `integration_connections` row is marked
+`DISCONNECTED`; the migration only reports their count with `RAISE NOTICE` (production had none).
+
+Legacy column: `integration_connections.encrypted_credentials` (Prisma `legacyEncryptedCredentials`) is now
+nullable and written only by the generic connect path of providers that are still `COMING_SOON`. A contract
+migration drops it after the Planday release, once no deployed image reads it.
+
+Lock timeout: `20261008140100_planday_integration` starts with `SET lock_timeout = '5s'`. Its `ADD COLUMN`s lock
+`employees`, `locations`, `teams`, `shifts`, `organisations` and `integration_connections` exclusively until the
+script commits, and web's pre-deploy step runs it while the previous deployments still serve traffic. If a lock is
+not granted within 5 seconds the whole script rolls back (PostgreSQL runs it as one transaction), the pre-deploy
+step fails and Railway keeps the previous web deployment; the new worker waits at its migration gate
+(`worker.jobs: "waiting_for_migrations"` on `/api/health`). Prisma records the attempt as failed, so the next
+`prisma migrate deploy` stops with P3009 until it is marked rolled back. To retry, from a trusted machine with
+the production `DIRECT_URL` (as in `docs/DEPLOYMENT.md`, Migrations):
+
+```bash
+DATABASE_URL="$DIRECT_URL" pnpm --filter @clockoff/db exec prisma migrate resolve --rolled-back 20261008140100_planday_integration
+```
+
+Then redeploy web (Railway → web → the failed deployment → Redeploy).
+
 ## Connections
 
 `DATABASE_URL` is Prisma's connection (in production Neon's **pooled** URL, PgBouncer in transaction mode).

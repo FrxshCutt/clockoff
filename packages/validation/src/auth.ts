@@ -63,6 +63,13 @@ export const currentUserSchema = z.object({
        * `TEST_TOOLS_ORGANISATION_IDS`. The dashboard hides "Create test shift…" otherwise.
        */
       testToolsEnabled: z.boolean(),
+      /**
+       * Whether Planday is switched on (`PLANDAY_ENABLED`, the release and kill switch; plan §0). While it is
+       * off the dashboard hides the Planday-only surfaces, such as the integration sync notification rows and
+       * activity filters. Optional so a dashboard served during a deploy overlap still reads an older server's
+       * response; absent means off.
+       */
+      plandayEnabled: z.boolean().optional(),
     }),
   ),
   /** Organisation currently selected (cookie), null until the manager creates/joins one. */

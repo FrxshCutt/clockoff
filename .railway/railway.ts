@@ -39,6 +39,11 @@ const SHARED_VARIABLES = [
   "MOBILE_JWT_SECRET",
   "NEXT_PUBLIC_APP_URL",
   "NEXT_TELEMETRY_DISABLED",
+  // Planday (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md appendix A): the release and kill switch, mock or
+  // live mode (mock is refused in production) and the Beta clock-in mode. Unset = off / live / off.
+  "PLANDAY_CLOCK_MODE_ENABLED",
+  "PLANDAY_ENABLED",
+  "PLANDAY_MODE",
   "RATE_LIMIT_BACKEND",
   "RESEND_API_KEY",
   "SESSION_SECRET",
@@ -47,7 +52,19 @@ const SHARED_VARIABLES = [
   "TEST_TOOLS_ORGANISATION_IDS",
   "TRUSTED_PROXY_HOPS",
 ];
-const WEB_VARIABLES = [...SHARED_VARIABLES, "PORT", "REALTIME_STREAM_MAX_LIFETIME_MS"];
+/**
+ * Web only. PLANDAY_CLIENT_ID (method A, OAuth) and PLANDAY_APP_ID (method B) are ClockOff's Planday App IDs
+ * and PLANDAY_OAUTH_PKCE turns on PKCE for method A; the worker never reads them (every connection stores its own
+ * encrypted client id).
+ */
+const WEB_VARIABLES = [
+  ...SHARED_VARIABLES,
+  "PLANDAY_APP_ID",
+  "PLANDAY_CLIENT_ID",
+  "PLANDAY_OAUTH_PKCE",
+  "PORT",
+  "REALTIME_STREAM_MAX_LIFETIME_MS",
+];
 const WORKER_VARIABLES = [...SHARED_VARIABLES, "WORKER_JOBS_ENABLED"];
 
 const preserved = (names: string[]) => Object.fromEntries(names.map((name) => [name, preserve()]));

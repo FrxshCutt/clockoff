@@ -39,6 +39,8 @@ const LOCATION: Location = {
   address: "1 Harbour St",
   employeeCount: 4,
   teamCount: 2,
+  source: "MANUAL",
+  managedBy: null,
   createdAt: "2026-10-01T09:00:00Z",
   updatedAt: "2026-10-01T09:00:00Z",
 };
@@ -48,6 +50,8 @@ const TEAM: Team = {
   name: "Front of house",
   location: { id: LOCATION.id, name: LOCATION.name },
   memberCount: 3,
+  source: "MANUAL",
+  managedBy: null,
   createdAt: "2026-10-01T09:00:00Z",
   updatedAt: "2026-10-01T09:00:00Z",
 };

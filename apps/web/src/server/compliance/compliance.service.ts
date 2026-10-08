@@ -158,6 +158,9 @@ function toComplianceRow(
     activeShift: activeShift ? toShiftSummary(activeShift) : null,
     lastSyncAt: evaluation.device?.lastDeviceSyncAt?.toISOString() ?? null,
     attentionReason: evaluation.write.attentionReason,
+    // Set for employees managed by a DEGRADED / AUTH_ERROR integration connection once the integration
+    // health work lands (Planday plan §8.5, build stage 4); no integration manages an employee before that.
+    rotaMayBeOutOfDate: false,
   };
 }
 
@@ -221,8 +224,9 @@ export async function getComplianceSummary(
     integrationStatus: integrations.map((row) => ({
       provider: row.provider,
       status: row.status,
-      lastSyncAt: row.connection?.lastSyncAt?.toISOString() ?? null,
-      lastError: row.connection?.lastError ?? null,
+      connectionStatus: row.connection?.status ?? null,
+      lastSyncAt: row.connection?.lastSuccessfulSyncAt?.toISOString() ?? null,
+      lastError: row.connection?.lastErrorMessage ?? null,
     })),
   };
 }

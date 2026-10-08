@@ -27,6 +27,7 @@ import type {
   ListEmployeesResponse,
   UpdateEmployeeInput,
 } from "@clockoff/validation/employees";
+import { managedByFromIntegrationId } from "@clockoff/validation/integrations";
 import type { EmployeeShiftsQuery, ListShiftsResponse } from "@clockoff/validation/shifts";
 import { errorSummary, logger } from "@/lib/logger";
 import { publishActivity } from "@/server/activity/recordActivity";
@@ -131,6 +132,8 @@ function toEmployeeDto(
     resolvedBreakPolicy: policies?.resolvedBreakPolicy ?? null,
     nextShift: context?.nextShift ? toShiftSummaryFromNext(context.nextShift) : null,
     lastSyncAt: context?.device?.lastDeviceSyncAt?.toISOString() ?? null,
+    source: row.source,
+    managedBy: managedByFromIntegrationId(row.managedByIntegrationId),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

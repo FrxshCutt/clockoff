@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -219,6 +220,39 @@ describe("docker/web/Dockerfile and docker/worker/Dockerfile", () => {
     expect(webDockerfile).toContain("/opt/migrate ./migrate");
   });
 
+  it.each([
+    ["web", webDockerfile],
+    ["worker", workerDockerfile],
+  ])(
+    "%s: copies every workspace package.json before the frozen-lockfile install",
+    (_name, dockerfile) => {
+      // A workspace manifest missing from the deps stage breaks `pnpm install --frozen-lockfile` (the
+      // lockfile lists an importer the image does not have), the classic failure of a new package.
+      const code = instructions(dockerfile);
+      const install = code.indexOf("RUN pnpm install --frozen-lockfile");
+      expect(install).toBeGreaterThan(0);
+      const workspaces = [
+        "apps/web",
+        ...readdirSync(path.join(ROOT, "packages"), { withFileTypes: true })
+          .filter(
+            (entry) =>
+              entry.isDirectory() &&
+              existsSync(path.join(ROOT, "packages", entry.name, "package.json")),
+          )
+          .map((entry) => `packages/${entry.name}`),
+      ];
+      expect(workspaces).toEqual(expect.arrayContaining(["packages/integrations"]));
+      for (const workspace of workspaces) {
+        const escaped = workspace.replace(/[/.]/g, "\\$&");
+        const copy = new RegExp(`^COPY ${escaped}/package\\.json\\b[^\\n]* ${escaped}/$`, "m").exec(
+          code,
+        );
+        expect(copy, `${workspace}/package.json`).not.toBeNull();
+        expect(copy!.index, `${workspace}/package.json before pnpm install`).toBeLessThan(install);
+      }
+    },
+  );
+
   it("worker runs the esbuild bundle", () => {
     expect(workerDockerfile).toContain("node apps/web/scripts/build-worker.mjs");
     expect(workerDockerfile).toContain("/repo/apps/web/dist/worker/ ./");
@@ -397,11 +431,50 @@ describe(".railway/railway.ts (infrastructure as code)", () => {
       "SHUTDOWN_GRACE_MS",
     ])
       expect(shared).toContain(name);
-    expect(iac).toContain(
-      'const WEB_VARIABLES = [...SHARED_VARIABLES, "PORT", "REALTIME_STREAM_MAX_LIFETIME_MS"];',
-    );
+    // Web and worker each add their own names to the shared list (nothing else).
+    expect(/const WEB_VARIABLES = \[\s*\.\.\.SHARED_VARIABLES,/.test(iac)).toBe(true);
+    expect(listed("WEB_VARIABLES")).toEqual([
+      "PLANDAY_APP_ID",
+      "PLANDAY_CLIENT_ID",
+      "PLANDAY_OAUTH_PKCE",
+      "PORT",
+      "REALTIME_STREAM_MAX_LIFETIME_MS",
+    ]);
     expect(iac).toContain('const WORKER_VARIABLES = [...SHARED_VARIABLES, "WORKER_JOBS_ENABLED"];');
     // Retired Netlify-era names must not come back (the worker refuses JOBS_ENABLED=false).
     for (const retired of ["JOBS_ENABLED", "CRON_SECRET"]) expect(shared).not.toContain(retired);
+  });
+
+  it("lists the Planday variables of appendix A on the services that read them", () => {
+    const shared = listed("SHARED_VARIABLES");
+    const webOnly = listed("WEB_VARIABLES");
+    const workerOnly = listed("WORKER_VARIABLES");
+    // Web and worker: the release / kill switch, mock or live, and the Beta clock-in mode.
+    for (const name of ["PLANDAY_ENABLED", "PLANDAY_MODE", "PLANDAY_CLOCK_MODE_ENABLED"])
+      expect(shared).toContain(name);
+    // Web only: ClockOff's App IDs (methods A and B) and PKCE; the worker uses each connection's own client id.
+    for (const name of ["PLANDAY_CLIENT_ID", "PLANDAY_APP_ID", "PLANDAY_OAUTH_PKCE"]) {
+      expect(webOnly).toContain(name);
+      expect(shared).not.toContain(name);
+      expect(workerOnly).not.toContain(name);
+    }
+    // Development and Playwright only (production refuses the mock), never a client secret (notes §3.4), and
+    // nothing from the retired Netlify executor design.
+    const everything = [...shared, ...webOnly, ...workerOnly];
+    for (const name of [
+      "PLANDAY_MOCK_URL",
+      "PLANDAY_MOCK_PORT",
+      "PLANDAY_CLIENT_SECRET",
+      "INTEGRATION_EXECUTOR",
+    ])
+      expect(everything).not.toContain(name);
+    // Every PLANDAY_* variable the env schema reads is listed, except the development-only mock URL.
+    const envSource = read("apps/web/src/lib/env.ts");
+    const readByEnv = [
+      ...new Set([...envSource.matchAll(/^\s+(PLANDAY_[A-Z_]+):/gm)].map((m) => m[1]!)),
+    ];
+    expect(readByEnv.length).toBeGreaterThan(0);
+    for (const name of readByEnv.filter((n) => n !== "PLANDAY_MOCK_URL"))
+      expect(everything, name).toContain(name);
   });
 });

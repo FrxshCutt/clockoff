@@ -29,6 +29,7 @@ export {
   activityEventMeta,
   activitySentence,
   activityText,
+  activityTypeOptions,
   type ActivityEventMeta,
   type ActivityIcon,
 } from "./activity-meta";

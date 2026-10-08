@@ -13,6 +13,17 @@ import type { ClockEventType } from "../enums";
 
 export type UpsertOutcome = "CREATED" | "UPDATED" | "UNCHANGED" | "SKIPPED";
 
+/** The provider account (Planday: the portal) a connection reads. Not personal data. */
+export interface ExternalPortal {
+  /** The provider's id as a decimal string (Planday portal id, e.g. `"4100001"`). */
+  readonly externalId: string;
+  readonly name: string;
+  /** IANA zone of the portal; null when the provider gave none ClockOff can use. */
+  readonly timezone: string | null;
+  /** Child portals the account can see; ClockOff syncs only this portal (shown on the wizard's step 2). */
+  readonly childPortalCount: number;
+}
+
 export interface ExternalLocation {
   readonly externalId: string;
   readonly name: string;
@@ -36,9 +47,25 @@ export interface ExternalEmployee {
   readonly jobTitle?: string | null;
   readonly externalLocationIds?: readonly string[];
   readonly externalTeamIds?: readonly string[];
+  /** The provider's primary location for the person (Planday `primaryDepartmentId`), when it has one. */
+  readonly primaryExternalLocationId?: string | null;
   /** False when the provider marks the person as deactivated / terminated. */
   readonly active: boolean;
 }
+
+/**
+ * Why a synced shift was removed: deleted upstream (the deleted list), gone on a by-id read, back to draft,
+ * unassigned, out of the mapped scope (excluded department or employee) or on a day hidden from employees.
+ */
+export const SHIFT_REMOVAL_REASONS = [
+  "DELETED",
+  "NOT_FOUND",
+  "DRAFT",
+  "UNASSIGNED",
+  "OUT_OF_SCOPE",
+  "HIDDEN_DAY",
+] as const;
+export type ShiftRemovalReason = (typeof SHIFT_REMOVAL_REASONS)[number];
 
 export interface ExternalShift {
   /** The provider's raw id; stored as Shift.externalShiftId = `<PROVIDER>:<externalId>`. */
@@ -53,6 +80,10 @@ export interface ExternalShift {
   readonly timezone: string;
   /** Deleted or cancelled upstream → Shift.status CANCELLED (never hard-deleted). */
   readonly cancelled: boolean;
+  /** Set together with `cancelled: true`: why the provider no longer publishes the shift. */
+  readonly removalReason?: ShiftRemovalReason | null;
+  /** DST note from the shared wall-clock resolver, e.g. `AMBIGUOUS_LOCAL_TIME_FIRST_OCCURRENCE`. */
+  readonly timeWarning?: string | null;
   readonly notes?: string | null;
 }
 

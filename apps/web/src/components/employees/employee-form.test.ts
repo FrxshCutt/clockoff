@@ -38,6 +38,8 @@ const EMPLOYEE: Employee = {
   resolvedBreakPolicy: null,
   nextShift: null,
   lastSyncAt: null,
+  source: "MANUAL",
+  managedBy: null,
   createdAt: "2026-10-01T09:00:00.000Z",
   updatedAt: "2026-10-01T09:00:00.000Z",
 };

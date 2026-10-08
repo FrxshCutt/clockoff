@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { nonEmptyString, optionalString, timezoneSchema, uuidSchema } from "./common";
+import { recordSourceSchema } from "./enumSchemas";
+import { managedBySchema } from "./integrations";
 import {
   instantSchema,
   nullableInstantSchema,
@@ -43,6 +45,10 @@ export const locationSchema = z
     policyAssignment: scopeAssignmentSchema.nullable().optional(),
     /** Active Break Policy assignment for this location, null when none. */
     breakPolicyAssignment: scopeAssignmentSchema.nullable().optional(),
+    /** How the record was created (provenance; stays INTEGRATION after a disconnect). */
+    source: recordSourceSchema,
+    /** Set while a connected integration owns the name (read-only, not deletable). */
+    managedBy: managedBySchema.nullable(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })
@@ -118,6 +124,10 @@ export const teamSchema = z
     policyAssignment: scopeAssignmentSchema.nullable().optional(),
     /** Active Break Policy assignment for this team, null when none. */
     breakPolicyAssignment: scopeAssignmentSchema.nullable().optional(),
+    /** How the record was created (provenance; stays INTEGRATION after a disconnect). */
+    source: recordSourceSchema,
+    /** Set while a connected integration owns the name (read-only, not deletable). */
+    managedBy: managedBySchema.nullable(),
     createdAt: instantSchema,
     updatedAt: instantSchema,
   })

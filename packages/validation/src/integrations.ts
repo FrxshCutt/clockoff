@@ -4,6 +4,7 @@ import {
   SYNC_ERROR_CODES,
   type ProviderAvailability,
 } from "@clockoff/shared/providers/workforceProvider";
+import { uuidSchema } from "./common";
 import {
   activationModeSchema,
   integrationProviderSchema,
@@ -14,7 +15,29 @@ import { instantSchema, nullableInstantSchema } from "./primitives";
 /**
  * Workforce integrations (§5 integrations). Providers are listed now and implemented in Phase 2: until a
  * provider is AVAILABLE, `connect` and `sync` answer 501 COMING_SOON and managers can ask to be notified.
+ * Planday's own endpoints and DTOs are in `./planday` (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md).
  */
+
+/**
+ * The integration that manages a record's synced fields (Employee name, email and primary location; Location
+ * and Team names; every field of a Shift). Null for records ClockOff owns, including every record left behind
+ * by a disconnect. The dashboard locks managed fields ("Managed in Planday").
+ */
+export const managedBySchema = z
+  .object({ provider: integrationProviderSchema, integrationId: uuidSchema })
+  .meta({ id: "ManagedBy" });
+export type ManagedBy = z.infer<typeof managedBySchema>;
+
+/**
+ * `managedBy` of a DTO from the row's `managedByIntegrationId`. Planday is the only provider whose sync manages
+ * records (the only one with connections); a second provider passes its own id.
+ */
+export function managedByFromIntegrationId(
+  managedByIntegrationId: string | null,
+  provider: ManagedBy["provider"] = "PLANDAY",
+): ManagedBy | null {
+  return managedByIntegrationId ? { provider, integrationId: managedByIntegrationId } : null;
+}
 
 /** Values of `ProviderAvailability` (@clockoff/shared, a type only); domain.test.ts asserts equality. */
 export const PROVIDER_AVAILABILITIES = [
@@ -60,6 +83,11 @@ export const integrationSchema = z
     lastError: z.string().nullable(),
     /** Name of the connected provider account, when the provider exposes one. */
     externalAccountName: z.string().nullable(),
+    /**
+     * ClockOff paused the provider (Planday's kill switch, PLANDAY_ENABLED=false) while this organisation has a
+     * live connection: the card shows "Paused" instead of "Coming soon"; no sync runs, the data stays.
+     */
+    paused: z.boolean(),
   })
   .meta({ id: "Integration" });
 export type Integration = z.infer<typeof integrationSchema>;
@@ -102,8 +130,45 @@ export const connectIntegrationResponseSchema = z
   .meta({ id: "ConnectIntegrationResponse" });
 export type ConnectIntegrationResponse = z.infer<typeof connectIntegrationResponseSchema>;
 
-/** `POST /api/integrations/:provider/disconnect` · `/sync` · `/notify-me` take no body. */
+/** `POST /api/integrations/:provider/sync` · `/notify-me` take no body. */
 export const integrationActionSchema = z.object({}).strict();
+
+/**
+ * What a disconnect does with the records the integration synced (Planday, §5.8): keep them all (they become
+ * ClockOff-managed and editable), or also cancel every future synced shift (employees are kept).
+ */
+export const DISCONNECT_MODES = ["KEEP_RECORDS", "CANCEL_FUTURE_SHIFTS"] as const;
+export type DisconnectMode = (typeof DISCONNECT_MODES)[number];
+
+/** `POST /api/integrations/:provider/disconnect` — `{}` keeps every record (`KEEP_RECORDS`). */
+export const disconnectIntegrationSchema = z
+  .object({ mode: z.enum(DISCONNECT_MODES).default("KEEP_RECORDS") })
+  .strict();
+export type DisconnectIntegrationInput = z.input<typeof disconnectIntegrationSchema>;
+export type DisconnectIntegrationBody = z.output<typeof disconnectIntegrationSchema>;
+
+/**
+ * A dashboard banner about an unhealthy connection (§8.3): `error` for AUTH_ERROR ("Planday disconnected"),
+ * `warning` for DEGRADED and for a connection paused by ClockOff. `action` is null for MANAGER and when there
+ * is nothing to do.
+ */
+export const integrationHealthBannerSchema = z
+  .object({
+    provider: integrationProviderSchema,
+    level: z.enum(["error", "warning"]),
+    title: z.string(),
+    body: z.string(),
+    action: z.object({ label: z.string(), href: z.string() }).nullable(),
+    isMock: z.boolean(),
+  })
+  .meta({ id: "IntegrationHealthBanner" });
+export type IntegrationHealthBanner = z.infer<typeof integrationHealthBannerSchema>;
+
+/** `GET /api/integrations/health` — answers while Planday is switched off too (the paused banner). */
+export const integrationHealthResponseSchema = z
+  .object({ banners: z.array(integrationHealthBannerSchema) })
+  .meta({ id: "IntegrationHealthResponse" });
+export type IntegrationHealthResponse = z.infer<typeof integrationHealthResponseSchema>;
 
 export const syncIntegrationResponseSchema = z
   .object({

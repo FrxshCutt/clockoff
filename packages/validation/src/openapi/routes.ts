@@ -86,7 +86,9 @@ import {
 import {
   connectIntegrationResponseSchema,
   connectIntegrationSchema,
+  disconnectIntegrationSchema,
   integrationActionSchema,
+  integrationHealthResponseSchema,
   integrationParamsSchema,
   integrationResponseSchema,
   listIntegrationsResponseSchema,
@@ -170,6 +172,7 @@ import {
   updateOrganisationSchema,
   requestDemoSchema,
   requestDemoResponseSchema,
+  setRotaSourceSchema,
 } from "../organisation";
 import {
   createOverrideSchema,
@@ -192,6 +195,50 @@ import {
   setDefaultPolicySchema,
   updatePolicySchema,
 } from "../policies";
+import {
+  connectPlandayTokenSchema,
+  createPlandayConnectLinkResponseSchema,
+  createPlandayConnectLinkSchema,
+  finishPlandayOnboardingResponseSchema,
+  listPlandayConnectLinksResponseSchema,
+  listPlandayPendingEmployeesResponseSchema,
+  listPlandayRunsResponseSchema,
+  plandayConnectLinkParamsSchema,
+  plandayConnectMethodsResponseSchema,
+  plandayConnectResponseSchema,
+  plandayIntegrationDetailSchema,
+  plandayOnboardingEmployeesQuerySchema,
+  plandayOnboardingEmployeesResponseSchema,
+  plandayOnboardingGotoSchema,
+  plandayOnboardingInvitesResponseSchema,
+  plandayOnboardingLocationsResponseSchema,
+  plandayOnboardingPoliciesResponseSchema,
+  plandayOnboardingResponseSchema,
+  plandayOnboardingStepResponseSchema,
+  plandayOnboardingTeamsResponseSchema,
+  plandayPendingEmployeesQuerySchema,
+  plandayRunParamsSchema,
+  plandayRunsQuerySchema,
+  plandaySettingsSchema,
+  plandayShiftPreviewResponseSchema,
+  plandaySyncRequestSchema,
+  plandaySyncResponseSchema,
+  plandaySyncRunSchema,
+  resolvePlandayConnectLinkResponseSchema,
+  resolvePlandayConnectLinkSchema,
+  resolvePlandayPendingEmployeesResponseSchema,
+  resolvePlandayPendingEmployeesSchema,
+  savePlandayActivationSchema,
+  savePlandayEmployeesSchema,
+  savePlandayLocationsSchema,
+  savePlandayPoliciesSchema,
+  savePlandayShiftPreviewSchema,
+  savePlandayTeamsSchema,
+  startPlandayOAuthResponseSchema,
+  startPlandayOAuthSchema,
+  updatePlandaySettingsResponseSchema,
+  updatePlandaySettingsSchema,
+} from "../planday";
 import { emptyBodySchema, emptyQuerySchema, idParamsSchema, okResponseSchema } from "../primitives";
 import { realtimeStreamQuerySchema, sseEventSchema } from "../realtime";
 import { billingResponseSchema, settingsResponseSchema, updateSettingsSchema } from "../settings";
@@ -413,6 +460,19 @@ defineRoute({
   request: { body: updateOrganisationSchema },
   responses: { 200: organisationResponseSchema },
   errors: ["INVALID_TIMEZONE"],
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/organisations/current/rota-source",
+  summary: 'Answer "How do you schedule your team?"',
+  description:
+    "Stores the organisation's rota source (onboarding; can be changed later). `otherText` (1–200 characters) is required with OTHER and refused otherwise. Audited.",
+  tags: ["Organisations"],
+  auth: "manager",
+  permission: "org:manage",
+  request: { body: setRotaSourceSchema },
+  responses: { 200: organisationResponseSchema },
 });
 
 defineRoute({
@@ -1362,24 +1422,25 @@ defineRoute({
   path: "/api/integrations/:provider/connect",
   summary: "Connect a provider",
   description:
-    "Every provider is COMING_SOON in the MVP: this returns 501 until the provider is available.",
+    "Returns 501 COMING_SOON until the provider is available. Planday never connects here (404 CONNECT_METHOD_UNAVAILABLE, nothing stored): it uses `POST /api/integrations/planday/connect/oauth`, `…/connect/token` and the OAuth callback.",
   tags: ["Integrations"],
   auth: "manager",
   permission: "integrations:write",
   request: { params: integrationParamsSchema, body: connectIntegrationSchema },
   responses: { 200: connectIntegrationResponseSchema },
-  errors: ["COMING_SOON"],
+  errors: ["COMING_SOON", "CONNECT_METHOD_UNAVAILABLE"],
 });
 
 defineRoute({
   method: "POST",
   path: "/api/integrations/:provider/disconnect",
   summary: "Disconnect a provider",
-  description: "Deletes stored credentials. Imported shifts are kept.",
+  description:
+    "Wipes the stored credentials (the connection row, its portal and its mappings are kept for a reconnect) and revokes ClockOff's access at the provider where it allows. `mode`: `KEEP_RECORDS` (default) keeps every synced employee, location, team and shift, which become ClockOff-managed and editable; `CANCEL_FUTURE_SHIFTS` also cancels every future synced shift (employees are kept). Audited.",
   tags: ["Integrations"],
   auth: "manager",
   permission: "integrations:write",
-  request: { params: integrationParamsSchema, body: integrationActionSchema },
+  request: { params: integrationParamsSchema, body: disconnectIntegrationSchema },
   responses: { 200: integrationResponseSchema },
 });
 
@@ -1387,6 +1448,8 @@ defineRoute({
   method: "POST",
   path: "/api/integrations/:provider/sync",
   summary: "Sync now",
+  description:
+    "Generic providers: 501 COMING_SOON until available. Planday answers with its own shape: `POST /api/integrations/planday/sync`.",
   tags: ["Integrations"],
   auth: "manager",
   permission: "integrations:write",
@@ -1403,6 +1466,420 @@ defineRoute({
   auth: "manager",
   request: { params: integrationParamsSchema, body: integrationActionSchema },
   responses: { 200: integrationResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/health",
+  summary: "Connection health banners",
+  description:
+    "One banner per unhealthy connection: `error` when a connection lost its authorisation (AUTH_ERROR), `warning` when syncs are delayed (DEGRADED) or ClockOff paused the provider. Answers while Planday is switched off (the paused banner). `action` is null for MANAGER.",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: integrationHealthResponseSchema },
+});
+
+// ── Planday (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §5, §7, §9, §10) ──
+// Served by the `[provider]` route folder; every route answers 404 NOT_FOUND for any other provider and while
+// PLANDAY_ENABLED=false. Not documented: `GET /api/integrations/planday/callback` (the OAuth redirect target)
+// and the development-only `/api/dev/mock-planday/*` routes (docs/API.md › Not in the document).
+
+const PLANDAY_CONNECT_ERRORS = [
+  "CONNECT_METHOD_UNAVAILABLE",
+  "INTEGRATION_AUTH_FAILED",
+  "INTEGRATION_SCOPE_MISSING",
+  "INTEGRATION_UNAVAILABLE",
+  "INTEGRATION_INVALID_RESPONSE",
+  "INTEGRATION_PORTAL_MISMATCH",
+  "INTEGRATION_PORTAL_IN_USE",
+  "RATE_LIMITED",
+] as const;
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday",
+  summary: "Planday integration card",
+  description:
+    "Connection status, portal, auth method, last and next sync, the active and last finished runs, the pending-employee counts. Never a token or App ID (`credentialHint` only).",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayIntegrationDetailSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/connect-methods",
+  summary: "Available Planday connect methods",
+  description:
+    "A (`OAUTH`) when PLANDAY_CLIENT_ID is set, B (`CUSTOMER_ADDED_APP_ID`) when PLANDAY_APP_ID is set, C (`CUSTOMER_OWN_APP`) always; `recommended` is A, else B, else C. A connect request for an unavailable method answers CONNECT_METHOD_UNAVAILABLE.",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayConnectMethodsResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/connect/oauth",
+  summary: "Start connecting Planday with Planday sign-in (method A)",
+  description:
+    "Creates a signed, single-use OAuth state (10 minutes, bound to the organisation and the signed-in user) and returns the Planday authorisation URL to send the manager to. Planday redirects back to `/api/integrations/planday/callback`, which proves the connection and redirects to `returnTo`'s page.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: startPlandayOAuthSchema },
+  responses: { 200: startPlandayOAuthResponseSchema },
+  errors: ["CONNECT_METHOD_UNAVAILABLE", "INTEGRATION_UNAVAILABLE", "RATE_LIMITED"],
+  rateLimit: "integrationsConnect",
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/connect/token",
+  summary: "Connect Planday with a pasted token (methods B and C)",
+  description:
+    "Exchanges the refresh token, reads the portal and probes every required scope before anything is stored; only then is the connection CONNECTED and a run queued. Pasted values are never echoed: the response carries `credentialHint` (last four characters) only. A token for another portal than the one this organisation is bound to answers INTEGRATION_PORTAL_MISMATCH unless `allowPortalSwitch` is sent from a DISCONNECTED connection; a portal connected to another organisation answers INTEGRATION_PORTAL_IN_USE.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: connectPlandayTokenSchema },
+  responses: { 200: plandayConnectResponseSchema },
+  errors: [...PLANDAY_CONNECT_ERRORS],
+  rateLimit: "integrationsConnectToken",
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/sync",
+  summary: "Sync Planday now",
+  description:
+    'Queues a MANUAL SYNC run for the worker (at most once a minute). An active SYNC answers `alreadyRunning`; another kind of active run makes the SYNC a follow-up (`followUpQueued`). `retryAuth: true` ("Try again" from AUTH_ERROR) retries the authorisation. 409 INTEGRATION_ONBOARDING_INCOMPLETE before the setup wizard\'s Finish.',
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: plandaySyncRequestSchema },
+  responses: { 200: plandaySyncResponseSchema },
+  errors: ["INTEGRATION_NOT_CONNECTED", "INTEGRATION_ONBOARDING_INCOMPLETE", "RATE_LIMITED"],
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/runs",
+  summary: "Recent Planday sync runs",
+  tags: ["Integrations"],
+  auth: "manager",
+  request: { query: plandayRunsQuerySchema },
+  responses: { 200: listPlandayRunsResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/runs/:runId",
+  summary: "One Planday sync run (progress)",
+  description:
+    "The wizard and the card poll this while a run is active; realtime `integration.sync.progress` events are hints to refetch it. 404 for another organisation's run.",
+  tags: ["Integrations"],
+  auth: "manager",
+  request: { params: plandayRunParamsSchema },
+  responses: { 200: plandaySyncRunSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/settings",
+  summary: "Planday sync settings",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandaySettingsSchema },
+  errors: ["INTEGRATION_NOT_CONNECTED"],
+});
+
+defineRoute({
+  method: "PATCH",
+  path: "/api/integrations/planday/settings",
+  summary: "Update Planday sync settings",
+  description:
+    "Department and group mappings, included departments, auto-include, email import, sync window, activation mode (CLOCK_EVENT only with clock-in mode enabled) and hidden-day skipping. Every id must belong to the organisation (404 otherwise, nothing written). Bumps the mapping version, audits the change and queues a MANUAL SYNC run. 409 INTEGRATION_ONBOARDING_INCOMPLETE before Finish.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: updatePlandaySettingsSchema },
+  responses: { 200: updatePlandaySettingsResponseSchema },
+  errors: ["INTEGRATION_NOT_CONNECTED", "INTEGRATION_ONBOARDING_INCOMPLETE"],
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/pending-employees",
+  summary: "Planday employees waiting for a manager",
+  description:
+    "New employees (when auto-include is off), ambiguous and possible matches, plan-limit overflow and mapped employees Planday no longer returns (`MISSING_IN_PLANDAY`).",
+  tags: ["Integrations"],
+  auth: "manager",
+  request: { query: plandayPendingEmployeesQuerySchema },
+  responses: { 200: listPlandayPendingEmployeesResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/pending-employees/resolve",
+  summary: "Resolve pending Planday employees",
+  description:
+    "IMPORT (a NOT_INVITED employee), LINK (to an employee of this organisation), DISMISS (excluded from future syncs); DEACTIVATE and KEEP for `MISSING_IN_PLANDAY` rows. Items are applied one by one; each result says whether it applied. Audited per item.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: resolvePlandayPendingEmployeesSchema },
+  responses: { 200: resolvePlandayPendingEmployeesResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/connect-links",
+  summary: "Active shareable connect links",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: listPlandayConnectLinksResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/connect-links",
+  summary: "Create a shareable connect link",
+  description:
+    "For the organisation's Planday administrator. The URL (`/connect/planday?token=…`) is returned once; only its hash is stored. With the email of someone who is not an OWNER or ADMIN yet, they also get an ADMIN invite that leads to the link (`invited: true`); an existing MANAGER answers CONFLICT. At most five active links.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: createPlandayConnectLinkSchema },
+  responses: { 201: createPlandayConnectLinkResponseSchema },
+});
+
+defineRoute({
+  method: "DELETE",
+  path: "/api/integrations/planday/connect-links/:linkId",
+  summary: "Revoke a connect link",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { params: plandayConnectLinkParamsSchema },
+  responses: { 204: null },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/connect-links/resolve",
+  summary: "Open a connect link",
+  description:
+    "The signed-in user must be an OWNER or ADMIN of the link's organisation and the link unexpired and unrevoked; anything else answers the same NOT_FOUND. Switches the current organisation to the link's and returns where to go (the wizard's connect step, or the reconnect panel after setup).",
+  tags: ["Integrations"],
+  auth: "user",
+  request: { body: resolvePlandayConnectLinkSchema },
+  responses: { 200: resolvePlandayConnectLinkResponseSchema },
+  errors: ["RATE_LIMITED"],
+  rateLimit: "integrationsConnectLink",
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding",
+  summary: "The Planday setup wizard session",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayOnboardingResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/onboarding",
+  summary: "Start or resume the Planday setup wizard",
+  description:
+    "Returns the active session, or creates it (with the integration and its mapping config). After Finish it answers CONFLICT with `details.href` (the reconnect panel when the connection needs one, else `/integrations`).",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: emptyBodySchema },
+  responses: { 200: plandayOnboardingResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/onboarding/goto",
+  summary: "Go to a wizard step",
+  description: "Only a completed step or the current one.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: plandayOnboardingGotoSchema },
+  responses: { 200: plandayOnboardingResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/onboarding/confirm-portal",
+  summary: "Confirm the connected Planday portal (step 2)",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: emptyBodySchema },
+  responses: { 200: plandayOnboardingResponseSchema },
+  errors: ["INTEGRATION_NOT_CONNECTED"],
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/locations",
+  summary: "Planday departments with suggested locations (step 3)",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayOnboardingLocationsResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/locations",
+  summary: "Save the department mapping (step 3)",
+  description:
+    "Creates the new locations, saves the mapping and queues the DIRECTORY run (employees and the shift preview). Existing location and department ids must belong to the organisation (404 otherwise, nothing written).",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayLocationsSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/teams",
+  summary: "Planday employee groups (step 4)",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayOnboardingTeamsResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/teams",
+  summary: "Save the employee-group mapping (step 4, optional)",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayTeamsSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/employees",
+  summary: "Planday employees to import (step 5)",
+  tags: ["Integrations"],
+  auth: "manager",
+  request: { query: plandayOnboardingEmployeesQuerySchema },
+  responses: { 200: plandayOnboardingEmployeesResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/employees",
+  summary: "Select the employees to import (step 5)",
+  description:
+    "Every selected ambiguous employee needs a resolution; the selection must fit the plan's employee limit; LINK targets must belong to the organisation. Queues the IMPORT_EMPLOYEES run.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayEmployeesSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/shift-preview",
+  summary: "Planday shifts of the next 14 days (step 6)",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayShiftPreviewResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/shift-preview",
+  summary: "Confirm the shift preview (step 6)",
+  description:
+    "Stores which conflicting manual or CSV shifts Planday's replace (ids checked against the organisation; nothing is cancelled until the first sync) and requires the sample times confirmed.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayShiftPreviewSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/onboarding/shift-preview/refresh",
+  summary: "Refresh the shift preview (step 6)",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: emptyBodySchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/policies",
+  summary: "Policy options (step 7)",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayOnboardingPoliciesResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/policies",
+  summary: "Choose the default policies (step 7)",
+  description:
+    'A one-click starter ("Standard Staff", "Standard Break") or an existing policy for each default, and optional per-team policies; ids must belong to the organisation.',
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayPoliciesSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "PUT",
+  path: "/api/integrations/planday/onboarding/activation",
+  summary: "Choose the activation mode (step 8)",
+  description: "CLOCK_EVENT (clock-in, Beta) only while clock-in mode is enabled.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: savePlandayActivationSchema },
+  responses: { 200: plandayOnboardingStepResponseSchema },
+});
+
+defineRoute({
+  method: "POST",
+  path: "/api/integrations/planday/onboarding/finish",
+  summary: "Finish the Planday setup (step 9)",
+  description:
+    "Completes onboarding and queues the INITIAL SYNC run, which imports the shifts and replaces the ticked conflicting shifts as their Planday replacements are created.",
+  tags: ["Integrations"],
+  auth: "manager",
+  permission: "integrations:write",
+  request: { body: emptyBodySchema },
+  responses: { 200: finishPlandayOnboardingResponseSchema },
+  errors: ["INTEGRATION_NOT_CONNECTED"],
+});
+
+defineRoute({
+  method: "GET",
+  path: "/api/integrations/planday/onboarding/invites",
+  summary: "Invite staff after setup (step 9)",
+  description:
+    "The company join code, a copyable invite message and the employees sharing a full name (they need personal invite codes).",
+  tags: ["Integrations"],
+  auth: "manager",
+  responses: { 200: plandayOnboardingInvitesResponseSchema },
 });
 
 // ── Compliance & activity ───────────────────────────────────────────────────

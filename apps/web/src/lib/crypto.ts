@@ -13,7 +13,9 @@ import { env } from "@/lib/env";
  *
  * - AES-256-GCM at rest for integration credentials / push tokens. Ciphertext layout:
  *   `iv (12 bytes) | auth tag (16 bytes) | ciphertext`. The key is `INTEGRATION_ENCRYPTION_KEY`
- *   (32 bytes, base64) unless an explicit key is supplied.
+ *   (32 bytes, base64) unless an explicit key is supplied. Optional associated data (`aad`) binds a
+ *   ciphertext to where it is stored: Planday secrets use `integration:<integrationId>:<column>`
+ *   ({@link integrationAad}), so a value copied into another row or column fails to decrypt (D-038).
  * - sha256 hex for storing opaque tokens (sessions, reset/verification/invite/refresh tokens).
  * - base64url random tokens.
  * - constant-time comparison and HMAC-SHA256 (CSRF token signatures).
@@ -36,32 +38,69 @@ function assertKey(key: Buffer): void {
     throw new Error(`Encryption key must be ${KEY_BYTES} bytes, got ${key.length}`);
 }
 
-/** Encrypt with AES-256-GCM. Returns `iv | tag | ciphertext`. */
-export function encrypt(plaintext: Buffer | string, key: Buffer = getEncryptionKey()): Buffer {
+/**
+ * Associated data must be non-empty: GCM treats empty AAD exactly like none, which would silently drop the
+ * binding (e.g. an `integration::refresh_token` built from a missing id is caught here instead).
+ */
+function aadBuffer(aad: string): Buffer {
+  if (aad.length === 0) throw new Error("Associated data must not be empty");
+  return Buffer.from(aad, "utf8");
+}
+
+/**
+ * Encrypt with AES-256-GCM. Returns `iv | tag | ciphertext`. With `aad`, the same associated data must be
+ * given to {@link decrypt}; it is authenticated, not stored.
+ */
+export function encrypt(
+  plaintext: Buffer | string,
+  key: Buffer = getEncryptionKey(),
+  aad?: string,
+): Buffer {
   assertKey(key);
   const iv = randomBytes(IV_BYTES);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
+  if (aad !== undefined) cipher.setAAD(aadBuffer(aad));
   const input = typeof plaintext === "string" ? Buffer.from(plaintext, "utf8") : plaintext;
   const ciphertext = Buffer.concat([cipher.update(input), cipher.final()]);
   const tag = cipher.getAuthTag();
   return Buffer.concat([iv, tag, ciphertext]);
 }
 
-/** Decrypt `iv | tag | ciphertext` produced by {@link encrypt}. Throws on tampering. */
-export function decrypt(blob: Buffer, key: Buffer = getEncryptionKey()): Buffer {
+/**
+ * Decrypt `iv | tag | ciphertext` produced by {@link encrypt}. Throws on tampering, on a wrong key and when
+ * `aad` differs from the associated data used to encrypt (including one given on only one side).
+ */
+export function decrypt(blob: Buffer, key: Buffer = getEncryptionKey(), aad?: string): Buffer {
   assertKey(key);
   if (blob.length < IV_BYTES + TAG_BYTES) throw new Error("Ciphertext too short");
   const iv = blob.subarray(0, IV_BYTES);
   const tag = blob.subarray(IV_BYTES, IV_BYTES + TAG_BYTES);
   const ciphertext = blob.subarray(IV_BYTES + TAG_BYTES);
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  if (aad !== undefined) decipher.setAAD(aadBuffer(aad));
   decipher.setAuthTag(tag);
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
 /** Convenience: decrypt to a UTF-8 string. */
-export function decryptToString(blob: Buffer, key?: Buffer): string {
-  return decrypt(blob, key).toString("utf8");
+export function decryptToString(blob: Buffer, key?: Buffer, aad?: string): string {
+  return decrypt(blob, key, aad).toString("utf8");
+}
+
+/** The encrypted columns of `integration_connections` (each with its own associated data). */
+export const INTEGRATION_SECRET_COLUMNS = ["client_id", "refresh_token", "access_token"] as const;
+export type IntegrationSecretColumn = (typeof INTEGRATION_SECRET_COLUMNS)[number];
+
+/** Associated data for an integration secret: `integration:<integrationId>:<column>` (D-038). */
+export function integrationAad(integrationId: string, column: IntegrationSecretColumn): string {
+  if (!integrationId) throw new Error("integrationAad needs the integration id");
+  return `integration:${integrationId}:${column}`;
+}
+
+/** Associated data for an OAuth state row's PKCE verifier: `oauth_state:<stateId>`. */
+export function oauthStateAad(stateId: string): string {
+  if (!stateId) throw new Error("oauthStateAad needs the state row id");
+  return `oauth_state:${stateId}`;
 }
 
 export function sha256Hex(input: string | Buffer): string {

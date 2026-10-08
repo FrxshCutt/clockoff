@@ -305,6 +305,8 @@ const EVENT_TONES: Partial<Record<ActivityEventType, StatusTone>> = {
   OVERRIDE_CREATED: "warning",
   OVERRIDE_EXPIRED: "neutral",
   POLICY_RESOLUTION_WARNING: "warning",
+  EMPLOYEE_DEACTIVATED: "warning",
+  EMPLOYEE_REACTIVATED: "success",
 };
 
 export function activityTone(type: ActivityEventType | string): StatusTone {

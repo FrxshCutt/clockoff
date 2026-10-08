@@ -15,14 +15,12 @@ import {
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { parseResponse } from "@/hooks/api-shapes";
 import { api } from "@/lib/api-client";
+import { integrationKeys } from "./integration-keys";
 import { providerPathSegment } from "./integration-view-model";
 
 /** Queries and mutations for `/api/integrations` and `/api/integrations/:provider/{connect,disconnect,sync,notify-me}`. */
 
-export const integrationKeys = {
-  all: ["org", "integrations"] as const,
-  list: ["org", "integrations", "list"] as const,
-} as const;
+export { integrationKeys };
 
 function actionPath(
   provider: IntegrationProvider,

@@ -1,0 +1,31 @@
+{
+  "name": "@clockoff/integrations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Workforce integrations without I/O dependencies: the provider-agnostic sync core, the Planday API client and Mock Planday. Free of Prisma, Next.js and pino; apps/web adapts it (docs/integrations/PLANDAY_IMPLEMENTATION_PLAN.md §3).",
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts",
+    "./planday": "./src/planday/index.ts",
+    "./planday/mock": "./src/planday/mock/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@clockoff/shared": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@clockoff/config": "workspace:*",
+    "@types/node": "24.19.1",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  }
+}

@@ -259,6 +259,7 @@ export function computeOnboardingSteps(
 export function buildOnboardingResponse(
   steps: Record<OnboardingStepKey, boolean>,
   dismissedAt: string | null,
+  rotaSource: OnboardingResponse["rotaSource"] = null,
 ): OnboardingResponse {
   const items: OnboardingItem[] = ONBOARDING_STEP_KEYS.map((key) => ({
     key,
@@ -273,6 +274,7 @@ export function buildOnboardingResponse(
     totalCount: items.length,
     allDone: completedCount === items.length,
     dismissedAt,
+    rotaSource,
   };
 }
 
@@ -282,12 +284,13 @@ export async function getOnboarding(ctx: ManagerContext): Promise<OnboardingResp
     countOnboardingSignals(ctx.organisation.id),
     prisma.organisation.findUniqueOrThrow({
       where: { id: ctx.organisation.id },
-      select: { onboardingState: true },
+      select: { onboardingState: true, rotaSource: true },
     }),
   ]);
   return buildOnboardingResponse(
     computeOnboardingSteps(signals),
     onboardingDismissedAt(org.onboardingState),
+    org.rotaSource,
   );
 }
 
