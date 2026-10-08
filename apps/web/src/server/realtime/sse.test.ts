@@ -8,10 +8,18 @@ import {
   type EventBus,
   type RealtimeEventHandler,
 } from "@/server/events";
-import { REALTIME_HEARTBEAT_MS, REALTIME_STREAM_MAX_LIFETIME_MS } from "./realtime.service";
-import { RECONNECT_FRAME, createOrganisationEventStream, formatSseFrame } from "./sse";
+import { DEFAULT_REALTIME_STREAM_MAX_LIFETIME_MS, REALTIME_HEARTBEAT_MS } from "./realtime.service";
+import {
+  RECONNECT_FRAME,
+  createOrganisationEventStream,
+  formatSseFrame,
+  openEventStreamCount,
+  resetEventStreamsForTesting,
+  shutdownEventStreams,
+} from "./sse";
 
 afterEach(() => {
+  resetEventStreamsForTesting();
   setEventBusForTesting(undefined);
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -202,6 +210,10 @@ describe("stream lifetime cap", () => {
         handlers.push(handler);
         return () => undefined;
       },
+      subscribeAll: (handler) => {
+        handlers.push(handler);
+        return () => undefined;
+      },
       subscriberCount: () => handlers.length,
     };
     setEventBusForTesting(leakyBus);
@@ -221,12 +233,65 @@ describe("stream lifetime cap", () => {
   });
 });
 
+describe("server shutdown", () => {
+  it("sends the reconnect frame to every open stream, closes it and leaves nothing behind", async () => {
+    vi.useFakeTimers();
+    setEventBusForTesting(new InProcessEventBus());
+    const a = openStream({ maxLifetimeMs: DEFAULT_REALTIME_STREAM_MAX_LIFETIME_MS });
+    const b = openStream();
+    expect(await a.next()).toContain("retry: 5000");
+    expect(await b.next()).toContain("retry: 5000");
+    expect(openEventStreamCount()).toBe(2);
+    expect(getEventBus().subscriberCount(ORG)).toBe(2);
+    const removeListener = vi.spyOn(a.controller.signal, "removeEventListener");
+
+    expect(shutdownEventStreams()).toBe(2);
+    for (const stream of [a, b]) {
+      expect(await stream.next()).toBe(RECONNECT_FRAME);
+      expect(await stream.next()).toBeNull();
+    }
+    expect(openEventStreamCount()).toBe(0);
+    expect(getEventBus().subscriberCount(ORG)).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(removeListener).toHaveBeenCalledWith("abort", expect.any(Function));
+    // Idempotent: nothing left to close.
+    expect(shutdownEventStreams()).toBe(0);
+  });
+
+  it("ends a stream opened while draining at once: retry hint, reconnect frame, no subscription", async () => {
+    vi.useFakeTimers();
+    setEventBusForTesting(new InProcessEventBus());
+    shutdownEventStreams();
+    const { next } = openStream({ maxLifetimeMs: DEFAULT_REALTIME_STREAM_MAX_LIFETIME_MS });
+    expect(await next()).toContain("retry: 5000");
+    expect(await next()).toBe(RECONNECT_FRAME);
+    expect(await next()).toBeNull();
+    expect(getEventBus().subscriberCount(ORG)).toBe(0);
+    expect(openEventStreamCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("forgets streams that ended on their own", async () => {
+    vi.useFakeTimers();
+    setEventBusForTesting(new InProcessEventBus());
+    const { controller, next } = openStream({ maxLifetimeMs: 20_000 });
+    await next();
+    expect(openEventStreamCount()).toBe(1);
+    controller.abort();
+    expect(openEventStreamCount()).toBe(0);
+
+    const capped = openStream({ maxLifetimeMs: 20_000 });
+    await capped.next();
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(openEventStreamCount()).toBe(0);
+    expect(shutdownEventStreams()).toBe(0);
+  });
+});
+
 describe("realtime stream timing", () => {
-  it("pings at least once per stream and ends well inside Netlify's 30 s cut", () => {
-    expect(REALTIME_HEARTBEAT_MS).toBeLessThan(REALTIME_STREAM_MAX_LIFETIME_MS);
-    expect(REALTIME_STREAM_MAX_LIFETIME_MS).toBe(20_000);
+  it("pings at least once per stream: 15 s heartbeat, 5 min default lifetime", () => {
     expect(REALTIME_HEARTBEAT_MS).toBe(15_000);
-    // Margin for cold starts and the auth round trips that run before the stream starts.
-    expect(30_000 - REALTIME_STREAM_MAX_LIFETIME_MS).toBeGreaterThanOrEqual(10_000);
+    expect(DEFAULT_REALTIME_STREAM_MAX_LIFETIME_MS).toBe(300_000);
+    expect(REALTIME_HEARTBEAT_MS).toBeLessThan(DEFAULT_REALTIME_STREAM_MAX_LIFETIME_MS);
   });
 });

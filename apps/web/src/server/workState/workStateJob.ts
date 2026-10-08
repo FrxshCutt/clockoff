@@ -17,7 +17,6 @@ import {
   type DigestAttentionEmployee,
 } from "@/server/digest/digest.service";
 import { publishEvent } from "@/server/events";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import {
   ambiguousTeamWarnings,
   type EmployeePolicyResolution,
@@ -34,8 +33,11 @@ import {
 } from "./workState.service";
 
 /**
- * The server Work Mode job (§10) — `runWorkModeTick(now)`. Runs every minute from `src/jobs/main.ts`
- * (node-cron) and on demand through `POST /api/jobs/tick`. See docs/WORK_MODE_SERVER_JOB.md.
+ * The server Work Mode job (§10) — `runWorkModeTick(now)`. The worker process (`src/worker`) runs it every
+ * minute as three jobs, each under its own Postgres advisory lock: `work-mode-tick` (steps 1–3, with
+ * `sweepOverrides: false, scheduleUpkeep: false`), `override-expiry` (step 4, `sweepExpiredOverrides`) and
+ * `schedule-upkeep` (step 5, `runScheduleUpkeep`). Called without options it runs all five steps (tests,
+ * scripts). See docs/WORK_MODE_SERVER_JOB.md.
  *
  * Order of work (every step idempotent, every write guarded so concurrent ticks never double-emit):
  *   1. Break sweep — ACTIVE sessions whose effective end has passed are closed (`expiredBreakSessionClosures`:
@@ -55,6 +57,16 @@ export interface WorkModeTickOptions {
   log?: Logger;
   /** Skip the manager digest (tests of other steps). Default true. */
   sendDigest?: boolean;
+  /**
+   * Step 4, the override sweep. Default true; the worker's `work-mode-tick` job passes false because the
+   * `override-expiry` job runs it under its own lock.
+   */
+  sweepOverrides?: boolean;
+  /**
+   * Step 5, schedule upkeep. Default true; the worker's `work-mode-tick` job passes false because the
+   * `schedule-upkeep` job runs it under its own lock.
+   */
+  scheduleUpkeep?: boolean;
 }
 
 export interface WorkModeTickReport {
@@ -387,6 +399,42 @@ export async function sweepExpiredOverrides(now: Date): Promise<number> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5. Schedule upkeep
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ScheduleUpkeepReport {
+  recurrencesCreated: number;
+  shiftsCompleted: number;
+  /** `"recurrences"` / `"shifts"` for a step that failed (logged with the error summary). */
+  errors: string[];
+}
+
+/**
+ * Materialise recurring shifts up to the horizon and mark ended shifts COMPLETED (both owned by the shifts
+ * service and idempotent). A failing step is logged and reported; it never prevents the other.
+ */
+export async function runScheduleUpkeep(
+  now: Date,
+  log: Logger = childLogger({ module: "workModeTick" }),
+): Promise<ScheduleUpkeepReport> {
+  const report: ScheduleUpkeepReport = { recurrencesCreated: 0, shiftsCompleted: 0, errors: [] };
+  try {
+    const recurrences = await materialiseRecurrences(undefined, undefined, now);
+    report.recurrencesCreated = recurrences.created;
+  } catch (err) {
+    log.error({ error: errorSummary(err) }, "schedule upkeep: recurrence materialisation failed");
+    report.errors.push("recurrences");
+  }
+  try {
+    report.shiftsCompleted = await markCompletedShifts(now);
+  } catch (err) {
+    log.error({ error: errorSummary(err) }, "schedule upkeep: completing shifts failed");
+    report.errors.push("shifts");
+  }
+  return report;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // The tick
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -429,7 +477,6 @@ export async function runWorkModeTick(
   for (const [organisationId, employeeIds] of candidates) {
     report.organisations += 1;
     try {
-      ensureOrganisationBridged(organisationId);
       const evaluated = await evaluateOrganisation({
         organisationId,
         employeeIds: [...employeeIds],
@@ -490,26 +537,21 @@ export async function runWorkModeTick(
   }
 
   // 4. Overrides that expired without shaping anyone's output still get their event.
-  try {
-    report.overridesExpired = await sweepExpiredOverrides(now);
-  } catch (err) {
-    log.error({ error: errorSummary(err) }, "work mode tick: override sweep failed");
-    report.errors.push("overrides");
+  if (options.sweepOverrides ?? true) {
+    try {
+      report.overridesExpired = await sweepExpiredOverrides(now);
+    } catch (err) {
+      log.error({ error: errorSummary(err) }, "work mode tick: override sweep failed");
+      report.errors.push("overrides");
+    }
   }
 
   // 5. Schedule upkeep (owned by the shifts service; failures never block the tick).
-  try {
-    const recurrences = await materialiseRecurrences(undefined, undefined, now);
-    report.recurrencesCreated = recurrences.created;
-  } catch (err) {
-    log.error({ error: errorSummary(err) }, "work mode tick: recurrence materialisation failed");
-    report.errors.push("recurrences");
-  }
-  try {
-    report.shiftsCompleted = await markCompletedShifts(now);
-  } catch (err) {
-    log.error({ error: errorSummary(err) }, "work mode tick: completing shifts failed");
-    report.errors.push("shifts");
+  if (options.scheduleUpkeep ?? true) {
+    const upkeep = await runScheduleUpkeep(now, log);
+    report.recurrencesCreated = upkeep.recurrencesCreated;
+    report.shiftsCompleted = upkeep.shiftsCompleted;
+    report.errors.push(...upkeep.errors);
   }
 
   report.durationMs = Date.now() - startedAt;

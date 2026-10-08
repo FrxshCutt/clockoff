@@ -15,7 +15,6 @@ env:
   SESSION_SECRET: ci-session-secret-ci-session-secret-ci-session-secret-0000000000000000
   MOBILE_JWT_SECRET: ci-mobile-secret-ci-mobile-secret-ci-mobile-secret-000000000000000000
   INTEGRATION_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-  CRON_SECRET: ci-cron-secret
   APP_URL: http://localhost:3000
   NEXT_PUBLIC_APP_URL: http://localhost:3000
   EMAIL_PROVIDER: console
@@ -65,6 +64,81 @@ jobs:
         run: pnpm test:integration
       - name: Build
         run: pnpm build
+
+  images:
+    # The Railway images, built and run the way Railway runs them: catches standalone tracing gaps (Prisma
+    # engine, argon2, static files), a broken worker bundle and migrate.sh regressions before a deploy does.
+    name: Images — build + smoke test (web, worker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: clockoff
+          POSTGRES_PASSWORD: clockoff
+          POSTGRES_DB: clockoff
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U clockoff -d clockoff"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build web image
+        run: docker build -f docker/web/Dockerfile -t clockoff-web:ci .
+      - name: Build worker image
+        run: docker build -f docker/worker/Dockerfile -t clockoff-worker:ci .
+      - name: Worker bundle loads and lists its jobs
+        run: |
+          out=$(docker run --rm clockoff-worker:ci node main.mjs list)
+          echo "$out"
+          for job in work-mode-tick override-expiry schedule-upkeep integrations-sync; do
+            echo "$out" | grep -q -- "$job" || { echo "missing job: $job"; exit 1; }
+          done
+      - name: Worker native modules load
+        run: docker run --rm clockoff-worker:ci node -e "require('@prisma/client'); require('@node-rs/argon2')"
+      - name: Database extensions
+        run: PGPASSWORD=clockoff psql -h localhost -U clockoff -d clockoff -c "CREATE EXTENSION IF NOT EXISTS citext; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+      - name: Pre-deploy migrations (web image, /app/migrate.sh)
+        run: docker run --rm --network host -e DATABASE_URL clockoff-web:ci /app/migrate.sh
+      - name: Start web and worker
+        # Variables are passed by name (-e VAR), so no value is echoed. Both read DIRECT_URL (LISTEN/NOTIFY,
+        # advisory locks); the local Postgres is not pooled, so it is the same URL as DATABASE_URL.
+        run: |
+          common="-e DATABASE_URL -e SESSION_SECRET -e MOBILE_JWT_SECRET -e INTEGRATION_ENCRYPTION_KEY -e APP_URL -e NEXT_PUBLIC_APP_URL -e EMAIL_PROVIDER -e RATE_LIMIT_BACKEND"
+          docker run -d --name ck-web --network host $common -e DIRECT_URL="$DATABASE_URL" clockoff-web:ci
+          docker run -d --name ck-worker --network host $common -e DIRECT_URL="$DATABASE_URL" clockoff-worker:ci
+      - name: Health is 200 with a fresh worker heartbeat AND jobs running
+        # A fresh heartbeat alone is not enough: a worker with its jobs switched off (or never started)
+        # still beats. worker.jobs "ok" means a work-mode-tick succeeded within the last 3 minutes.
+        run: |
+          for i in $(seq 1 45); do
+            body=$(curl -fsS localhost:3000/api/health || true)
+            if [ -n "$body" ] \
+              && [ "$(echo "$body" | jq -r '.worker.status')" = "fresh" ] \
+              && [ "$(echo "$body" | jq -r '.worker.jobs')" = "ok" ] \
+              && [ "$(echo "$body" | jq -r '.worker.lastSuccessfulTickAt')" != "null" ]; then
+              echo "$body" | jq .
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "health never reported a fresh worker with jobs ok within 90 s; last body: $body"
+          exit 1
+      - name: Marketing page and login page render
+        run: |
+          curl -fsS -o /dev/null localhost:3000/
+          curl -fsS -o /dev/null localhost:3000/login
+      - name: Stop containers gracefully (SIGTERM), then show their logs
+        if: always()
+        run: |
+          docker stop -t 40 ck-web ck-worker || true
+          for c in ck-web ck-worker; do
+            echo "::group::$c (exit code $(docker inspect -f '{{.State.ExitCode}}' $c 2>/dev/null || echo n/a))"
+            docker logs $c || true
+            echo "::endgroup::"
+          done
+          docker rm -f ck-web ck-worker || true
 
   ios:
     name: iOS — build + test (simulator, mock provider)

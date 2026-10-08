@@ -1,0 +1,32 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "docker/web/Dockerfile",
+    "watchPatterns": [
+      "apps/web/**",
+      "packages/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      ".npmrc",
+      "tsconfig.base.json",
+      ".dockerignore",
+      "docker/web/**",
+      "railway/web.json"
+    ]
+  },
+  "deploy": {
+    "preDeployCommand": "/app/migrate.sh",
+    "preDeployTimeoutSeconds": 300,
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "numReplicas": 1,
+    "sleepApplication": false,
+    "overlapSeconds": 15,
+    "drainingSeconds": 30,
+    "limitOverride": { "containers": { "memoryBytes": 536870912 } }
+  }
+}

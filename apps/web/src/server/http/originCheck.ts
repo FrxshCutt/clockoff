@@ -3,11 +3,11 @@
  *
  * Non-GET `/api/*` calls from browsers must carry `Origin: <APP_URL origin>`. Requests without an
  * Origin header are only accepted when the browser says they are same-origin (`Sec-Fetch-Site`).
- * The mobile app (`/api/mobile/**`) and the scheduler (`/api/jobs/**`) are not browsers and are
- * authenticated by bearer tokens instead.
+ * The mobile app (`/api/mobile/**`) is not a browser and is authenticated by bearer tokens instead.
+ * Nothing else is exempt: background jobs run in the worker process, not behind an HTTP route.
  */
 
-export const ORIGIN_CHECK_EXEMPT_PREFIXES = ["/api/mobile/", "/api/jobs/"] as const;
+export const ORIGIN_CHECK_EXEMPT_PREFIXES = ["/api/mobile/"] as const;
 
 export function isOriginCheckExempt(pathname: string): boolean {
   return ORIGIN_CHECK_EXEMPT_PREFIXES.some(

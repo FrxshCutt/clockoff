@@ -9,3 +9,5 @@ export {
 } from "./integrations.service";
 export { findIntegration, findIntegrations } from "./integrations.repository";
 export type { IntegrationRow } from "./integrations.repository";
+export { runScheduledIntegrationSyncs } from "./scheduledSync";
+export type { ScheduledSyncOptions, ScheduledSyncReport } from "./scheduledSync";

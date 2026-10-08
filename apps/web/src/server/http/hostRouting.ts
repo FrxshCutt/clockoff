@@ -8,8 +8,9 @@
  * dashboard's cookies are only ever set on `app.DOMAIN`. Edge-safe (no Node APIs): the middleware runs it.
  *
  * Off unless `HOST_ROUTING=on` and both `APP_URL` and `MARKETING_URL` are valid URLs on different hosts.
- * Requests to any other host (localhost, `*.netlify.app` and deploy-preview URLs) are never touched, so local
- * development and preview deployments keep serving everything from one origin.
+ * Requests to any other host (localhost, the platform's own `*.up.railway.app` service domains, the
+ * health-check probe) are never touched, so local development and pre-DNS testing keep serving
+ * everything from one origin.
  */
 
 /** Top-level marketing pages (`src/app/(marketing)/**`). A test keeps this list in sync with the folder. */
@@ -143,7 +144,7 @@ export function routeByHost(
     return { action: "next" };
   }
 
-  // Unknown host (localhost, *.netlify.app, deploy previews): serve everything as-is.
+  // Unknown host (localhost, *.up.railway.app, health-check probes): serve everything as-is.
   return { action: "next" };
 }
 

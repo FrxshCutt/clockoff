@@ -20,11 +20,25 @@ describe("checkRequestOrigin", () => {
     expect(
       checkRequestOrigin({ ...base, method: "POST", pathname: "/api/mobile/v1/sync" }).ok,
     ).toBe(true);
-    expect(checkRequestOrigin({ ...base, method: "POST", pathname: "/api/jobs/tick" }).ok).toBe(
-      true,
-    );
     expect(isOriginCheckExempt("/api/mobile")).toBe(true);
     expect(isOriginCheckExempt("/api/mobilex")).toBe(false);
+  });
+
+  it("no longer exempts the former scheduler prefix /api/jobs/", () => {
+    expect(isOriginCheckExempt("/api/jobs/run")).toBe(false);
+    expect(isOriginCheckExempt("/api/jobs")).toBe(false);
+    expect(
+      checkRequestOrigin({
+        ...base,
+        method: "POST",
+        pathname: "/api/jobs/x",
+        origin: "https://evil.example",
+      }),
+    ).toEqual({ ok: false, reason: "origin_mismatch" });
+    expect(checkRequestOrigin({ ...base, method: "POST", pathname: "/api/jobs/run" })).toEqual({
+      ok: false,
+      reason: "origin_missing",
+    });
   });
 
   it("requires the exact APP_URL origin on mutating API calls", () => {

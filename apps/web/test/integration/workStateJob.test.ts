@@ -1,21 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@clockoff/db";
-import { afterEach, describe, expect, it } from "vitest";
-import { POST as tickRoute } from "@/app/api/jobs/tick/route";
+import { describe, expect, it } from "vitest";
 import { GET as syncRoute } from "@/app/api/mobile/v1/sync/route";
-import { encrypt } from "@/lib/crypto";
-import { env } from "@/lib/env";
-import { getEventBus, publishEvent, type RealtimeEvent } from "@/server/events";
+import { getEventBus, type RealtimeEvent } from "@/server/events";
 import { issueMobileTokens } from "@/server/mobileAuth";
-import type { AlertPushPayload, PushProvider, PushReport, SilentPushPayload } from "@/server/push";
-import { setPushProviderForTesting } from "@/server/push";
-import {
-  ensureOrganisationBridged,
-  flushPushBridge,
-  resetPushBridgeForTesting,
-} from "@/server/realtime/pushBridge";
 import { SYNC_DELAYED_MARKER } from "@/server/workState/workState.service";
-import { runWorkModeTick, scheduledBreakClientId } from "@/server/workState/workStateJob";
+import {
+  runScheduleUpkeep,
+  runWorkModeTick,
+  scheduledBreakClientId,
+  sweepExpiredOverrides,
+} from "@/server/workState/workStateJob";
 import { DIGEST_NOTIFICATION_TYPE } from "@/server/digest/digest.service";
 import {
   callRoute,
@@ -24,43 +19,10 @@ import {
   createTestUser,
   addMember,
   testEmails,
-  type ErrorBody,
 } from "../helpers";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
-
-/** Test-only push double: records what would have been sent. */
-class MockPushProvider implements PushProvider {
-  readonly name = "noop" as const;
-  readonly silent: Array<{ tokens: string[]; payload: SilentPushPayload }> = [];
-  async sendSilent(deviceTokens: string[], payload: SilentPushPayload): Promise<PushReport> {
-    this.silent.push({ tokens: deviceTokens, payload });
-    return {
-      provider: "noop",
-      requested: deviceTokens.length,
-      sent: deviceTokens.length,
-      failed: 0,
-      invalidTokens: [],
-      failures: [],
-    };
-  }
-  async sendAlert(deviceTokens: string[], _payload: AlertPushPayload): Promise<PushReport> {
-    return {
-      provider: "noop",
-      requested: deviceTokens.length,
-      sent: 0,
-      failed: 0,
-      invalidTokens: [],
-      failures: [],
-    };
-  }
-}
-
-afterEach(() => {
-  resetPushBridgeForTesting();
-  setPushProviderForTesting(undefined);
-});
 
 async function connectedFixture(now: Date) {
   const org = await createTestOrg();
@@ -451,94 +413,104 @@ describe("runWorkModeTick", () => {
   });
 });
 
-describe("push bridge", () => {
-  it("sends one debounced silent push per affected device with the decrypted token", async () => {
+describe("runWorkModeTick options (the worker's job split)", () => {
+  it("sweepOverrides: false leaves expired overrides to the override-expiry job, which emits once", async () => {
     const now = new Date();
-    const provider = new MockPushProvider();
-    setPushProviderForTesting(provider);
-    const { org, employee, device } = await connectedFixture(now);
-    const other = await createTestDevice(org.organisation.id);
-    const token = "ab".repeat(32);
-    await prisma.device.update({
-      where: { id: device.id },
+    const { org, employee } = await connectedFixture(now);
+    const expired = await prisma.managerOverride.create({
       data: {
-        pushTokenEncrypted: new Uint8Array(
-          encrypt(JSON.stringify({ token, environment: "sandbox" })),
-        ),
+        organisationId: org.organisation.id,
+        employeeId: employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        reason: "cover",
+        startsAt: new Date(now.getTime() - 2 * HOUR),
+        expiresAt: new Date(now.getTime() - MINUTE),
       },
     });
-    await prisma.device.update({
-      where: { id: other.device.id },
-      data: {
-        pushTokenEncrypted: new Uint8Array(
-          encrypt(JSON.stringify({ token: "cd".repeat(32), environment: "sandbox" })),
-        ),
-      },
-    });
-    ensureOrganisationBridged(org.organisation.id);
 
-    publishEvent({
-      type: "POLICY_CHANGED",
-      organisationId: org.organisation.id,
-      payload: { policyId: randomUUID(), reason: "PUBLISHED", affectedEmployeeIds: [employee.id] },
+    const tick = await runWorkModeTick(now, {
+      sendDigest: false,
+      sweepOverrides: false,
+      scheduleUpkeep: false,
     });
-    publishEvent({
-      type: "SCHEDULE_CHANGED",
-      organisationId: org.organisation.id,
-      employeeId: employee.id,
-      payload: { employeeId: employee.id, shiftIds: [randomUUID()], reason: "UPDATED" },
-    });
-    await flushPushBridge();
-    expect(provider.silent).toHaveLength(1);
-    expect(provider.silent[0]!.tokens).toEqual([token]);
-    expect(provider.silent[0]!.payload.reason).toBe("policy_changed,schedule_changed");
+    expect(tick.overridesExpired).toBe(0);
+    expect(
+      (await prisma.managerOverride.findUniqueOrThrow({ where: { id: expired.id } }))
+        .expiredEventEmittedAt,
+    ).toBeNull();
+    expect(await countEvents(employee.id, org.organisation.id, "OVERRIDE_EXPIRED")).toBe(0);
 
-    // Organisation-wide override → every device with a token.
-    publishEvent({
-      type: "OVERRIDE_CREATED",
-      organisationId: org.organisation.id,
-      payload: { overrideId: randomUUID(), type: "EMERGENCY_POLICY_OVERRIDE", employeeId: null },
-    });
-    await flushPushBridge();
-    expect(provider.silent).toHaveLength(3);
-    const tokens = provider.silent
-      .slice(1)
-      .flatMap((s) => s.tokens)
-      .sort();
-    expect(tokens).toEqual([token, "cd".repeat(32)].sort());
-
-    // Unrelated event kinds are ignored.
-    publishEvent({ type: "activity.recorded", organisationId: org.organisation.id, payload: {} });
-    await flushPushBridge();
-    expect(provider.silent).toHaveLength(3);
+    // The override-expiry job (the test database is shared, so the sweep count is a lower bound).
+    expect(await sweepExpiredOverrides(now)).toBeGreaterThanOrEqual(1);
+    await sweepExpiredOverrides(new Date(now.getTime() + MINUTE));
+    expect(await countEvents(employee.id, org.organisation.id, "OVERRIDE_EXPIRED")).toBe(1);
+    expect(
+      (await prisma.managerOverride.findUniqueOrThrow({ where: { id: expired.id } }))
+        .expiredEventEmittedAt,
+    ).not.toBeNull();
   });
-});
 
-describe("POST /api/jobs/tick", () => {
-  it("requires the scheduler secret and returns the tick report", async () => {
-    const anonymous = await callRoute<ErrorBody>(tickRoute, {
-      method: "POST",
-      path: "/api/jobs/tick",
-    });
-    expect(anonymous.status).toBe(401);
-    const wrong = await callRoute<ErrorBody>(tickRoute, {
-      method: "POST",
-      path: "/api/jobs/tick",
-      headers: { authorization: "Bearer not-the-secret" },
-    });
-    expect(wrong.status).toBe(401);
-
-    const res = await callRoute<{ ok: boolean; report: { now: string; errors: string[] } }>(
-      tickRoute,
-      {
-        method: "POST",
-        path: "/api/jobs/tick",
-        headers: { authorization: `Bearer ${env().CRON_SECRET}` },
+  it("scheduleUpkeep: false leaves ended shifts to the schedule-upkeep job", async () => {
+    const now = new Date();
+    const { org, employee } = await connectedFixture(now);
+    const ended = await prisma.shift.create({
+      data: {
+        organisationId: org.organisation.id,
+        employeeId: employee.id,
+        startsAt: new Date(now.getTime() - 7 * HOUR),
+        endsAt: new Date(now.getTime() - 3 * HOUR),
+        timezone: "Europe/London",
       },
+    });
+
+    const tick = await runWorkModeTick(now, {
+      sendDigest: false,
+      sweepOverrides: false,
+      scheduleUpkeep: false,
+    });
+    expect(tick.shiftsCompleted).toBe(0);
+    expect(tick.recurrencesCreated).toBe(0);
+    expect((await prisma.shift.findUniqueOrThrow({ where: { id: ended.id } })).status).toBe(
+      "SCHEDULED",
     );
-    expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(res.body.report.errors).toEqual([]);
-    expect(Date.parse(res.body.report.now)).not.toBeNaN();
+
+    const upkeep = await runScheduleUpkeep(now);
+    expect(upkeep.errors).toEqual([]);
+    expect(upkeep.shiftsCompleted).toBeGreaterThanOrEqual(1);
+    expect((await prisma.shift.findUniqueOrThrow({ where: { id: ended.id } })).status).toBe(
+      "COMPLETED",
+    );
+  });
+
+  it("runs every step by default (override sweep and schedule upkeep included)", async () => {
+    const now = new Date();
+    const { org, employee } = await connectedFixture(now);
+    await prisma.managerOverride.create({
+      data: {
+        organisationId: org.organisation.id,
+        employeeId: employee.id,
+        type: "EXEMPT_TEMPORARILY",
+        reason: "cover",
+        startsAt: new Date(now.getTime() - 2 * HOUR),
+        expiresAt: new Date(now.getTime() - MINUTE),
+      },
+    });
+    const ended = await prisma.shift.create({
+      data: {
+        organisationId: org.organisation.id,
+        employeeId: employee.id,
+        startsAt: new Date(now.getTime() - 7 * HOUR),
+        endsAt: new Date(now.getTime() - 3 * HOUR),
+        timezone: "Europe/London",
+      },
+    });
+
+    const tick = await runWorkModeTick(now, { sendDigest: false });
+    expect(tick.overridesExpired).toBeGreaterThanOrEqual(1);
+    expect(tick.shiftsCompleted).toBeGreaterThanOrEqual(1);
+    expect(await countEvents(employee.id, org.organisation.id, "OVERRIDE_EXPIRED")).toBe(1);
+    expect((await prisma.shift.findUniqueOrThrow({ where: { id: ended.id } })).status).toBe(
+      "COMPLETED",
+    );
   });
 });

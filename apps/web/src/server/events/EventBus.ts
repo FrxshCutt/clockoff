@@ -1,7 +1,7 @@
 /**
- * Realtime events fan out from the server to dashboard SSE streams (per organisation).
- * `type` is an open string so feature engineers can add kinds without touching this file; the
- * known kinds are listed in {@link REALTIME_EVENT_TYPES} for discoverability.
+ * Realtime events fan out from the server to dashboard SSE streams (per organisation) and to the device
+ * push bridge. `type` is an open string so feature engineers can add kinds without touching this file;
+ * the known kinds are listed in {@link REALTIME_EVENT_TYPES} for discoverability.
  */
 export const REALTIME_EVENT_TYPES = [
   "activity.recorded",
@@ -27,11 +27,34 @@ export const REALTIME_EVENT_TYPES = [
 ] as const;
 export type KnownRealtimeEventType = (typeof REALTIME_EVENT_TYPES)[number];
 
+/**
+ * Bus event kinds that make a device re-sync (consumed by `server/realtime/pushBridge.ts`). Declared here,
+ * next to the bus, because the cross-process bus must never drop them when its send queue overflows.
+ * `SCHEDULE_CHANGED` is a push-only kind: the dashboard listens for `shift.changed` instead.
+ */
+export const PUSH_BRIDGE_EVENT_TYPES = [
+  "POLICY_CHANGED",
+  "BREAK_POLICY_CHANGED",
+  "SCHEDULE_CHANGED",
+  "OVERRIDE_CREATED",
+  "OVERRIDE_REVOKED",
+  "OVERRIDE_EXPIRED",
+] as const;
+export type PushBridgeEventType = (typeof PUSH_BRIDGE_EVENT_TYPES)[number];
+
+export function isPushBridgeEventType(type: string): type is PushBridgeEventType {
+  return (PUSH_BRIDGE_EVENT_TYPES as readonly string[]).includes(type);
+}
+
 export interface RealtimeEvent {
   type: KnownRealtimeEventType | (string & {});
   organisationId: string;
   employeeId?: string;
-  /** JSON-serialisable, operational data only (never PII — §12). */
+  /**
+   * JSON-serialisable, operational data only (never PII — §12). `{ truncated: true }` alone means the
+   * cross-process bus could not carry the original payload (too large, or coalesced in an overflow):
+   * treat the event as "refetch" (dashboards) / "every device of the organisation" (push bridge).
+   */
   payload: Record<string, unknown>;
   /** ISO-8601 UTC instant. */
   at: string;
@@ -44,6 +67,8 @@ export interface EventBus {
   publish(event: RealtimeEvent): void;
   /** Receive every event for `organisationId`. Returns the unsubscribe function. */
   subscribe(organisationId: string, handler: RealtimeEventHandler): Unsubscribe;
+  /** Receive every event of every organisation (the push bridge). Returns the unsubscribe function. */
+  subscribeAll(handler: RealtimeEventHandler): Unsubscribe;
   /** Number of live subscribers for an organisation (diagnostics / tests). */
   subscriberCount(organisationId: string): number;
 }

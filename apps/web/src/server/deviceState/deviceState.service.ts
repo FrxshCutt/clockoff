@@ -7,7 +7,6 @@ import type { PermissionState, SelectionState, WorkModeState } from "@clockoff/s
 import type { DeviceStateReportInput, DeviceStateResponse } from "@clockoff/validation/mobile";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { publishEvent } from "@/server/events";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import { policyVersionExistsInOrganisation, updateDevice } from "@/server/sync/sync.repository";
 import type { DeviceContext } from "@/server/tenancy/context";
 import { recomputeEmployeeInviteStatus } from "@/server/workState/externalServices";
@@ -102,7 +101,6 @@ export async function reportDeviceState(
   const organisationId = ctx.organisation.id;
   const employeeId = ctx.employee.id;
   const previous = ctx.device;
-  ensureOrganisationBridged(organisationId);
 
   const clockSkewSeconds = computeClockSkewSeconds(new Date(input.localTime), now);
   const policyVersionId =

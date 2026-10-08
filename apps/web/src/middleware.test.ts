@@ -55,7 +55,7 @@ describe("middleware", () => {
     expect(crossSite.status).toBe(403);
   });
 
-  it("allows same-origin mutating calls and exempts mobile + jobs APIs", () => {
+  it("allows same-origin mutating calls and exempts only the mobile API", () => {
     expect(
       middleware(req("/api/auth/login", { method: "POST", headers: { origin: APP } })).status,
     ).toBe(200);
@@ -65,7 +65,13 @@ describe("middleware", () => {
       ).status,
     ).toBe(200);
     expect(middleware(req("/api/mobile/v1/refresh", { method: "POST" })).status).toBe(200);
-    expect(middleware(req("/api/jobs/tick", { method: "POST" })).status).toBe(200);
+    // The former scheduler prefix is not exempt: no jobs run behind HTTP any more.
+    expect(middleware(req("/api/jobs/run", { method: "POST" })).status).toBe(403);
+    expect(
+      middleware(
+        req("/api/jobs/x", { method: "POST", headers: { origin: "https://evil.example" } }),
+      ).status,
+    ).toBe(403);
     expect(middleware(req("/login", { method: "POST" })).status).toBe(200);
   });
 
@@ -166,13 +172,13 @@ describe("middleware with hostname routing on", () => {
     expect(crossHost.status).toBe(403);
   });
 
-  it("sends the app root to /overview and leaves preview hosts alone", () => {
+  it("sends the app root to /overview and leaves platform hosts alone", () => {
     const root = withEnv(ROUTING, () => middleware(hostReq("https://app.example.com/")));
     expect(root.status).toBe(307);
     expect(root.headers.get("location")).toBe("https://app.example.com/overview");
-    const preview = withEnv(ROUTING, () =>
-      middleware(hostReq("https://deploy-preview-12--clockoff.netlify.app/login")),
+    const platform = withEnv(ROUTING, () =>
+      middleware(hostReq("https://web-production-1a2b.up.railway.app/login")),
     );
-    expect(preview.headers.get("location")).toBeNull();
+    expect(platform.headers.get("location")).toBeNull();
   });
 });

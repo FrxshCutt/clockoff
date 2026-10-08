@@ -58,9 +58,11 @@ describe("routeByHost", () => {
     });
   });
 
-  it("never touches unknown hosts (localhost, preview deployments)", () => {
+  it("never touches unknown hosts (localhost, platform service domains, health probes)", () => {
     expect(route("localhost:3000", "/overview")).toEqual({ action: "next" });
-    expect(route("clockoff.netlify.app", "/")).toEqual({ action: "next" });
+    expect(route("web-production-1a2b.up.railway.app", "/")).toEqual({ action: "next" });
+    expect(route("web-production-1a2b.up.railway.app", "/overview")).toEqual({ action: "next" });
+    expect(route("healthcheck.railway.app", "/api/health")).toEqual({ action: "next" });
   });
 
   it("redirects www to the apex, keeping path and query", () => {

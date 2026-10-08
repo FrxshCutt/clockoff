@@ -5,8 +5,11 @@ declare global {
 }
 
 /**
- * Prisma client singleton. Next.js dev hot-reloading would otherwise create a new
- * connection pool on every reload, so the instance is cached on `globalThis`.
+ * Prisma client singleton, cached on `globalThis` in every environment:
+ * - Next.js dev hot-reloading would otherwise create a new connection pool on every reload;
+ * - in production Next.js bundles this module into separate webpack layers (the instrumentation hook and
+ *   the route handlers), each with its own module state, so the cache also dedupes the client across
+ *   those layers and the web process runs one query engine and one connection pool.
  */
 export function createPrismaClient(datasourceUrl?: string): PrismaClient {
   return new PrismaClient({
@@ -17,6 +20,4 @@ export function createPrismaClient(datasourceUrl?: string): PrismaClient {
 
 export const prisma: PrismaClient = globalThis.__clockoffPrisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalThis.__clockoffPrisma = prisma;
-}
+globalThis.__clockoffPrisma = prisma;

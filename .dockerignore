@@ -1,0 +1,25 @@
+# Build context for docker/web/Dockerfile and docker/worker/Dockerfile (context = repo root).
+# Dependencies are installed inside the image from pnpm-lock.yaml; nothing local is copied in.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+**/*.log
+**/.DS_Store
+
+# Secrets never enter an image: runtime configuration comes from the platform's variables.
+**/.env
+**/.env.*
+
+.git
+.github
+.netlify
+apps/ios
+apps/web/e2e/screenshots
+awesome-design-md
+docs
+deno.lock

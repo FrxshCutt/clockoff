@@ -62,8 +62,8 @@ const INITIAL_STATE: RealtimeConnectionState = { status: "reconnecting", connect
  * (events are hints, never data — §5). Mounted once by `<RealtimeProvider>`; pages call `useRealtime()` for
  * the status. The decisions live in `realtime-model.ts`; this hook only wires them up:
  *
- * - **Planned reconnect.** The server ends every stream after 20 s with an `event: reconnect` control frame
- *   (`REALTIME_RECONNECT_EVENT`). If the stream had been open for `minHealthyStreamMs`, the hook reconnects
+ * - **Planned reconnect.** The server ends every stream after its lifetime cap (and when it shuts down) with
+ *   an `event: reconnect` control frame (`REALTIME_RECONNECT_EVENT`). If the stream had been open for `minHealthyStreamMs`, the hook reconnects
  *   after 100–400 ms without changing status (no "Reconnecting…" flash, nothing announced) and without the
  *   refetch-all on reopen. The polling flip is still armed from the close: if the replacement fails it is an
  *   unplanned drop dated from the close, and if it has not opened 10 s after the close the status goes
@@ -74,8 +74,8 @@ const INITIAL_STATE: RealtimeConnectionState = { status: "reconnecting", connect
  *   hot-looping — then everything realtime-backed is refetched once on reopen. After 10 s down it falls back
  *   to invalidating every realtime-backed query every 30 s.
  * - **Explicit refresh.** While connected it invalidates every realtime-backed query every 30 s
- *   (`refreshIntervalMs`), kept across planned reconnects: the server's bus is per instance, so events raised
- *   on another instance arrive this way.
+ *   (`refreshIntervalMs`), kept across planned reconnects: events raised while the server's listener or this
+ *   stream was reconnecting arrive this way.
  */
 export function useRealtimeConnection(
   options: { enabled?: boolean } = {},

@@ -18,7 +18,6 @@ content = content
   .replace(
     'INTEGRATION_ENCRYPTION_KEY="replace-with-base64-32-bytes"',
     `INTEGRATION_ENCRYPTION_KEY="${randomBytes(32).toString("base64")}"`,
-  )
-  .replace('CRON_SECRET="replace-with-random-string"', `CRON_SECRET="${hex()}"`);
+  );
 writeFileSync(target, content);
 console.log("Created .env with generated secrets.");

@@ -11,7 +11,6 @@ import { MOBILE_LIMITS } from "@clockoff/validation/mobile";
 import type { OkResponse } from "@clockoff/validation/primitives";
 import { encrypt } from "@/lib/crypto";
 import { recordActivity } from "@/server/activity/recordActivity";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import type { DeviceContext } from "@/server/tenancy/context";
 import {
   computePolicyVersionString,
@@ -133,7 +132,6 @@ export async function getSyncBundle(
 ): Promise<MobileSyncResponse> {
   const organisationId = ctx.organisation.id;
   const employeeId = ctx.employee.id;
-  ensureOrganisationBridged(organisationId);
   const { from, to } = scheduleWindow(now);
 
   const [evaluated, shifts, overrides, scheduleVersion] = await Promise.all([

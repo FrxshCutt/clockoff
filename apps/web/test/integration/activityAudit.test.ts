@@ -1,10 +1,9 @@
 import { prisma } from "@clockoff/db";
 import { describe, expect, it } from "vitest";
-import { GET as healthRoute } from "@/app/api/health/route";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { getEventBus, type RealtimeEvent } from "@/server/events";
-import { callRoute, createTestDevice, createTestOrg } from "../helpers";
+import { createTestDevice, createTestOrg } from "../helpers";
 
 describe("recordActivity", () => {
   it("writes the event, publishes it to the organisation's subscribers only, and is idempotent per device", async () => {
@@ -130,19 +129,5 @@ describe("audit with empty snapshots", () => {
     expect(row.before).toBeNull();
     expect(row.after).toBeNull();
     expect(row.actorUserId).toBeNull();
-  });
-});
-
-describe("GET /api/health", () => {
-  it("reports database reachability and that every migration is applied", async () => {
-    const res = await callRoute<{ status: string; database: string; migrations: string }>(
-      healthRoute,
-      {
-        path: "/api/health",
-      },
-    );
-    expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ status: "ok", database: "ok", migrations: "up_to_date" });
-    expect(Object.keys(res.body).sort()).toEqual(["database", "migrations", "status", "time"]);
   });
 });

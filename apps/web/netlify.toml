@@ -1,7 +1,9 @@
-# Netlify build for the web app (docs/DEPLOYMENT.md).
+# RETIRED at the Railway cutover: production runs on Railway (railway/web.json + railway/worker.json,
+# docker/web + docker/worker). This file only lets the old Netlify site keep building until DNS moves;
+# it is deleted (with build:netlify and @netlify/plugin-nextjs) once Railway serves every hostname.
+# It schedules nothing: background jobs run only in the Railway worker service.
+#
 # Monorepo layout: Netlify site "Package directory" = apps/web (this file's folder), base directory = repo root.
-# Next.js runs on Netlify's Next.js runtime (OpenNext-based): pages + route handlers become one Netlify
-# Function, src/middleware.ts becomes an Edge Function. pnpm installs the whole workspace.
 
 [build]
   command = "pnpm --filter @clockoff/web run build:netlify"   # prisma generate → next build
@@ -11,10 +13,6 @@
   NODE_VERSION = "22"
   # Use the pnpm pinned in package.json#packageManager.
   PNPM_VERSION = "11.10.0"
-
-[functions]
-  # Scheduled function that runs the Work Mode tick every minute (netlify/functions/work-mode-tick.mts).
-  directory = "apps/web/netlify/functions"   # relative to the base directory (repo root)
 
 # Netlify's Next.js runtime. Declared explicitly (and pinned in apps/web devDependencies) because framework
 # auto-detection looks at the base directory (repo root), which has no "next" dependency.

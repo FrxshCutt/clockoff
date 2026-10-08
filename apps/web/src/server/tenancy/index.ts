@@ -12,7 +12,6 @@ export {
 } from "./context";
 export type {
   AnyContext,
-  CronContext,
   DeviceContext,
   ManagerContext,
   ManagerContextOptions,

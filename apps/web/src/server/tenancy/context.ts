@@ -57,12 +57,7 @@ export interface DeviceContext extends RequestMeta {
   mobileUser: MobileUser;
 }
 
-/** A trusted scheduler call (`CRON_SECRET`). */
-export interface CronContext extends RequestMeta {
-  kind: "cron";
-}
-
-export type AnyContext = UserContext | ManagerContext | DeviceContext | CronContext;
+export type AnyContext = UserContext | ManagerContext | DeviceContext;
 
 export function getRequestMeta(req: Request): RequestMeta {
   return { requestId: getRequestId(req), ip: getClientIp(req), userAgent: getUserAgent(req) };

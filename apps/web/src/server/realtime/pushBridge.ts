@@ -1,20 +1,33 @@
 import { prisma } from "@clockoff/db";
 import { decryptToString } from "@/lib/crypto";
 import { childLogger, errorSummary } from "@/lib/logger";
-import { getEventBus, type EventBus, type RealtimeEvent, type Unsubscribe } from "@/server/events";
+import {
+  getEventBus,
+  isPushBridgeEventType,
+  type EventBus,
+  type PushBridgeEventType,
+  type RealtimeEvent,
+  type Unsubscribe,
+} from "@/server/events";
 import { getPushProvider } from "@/server/push";
 
 /**
  * Bus → silent push bridge (§10). When a policy, break policy, schedule or override changes, the
- * employees' phones must re-sync; this module turns the organisation bus events below into
- * content-available pushes through the configured `PushProvider`, debounced per device so a burst of
- * edits (bulk import, series update) sends one push.
+ * employees' phones must re-sync; this module turns the bus events below into content-available pushes
+ * through the configured `PushProvider`, debounced per device so a burst of edits (bulk import, series
+ * update) sends one push.
  *
- * The in-process bus is keyed by organisation, so there is no wildcard subscription: an organisation is
- * bridged lazily by `ensureOrganisationBridged` (called from the mobile endpoints, the overrides service,
- * the realtime stream and every job tick) and eagerly by `startPushBridge()` in the job process for every
- * organisation with an active device. Subscriptions are tracked per bus instance, so a test that installs
- * a fresh `InProcessEventBus` re-bridges cleanly.
+ * Ownership: the realtime bus carries every event to every process (Postgres LISTEN/NOTIFY), so a bridge
+ * in more than one process would push every change twice. Only the worker that holds the push-bridge
+ * leadership lease calls {@link enablePushBridge} (one all-organisations subscription); it calls
+ * {@link disablePushBridge} when it loses the lease or shuts down. The web process never bridges. The
+ * leader also passes `stillLeader` (its lease is still held): checked when an event arrives, when a
+ * device lookup finishes and right before each send, so a leader whose lock session just died sends
+ * nothing more, even before it has disabled the bridge.
+ *
+ * A truncated event (`payload: { truncated: true }`, see `server/events/envelope.ts`) has lost its
+ * employee list: policy events then reach every active device of the organisation (a safe superset),
+ * schedule and override events keep their top-level `employeeId` when they had one.
  *
  * Privacy (§12): tokens are decrypted only for the provider call and never logged; log lines carry counts
  * and reasons only.
@@ -22,16 +35,9 @@ import { getPushProvider } from "@/server/push";
 
 export const PUSH_DEBOUNCE_MS = 5_000;
 
-/** Bus event kinds that make a device re-sync. */
-export const PUSH_BRIDGE_EVENT_TYPES = [
-  "POLICY_CHANGED",
-  "BREAK_POLICY_CHANGED",
-  "SCHEDULE_CHANGED",
-  "OVERRIDE_CREATED",
-  "OVERRIDE_REVOKED",
-  "OVERRIDE_EXPIRED",
-] as const;
-export type PushBridgeEventType = (typeof PUSH_BRIDGE_EVENT_TYPES)[number];
+/** Bus event kinds that make a device re-sync (declared next to the bus, which never drops them). */
+export { PUSH_BRIDGE_EVENT_TYPES } from "@/server/events";
+export type { PushBridgeEventType } from "@/server/events";
 
 const PUSH_REASON: Record<PushBridgeEventType, string> = {
   POLICY_CHANGED: "policy_changed",
@@ -49,14 +55,21 @@ interface PendingPush {
 }
 
 interface PushBridgeState {
-  /** Organisations bridged on each bus instance → their unsubscribe functions. */
-  bridged: WeakMap<EventBus, Map<string, Unsubscribe>>;
+  /** The all-organisations bus subscription while enabled (worker leader only). */
+  subscription: { bus: EventBus; unsubscribe: Unsubscribe } | null;
   /** Debounced pushes by device id. */
   pending: Map<string, PendingPush>;
-  /** Device lookups still running (awaited by `flushPushBridgeForTesting`). */
+  /** Device lookups still running (awaited by `flushPushBridge`). */
   inFlight: Set<Promise<void>>;
   /** Pushes delivered since the last reset (diagnostics / tests). */
   delivered: number;
+  /** The leader's "lease still held" check while enabled (null: always allowed). */
+  stillLeader: (() => boolean) | null;
+  /**
+   * Bumped by every disable: a device lookup started before a `flush: false` disable finds a newer epoch
+   * when it completes and enqueues nothing.
+   */
+  epoch: number;
 }
 
 declare global {
@@ -66,20 +79,18 @@ declare global {
 function state(): PushBridgeState {
   if (!globalThis.__clockoffPushBridge) {
     globalThis.__clockoffPushBridge = {
-      bridged: new WeakMap(),
+      subscription: null,
       pending: new Map(),
       inFlight: new Set(),
       delivered: 0,
+      stillLeader: null,
+      epoch: 0,
     };
   }
   return globalThis.__clockoffPushBridge;
 }
 
 const log = childLogger({ module: "pushBridge" });
-
-function isBridgeEvent(type: string): type is PushBridgeEventType {
-  return (PUSH_BRIDGE_EVENT_TYPES as readonly string[]).includes(type);
-}
 
 function stringArray(value: unknown): string[] | null {
   if (!Array.isArray(value)) return null;
@@ -88,15 +99,16 @@ function stringArray(value: unknown): string[] | null {
 
 /**
  * Which employees an event affects: a list of ids, `null` for "every active device of the organisation",
- * or `undefined` when the event is not a bridge event.
+ * or `undefined` when the event is not a bridge event. A truncated policy event has lost its list and
+ * reaches every device.
  */
 export function affectedEmployeeIds(event: RealtimeEvent): string[] | null | undefined {
-  if (!isBridgeEvent(event.type)) return undefined;
+  if (!isPushBridgeEventType(event.type)) return undefined;
   const payload = event.payload ?? {};
   switch (event.type) {
     case "POLICY_CHANGED":
     case "BREAK_POLICY_CHANGED":
-      return stringArray(payload.affectedEmployeeIds);
+      return payload.truncated === true ? null : stringArray(payload.affectedEmployeeIds);
     case "SCHEDULE_CHANGED": {
       const id =
         event.employeeId ?? (typeof payload.employeeId === "string" ? payload.employeeId : null);
@@ -127,16 +139,26 @@ export function decryptPushToken(encrypted: Uint8Array | null): string | null {
   }
 }
 
+/** False once the leader's lease is gone (see the module comment); true without a `stillLeader` check. */
+function mayPush(): boolean {
+  const check = state().stillLeader;
+  return check === null || check();
+}
+
 async function deliver(deviceId: string, pending: PendingPush): Promise<void> {
   const s = state();
-  s.pending.delete(deviceId);
+  if (s.pending.get(deviceId) === pending) s.pending.delete(deviceId);
+  if (!mayPush()) {
+    log.debug({ deviceId }, "silent push dropped: push bridge leadership lost");
+    return;
+  }
   try {
     const device = await prisma.device.findFirst({
       where: { id: deviceId, organisationId: pending.organisationId, isActive: true },
       select: { pushTokenEncrypted: true },
     });
     const token = device ? decryptPushToken(device.pushTokenEncrypted) : null;
-    if (!token) return;
+    if (!token || !mayPush()) return;
     const reasons = [...pending.reasons].sort();
     const report = await getPushProvider().sendSilent([token], {
       reason: reasons.join(","),
@@ -159,8 +181,9 @@ async function deliver(deviceId: string, pending: PendingPush): Promise<void> {
   }
 }
 
-function enqueue(organisationId: string, deviceId: string, reason: string): void {
+function enqueue(organisationId: string, deviceId: string, reason: string, epoch: number): void {
   const s = state();
+  if (epoch !== s.epoch || !mayPush()) return;
   const existing = s.pending.get(deviceId);
   if (existing) {
     existing.reasons.add(reason);
@@ -179,6 +202,7 @@ async function schedulePushes(
   organisationId: string,
   employeeIds: string[] | null,
   reason: string,
+  epoch: number,
 ): Promise<void> {
   if (employeeIds !== null && employeeIds.length === 0) return;
   const devices = await prisma.device.findMany({
@@ -190,58 +214,71 @@ async function schedulePushes(
     },
     select: { id: true },
   });
-  for (const device of devices) enqueue(organisationId, device.id, reason);
+  for (const device of devices) enqueue(organisationId, device.id, reason, epoch);
 }
 
 function handleEvent(event: RealtimeEvent): void {
   const employeeIds = affectedEmployeeIds(event);
-  if (employeeIds === undefined) return;
+  if (employeeIds === undefined || !mayPush()) return;
   const s = state();
   const reason = PUSH_REASON[event.type as PushBridgeEventType];
-  const task = schedulePushes(event.organisationId, employeeIds, reason).catch((err: unknown) => {
-    log.error(
-      { error: errorSummary(err), eventType: event.type },
-      "push bridge: device lookup failed",
-    );
-  });
+  const task = schedulePushes(event.organisationId, employeeIds, reason, s.epoch).catch(
+    (err: unknown) => {
+      log.error(
+        { error: errorSummary(err), eventType: event.type },
+        "push bridge: device lookup failed",
+      );
+    },
+  );
   s.inFlight.add(task);
   void task.finally(() => s.inFlight.delete(task));
 }
 
-/** Subscribe the bridge to `organisationId` on the current bus (idempotent per bus instance). */
-export function ensureOrganisationBridged(
-  organisationId: string,
+/**
+ * Starts bridging every organisation's events on `bus` (one all-organisations subscription). Idempotent:
+ * a second call on the same bus changes nothing; a call with another bus moves the subscription there.
+ * Called only by the worker holding the push-bridge leadership lease, with `stillLeader` checking that
+ * lease (see the module comment).
+ */
+export function enablePushBridge(
   bus: EventBus = getEventBus(),
+  options: { stillLeader?: () => boolean } = {},
 ): void {
   const s = state();
-  let map = s.bridged.get(bus);
-  if (!map) {
-    map = new Map();
-    s.bridged.set(bus, map);
+  s.stillLeader = options.stillLeader ?? null;
+  if (s.subscription?.bus === bus) return;
+  s.subscription?.unsubscribe();
+  s.subscription = { bus, unsubscribe: bus.subscribeAll(handleEvent) };
+  log.info("push bridge enabled");
+}
+
+/**
+ * Stops bridging new events. With `flush` (the default) the pushes already debounced or being looked up
+ * are delivered before this resolves (leadership hand-over, shutdown); with `flush: false` (the lease
+ * was lost: another worker may already be leading) they are dropped, including lookups still running.
+ * Safe to call when not enabled.
+ */
+export async function disablePushBridge(options: { flush?: boolean } = {}): Promise<void> {
+  const s = state();
+  const wasEnabled = s.subscription !== null;
+  s.subscription?.unsubscribe();
+  s.subscription = null;
+  if (options.flush ?? true) {
+    await flushPushBridge();
+  } else {
+    for (const entry of s.pending.values()) clearTimeout(entry.timer);
+    s.pending.clear();
   }
-  if (map.has(organisationId)) return;
-  map.set(organisationId, bus.subscribe(organisationId, handleEvent));
+  s.epoch += 1;
+  s.stillLeader = null;
+  if (wasEnabled) log.info({ flushed: options.flush ?? true }, "push bridge disabled");
 }
 
-export function isOrganisationBridged(
-  organisationId: string,
-  bus: EventBus = getEventBus(),
-): boolean {
-  return state().bridged.get(bus)?.has(organisationId) ?? false;
+export function isPushBridgeEnabled(): boolean {
+  return state().subscription !== null;
 }
 
-/** Job-process startup: bridge every organisation that has an active device. Returns the count. */
-export async function startPushBridge(bus: EventBus = getEventBus()): Promise<number> {
-  const rows = await prisma.device.findMany({
-    where: { isActive: true },
-    select: { organisationId: true },
-    distinct: ["organisationId"],
-  });
-  for (const row of rows) ensureOrganisationBridged(row.organisationId, bus);
-  return rows.length;
-}
-
-/** Deliver every debounced push now (tests, graceful shutdown). */
+/** Deliver every debounced push now (tests, leadership hand-over, graceful shutdown). */
 export async function flushPushBridge(): Promise<void> {
   const s = state();
   while (s.inFlight.size > 0) await Promise.all([...s.inFlight]);
@@ -250,21 +287,20 @@ export async function flushPushBridge(): Promise<void> {
   await Promise.all(entries.map(([deviceId, entry]) => deliver(deviceId, entry)));
 }
 
-/** Drop pending pushes and subscriptions on the current bus (tests). */
-export function resetPushBridgeForTesting(bus: EventBus = getEventBus()): void {
+/** Unsubscribe, drop pending pushes and reset the counters (tests). */
+export function resetPushBridgeForTesting(): void {
   const s = state();
+  s.subscription?.unsubscribe();
+  s.subscription = null;
   for (const entry of s.pending.values()) clearTimeout(entry.timer);
   s.pending.clear();
   s.inFlight.clear();
   s.delivered = 0;
-  const map = s.bridged.get(bus);
-  if (map) {
-    for (const unsubscribe of map.values()) unsubscribe();
-    map.clear();
-  }
+  s.stillLeader = null;
+  s.epoch += 1;
 }
 
-export function pushBridgeDiagnostics(): { pending: number; delivered: number } {
+export function pushBridgeDiagnostics(): { enabled: boolean; pending: number; delivered: number } {
   const s = state();
-  return { pending: s.pending.size, delivered: s.delivered };
+  return { enabled: s.subscription !== null, pending: s.pending.size, delivered: s.delivered };
 }

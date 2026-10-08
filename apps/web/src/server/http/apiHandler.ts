@@ -13,13 +13,12 @@ import {
   orgCookie,
   sessionCookie,
 } from "@/lib/cookies";
-import { constantTimeEqual, isValidCsrfToken } from "@/lib/crypto";
+import { isValidCsrfToken } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { childLogger, errorSummary, stackFrames, type Logger } from "@/lib/logger";
 import {
   CSRF_HEADER,
   REQUEST_ID_HEADER,
-  getBearerToken,
   getClientIp,
   getCookie,
   getRequestId,
@@ -33,9 +32,7 @@ import {
   elevateToManagerContext,
   getCurrentDeviceContext,
   getCurrentUserContext,
-  getRequestMeta,
   requirePermission,
-  type CronContext,
   type DeviceContext,
   type ManagerContext,
   type UserContext,
@@ -59,12 +56,14 @@ import { errorResponse, json, noContent } from "./responses";
  * - `user`    — signed-in manager, organisation not required (auth routes, organisation creation).
  * - `manager` — signed-in manager scoped to their current organisation (`ctx.organisation` etc.).
  * - `mobile`  — employee device bearer JWT (`ctx.device`, `ctx.employee`, `ctx.organisation`).
- * - `cron`    — `Authorization: Bearer <CRON_SECRET>` (or `x-cron-secret`).
+ *
+ * There is no scheduler mode: background jobs run in the worker process (`src/worker`), never behind an
+ * HTTP route.
  *
  * CSRF: mutating `user` / `manager` requests ALWAYS pass the double-submit check plus an Origin re-check
  * (it cannot be switched off). Mutating `public` requests (login, register, invite accept…) reject a
- * foreign `Origin`; `csrf: true` additionally demands the double-submit token (logout). `mobile` and
- * `cron` are bearer-authenticated and never CSRF-checked.
+ * foreign `Origin`; `csrf: true` additionally demands the double-submit token (logout). `mobile` is
+ * bearer-authenticated and never CSRF-checked.
  *
  * Input: only what a schema validated reaches the implementation. Without a `params` / `query` /
  * `body` schema the corresponding argument is `undefined` (declare a schema to read it).
@@ -74,7 +73,7 @@ import { errorResponse, json, noContent } from "./responses";
  * `undefined` becomes 204.
  */
 
-export type AuthMode = "public" | "user" | "manager" | "mobile" | "cron";
+export type AuthMode = "public" | "user" | "manager" | "mobile";
 
 export type EmailVerificationPolicy = "env" | "always" | "never";
 
@@ -84,9 +83,7 @@ export type ContextFor<A extends AuthMode> = A extends "manager"
     ? UserContext
     : A extends "mobile"
       ? DeviceContext
-      : A extends "cron"
-        ? CronContext
-        : null;
+      : null;
 
 export type RawParams = Record<string, string | string[] | undefined>;
 export type RawQuery = Record<string, string | string[]>;
@@ -132,7 +129,7 @@ export interface HandlerOptions<A extends AuthMode, P, Q, B> {
   /**
    * `public` mode only: `true` also requires the double-submit CSRF token on mutating requests (e.g.
    * logout). Always on for `user` / `manager` (`false` throws at definition); not applicable to the
-   * bearer-authenticated `mobile` / `cron` modes (`true` throws at definition).
+   * bearer-authenticated `mobile` mode (`true` throws at definition).
    */
   csrf?: boolean;
   /**
@@ -174,7 +171,7 @@ export function createHandler<A extends AuthMode, P = undefined, Q = undefined, 
       "createHandler: CSRF protection cannot be disabled for cookie-authenticated (user/manager) routes",
     );
   }
-  if ((options.auth === "mobile" || options.auth === "cron") && options.csrf) {
+  if (options.auth === "mobile" && options.csrf) {
     throw new Error(
       `createHandler: \`csrf\` does not apply to bearer-authenticated auth: '${options.auth}' routes`,
     );
@@ -207,7 +204,7 @@ export function createHandler<A extends AuthMode, P = undefined, Q = undefined, 
       // 3. Authentication / tenancy (401 takes precedence over CSRF so expired sessions read as such).
       const ctx = (await authenticate(req, options)) as ContextFor<A>;
 
-      // 4. CSRF / Origin (mutating methods; never for the bearer-authenticated mobile and cron modes).
+      // 4. CSRF / Origin (mutating methods; never for the bearer-authenticated mobile mode).
       if (isMutatingMethod(req.method)) {
         if (cookieAuthenticated || (options.auth === "public" && options.csrf === true)) {
           assertCsrf(req);
@@ -398,7 +395,7 @@ async function readTextWithLimit(req: Request, maxBytes: number): Promise<string
 async function authenticate<A extends AuthMode, P, Q, B>(
   req: NextRequest,
   options: HandlerOptions<A, P, Q, B>,
-): Promise<UserContext | ManagerContext | DeviceContext | CronContext | null> {
+): Promise<UserContext | ManagerContext | DeviceContext | null> {
   switch (options.auth) {
     case "public":
       return null;
@@ -415,8 +412,6 @@ async function authenticate<A extends AuthMode, P, Q, B>(
     }
     case "mobile":
       return getCurrentDeviceContext(req);
-    case "cron":
-      return authenticateCron(req);
     default: {
       const exhaustive: never = options.auth;
       throw new Error(`Unknown auth mode ${String(exhaustive)}`);
@@ -443,14 +438,6 @@ function assertEmailVerification(ctx: UserContext, policy: EmailVerificationPoli
   if (verificationRequired(policy) && !ctx.user.emailVerifiedAt) {
     throw new AppError("EMAIL_NOT_VERIFIED", "Verify your email address to continue");
   }
-}
-
-function authenticateCron(req: NextRequest): CronContext {
-  const presented = getBearerToken(req) ?? req.headers.get("x-cron-secret");
-  if (!presented || !constantTimeEqual(presented, env().CRON_SECRET)) {
-    throw new AppError("UNAUTHENTICATED", "Invalid scheduler secret");
-  }
-  return { kind: "cron", ...getRequestMeta(req) };
 }
 
 const KNOWN_ERROR_CODES: ReadonlySet<string> = new Set(API_ERROR_CODES);

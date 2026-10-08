@@ -1170,3 +1170,37 @@ model DemoRequest {
   @@index([createdAt(sort: Desc)])
   @@map("demo_requests")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform: background worker runtime
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One row per worker process, upserted every minute; GET /api/health reports the newest live beat.
+model WorkerHeartbeat {
+  instanceId String    @id @map("instance_id") @db.VarChar(128)
+  service    String    @db.VarChar(64)
+  version    String?   @db.VarChar(64)
+  startedAt  DateTime  @map("started_at") @db.Timestamptz(6)
+  lastBeatAt DateTime  @map("last_beat_at") @db.Timestamptz(6)
+  /// Set by a graceful shutdown (never bumps lastBeatAt); cleared only by a later process start of the same instance id.
+  stoppedAt  DateTime? @map("stopped_at") @db.Timestamptz(6)
+  details    Json      @default("{}")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([lastBeatAt(sort: Desc)])
+  @@map("worker_heartbeats")
+}
+
+/// Last scheduled slot claimed per worker job (at most one run per slot across instances) and its outcome.
+model WorkerJobRun {
+  job            String    @id @db.VarChar(64)
+  lastSlot       BigInt    @map("last_slot")
+  lastStartedAt  DateTime  @map("last_started_at") @db.Timestamptz(6)
+  lastFinishedAt DateTime? @map("last_finished_at") @db.Timestamptz(6)
+  lastOutcome    String?   @map("last_outcome") @db.VarChar(32)
+  lastOkAt       DateTime? @map("last_ok_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("worker_job_runs")
+}

@@ -217,25 +217,17 @@ describe("createHandler", () => {
     expect((await send("a@x.test", "2.2.2.2")).res.status).toBe(200);
   });
 
-  it("cron mode requires the CRON_SECRET bearer", async () => {
-    const cron = createHandler({ auth: "cron" }, async ({ ctx }) => ({ kind: ctx.kind }));
-    expect((await call(cron, request("/api/jobs/tick", { method: "POST" }))).res.status).toBe(401);
-    expect(
-      (
-        await call(
-          cron,
-          request("/api/jobs/tick", { method: "POST", headers: { authorization: "Bearer wrong" } }),
-        )
-      ).res.status,
-    ).toBe(401);
-    const ok = await call(
-      cron,
-      request("/api/jobs/tick", {
-        method: "POST",
-        headers: { authorization: `Bearer ${env().CRON_SECRET}` },
-      }),
+  it("has no scheduler (cron) mode any more: an unknown mode never authenticates anyone", async () => {
+    // Jobs run in the worker process; the former bearer-secret mode must not silently become `public`.
+    const legacy = createHandler({ auth: "cron" as unknown as "public" }, async () => ({
+      ran: true,
+    }));
+    const { res, body } = await call(
+      legacy,
+      request("/api/jobs/run", { method: "POST", headers: { authorization: "Bearer anything" } }),
     );
-    expect(ok.body).toEqual({ kind: "cron" });
+    expect(res.status).toBe(500);
+    expect((body?.error as { code: string }).code).toBe("INTERNAL_ERROR");
   });
 
   it("manager / user / mobile modes reject anonymous callers with UNAUTHENTICATED before CSRF", async () => {
@@ -276,9 +268,6 @@ describe("createHandler", () => {
     expect(() => createHandler({ auth: "mobile", csrf: true }, async () => null)).toThrow(
       /does not apply/,
     );
-    expect(() => createHandler({ auth: "cron", csrf: true }, async () => null)).toThrow(
-      /does not apply/,
-    );
   });
 
   it("public mutating routes reject a foreign (or opaque null) Origin but allow none or the app's own", async () => {
@@ -301,10 +290,12 @@ describe("createHandler", () => {
     expect((await post({ origin: "null" })).res.status).toBe(403);
     expect((await post({ origin: env().APP_ORIGIN })).res.status).toBe(200);
     expect((await post({})).res.status).toBe(200);
-    // Bearer-token clients (native app, scheduler) are exempt by path.
+    // Bearer-token clients (the native app) are exempt by path.
     expect((await post({ origin: "https://evil.example" }, "/api/mobile/v1/join")).res.status).toBe(
       200,
     );
+    // The former scheduler prefix is an ordinary API path now (no jobs run behind HTTP).
+    expect((await post({ origin: "https://evil.example" }, "/api/jobs/x")).res.status).toBe(403);
     // Safe methods are never origin-checked.
     const get = createHandler({ auth: "public" }, async () => ({ ok: true }));
     expect(

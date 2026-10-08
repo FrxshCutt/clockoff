@@ -47,7 +47,6 @@ import { GET as employeeActivityRoute } from "@/app/api/employees/[id]/activity/
 import { POST as createInviteRoute } from "@/app/api/employees/[id]/invites/route";
 import { GET as employeeRoute } from "@/app/api/employees/[id]/route";
 import { GET as listEmployeesRoute, POST as createEmployeeRoute } from "@/app/api/employees/route";
-import { POST as tickRoute } from "@/app/api/jobs/tick/route";
 import { POST as refreshRoute } from "@/app/api/mobile/v1/auth/refresh/route";
 import { POST as startBreakRoute } from "@/app/api/mobile/v1/breaks/start/route";
 import { POST as pushTokenRoute } from "@/app/api/mobile/v1/device/push-token/route";
@@ -65,7 +64,6 @@ import { POST as publishPolicyRoute } from "@/app/api/policies/[id]/publish/rout
 import { POST as createPolicyRoute } from "@/app/api/policies/route";
 import { POST as createShiftRoute } from "@/app/api/shifts/route";
 import { ORG_COOKIE } from "@/lib/cookies";
-import { env } from "@/lib/env";
 import { resetPushBridgeForTesting } from "@/server/realtime/pushBridge";
 import { runWorkModeTick } from "@/server/workState/workStateJob";
 import {
@@ -887,21 +885,10 @@ describe("Definition of Done: manager sign-up → employee joins → Work Mode t
   it("10. at the end of the shift the job expects OFF_SHIFT; the phone ends Work Mode → OFF_SHIFT + WORK_MODE_ENDED", async () => {
     travelTo(new Date(j.shift.endsAt.getTime() + MINUTE));
 
-    // This time through the HTTP trigger an external scheduler would call.
-    const unauthorised = await callRoute<ErrorBody>(tickRoute, {
-      method: "POST",
-      path: "/api/jobs/tick",
-      headers: { authorization: "Bearer not-the-secret" },
-    });
-    expect(unauthorised.status).toBe(401);
-    const tick = await callRoute<{ ok: boolean; report: { errors: string[] } }>(tickRoute, {
-      method: "POST",
-      path: "/api/jobs/tick",
-      headers: { authorization: `Bearer ${env().CRON_SECRET}` },
-    });
-    expect(tick.status, JSON.stringify(tick.body)).toBe(200);
-    expect(tick.body.ok).toBe(true);
-    expect(tick.body.report.errors).not.toContain(j.organisationId);
+    // This time the composed tick with every step (the worker's work-mode-tick, override-expiry and
+    // schedule-upkeep jobs together), digest included.
+    const report = await runWorkModeTick(new Date());
+    expect(report.errors).not.toContain(j.organisationId);
 
     const stored = await prisma.employeeWorkState.findUniqueOrThrow({
       where: { employeeId: j.employeeId },

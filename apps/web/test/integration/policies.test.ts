@@ -41,11 +41,7 @@ import {
   resolveForEmployees,
   toResolvedPolicyRefs,
 } from "@/server/policies/policies.service";
-import {
-  affectedEmployeeIds,
-  isOrganisationBridged,
-  PUSH_BRIDGE_EVENT_TYPES,
-} from "@/server/realtime/pushBridge";
+import { affectedEmployeeIds, PUSH_BRIDGE_EVENT_TYPES } from "@/server/realtime/pushBridge";
 import {
   addMember,
   callRoute,
@@ -1168,7 +1164,5 @@ describe("realtime contract", () => {
     unsubscribe();
     expect(seen).toHaveLength(1);
     expect(affectedEmployeeIds(seen[0]!)).toEqual([employee.id]);
-    // Publishing bridges the organisation first, so the silent push also fires from this process.
-    expect(isOrganisationBridged(org.organisation.id)).toBe(true);
   });
 });

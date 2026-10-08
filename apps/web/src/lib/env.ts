@@ -46,11 +46,27 @@ const base64Key32 = z.string().refine(
   { message: "must be 32 random bytes encoded as base64 (e.g. `openssl rand -base64 32`)" },
 );
 
+/**
+ * SHUTDOWN_GRACE_MS's maximum: the longest grace that still fits both Railway draining periods (web
+ * 30 s; worker 60 s minus its ~21 s of fixed shutdown steps). Raise it only together with those.
+ */
+export const SHUTDOWN_GRACE_MAX_MS = 25_000;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
   // Database
+  /** Prisma's connection. Production: Neon's POOLED (PgBouncer, transaction mode) URL. */
   DATABASE_URL: z.url({ message: "must be a postgresql:// connection string" }),
+  /**
+   * The DIRECT (non-pooled) connection, read at runtime by every process: the realtime LISTEN session
+   * (server/events) and the worker's advisory-lock session need a real Postgres session, which
+   * PgBouncer's transaction mode cannot give (LISTEN receives nothing, session locks leak across pooled
+   * backends). Also used by `prisma migrate` (migrate.sh). Unset: realtime stays in-process (tests, dev
+   * without Postgres) and the production worker refuses to start. A pooled URL here is rejected in
+   * production by parseEnv ({@link isPooledPostgresUrl}).
+   */
+  DIRECT_URL: z.url({ message: "must be a postgresql:// connection string" }).optional(),
   TEST_DATABASE_URL: z.url().optional(),
 
   // App URLs
@@ -106,9 +122,14 @@ const envSchema = z.object({
    */
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(10).default(1),
   /**
-   * A header set by the hosting platform's edge that carries the true client IP and cannot be supplied
-   * by the client (Netlify: `x-nf-client-connection-ip`). When set and present it wins over
-   * X-Forwarded-For. Leave empty unless the platform guarantees the header.
+   * A header the hosting platform's edge always sets (overwriting anything the client sent) to the true
+   * client IP. When set and present it wins over X-Forwarded-For; its first comma-separated entry is
+   * the client. Railway: `x-real-ip` (documented as the client's remote IP; client-supplied values are
+   * replaced at the edge). `x-forwarded-for` is the alternative there (its leftmost entry, because
+   * Railway's edge rewrites that header too) if `x-real-ip` turns out to carry a CDN address. Never a
+   * header the edge does not overwrite: the value would be client-chosen and so would every per-IP rate
+   * limit. parseEnv rejects Netlify's `x-nf-*` headers in production, and on Railway any header other
+   * than those two. Empty: the X-Forwarded-For entry TRUSTED_PROXY_HOPS from the right.
    */
   CLIENT_IP_HEADER: z
     .string()
@@ -118,9 +139,39 @@ const envSchema = z.object({
     .transform((v) => v.toLowerCase()),
 
   // Jobs
-  JOBS_ENABLED: booleanString.default(true),
-  // Length is enforced for production in parseEnv (CI uses a short fixed value).
-  CRON_SECRET: z.string().min(1),
+  /**
+   * Kill switch read only by the worker process (`src/worker`; the web process never runs jobs):
+   * `false` → no jobs run, while the heartbeat and push-bridge leadership continue (`/api/health`
+   * reports `worker.jobs: "disabled"`).
+   */
+  WORKER_JOBS_ENABLED: booleanString.default(true),
+  /**
+   * RETIRED (Netlify era: "false" meant "the scheduled function runs the tick, not node-cron"). Never a
+   * switch any more: parseEnv warns while it is set, and the worker refuses to start while it is
+   * "false" (a value copied from the Netlify site must not silently turn every job off). Remove it.
+   */
+  JOBS_ENABLED: booleanString.optional(),
+
+  // Long-running server
+  /**
+   * How long one realtime SSE stream stays open before the server ends it with a planned `reconnect`
+   * frame (the client reconnects at once). A stream authenticates once, so this also bounds how long a
+   * revoked session keeps streaming. 10 s–14 min, under the hosting platform's request cap.
+   */
+  REALTIME_STREAM_MAX_LIFETIME_MS: z.coerce
+    .number()
+    .int()
+    .min(10_000)
+    .max(840_000)
+    .default(300_000),
+  /**
+   * Upper bound for a graceful shutdown after SIGTERM: the web process exits 0 by then even if
+   * requests are still open; the worker abandons jobs still running after it (their locks die with
+   * the lock session), then needs up to ~21 s more for its fixed shutdown steps. So: web grace <
+   * web drainingSeconds, worker grace + 21 s ≤ worker drainingSeconds (railway/*.json; checked by
+   * src/deploy/railwayConfig.test.ts up to the maximum, {@link SHUTDOWN_GRACE_MAX_MS}).
+   */
+  SHUTDOWN_GRACE_MS: z.coerce.number().int().min(1_000).max(SHUTDOWN_GRACE_MAX_MS).default(20_000),
 
   // Logging
   LOG_LEVEL: z.enum(LOG_LEVELS).default("info"),
@@ -212,6 +263,36 @@ function resendProblems(raw: RawEnv): string[] {
   return problems;
 }
 
+/** Whether the process runs on Railway (variables Railway injects into every deployment). */
+function isRailway(source: Readonly<Record<string, string | undefined>>): boolean {
+  return ["RAILWAY_ENVIRONMENT_ID", "RAILWAY_PROJECT_ID", "RAILWAY_ENVIRONMENT_NAME"].some((key) =>
+    Boolean(source[key]?.trim()),
+  );
+}
+
+/** Client-IP headers Railway's edge sets on every request, replacing client-supplied values. */
+export const RAILWAY_CLIENT_IP_HEADERS: readonly string[] = ["x-real-ip", "x-forwarded-for"];
+
+/**
+ * CLIENT_IP_HEADER values that would let a client choose its own rate-limit identity: a Netlify edge
+ * header (`x-nf-…`, set by nothing once the app left Netlify), and on Railway any header its edge does
+ * not overwrite. Messages never contain anything but the variable and header names.
+ */
+function clientIpHeaderProblems(header: string, onRailway: boolean): string[] {
+  if (!header) return [];
+  if (header.startsWith("x-nf-")) {
+    return [
+      `CLIENT_IP_HEADER="${header}" is a Netlify edge header: no proxy sets it any more, so clients could pick their own rate-limit identity (use "x-real-ip" on Railway, or leave it empty)`,
+    ];
+  }
+  if (onRailway && !RAILWAY_CLIENT_IP_HEADERS.includes(header)) {
+    return [
+      `CLIENT_IP_HEADER="${header}" is not set by Railway's edge, so clients could pick their own rate-limit identity (use "x-real-ip", or leave it empty)`,
+    ];
+  }
+  return [];
+}
+
 function formatIssues(error: z.ZodError): string {
   return error.issues
     .map((issue) => {
@@ -265,10 +346,36 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
       "Invalid environment configuration:\n - SESSION_SECRET and MOBILE_JWT_SECRET must be different secrets in production",
     );
   }
-  if (isProduction && raw.CRON_SECRET.length < 32) {
-    throw new Error(
-      "Invalid environment configuration:\n - CRON_SECRET must be at least 32 characters in production",
+  if (raw.DIRECT_URL && isPooledPostgresUrl(raw.DIRECT_URL)) {
+    // Never echo the URL: it carries the database password.
+    if (isProduction) {
+      throw new Error(
+        "Invalid environment configuration:\n - DIRECT_URL must be the direct (non-pooled) connection string in production",
+      );
+    }
+    warnings.push(
+      "DIRECT_URL looks like a pooled (PgBouncer) connection string: realtime LISTEN receives nothing and worker advisory locks leak across pooled backends. Use the direct (non-pooled) URL.",
     );
+  }
+  if (isProduction && !raw.DIRECT_URL) {
+    warnings.push(
+      "DIRECT_URL is not set in production: realtime events stay inside this process (no Postgres LISTEN/NOTIFY) and the worker refuses to start.",
+    );
+  }
+  for (const problem of clientIpHeaderProblems(raw.CLIENT_IP_HEADER, isRailway(source))) {
+    // A client-chosen rate-limit identity bypasses every per-IP limit: fatal in production.
+    if (isProduction) throw new Error(`Invalid environment configuration:\n - ${problem}`);
+    warnings.push(problem);
+  }
+  if (raw.JOBS_ENABLED !== undefined) {
+    warnings.push(
+      raw.JOBS_ENABLED
+        ? "JOBS_ENABLED is retired and ignored (the worker's switch is WORKER_JOBS_ENABLED): remove it."
+        : "JOBS_ENABLED=false is a retired Netlify-era setting: the worker refuses to start while it is set. Remove it (WORKER_JOBS_ENABLED=false is the kill switch).",
+    );
+  }
+  if (source.CRON_SECRET?.trim()) {
+    warnings.push("CRON_SECRET is no longer used (the worker runs the jobs): remove it.");
   }
   if (raw.RATE_LIMIT_BACKEND === "redis" && !raw.REDIS_URL) {
     throw new Error(
@@ -290,6 +397,24 @@ export function parseEnv(source: Readonly<Record<string, string | undefined>>): 
     isDevelopment: raw.NODE_ENV === "development",
   };
   return { env, warnings };
+}
+
+/**
+ * Whether a Postgres connection string goes through a connection pooler (PgBouncer), judged by the
+ * conventions Neon and Prisma use: a `-pooler.` host (`ep-…-pooler.<region>.aws.neon.tech`) or the
+ * `pgbouncer=true` query flag. LISTEN and session-level advisory locks do not work through such a URL.
+ * An unparsable string is judged on its raw text.
+ */
+export function isPooledPostgresUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      /-pooler\./i.test(parsed.hostname) ||
+      parsed.searchParams.get("pgbouncer")?.trim().toLowerCase() === "true"
+    );
+  } catch {
+    return /-pooler\./i.test(url) || /[?&]pgbouncer=true(?:&|$)/i.test(url);
+  }
 }
 
 /** Validated environment. Parsed once; throws a readable error listing every problem. */

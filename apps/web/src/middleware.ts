@@ -12,9 +12,9 @@ import { applySecurityHeaders } from "@/server/http/securityHeaders";
  * 1. assigns an `x-request-id` (kept when the caller sent a well-formed one) and forwards it to the
  *    route handler so logs and responses correlate;
  * 2. rejects cross-origin mutating `/api/*` calls (CSRF layer 1): `Origin` must equal the `APP_URL`
- *    origin, or be absent with `Sec-Fetch-Site: same-origin`. `/api/mobile/**` and `/api/jobs/**` are
- *    exempt (bearer-token clients, not browsers). The double-submit token (layer 2) is checked by the
- *    handler wrapper;
+ *    origin, or be absent with `Sec-Fetch-Site: same-origin`. Only `/api/mobile/**` is exempt (the
+ *    native app is a bearer-token client, not a browser). The double-submit token (layer 2) is checked
+ *    by the handler wrapper;
  * 3. sets security headers (CSP, HSTS in production, X-Frame-Options, nosniff, Referrer-Policy,
  *    Permissions-Policy) on the response;
  * 4. when `HOST_ROUTING=on`, routes by hostname: the marketing site on `MARKETING_URL` (+ www), the

@@ -1,17 +1,18 @@
 import type { Logger } from "@/lib/logger";
 
 /**
- * Background job contracts (interface only — the scheduler, `/api/jobs/tick` and the concrete jobs
- * such as the Work Mode server job are owned by another engineer).
+ * Background job contracts. The worker process implements them (`src/worker/jobs.ts` defines the jobs,
+ * `src/worker/scheduler.ts` runs them); the web process runs no jobs.
  *
- * Jobs must be idempotent: the minute scheduler and the HTTP tick endpoint may both fire.
+ * Jobs must be idempotent: each run holds a Postgres advisory lock and claims its minute slot, but a lock
+ * session lost mid-run, or a manual `node main.mjs run <job>`, can still overlap another run.
  */
 export interface JobContext {
   /** UTC instant the tick represents (not necessarily "now" when catching up). */
   now: Date;
   requestId: string;
   log: Logger;
-  /** Aborts long-running jobs when the tick times out. */
+  /** Aborts long-running jobs (optional; the worker scheduler does not set it yet). */
   signal?: AbortSignal;
 }
 

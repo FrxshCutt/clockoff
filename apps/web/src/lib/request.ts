@@ -5,12 +5,16 @@ import { env } from "@/lib/env";
 /**
  * Request inspection helpers (Node runtime). The middleware sets `x-request-id`; handlers echo it.
  *
- * Client IP: Next.js route handlers cannot see the socket address, so the IP comes from
- * `X-Forwarded-For` as written by our own reverse proxy. Proxies APPEND the address they received the
- * connection from, so everything left of the trusted hops is client-supplied and spoofable: the client
- * IP is the entry `TRUSTED_PROXY_HOPS` (default 1) positions from the RIGHT. Taking the first (leftmost)
- * entry would let any caller pick their own rate-limit bucket. `X-Real-IP` is only used when there is
- * no `X-Forwarded-For` at all. Without either header the IP is unknown and rate limits share a bucket.
+ * Client IP: Next.js route handlers cannot see the socket address, so the IP comes from a header.
+ * - `CLIENT_IP_HEADER` (production on Railway: `x-real-ip`) names a header the hosting edge always
+ *   overwrites; when present its first comma-separated entry is the client (so `x-forwarded-for` there
+ *   means "leftmost entry", valid only behind an edge that replaces the client's X-Forwarded-For).
+ * - Otherwise `X-Forwarded-For` as written by our own reverse proxy: proxies APPEND the address they
+ *   received the connection from, so everything left of the trusted hops is client-supplied and
+ *   spoofable, and the client IP is the entry `TRUSTED_PROXY_HOPS` (default 1) positions from the RIGHT.
+ *   Taking the first (leftmost) entry there would let any caller pick their own rate-limit bucket.
+ * - `X-Real-IP` is only used when there is no `X-Forwarded-For` at all. Without any header the IP is
+ *   unknown and rate limits share a bucket.
  */
 
 export const REQUEST_ID_HEADER = "x-request-id";
@@ -29,9 +33,10 @@ export function getClientIp(
   trustedProxyHops: number = env().TRUSTED_PROXY_HOPS,
   clientIpHeader: string = env().CLIENT_IP_HEADER,
 ): string | null {
-  // A platform-set header (e.g. Netlify's x-nf-client-connection-ip) is authoritative when configured.
+  // A platform-set header (CLIENT_IP_HEADER) is authoritative when configured; only name one the
+  // hosting edge always overwrites, never a header a client can supply (parseEnv refuses known traps).
   if (clientIpHeader) {
-    const platform = req.headers.get(clientIpHeader)?.trim();
+    const platform = req.headers.get(clientIpHeader)?.split(",")[0]?.trim();
     if (platform) return platform.slice(0, 64);
   }
   const forwarded = req.headers.get("x-forwarded-for");

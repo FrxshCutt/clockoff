@@ -1,5 +1,4 @@
 import { publishEvent } from "@/server/events";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 
 /**
  * Realtime bus events for policy changes. Devices (via the push bridge) and the dashboard refetch on them;
@@ -8,9 +7,8 @@ import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
  * dashboard's SSE client subscribes to them as well. The older `policy.changed` kind stays listed for
  * compatibility but is not published here.
  *
- * The in-process bus has no wildcard subscription, so the organisation is bridged to the push provider
- * before publishing — otherwise a change made from a web worker that has never served one of this
- * organisation's devices or dashboard streams would reach no phone.
+ * The bus carries these events to every process; the worker that leads the push bridge turns them into
+ * silent pushes, wherever they were published.
  */
 export const POLICY_EVENT_TYPES = {
   policyChanged: "POLICY_CHANGED",
@@ -32,7 +30,6 @@ export interface PolicyChangedEvent {
 }
 
 export function publishPolicyChanged(event: PolicyChangedEvent): void {
-  ensureOrganisationBridged(event.organisationId);
   publishEvent({
     type: POLICY_EVENT_TYPES.policyChanged,
     organisationId: event.organisationId,
@@ -55,7 +52,6 @@ export interface BreakPolicyChangedEvent {
 }
 
 export function publishBreakPolicyChanged(event: BreakPolicyChangedEvent): void {
-  ensureOrganisationBridged(event.organisationId);
   publishEvent({
     type: POLICY_EVENT_TYPES.breakPolicyChanged,
     organisationId: event.organisationId,

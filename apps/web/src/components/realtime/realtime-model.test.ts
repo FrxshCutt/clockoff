@@ -44,10 +44,10 @@ describe("REALTIME_TIMING", () => {
     expect(REALTIME_TIMING.refreshIntervalMs).toBe(REALTIME_TIMING.pollIntervalMs);
   });
 
-  it("counts a stream as healthy after 5 s, well inside the server's 20 s lifetime cap", () => {
+  it("counts a stream as healthy after 5 s, inside the server's shortest allowed lifetime cap", () => {
     expect(REALTIME_TIMING.minHealthyStreamMs).toBe(5_000);
-    // REALTIME_STREAM_MAX_LIFETIME_MS (server) is 20 s: every capped stream qualifies as planned.
-    expect(REALTIME_TIMING.minHealthyStreamMs).toBeLessThan(20_000);
+    // REALTIME_STREAM_MAX_LIFETIME_MS (server) is at least 10 s: every capped stream qualifies as planned.
+    expect(REALTIME_TIMING.minHealthyStreamMs).toBeLessThan(10_000);
   });
 
   it("reconnects after a planned close faster than after any drop", () => {

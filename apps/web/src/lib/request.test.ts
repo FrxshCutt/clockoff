@@ -62,17 +62,28 @@ describe("request helpers", () => {
 describe("getClientIp with a platform client-IP header", () => {
   it("prefers the configured platform header over X-Forwarded-For", () => {
     const r = req({
-      "x-nf-client-connection-ip": "198.51.100.7",
+      "x-edge-client-ip": "198.51.100.7",
       "x-forwarded-for": "6.6.6.6, 10.0.0.1",
     });
-    expect(getClientIp(r, 1, "x-nf-client-connection-ip")).toBe("198.51.100.7");
+    expect(getClientIp(r, 1, "x-edge-client-ip")).toBe("198.51.100.7");
+  });
+
+  it("takes the first entry of a list-valued platform header (Railway's rewritten X-Forwarded-For)", () => {
+    const r = req({
+      "x-forwarded-for": "203.0.113.9, 152.233.23.193",
+      "x-real-ip": "152.233.23.193",
+    });
+    expect(getClientIp(r, 1, "x-forwarded-for")).toBe("203.0.113.9");
+    expect(getClientIp(r, 1, "x-real-ip")).toBe("152.233.23.193");
+    // Without the platform header setting, the rightmost entry (one trusted hop) as before.
+    expect(getClientIp(r, 1, "")).toBe("152.233.23.193");
   });
 
   it("falls back to X-Forwarded-For when the header is absent or not configured", () => {
     const r = req({ "x-forwarded-for": "6.6.6.6, 203.0.113.1" });
-    expect(getClientIp(r, 1, "x-nf-client-connection-ip")).toBe("203.0.113.1");
+    expect(getClientIp(r, 1, "x-edge-client-ip")).toBe("203.0.113.1");
     const spoofed = req({
-      "x-nf-client-connection-ip": "1.2.3.4",
+      "x-edge-client-ip": "1.2.3.4",
       "x-forwarded-for": "203.0.113.1",
     });
     expect(getClientIp(spoofed, 1, "")).toBe("203.0.113.1");

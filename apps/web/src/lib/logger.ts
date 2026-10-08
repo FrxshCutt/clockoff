@@ -56,10 +56,19 @@ function resolveLevel(): string {
   return process.env.LOG_LEVEL?.trim() || "info";
 }
 
+/**
+ * `service` on every line: `LOG_SERVICE_NAME`, else "clockoff-web". The worker bundle fixes it to
+ * "clockoff-worker" at build time (scripts/build-worker.mjs `define`) and `pnpm worker` sets it in
+ * development, so the two processes' lines stay distinguishable in a shared log stream.
+ */
+function resolveService(): string {
+  return process.env.LOG_SERVICE_NAME?.trim() || "clockoff-web";
+}
+
 export const LOGGER_OPTIONS: LoggerOptions = {
   level: resolveLevel(),
   redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
-  base: { service: "clockoff-web" },
+  base: { service: resolveService() },
   timestamp: pino.stdTimeFunctions.isoTime,
   formatters: {
     level: (label) => ({ level: label }),

@@ -14,7 +14,6 @@ import {
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { toOverrideDto } from "@/server/employees/employees.mappers";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import { requirePermission, type ManagerContext } from "@/server/tenancy/context";
 import { publishOverrideEvent } from "@/server/workState/workStateJob";
 import { recomputeEmployeeWorkState } from "@/server/workState/workState.service";
@@ -246,7 +245,6 @@ export async function createOverride(
   });
   publishActivity(event);
 
-  ensureOrganisationBridged(organisationId);
   publishOverrideEvent("OVERRIDE_CREATED", row);
   // Organisation-wide overrides are picked up for every active employee by the next job tick.
   if (row.employeeId)
@@ -288,7 +286,6 @@ export async function revokeOverride(
   const current = (await findOverrideInOrganisation(organisationId, row.id)) ?? row;
   if (!revoked) return toOverrideDto(current, now); // lost a race with a concurrent revoke
 
-  ensureOrganisationBridged(organisationId);
   publishOverrideEvent("OVERRIDE_REVOKED", current);
   if (current.employeeId) {
     await recomputeEmployeeWorkState({ organisationId, employeeId: current.employeeId, now });

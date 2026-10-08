@@ -42,8 +42,9 @@ export const REALTIME_TIMING = {
    */
   minHealthyStreamMs: 5_000,
   /**
-   * While connected, every realtime-backed query is refetched this often. The server's event bus is per
-   * instance, so on a multi-instance host (Netlify) events raised elsewhere only arrive through this refresh.
+   * While connected, every realtime-backed query is refetched this often. Events reach the stream from every
+   * server process, but one raised while the server's listener or this stream was reconnecting is missed;
+   * this refresh catches those up.
    */
   refreshIntervalMs: 30_000,
   /** A planned reconnect (server lifetime cap) waits a jittered delay in this window. */

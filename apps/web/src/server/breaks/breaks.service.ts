@@ -24,7 +24,6 @@ import type {
 import { toBreakAllowanceDto, toBreakSessionDto } from "@/server/sync/mobileMappers";
 import type { DeviceContext } from "@/server/tenancy/context";
 import { updateDevice } from "@/server/sync/sync.repository";
-import { ensureOrganisationBridged } from "@/server/realtime/pushBridge";
 import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
 import {
   resolveEmployeePolicies,
@@ -523,7 +522,6 @@ export async function startBreakFromDevice(
   input: MobileStartBreakInput,
   now: Date = new Date(),
 ): Promise<MobileBreakResponse> {
-  ensureOrganisationBridged(ctx.organisation.id);
   const result = await startBreak({
     organisationId: ctx.organisation.id,
     employeeId: ctx.employee.id,

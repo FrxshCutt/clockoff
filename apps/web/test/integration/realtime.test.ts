@@ -1,12 +1,22 @@
 import { sseEventSchema } from "@clockoff/validation/realtime";
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { GET as streamRoute } from "@/app/api/realtime/stream/route";
 import { env } from "@/lib/env";
 import { recordActivity } from "@/server/activity/recordActivity";
 import { getEventBus, publishEvent } from "@/server/events";
-import { isOrganisationBridged } from "@/server/realtime/pushBridge";
+import { isPushBridgeEnabled } from "@/server/realtime/pushBridge";
+import {
+  RECONNECT_FRAME,
+  openEventStreamCount,
+  resetEventStreamsForTesting,
+  shutdownEventStreams,
+} from "@/server/realtime/sse";
 import { createTestDevice, createTestOrg, loginAs, type CookieJar } from "../helpers";
+
+afterEach(() => {
+  resetEventStreamsForTesting();
+});
 
 function streamRequest(jar: CookieJar | null, signal: AbortSignal, query = ""): NextRequest {
   const headers: Record<string, string> = {};
@@ -56,7 +66,7 @@ function frames(text: string): Array<{ event: string; data: unknown }> {
 }
 
 describe("GET /api/realtime/stream", () => {
-  it("streams the organisation's events as SSE frames, bridges the organisation, and closes on abort", async () => {
+  it("streams the organisation's events as SSE frames and closes on abort (web never bridges pushes)", async () => {
     const org = await createTestOrg();
     const other = await createTestOrg();
     const { employee, device } = await createTestDevice(org.organisation.id);
@@ -70,8 +80,8 @@ describe("GET /api/realtime/stream", () => {
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(response.headers.get("cache-control")).toContain("no-cache");
     expect(response.headers.get("x-accel-buffering")).toBe("no");
-    expect(isOrganisationBridged(org.organisation.id)).toBe(true);
-    expect(getEventBus().subscriberCount(org.organisation.id)).toBeGreaterThanOrEqual(1);
+    expect(isPushBridgeEnabled()).toBe(false);
+    expect(getEventBus().subscriberCount(org.organisation.id)).toBe(1);
 
     const reader = response.body!.getReader();
     const hello = await readUntil(reader, (t) => t.includes("retry: 5000"));
@@ -142,6 +152,34 @@ describe("GET /api/realtime/stream", () => {
     ]);
     expect((received[0]!.data as { employeeId: string }).employeeId).toBe(a.employee.id);
     controller.abort();
+  });
+
+  it("ends a live stream with the reconnect frame when the server shuts down", async () => {
+    const org = await createTestOrg();
+    const jar = await loginAs(org.owner, { organisationId: org.organisation.id });
+    const controller = new AbortController();
+    const response = await streamRoute(streamRequest(jar, controller.signal), {
+      params: Promise.resolve({}),
+    });
+    const reader = response.body!.getReader();
+    await readUntil(reader, (t) => t.includes("retry: 5000"));
+    expect(openEventStreamCount()).toBe(1);
+
+    expect(shutdownEventStreams()).toBe(1);
+    const text = await readUntil(reader, (t) => t.includes(RECONNECT_FRAME));
+    expect(text.endsWith(RECONNECT_FRAME)).toBe(true);
+    expect((await reader.read()).done).toBe(true);
+    expect(openEventStreamCount()).toBe(0);
+    expect(getEventBus().subscriberCount(org.organisation.id)).toBe(0);
+
+    // A stream opened while the server drains is told to reconnect at once.
+    const late = await streamRoute(streamRequest(jar, new AbortController().signal), {
+      params: Promise.resolve({}),
+    });
+    expect(late.status).toBe(200);
+    const lateText = await readUntil(late.body!.getReader(), (t) => t.includes(RECONNECT_FRAME));
+    expect(lateText).toContain("retry: 5000");
+    expect(openEventStreamCount()).toBe(0);
   });
 
   it("requires a signed-in manager", async () => {
