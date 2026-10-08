@@ -13,7 +13,8 @@
       "tsconfig.base.json",
       ".dockerignore",
       "docker/worker/**",
-      "railway/worker.json"
+      "railway/worker.json",
+      ".railway/**"
     ]
   },
   "deploy": {
@@ -23,6 +24,10 @@
     "sleepApplication": false,
     "overlapSeconds": 0,
     "drainingSeconds": 60,
-    "limitOverride": { "containers": { "memoryBytes": 268435456 } }
+    "limitOverride": {
+      "containers": {
+        "memoryBytes": 268435456
+      }
+    }
   }
 }

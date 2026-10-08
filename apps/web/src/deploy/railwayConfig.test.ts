@@ -15,7 +15,8 @@ import { parseEnv, SHUTDOWN_GRACE_MAX_MS } from "@/lib/env";
 import { WORKER_SHUTDOWN_FIXED_BUDGET_MS } from "@/worker/shutdown";
 
 /**
- * The Railway deployment as code: railway/{web,worker}.json (config-as-code, one file per service),
+ * The Railway deployment as code: railway/{web,worker}.json (one settings file per service), applied by
+ * .railway/railway.ts (Railway's infrastructure as code — new services no longer read railway.json),
  * docker/{web,worker}/Dockerfile, docker/web/migrate.sh (the web pre-deploy command) and .dockerignore.
  * Field names were checked against https://railway.com/railway.schema.json; these tests pin the values
  * the runtime relies on (draining vs. the shutdown grace, memory vs. the heap caps, health check and
@@ -349,5 +350,51 @@ describe("docker/web/migrate.sh", () => {
       expect(r.status).toBe(0);
       expect(r.node![1]).toBe(local);
     });
+  });
+});
+
+describe(".railway/railway.ts (infrastructure as code)", () => {
+  const iac = read(".railway/railway.ts");
+  const listed = (constant: string) =>
+    [
+      ...(new RegExp(`const ${constant} = \\[([^\\]]*)\\]`).exec(iac)?.[1] ?? "").matchAll(
+        /"([A-Z0-9_]+)"/g,
+      ),
+    ].map((match) => match[1]);
+
+  it("applies the per-service files instead of repeating their settings", () => {
+    expect(iac).toContain('from "../railway/web.json" with { type: "json" }');
+    expect(iac).toContain('from "../railway/worker.json" with { type: "json" }');
+    expect(iac).toContain('github("FrxshCutt/clockoff", { branch: "main" })');
+    // The CLI evaluates the file with Node as an ES module.
+    expect(JSON.parse(read(".railway/package.json")).type).toBe("module");
+    for (const config of [web, worker]) expect(config.build.watchPatterns).toContain(".railway/**");
+  });
+
+  it("preserves every variable the services read, so an apply never deletes one", () => {
+    const shared = listed("SHARED_VARIABLES");
+    for (const name of [
+      "DATABASE_URL",
+      "DIRECT_URL",
+      "APP_URL",
+      "NEXT_PUBLIC_APP_URL",
+      "MARKETING_URL",
+      "HOST_ROUTING",
+      "SESSION_SECRET",
+      "MOBILE_JWT_SECRET",
+      "INTEGRATION_ENCRYPTION_KEY",
+      "EMAIL_PROVIDER",
+      "EMAIL_FROM",
+      "RESEND_API_KEY",
+      "CLIENT_IP_HEADER",
+      "SHUTDOWN_GRACE_MS",
+    ])
+      expect(shared).toContain(name);
+    expect(iac).toContain(
+      'const WEB_VARIABLES = [...SHARED_VARIABLES, "PORT", "REALTIME_STREAM_MAX_LIFETIME_MS"];',
+    );
+    expect(iac).toContain('const WORKER_VARIABLES = [...SHARED_VARIABLES, "WORKER_JOBS_ENABLED"];');
+    // Retired Netlify-era names must not come back (the worker refuses JOBS_ENABLED=false).
+    for (const retired of ["JOBS_ENABLED", "CRON_SECRET"]) expect(shared).not.toContain(retired);
   });
 });
