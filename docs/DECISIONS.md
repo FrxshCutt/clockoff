@@ -130,6 +130,8 @@ Netlify's Linux image (Git-triggered) because the Prisma engine and argon2 are n
 configuration from the first deployment attempt was removed. Superseded for DNS by D-020: the zone moved
 to Cloudflare on 2026-10-06; the hosting, database and build choices above still apply.
 
+(Hosting and builds superseded by D-023: production moved to Railway on 2026-10-08. Neon stays.)
+
 ## D-020 — DNS moved to Cloudflare (API-managed); email via a Resend sending subdomain
 
 The owner moved authoritative DNS for `clockoff.online` from IONOS to a Cloudflare zone (free plan). The
@@ -164,6 +166,9 @@ four Resend records); the six IONOS records were re-read afterwards and are byte
 unaffected. Netlify renews the certificate for all three hostnames only while their records stay DNS only and
 point at Netlify. The Cloudflare token is one more credential to rotate. If the owner wants DMARC aggregate
 reports, the `_dmarc` CNAME is replaced by one TXT record with `rua`; a second `_dmarc` record is never added.
+
+(Partly superseded by D-023: since 2026-10-08 the web records point at Railway, and the apex is a CNAME that
+Cloudflare flattens instead of Netlify's A record. Every other rule above still applies, DNS only included.)
 
 ## D-021 — Product renamed from Work Mode to ClockOff; "Work Mode" stays the name of the shift state
 
@@ -248,3 +253,157 @@ iOS app does not read its old `wm.*` App Group keys (there are no production use
 repository URL, and the Netlify deploy key and webhook stayed attached through the rename. The old local volume
 `workmode_workmode-pgdata` is kept as a backup on the owner's machine; remove it with
 `docker volume rm workmode_workmode-pgdata` once the new database is confirmed.
+
+## D-023 — Hosting moved from Netlify to Railway (always-on services); Neon stays
+
+Context: Netlify's free plan ran out of credits on 2026-10-07. Netlify skipped deploys and then paused the site, and
+on the morning of 2026-10-08 every hostname answered 503. The owner asked to move the whole web app (marketing
+site, dashboard, API and background jobs) to Railway as always-on services and to keep the Neon database.
+
+Decision:
+
+- Railway project `clockoff`, environment `production`, Hobby plan, region EU West (Amsterdam, the nearest to Neon
+  in London). Three services built from GitHub `main` with Dockerfiles: `web` (Next.js `output: "standalone"`),
+  `worker` (background jobs, D-024) and `www` (redirect, D-027). Each restarts on failure, never sleeps and runs
+  one replica.
+- Sizes as the owner asked: web 512 MiB, worker 256 MiB, with Node heap caps well inside; CPU caps of 2, 1 and
+  0.5 vCPU, which limit how fast a runaway process spends but do not keep it under the usage limit (web at its
+  cap costs about $40 a month, so it would reach the $15 alert in about 10 days and the $25 hard cap in about
+  2.5 weeks; `docs/DEPLOYMENT.md` › Scale and size). Usage limits: an alert at $15 and a hard cap at $25 a month.
+- Migrations run as web's pre-deploy command (`/app/migrate.sh`, `prisma migrate deploy` over `DIRECT_URL`), so a
+  failed migration fails the deploy and the old deployment keeps serving. Web's deploy health check is
+  `/api/health`.
+- Graceful shutdown on SIGTERM in both processes, with Railway draining periods (web 30 s, worker 60 s) longer
+  than the shutdown bound (`SHUTDOWN_GRACE_MS`, at most 25 s).
+- The variables were copied from Netlify unchanged (secrets were not regenerated, so sessions and device tokens
+  stayed valid), apart from the retired ones (D-029) and the client-IP header (D-028).
+- All Netlify-specific code was removed (`netlify.toml`, the scheduled function, `deno.lock`, `build:netlify`,
+  `@netlify/plugin-nextjs`, `node-cron`, the `rhel-openssl-3.0.x` Prisma target). Each image generates its own
+  Prisma engine (`binaryTargets = ["native"]`).
+
+Consequences: the app runs in one region close to the database instead of US functions. SSE streams can stay open
+for minutes and the jobs run in a process that is always up. The cost is a fixed monthly bill (approximately the
+$5 Hobby subscription at the measured footprint) instead of a free plan with credits. The always-on worker keeps
+Neon's compute awake, which exhausts Neon's free compute allowance before the month ends (`docs/STATUS.md` ›
+Risks; owner decision pending). The Netlify site is paused with its builds stopped and domains removed, but not
+deleted, pending the owner's decision. Runbook: `docs/DEPLOYMENT.md`.
+
+## D-024 — A separate worker process; one Postgres advisory lock and one slot claim per job
+
+Context: on Netlify the minute job was a scheduled function calling an HTTP route. The owner wanted background
+work split into its own process with its own entry point, so restarting web never interrupts jobs and the other
+way round, and every job safe if two instances ever run at once.
+
+Decision:
+
+- The worker (`apps/web/src/worker`, bundled by esbuild into `main.mjs`) runs four jobs: `work-mode-tick` (every
+  minute: break expiry, scheduled breaks, evaluation and the hourly digest), `override-expiry` (every minute),
+  `schedule-upkeep` (every minute, after that minute's tick) and `integrations-sync` (every 15 minutes; a
+  documented no-op until a workforce provider such as Planday registers). The web process runs no jobs
+  (`src/deploy/processBoundaries.test.ts`).
+- Each run takes a session-level `pg_try_advisory_lock` on a dedicated `DIRECT_URL` connection (keys in
+  `src/worker/lockKeys.ts`, never reused) and then claims its minute slot in `worker_job_runs`, so a slot runs at
+  most once across instances; a lock held elsewhere is `skipped_locked`, a slot already run is
+  `skipped_already_ran`. A dead process's locks die with its session; idle-session timeouts free a vanished
+  client's locks within about 2 minutes.
+- The worker writes a `worker_heartbeats` row every minute and marks it stopped on a graceful shutdown.
+  `/api/health` reports the heartbeat and whether jobs actually succeed (`worker.jobs`), but never fails web's
+  health because of the worker.
+- A new worker waits for web's pre-deploy migration (migration gate) instead of running against an old schema; a
+  watchdog exits when the minute lane makes no progress for 10 minutes so Railway restarts it.
+- The worker has a small CLI (`list`, `run <job>`, `emit-diagnostic <orgId>`) for manual runs and end-to-end
+  checks.
+
+Consequences: a second worker replica is safe. The scheduled tick no longer needs an HTTP route or a shared
+secret (D-029). Every job stays idempotent, so the rare extra run (a manual `run`, a lock session lost mid-job)
+is harmless; the future Planday sync must throttle on `lastSyncAt` for the same reason. Migration
+`20261008090000_worker_runtime` adds the two tables.
+
+## D-025 — Realtime across processes through Postgres LISTEN/NOTIFY; the push bridge runs in the elected worker
+
+Context: the event bus was in-process. With jobs in a separate process, events the worker raises (override expiry,
+work-state changes) would never reach the dashboards' SSE streams on web, and manager edits on web would never
+reach a push bridge in the worker.
+
+Decision:
+
+- `PostgresEventBus` delivers each event to the process's own subscribers at once and NOTIFYs the others on the
+  `clockoff_events` channel. NOTIFYs go out through the normal pooled Prisma connection, batched; one LISTEN
+  session per process runs on `DIRECT_URL`, because PgBouncer's transaction mode cannot hold a LISTEN. A process
+  ignores its own notifications, reconnects with backoff, and keeps payloads under Postgres's 8000-byte limit
+  (oversized events are sent truncated, meaning "refetch").
+- Without `DIRECT_URL` (tests, local runs without it) the bus stays in-process.
+- SSE streams on the persistent server live 5 minutes (`REALTIME_STREAM_MAX_LIFETIME_MS`), then end with a planned
+  `reconnect`; the dashboard's 30-second polling fallback stays for events missed during a reconnect.
+- Only the worker holding a leadership lease (an advisory lock) bridges events to silent pushes; the others stand
+  by and take over within about 5 seconds. Web never bridges, so a change is pushed once, not once per process.
+
+Consequences: a second web or worker process sees every event. Events NOTIFYed while a listener is reconnecting
+are missed by that process; dashboards recover through their 30-second refresh and phones at their next sync.
+Health reports `realtime.mode` and `listening`. `DIRECT_URL` is now required at runtime in production, not only
+for migrations.
+
+## D-026 — Railway settings as infrastructure as code (`.railway/railway.ts`), not `railway.json`
+
+Context: the owner asked for a committed config file per service (`railway.json` or `railway.toml`). Railway
+refuses config-as-code files for new services ("Config as Code is deprecated. Use Infrastructure as Code") and
+stops reading existing ones on 2026-12-01.
+
+Decision: `.railway/railway.ts` (built on `railway/iac` from the `railway` npm package, pinned to 3.13.0) is what
+Railway applies, through `railway config plan` and `railway config apply`. The per-service settings the owner asked
+for stay in `railway/web.json`, `railway/worker.json` and `railway/www.json` (railway.json's schema), which the IaC
+file reads; `apps/web/src/deploy/railwayConfig.test.ts` pins their contents. Variables are listed by name with
+`preserve()`, so their values live only in Railway. Custom domains are managed outside the file.
+
+Consequences: service settings change through a reviewed commit and a plan. A variable set in Railway but missing
+from the file is deleted by the next apply, so a new variable's name is added to the file in the same change that
+starts reading it.
+
+## D-027 — A separate `www` redirect service
+
+Context: Railway's Hobby plan allows two custom domains per service. The web service carries `clockoff.online` and
+`app.clockoff.online`.
+
+Decision: a third, dependency-free service (`docker/www-redirect/`, 128 MiB) answers `www.clockoff.online` with a
+308 to `https://clockoff.online`, keeping the path and query; the `Host` header never chooses the destination. It
+serves `/healthz` for Railway's health check.
+
+Consequences: `www` behaves like the app's own alias redirect (on Netlify it was a 301 from Netlify itself). One
+more small service to run (about 14 MB of memory). If the plan ever allows more domains per service, the web app
+can carry `www` again (its host routing already redirects `www.` to the apex) and this service can go.
+
+## D-028 — Client IP from `X-Real-IP` on Railway
+
+Context: per-IP rate limits and the audit log need the real client address. On Netlify it came from
+`x-nf-client-connection-ip`, which nothing sets on Railway; a header that the edge does not overwrite would let
+clients choose their own rate-limit identity.
+
+Decision: `CLIENT_IP_HEADER=x-real-ip`. Probed with a temporary echo service before the move: Railway's edge
+overwrites `X-Real-IP` with the true client address and rewrites a client-sent `X-Forwarded-For` (it becomes
+"client, edge address"). In production a login sent with a spoofed `X-Real-IP` and `X-Forwarded-For` recorded the
+real public IP. The configured header's first comma-separated entry is used, so `x-forwarded-for` remains the
+fallback (its leftmost entry) if `X-Real-IP` ever carries a CDN address. In production `env()` refuses Netlify's
+`x-nf-*` headers, and on Railway any header other than those two.
+
+Consequences: rate limits key on the real client. A misconfigured header fails startup in production instead of
+silently opening the limits.
+
+## D-029 — `JOBS_ENABLED`, `CRON_SECRET` and `POST /api/jobs/tick` retired
+
+Context: the tick route existed for platforms without long-running processes; Netlify's scheduled function called
+it with `CRON_SECRET`, and `JOBS_ENABLED=false` on Netlify meant "the scheduled function runs the tick". The worker
+now runs every job.
+
+Decision:
+
+- The route `/api/jobs/tick`, the `cron` auth mode, the `/api/jobs/` origin-check exemption and `CRON_SECRET` are
+  deleted: a secret that unlocks nothing is attack surface. `env()` warns while `CRON_SECRET` is still set.
+- `JOBS_ENABLED` is never a switch any more. Its Netlify value was `false`, so a copy on Railway would have stopped
+  every job while the heartbeat stayed fresh: `env()` warns while it is set and the worker refuses to start while
+  it is `false`. The worker's kill switch is `WORKER_JOBS_ENABLED` (default `true`).
+- Manual runs use the worker CLI (`node main.mjs run <job>`).
+
+Consequences: neither retired name is set on Railway, and `railwayConfig.test.ts` fails if either is added to
+`.railway/railway.ts`. The paused Netlify site's scheduled function can no longer run a tick, because the route it
+calls does not exist. Future integrations (Planday) run in the worker's `integrations-sync` slot, not behind a
+cron-authenticated HTTP route.

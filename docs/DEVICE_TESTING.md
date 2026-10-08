@@ -23,7 +23,7 @@ Steps 8 and 9 each need a new one.
 | Employee             | Zach Stephens                                                                                                                                          |
 | Work Policy          | Standard Staff (default): Social Media, Games, Entertainment. Shield message "Work Mode is on. This app will be available again after your shift."     |
 | Break Policy         | Standard Break (default): 2 breaks of 15 minutes, 30 minutes in total, `RELAX_ALL` (every app opens), allowed from the start of a shift, no gap needed |
-| "Create test shift…" | Shown only for organisations listed in `TEST_TOOLS_ORGANISATION_IDS` on the Netlify site (`docs/ENVIRONMENT.md`)                                       |
+| "Create test shift…" | Shown only for organisations listed in `TEST_TOOLS_ORGANISATION_IDS` on the Railway services (`docs/ENVIRONMENT.md`)                                   |
 
 On the phone:
 
@@ -525,7 +525,8 @@ It prints JSON with the organisation id, `companyCode`, policy names, employee a
 `testToolsEnv` line (`TEST_TOOLS_ORGANISATION_IDS=<id>`). If the organisation was created afresh (for example
 after the old one was deleted), its id and company code are new:
 
-- set the new id in `TEST_TOOLS_ORGANISATION_IDS` on the Netlify site and redeploy;
+- set the new id in `TEST_TOOLS_ORGANISATION_IDS` on the Railway `web` and `worker` services
+  (`railway variable set … --service web`, then `--service worker`; each change redeploys that service);
 - update `apps/web/.env.production.example`;
 - update the code in this document.
 

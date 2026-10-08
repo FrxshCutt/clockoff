@@ -1,8 +1,9 @@
 # Architecture
 
 ClockOff is a monorepo with three runtime surfaces — the **manager web app + API** (Next.js), the
-**background job runner** (Node, same codebase), and the **employee iOS app** (Swift) with three app
-extensions — sharing a PostgreSQL database through Prisma and a set of pure-TypeScript domain packages.
+**background worker** (Node, same codebase, its own process), and the **employee iOS app** (Swift) with three app
+extensions — sharing a PostgreSQL database through Prisma and a set of pure-TypeScript domain packages. In
+production web and worker are separate Railway services (`docs/DEPLOYMENT.md`).
 
 ```mermaid
 flowchart LR
@@ -13,9 +14,12 @@ flowchart LR
     API[/API route handlers<br/>/api/** manager · /api/mobile/v1/** device/]
     SVC[Service layer<br/>services/*.service.ts]
     REPO[Repositories<br/>organisationId explicit]
-    BUS[(In-process event bus<br/>Redis-pluggable)]
+    BUS[(Event bus<br/>local delivery + Postgres NOTIFY)]
     SSE[/api/realtime/stream/]
-    JOBS[Minute scheduler<br/>src/jobs/main.ts]
+  end
+  subgraph Worker["apps/web/src/worker (separate process)"]
+    JOBS[Scheduler<br/>advisory lock per job]
+    BRIDGE[Push bridge<br/>elected leader only]
   end
   subgraph Shared["packages/*"]
     SH[shared: state machine · policy resolution<br/>break rules · time · CSV · privacy statements]
@@ -37,8 +41,10 @@ flowchart LR
   UI -->|SSE| SSE
   API --> SVC --> REPO --> DB --> PG
   SVC --> BUS --> SSE
+  BUS <-->|LISTEN/NOTIFY| PG
   JOBS --> SVC
-  JOBS -->|silent push| APNS --> APP
+  BUS --> BRIDGE
+  BRIDGE -->|silent push| APNS --> APP
   APP -->|JWT bearer| API
   APP --> CORE
   MON --> CORE
@@ -58,7 +64,7 @@ flowchart LR
 | `packages/validation` | Zod schemas for every request/response (strict for mobile), and the OpenAPI 3.1 generator producing `docs/openapi.json`.                                                                                                                                                                                                        | zod, shared             |
 | `packages/db`         | Prisma schema, SQL migrations (including hand-written constraints), client singleton, seed.                                                                                                                                                                                                                                     | @prisma/client          |
 | `packages/config`     | tsconfig/eslint presets.                                                                                                                                                                                                                                                                                                        | —                       |
-| `apps/web`            | Dashboard UI, marketing pages, all API handlers, SSE, jobs entrypoint.                                                                                                                                                                                                                                                          | all packages            |
+| `apps/web`            | Dashboard UI, marketing pages, all API handlers, SSE; the worker's entry point (`src/worker`, bundled separately).                                                                                                                                                                                                              | all packages            |
 | `apps/ios`            | Xcode project generated from `project.yml` (XcodeGen); app + 3 extensions + ClockOffCore SPM.                                                                                                                                                                                                                                   | — (consumes the API)    |
 
 ## Request lifecycle (manager)
@@ -92,11 +98,19 @@ employee. Input schemas are `.strict()` and allow only the operational fields en
 
 ## Background jobs
 
-`apps/web/src/jobs/main.ts` runs every minute (node-cron) or can be triggered via `POST /api/jobs/tick`
-with `CRON_SECRET` (for platforms without long-running processes). It: recomputes expected state per
-employee with a shift today, flags `SYNC_DELAYED`/`NEEDS_ATTENTION`, auto-ends expired breaks, expires
-overrides, materialises recurring shifts for the next 8 weeks, publishes SSE events, and sends silent pushes
-through the `PushProvider` (`ApnsPushProvider` when APNs env is set, otherwise `NoopPushProvider`).
+The worker process (`apps/web/src/worker`, `pnpm worker` locally, the Railway `worker` service in production)
+runs the jobs; the web process runs none. Every minute it recomputes expected state per employee with a shift
+around now, flags `SYNC_DELAYED`/`NEEDS_ATTENTION`, auto-ends expired breaks, starts scheduled breaks, sends the
+hourly manager digest, expires overrides, materialises recurring shifts for the next 8 weeks and completes ended
+shifts; every 15 minutes it runs the scheduled workforce-provider syncs (a no-op until a provider registers). Each
+job runs under its own Postgres advisory lock and claims its minute slot, so a second worker never repeats it. The
+worker writes a heartbeat row every minute, which `GET /api/health` reports. Details: `docs/WORK_MODE_SERVER_JOB.md`.
+
+The event bus delivers each event to its own process's subscribers and NOTIFYs the other processes through
+Postgres (one LISTEN session per process on the direct connection), so the worker's events reach the dashboards'
+SSE streams on web and manager edits reach the worker. The worker that holds the push-leadership lease turns
+policy, schedule and override events into silent pushes through the `PushProvider` (`ApnsPushProvider` when APNs
+env is set, otherwise `NoopPushProvider`).
 
 ## iOS extensions
 

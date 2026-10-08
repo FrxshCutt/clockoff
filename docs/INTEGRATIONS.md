@@ -110,7 +110,7 @@ sequenceDiagram
   API->>API: encrypt credentials, Integration.status = CONNECTED
   API->>P: syncLocations → syncTeams → syncEmployees → syncShifts → syncClockEvents
   P->>S: upsert… (idempotent, keyed by external id)
-  loop minute job
+  loop worker job integrations-sync (every 15 min)
     API->>P: refreshAuthentication (before tokenExpiresAt)
     API->>P: syncShifts / syncClockEvents (incremental)
   end
@@ -126,11 +126,16 @@ sequenceDiagram
 2. **Initial sync.** Order matters because later records reference earlier ones: locations, teams, employees,
    then shifts (default window: now − 1 day to now + 8 weeks, the same horizon as recurring shifts), then
    clock events (`CLOCK_EVENT` mode only).
-3. **Ongoing sync.** The minute job (`apps/web/src/jobs/main.ts`) refreshes tokens shortly before
-   `tokenExpiresAt` (`refreshAuthentication` stores new tokens via `sink.saveCredentials`), runs incremental
-   shift syncs (for example every 15 minutes) and, in `CLOCK_EVENT` mode, clock-event syncs every minute.
-   Each run updates `IntegrationConnection.lastSyncAt`; a run with record errors still succeeds and its
-   `SyncReport` is logged and summarised in the dashboard.
+3. **Ongoing sync.** Scheduled syncs run in the worker process, never behind an HTTP cron route: the
+   `integrations-sync` job runs every 15 minutes under its own advisory lock and slot claim
+   (`runScheduledIntegrationSyncs` in `apps/web/src/server/integrations/scheduledSync.ts`; today a documented
+   no-op that reports `NO_AVAILABLE_PROVIDER`). It is where tokens are refreshed shortly before `tokenExpiresAt`
+   (`refreshAuthentication` stores new tokens via `sink.saveCredentials`) and incremental shift syncs run. It must
+   throttle on `lastSyncAt`, isolate each integration's failure and finish well within 15 minutes. Clock-event
+   syncs every minute (`CLOCK_EVENT` mode) would be a separate one-minute job in `apps/web/src/worker/jobs.ts` with
+   its own, never reused lock key. Each run updates `IntegrationConnection.lastSyncAt`; a run with record errors
+   still succeeds and its `SyncReport` is logged and summarised in the dashboard. A manual run:
+   `node main.mjs run integrations-sync` in the worker (`pnpm worker run integrations-sync` locally).
 4. **Errors.** If a provider call rejects (expired consent, revoked app, outage), the service sets
    `Integration.status = ERROR`, stores `lastError`, records an `INTEGRATION_ERROR` activity event and keeps
    retrying with backoff. Shifts already synced stay in force.
@@ -183,7 +188,9 @@ scopes and token lifetimes against Planday's current developer documentation bef
 
 1. **Register an app** in Planday's developer portal to get a client id (and secret where required) and set
    the redirect URI to `${APP_URL}/api/integrations/planday/callback`. Add `PLANDAY_CLIENT_ID` and
-   `PLANDAY_CLIENT_SECRET` to `apps/web/src/lib/env.ts` and `docs/ENVIRONMENT.md` (they do not exist yet).
+   `PLANDAY_CLIENT_SECRET` to `apps/web/src/lib/env.ts`, `docs/ENVIRONMENT.md` and the shared variable list in
+   `.railway/railway.ts` (they do not exist yet; a variable missing from that list is deleted by the next
+   `railway config apply`).
 2. **Auth.**
    - _Authorization code (preferred):_ `connect` without a code returns `REDIRECT_REQUIRED` with Planday's
      authorize URL (client id, redirect URI, requested scopes for HR, scheduling and punch clock, random
@@ -210,8 +217,8 @@ scopes and token lifetimes against Planday's current developer documentation bef
 
 4. **Implement** `PlandayProvider implements WorkforceProvider` with `status: "AVAILABLE"`, paging and
    rate-limit handling (back off on HTTP 429; if retries are exhausted reject with a `RATE_LIMITED`
-   `ProviderError`), and register it once at server
-   start-up: `registerProvider(new PlandayProvider(config))`. `listProviders()` then reports Planday as
+   `ProviderError`), and register it once at start-up in **both** processes, the web app (connect, callback,
+   listings) and the worker (scheduled syncs): `registerProvider(new PlandayProvider(config))`. `listProviders()` then reports Planday as
    `AVAILABLE` and the dashboard shows a Connect button instead of Notify me. Set
    `PROVIDERS.PLANDAY.status` to `"AVAILABLE"` when it ships so static listings agree.
 5. **Test** mapping with recorded fixtures (time zones and DST included), the provider against a local

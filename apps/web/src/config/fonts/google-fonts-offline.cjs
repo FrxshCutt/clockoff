@@ -9,13 +9,16 @@
  *
  * Only use it for offline/air-gapped builds; normal builds should self-host Inter.
  */
-const OFFLINE_STYLESHEET = "/* ClockOff offline build: Google Fonts skipped, using the system font stack. */";
+const OFFLINE_STYLESHEET =
+  "/* ClockOff offline build: Google Fonts skipped, using the system font stack. */";
 
 module.exports = new Proxy(
   {},
   {
     get(_target, key) {
-      return typeof key === "string" && key.startsWith("https://fonts.googleapis.com/") ? OFFLINE_STYLESHEET : undefined;
+      return typeof key === "string" && key.startsWith("https://fonts.googleapis.com/")
+        ? OFFLINE_STYLESHEET
+        : undefined;
     },
   },
 );

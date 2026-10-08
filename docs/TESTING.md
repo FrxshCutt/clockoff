@@ -86,6 +86,13 @@ Packages: `cd packages/shared && pnpm typecheck && pnpm lint && pnpm test` (same
 It also forces `REQUIRE_EMAIL_VERIFICATION=false`; a test that needs it on sets
 `process.env.REQUIRE_EMAIL_VERIFICATION = "true"` and calls `resetEnvCache()`.
 
+The in-process bus keeps ordinary tests independent of each other. The cross-process path is tested on its own:
+`postgresEventBus.test.ts` runs two real LISTEN/NOTIFY buses against the test database, and the worker suites
+(`workerJobs`, `workerLocks`, `workerHeartbeat`, `workerLiveness`, `workerBundle`) cover the advisory locks, slot
+claims, heartbeat and liveness, and the esbuild bundle. `src/deploy/*.test.ts` (unit) pins the Railway service files,
+the Dockerfiles, `migrate.sh`, `.railway/railway.ts`, the www redirect server and the rule that the web process
+never imports worker code.
+
 Some work runs after the response (`runAfterResponse` in `src/server/background`, e.g. the register and
 forgot-password emails, so their timing cannot reveal whether an account exists). Outside a Next request
 those tasks run detached: `callRoute` awaits them (`settleBackgroundTasks()`) before it resolves, and
@@ -217,6 +224,13 @@ manager and organisation (`E2E Coffee <runId>`) in the dev database.
 `make -C apps/ios test` builds and runs XCTest on the simulator. Screen Time APIs are unavailable there, so
 `MockRestrictionProvider` stands in; tests that need real shields are manual device checks listed in
 `docs/IOS_SETUP.md`. The `ClockOffCore` Swift package also runs `docs/fixtures/workmode-cases.json`.
+
+## CI
+
+`.github/workflows/ci.yml` runs three jobs on pushes to `main` and on pull requests: `js` (lint, typecheck, unit
+and integration tests against a Postgres service, build), `images` (builds the web and worker Docker images, runs
+`/app/migrate.sh`, starts both containers and requires `/api/health` to report a fresh worker heartbeat with
+`worker.jobs: "ok"`, then stops them with SIGTERM) and `ios` (simulator build and tests, Release build).
 
 ## Before you push
 

@@ -33,7 +33,7 @@ export const PATCH = createHandler(
 );
 ```
 
-- **`createHandler(options, impl)`** (`@/server/http/apiHandler`). Options: `auth` (`public | user | manager | mobile | cron`),
+- **`createHandler(options, impl)`** (`@/server/http/apiHandler`). Options: `auth` (`public | user | manager | mobile`),
   `permission` (manager only), `params`/`query`/`body` Zod schemas, `rateLimit` (rule or rules; coarse per-IP rule first),
   `maxBodyBytes` (default 1 MiB), `emailVerification`. Pipeline: body → rate limit → auth → CSRF/Origin → permission →
   Zod → impl. Without a schema, `params`/`query`/`body` are `undefined` — declare a schema for everything you read.
@@ -55,9 +55,14 @@ occurredAt?, metadata?, clientEventId? }, { db?, publish? })` (`@/server/activit
   on `(deviceId, clientEventId)` and safe inside a transaction (pass `publish: false`, then `publishActivity(event)` after
   commit). Metadata is operational only (ids, versions, states, counts).
 - **Realtime**: `publishEvent({ type, organisationId, employeeId?, payload })` (`@/server/events`) feeds the SSE stream
-  and the push bridge. Payloads carry ids/types/badges only — never PII.
+  and the push bridge in every process (local delivery plus Postgres NOTIFY when `DIRECT_URL` is set). Payloads carry
+  ids/types/badges only — never PII — and must stay small (an event over ~7.5 KB is sent truncated as "refetch").
 - **Background work**: `runAfterResponse(name, task)` (`@/server/background`) for work whose timing must not leak
   (emails for existing accounts) or must not block the response.
+- **Scheduled jobs** run only in the worker (`src/worker`): add a `WorkerJob` to `WORKER_JOBS` in
+  `src/worker/jobs.ts` with a new key in `src/worker/lockKeys.ts` (never renumber or reuse one), keep it idempotent,
+  and never call job code from the web process (`src/deploy/processBoundaries.test.ts` fails if web imports
+  `@/worker/*`). Try it with `pnpm worker run <job>`.
 - **Rate limits**: presets in `RATE_LIMITS` (`@/server/rateLimit`); custom rules `{ key, limit, windowSeconds, by }`.
 - **Email / push**: `getEmailProvider()` / `sendEmailSafely()`; `getPushProvider().sendSilent(tokens, { reason })`.
 - **Logging**: `log.error({ error: errorSummary(e), stack: stackFrames(e) }, "…")`. Never log `err.message`/`err.stack`,

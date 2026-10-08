@@ -3,11 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "docker/www-redirect/Dockerfile",
-    "watchPatterns": [
-      "docker/www-redirect/**",
-      "railway/www.json",
-      ".railway/**"
-    ]
+    "watchPatterns": ["docker/www-redirect/**", "railway/www.json", ".railway/**"]
   },
   "deploy": {
     "healthcheckPath": "/healthz",

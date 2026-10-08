@@ -169,9 +169,10 @@ that are limited carry `x-rate-limit` with the preset name (`apps/web/src/server
 
 ## Not in the document
 
-Internal endpoints are deliberately left out of `openapi.json`: `POST /api/jobs/tick` (external cron,
-`Authorization: Bearer <CRON_SECRET>`, see ARCHITECTURE.md) and the development-only `/api/dev/*` helpers
-(`DEV_TOOLS_ENABLED`, never in production): `GET /api/dev/last-email?to=<address>` →
+Background jobs have no HTTP endpoint: they run in the worker process (ARCHITECTURE.md; the old
+`POST /api/jobs/tick` route and `CRON_SECRET` were removed, DECISIONS.md D-029). Internal endpoints are
+deliberately left out of `openapi.json`: the development-only `/api/dev/*` helpers (`DEV_TOOLS_ENABLED`, never in
+production): `GET /api/dev/last-email?to=<address>` →
 `{ email: { to, subject, text, sentAt } }`, the last message the console email provider sent to that address
 (404 when there is none, or when dev tools are off). Integration OAuth callbacks arrive with the Phase 2
 providers (INTEGRATIONS.md).
@@ -222,11 +223,13 @@ with a `: ping` comment every 15 s. Events are cache-invalidation hints (`shift.
 `employee.work_state.changed`, ...): refetch the affected resource, never treat the payload as the source of
 truth.
 
-The server ends every stream after 20 s (Netlify cuts streamed responses at 30 s): the last frame is the
-control frame `event: reconnect` / `data: {}` (`REALTIME_RECONNECT_EVENT` in `@clockoff/validation/realtime`;
-not an event kind and not an `SseEvent`), then a normal close. Reconnect straight away; the dashboard does so
-silently and refreshes its realtime-backed data every 30 s while connected, because the in-process event bus
-only carries events raised on the same server instance.
+The server ends every stream after `REALTIME_STREAM_MAX_LIFETIME_MS` (default 5 minutes), and early when the
+web process shuts down for a deploy: the last frame is the control frame `event: reconnect` / `data: {}`
+(`REALTIME_RECONNECT_EVENT` in `@clockoff/validation/realtime`; not an event kind and not an `SseEvent`), then a
+normal close. Reconnect straight away; the dashboard does so silently. Events reach every server process through
+Postgres LISTEN/NOTIFY (`PostgresEventBus`), so a stream also carries events the worker raises. The dashboard
+still refreshes its realtime-backed data every 30 s while connected, as a fallback for events missed while the
+stream or the server's listener was reconnecting.
 
 ## Schemas in code
 

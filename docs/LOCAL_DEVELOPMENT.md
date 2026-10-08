@@ -23,12 +23,19 @@ pnpm dev                     # http://localhost:3000
 
 Seeded manager login: `owner@harpendencoffee.test` / `Password123!`. Join code: `BREW-4821`.
 
-Run the minute scheduler in another terminal when you want Work Mode states, overrides and break expiry to
-move on their own:
+Run the worker in another terminal when you want Work Mode states, overrides, break expiry and recurring shifts
+to move on their own (the web app runs no jobs):
 
 ```bash
-pnpm jobs
+pnpm worker                      # the jobs every minute, the heartbeat and the push bridge, until Ctrl-C
+pnpm worker list                 # the jobs, their intervals and lock keys
+pnpm worker run work-mode-tick   # one run now (also override-expiry, schedule-upkeep, integrations-sync)
 ```
+
+With `DIRECT_URL` set (the `.env.example` value equals `DATABASE_URL`), `pnpm dev` and `pnpm worker` share
+realtime events through Postgres LISTEN/NOTIFY, so the dashboard updates live when the worker changes something.
+Without it each process keeps its events to itself, and the dashboard only sees the worker's changes through its
+30-second refresh. `/api/health` shows the worker's heartbeat (`worker.status`, `worker.jobs`).
 
 Emails (verification, password reset, invites) are printed to the web server console by
 `ConsoleEmailProvider` — look for the boxed block containing the link.
@@ -41,7 +48,8 @@ volume. The compose project is now `clockoff`: container `clockoff-postgres`, ro
 databases `clockoff` / `clockoff_test`, volume `clockoff_clockoff-pgdata`. After pulling, run `pnpm install`.
 
 `pnpm db:down` is not enough: it now acts on the `clockoff` project, so it neither stops the old container (which
-still holds port 5433) nor moves its data. Stop `pnpm dev`, `pnpm jobs` and Prisma Studio, then pick one:
+still holds port 5433) nor moves its data. Stop `pnpm dev`, the job runner (`pnpm worker`; `pnpm jobs` in older
+checkouts) and Prisma Studio, then pick one:
 
 - **Recreate (simplest; local data is lost).** The old volume is left alone.
 
@@ -85,15 +93,15 @@ Then:
 
 ## Everyday commands
 
-| Command                                              | What                                                             |
-| ---------------------------------------------------- | ---------------------------------------------------------------- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm test`         | all packages via Turborepo                                       |
-| `pnpm test:integration`                              | API + service tests against `clockoff_test` (reset on every run) |
-| `pnpm --filter @clockoff/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                      |
-| `pnpm build`                                         | production build of the web app (typechecks packages first)      |
-| `pnpm openapi`                                       | regenerate `docs/openapi.json` from the Zod schemas              |
-| `pnpm db:studio`                                     | Prisma Studio                                                    |
-| `make -C apps/ios generate build test build-release` | iOS project regen, build, test, release compile                  |
+| Command                                              | What                                                                              |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm test`         | all packages via Turborepo                                                        |
+| `pnpm test:integration`                              | API + service tests against `clockoff_test` (reset on every run)                  |
+| `pnpm --filter @clockoff/web test:e2e`               | Playwright smoke (needs `pnpm dev` running)                                       |
+| `pnpm build`                                         | production build of the web app and the worker bundle (typechecks packages first) |
+| `pnpm openapi`                                       | regenerate `docs/openapi.json` from the Zod schemas                               |
+| `pnpm db:studio`                                     | Prisma Studio                                                                     |
+| `make -C apps/ios generate build test build-release` | iOS project regen, build, test, release compile                                   |
 
 ## Database workflow
 

@@ -39,7 +39,7 @@ the SQL, then `pnpm db:migrate`.
 
 | Database        | URL variable        | Used by                                                    |
 | --------------- | ------------------- | ---------------------------------------------------------- |
-| `clockoff`      | `DATABASE_URL`      | dev server, jobs, seed, Prisma Studio                      |
+| `clockoff`      | `DATABASE_URL`      | dev server, worker, seed, Prisma Studio                    |
 | `clockoff_test` | `TEST_DATABASE_URL` | integration tests — **dropped and recreated on every run** |
 
 The integration global setup refuses to run unless `TEST_DATABASE_URL` contains `_test`.
@@ -52,7 +52,27 @@ three locations, departments, teams, six policies, three break policies, 16 empl
 state, two weeks of shifts, break sessions, 50+ activity events, a CSV import record, an expired override,
 audit logs) and a second organisation "Other Co" used by tenant-isolation tests.
 
+## Worker tables
+
+Migration `20261008090000_worker_runtime` adds two operational tables for the background worker. Neither holds
+tenant data or PII.
+
+| Table               | Key           | Purpose                                                                                                                                                                                                         |
+| ------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `worker_heartbeats` | `instance_id` | One row per worker process, upserted every minute (`last_beat_at`, counters and flags in `details`); `stopped_at` is set by a graceful shutdown. `GET /api/health` reads it; rows older than 7 days are pruned. |
+| `worker_job_runs`   | `job`         | The last minute slot each job claimed (`last_slot`) and its outcome. The claim makes a scheduled slot run once across workers; `last_ok_at` of `work-mode-tick` feeds `worker.jobs` in `/api/health`.           |
+
+## Connections
+
+`DATABASE_URL` is Prisma's connection (in production Neon's **pooled** URL, PgBouncer in transaction mode).
+`DIRECT_URL` is the **direct** connection, read at runtime by the web app and the worker for the realtime LISTEN
+session and the worker's advisory-lock session (neither works through PgBouncer), and used by migrations.
+Locally both point at the same database.
+
 ## Backups / production
 
-Use managed Postgres with PITR. Run `prisma migrate deploy` on release. Never run `migrate dev`,
-`migrate reset` or `db push` against production.
+Production is Neon Postgres 17 in London (`docs/DEPLOYMENT.md` › Database). Migrations run as the web service's
+pre-deploy step on Railway (`/app/migrate.sh`, `prisma migrate deploy` over `DIRECT_URL`), so keep them additive:
+the previous web and worker images must keep working against the new schema during a deploy and after a rollback.
+Never run `migrate dev`, `migrate reset` or `db push` against production. Neon's free plan keeps a 6-hour restore
+window; see `docs/DEPLOYMENT.md` › Backups and restore.
