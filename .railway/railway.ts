@@ -1,9 +1,10 @@
 /**
  * Railway infrastructure as code for ClockOff (docs/DEPLOYMENT.md): project `clockoff`, environment
- * `production`, services `web` (Next.js) and `worker` (background jobs), both built from this repository's
- * `main` branch with the Dockerfiles in docker/. Railway retired per-service config files (railway.json) for
+ * `production`, services `web` (Next.js), `worker` (background jobs) and `www` (www → apex redirect: the Hobby
+ * plan allows two custom domains per service), all built from this repository's `main` branch with the
+ * Dockerfiles in docker/. Railway retired per-service config files (railway.json) for
  * new services, so this file is what the platform applies; the per-service build and deploy settings stay in
- * railway/web.json and railway/worker.json (pinned by apps/web/src/deploy/railwayConfig.test.ts) and are
+ * railway/{web,worker,www}.json (pinned by apps/web/src/deploy/railwayConfig.test.ts) and are
  * read from there.
  *
  *   railway config plan     # preview — never changes Railway
@@ -16,6 +17,7 @@
 import { defineRailway, github, preserve, project, service } from "railway/iac";
 import webConfig from "../railway/web.json" with { type: "json" };
 import workerConfig from "../railway/worker.json" with { type: "json" };
+import wwwConfig from "../railway/www.json" with { type: "json" };
 
 /** EU West (Amsterdam); the Neon database is in London (aws-eu-west-2). */
 const REGION = "europe-west4-drams3a";
@@ -50,7 +52,7 @@ const WORKER_VARIABLES = [...SHARED_VARIABLES, "WORKER_JOBS_ENABLED"];
 
 const preserved = (names: string[]) => Object.fromEntries(names.map((name) => [name, preserve()]));
 
-type ServiceFile = typeof webConfig | typeof workerConfig;
+type ServiceFile = typeof webConfig | typeof workerConfig | typeof wwwConfig;
 
 /** railway.json's deploy block in IaC form: replicas are set per region, preDeployCommand is a list. */
 function deployOf(file: ServiceFile) {
@@ -81,5 +83,13 @@ export default defineRailway(() => {
     replicas: { [REGION]: workerConfig.deploy.numReplicas },
     env: preserved(WORKER_VARIABLES),
   });
-  return project("clockoff", { resources: [web, worker] });
+  const www = service("www", {
+    source,
+    build: wwwConfig.build,
+    deploy: deployOf(wwwConfig),
+    replicas: { [REGION]: wwwConfig.deploy.numReplicas },
+    // Not secrets: the redirect target and the port the www.clockoff.online custom domain targets.
+    env: { REDIRECT_TO: "https://clockoff.online", PORT: "8080" },
+  });
+  return project("clockoff", { resources: [web, worker, www] });
 });
