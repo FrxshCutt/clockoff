@@ -117,6 +117,13 @@ describe("railway/web.json and railway/worker.json", () => {
     expect(heapCapMiB(workerDockerfile)).toBeLessThanOrEqual(256 * 0.65);
   });
 
+  it("cap CPU so a runaway process cannot spend the usage limit (web 2, worker 1, www 0.5 vCPU)", () => {
+    const www = JSON.parse(read("railway/www.json")) as RailwayConfig;
+    const cpu = (config: RailwayConfig) =>
+      (config.deploy.limitOverride.containers as { cpu?: number }).cpu;
+    expect([cpu(web), cpu(worker), cpu(www)]).toEqual([2, 1, 0.5]);
+  });
+
   it("drain long enough for the graceful shutdown before SIGKILL, for any allowed SHUTDOWN_GRACE_MS", () => {
     expect(defaultGraceSeconds).toBe(20);
     // SHUTDOWN_GRACE_MS is one shared variable: check the largest value the schema accepts, plus a

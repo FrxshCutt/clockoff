@@ -17,7 +17,6 @@
 
 .git
 .github
-.netlify
 apps/ios
 apps/web/e2e/screenshots
 awesome-design-md

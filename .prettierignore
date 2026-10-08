@@ -11,8 +11,6 @@ docs/fixtures
 apps/web/test-results
 apps/web/playwright-report
 apps/web/e2e/screenshots
-.netlify
-**/.netlify
-
+**/
 # Verbatim Cloudflare API exports (kept byte-for-byte as returned)
 docs/dns-backup-*.json

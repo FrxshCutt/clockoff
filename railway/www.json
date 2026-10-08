@@ -3,7 +3,11 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "docker/www-redirect/Dockerfile",
-    "watchPatterns": ["docker/www-redirect/**", "railway/www.json", ".railway/**"]
+    "watchPatterns": [
+      "docker/www-redirect/**",
+      "railway/www.json",
+      ".railway/**"
+    ]
   },
   "deploy": {
     "healthcheckPath": "/healthz",
@@ -14,6 +18,11 @@
     "sleepApplication": false,
     "overlapSeconds": 5,
     "drainingSeconds": 5,
-    "limitOverride": { "containers": { "memoryBytes": 134217728 } }
+    "limitOverride": {
+      "containers": {
+        "cpu": 0.5,
+        "memoryBytes": 134217728
+      }
+    }
   }
 }

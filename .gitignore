@@ -55,8 +55,6 @@ apps/ios/**/.swiftpm/xcode/package.xcworkspace/xcuserdata/
 # deployment credentials (local only)
 .env.deploy
 
-# Local Netlify folder
-.netlify
 
 # Apple keys (App Store Connect API / APNs) — never commit
 *.p8

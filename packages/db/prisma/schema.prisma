@@ -7,9 +7,9 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
-  // "native" for the machine running generate; rhel-openssl-3.0.x for Netlify Functions (AWS Lambda on
-  // Amazon Linux 2023), which run on a different OS from the Ubuntu build image.
-  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  // "native" only: the Railway images run `prisma generate` inside their own Linux build (docker/), so the
+  // engine always matches the platform that runs it.
+  binaryTargets   = ["native"]
 }
 
 datasource db {
