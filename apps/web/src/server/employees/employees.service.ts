@@ -39,6 +39,7 @@ import { RATE_LIMITS, enforceRateLimit } from "@/server/rateLimit";
 import { listShiftsForEmployee } from "@/server/shifts";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { revokeEmployeeAccess } from "./employeeAccess";
+import { assertManagedEmployeeEdit } from "./employees.integration";
 import {
   employeeLocations,
   toActivityEventDto,
@@ -70,6 +71,7 @@ import {
   findLocationIdsInOrganisation,
   findTeamIdsInOrganisation,
   findUsersByIds,
+  type Db,
   type EmployeeRow,
 } from "./employees.repository";
 import {
@@ -90,6 +92,11 @@ export {
  * scopes by `ctx.organisation.id`; a row of another tenant reads as EMPLOYEE_NOT_FOUND (404). Every
  * mutation is audited. Device badges and resolved policies are computed per page in a fixed number of
  * queries (`getEmployeeStatusContext`, `resolvePoliciesForEmployees`).
+ *
+ * An employee an integration manages (`managedByIntegrationId`) keeps its synced fields locked: changing the
+ * name, email (while the integration imports emails), external ID or primary location answers
+ * INTEGRATION_MANAGED (`employees.integration.ts`, plan §6.5 "Locked fields"). Policies, break policies, team
+ * overrides and every other ClockOff-only field stay editable, and deactivating or archiving stays available.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -229,10 +236,16 @@ async function assertReferences(organisationId: string, refs: ReferenceInput): P
   }
 }
 
-/** Plan limit on ACTIVE employees (create / reactivate). `CONFLICT` with `{ plan, limit, current }`. */
-async function assertEmployeeCapacity(organisation: OrganisationPolicyRef): Promise<void> {
-  const current = await countActiveEmployees(organisation.id);
-  if (isWithinLimit(organisation.plan, "employees", current + 1)) return;
+/**
+ * Plan limit on ACTIVE employees (create / reactivate, and the integration importer: `adding` new employees at
+ * once, counted in `db`). `CONFLICT` with `{ plan, limit, current }`.
+ */
+export async function assertEmployeeCapacity(
+  organisation: Pick<OrganisationRow, "id" | "plan">,
+  options: { adding?: number; db?: Db } = {},
+): Promise<void> {
+  const current = await countActiveEmployees(organisation.id, options.db);
+  if (isWithinLimit(organisation.plan, "employees", current + (options.adding ?? 1))) return;
   const limit = planLimitsFor(organisation.plan).employees;
   throw new AppError(
     "CONFLICT",
@@ -580,6 +593,13 @@ export async function updateEmployee(
 ): Promise<Employee> {
   const organisationId = ctx.organisation.id;
   const before = await requireEmployee(ctx, employeeId);
+  await assertManagedEmployeeEdit(prisma, organisationId, before, {
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    externalEmployeeId: input.externalEmployeeId,
+    primaryLocationId: input.primaryLocationId,
+  });
   await assertReferences(organisationId, {
     departmentId: input.departmentId,
     primaryLocationId: input.primaryLocationId,
@@ -935,6 +955,9 @@ export async function assignEmployeeLocation(
 ): Promise<Employee> {
   const organisationId = ctx.organisation.id;
   const before = await requireEmployee(ctx, employeeId);
+  await assertManagedEmployeeEdit(prisma, organisationId, before, {
+    primaryLocationId: input.primaryLocationId,
+  });
   await assertReferences(organisationId, {
     primaryLocationId: input.primaryLocationId,
     locationIds: input.locationIds,

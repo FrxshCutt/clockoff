@@ -1,4 +1,4 @@
-import { prisma, type ActivityEvent, type Prisma } from "@clockoff/db";
+import { prisma, type ActivityEvent } from "@clockoff/db";
 import type { ApiErrorCode } from "@clockoff/shared/errors";
 import { AppError } from "@clockoff/shared/errors";
 import {
@@ -39,16 +39,25 @@ import {
   type SkippedOccurrence,
   type UpdateShiftInput,
 } from "@clockoff/validation/shifts";
-import { publishActivity, recordActivity } from "@/server/activity/recordActivity";
+import { publishActivity } from "@/server/activity/recordActivity";
 import { audit } from "@/server/audit/audit";
 import { readOrganisationSettings } from "@/server/organisations/mappers";
 import type { ManagerContext } from "@/server/tenancy/context";
 import { encodeSeriesRule, parseSeriesRule, withCount } from "./recurrence";
 import { publishScheduleChanged, publishScheduleChangedForShifts } from "./shifts.events";
+import { integrationManagedError } from "./shifts.integration";
+import {
+  auditSnapshot,
+  breakInputs,
+  endActiveBreakOutside,
+  instantsOf,
+  recordShiftActivity,
+  updateShiftRow,
+  type ShiftActor,
+} from "./shifts.internal";
 import { shiftInclude, toShiftDto, type ShiftRow } from "./shifts.mappers";
 import {
   completeEndedShifts,
-  findActiveBreakSession,
   findEmployee,
   findLocation,
   findShift,
@@ -90,6 +99,9 @@ import {
  *   writing a shift answers CONFLICT, with or without `expectedVersion`.
  * - Only SCHEDULED shifts can be rescheduled; a cancelled or completed shift keeps its times (duplicate it
  *   instead). Notes, location and scheduled breaks stay editable on any status.
+ * - A shift an integration manages (`managedByIntegrationId`, plan §6.6 "Read-only") cannot be updated,
+ *   cancelled or deleted here (INTEGRATION_MANAGED; per item in bulk actions): it is edited in the provider and
+ *   synced. Duplicating or repeating it creates an ordinary MANUAL shift and stays allowed.
  */
 
 const TRANSACTION_OPTIONS = { timeout: 60_000, maxWait: 10_000 } as const;
@@ -125,151 +137,15 @@ async function requireShift(
   return shift;
 }
 
-function managerActor(ctx: ManagerContext) {
-  return { actorType: "MANAGER" as const, actorUserId: ctx.user.id };
+/** The manager behind a request, as the shared write helpers (`shifts.internal.ts`) take it. */
+function shiftActor(ctx: ManagerContext): ShiftActor {
+  return { organisationId: ctx.organisation.id, actorType: "MANAGER", actorUserId: ctx.user.id };
 }
 
-function instantsOf(row: { startsAt: Date; endsAt: Date }) {
-  return { startsAt: row.startsAt.toISOString(), endsAt: row.endsAt.toISOString() };
-}
-
-function breakInputs(row: ShiftRow): ScheduledBreakInput[] {
-  return row.scheduledBreaks.map((b) => ({
-    offsetMinutesFromStart: b.offsetMinutesFromStart,
-    durationMinutes: b.durationMinutes,
-  }));
-}
-
-/**
- * Ends the shift's ACTIVE break session (reason SHIFT_ENDED) when `now` is no longer inside the shift's
- * window (`null` window = the shift is gone). Returns the activity event to publish after commit.
- */
-async function endActiveBreakOutside(
-  tx: Prisma.TransactionClient,
-  ctx: ManagerContext,
-  shift: { id: string; employeeId: string },
-  window: { startsAt: Date; endsAt: Date } | null,
-  now: Date,
-): Promise<ActivityEvent | null> {
-  const session = await findActiveBreakSession(shift.id, tx);
-  if (!session) return null;
-  if (window && now >= window.startsAt && now < window.endsAt) return null;
-  const limit = window ? Math.min(now.getTime(), window.endsAt.getTime()) : now.getTime();
-  const endedAt = new Date(Math.max(session.startedAt.getTime(), limit));
-  await tx.breakSession.update({
-    where: { id: session.id },
-    data: { status: "ENDED", endedAt, endReason: "SHIFT_ENDED" },
-  });
-  const { event } = await recordActivity(
-    {
-      organisationId: ctx.organisation.id,
-      employeeId: shift.employeeId,
-      deviceId: session.deviceId,
-      ...managerActor(ctx),
-      type: "BREAK_ENDED",
-      occurredAt: endedAt,
-      metadata: { breakSessionId: session.id, shiftId: shift.id, endReason: "SHIFT_ENDED" },
-    },
-    { db: tx, publish: false },
-  );
-  return event;
-}
-
-async function recordShiftActivity(
-  tx: Prisma.TransactionClient,
-  ctx: ManagerContext,
-  type: "SHIFT_CREATED" | "SHIFT_UPDATED" | "SHIFT_CANCELLED",
-  row: {
-    id: string;
-    employeeId: string;
-    startsAt: Date;
-    endsAt: Date;
-    timezone: string;
-    version: number;
-    status: string;
-    parentRecurrenceId: string | null;
-    source: string;
-  },
-  extra: Record<string, unknown> = {},
-): Promise<ActivityEvent> {
-  const { event } = await recordActivity(
-    {
-      organisationId: ctx.organisation.id,
-      employeeId: row.employeeId,
-      ...managerActor(ctx),
-      type,
-      metadata: {
-        shiftId: row.id,
-        ...instantsOf(row),
-        timezone: row.timezone,
-        version: row.version,
-        status: row.status,
-        source: row.source,
-        ...(row.parentRecurrenceId ? { parentRecurrenceId: row.parentRecurrenceId } : {}),
-        ...extra,
-      },
-    },
-    { db: tx, publish: false },
-  );
-  return event;
-}
-
-/** Snapshot for audit `before` / `after` (operational fields only). */
-function auditSnapshot(row: ShiftRow) {
-  return {
-    employeeId: row.employeeId,
-    locationId: row.locationId,
-    ...instantsOf(row),
-    timezone: row.timezone,
-    status: row.status,
-    notes: row.notes,
-    version: row.version,
-    recurrenceRule: row.recurrenceRule,
-    parentRecurrenceId: row.parentRecurrenceId,
-    scheduledBreaks: breakInputs(row),
-  };
-}
-
-/**
- * Writes `data` to a shift only while its `version` is still the one the caller read (optimistic lock) and
- * bumps the version. A change that landed in between — another manager's edit, a cancel, a delete —
- * answers CONFLICT with the current version (NOT_FOUND once the row is gone) instead of overwriting it.
- * `breaks`, when given, replace the scheduled breaks. Returns the fresh row.
- */
-async function updateShiftRow(
-  tx: Prisma.TransactionClient,
-  organisationId: string,
-  current: Pick<ShiftRow, "id" | "version">,
-  data: Omit<Prisma.ShiftUncheckedUpdateManyInput, "id" | "organisationId" | "version">,
-  breaks?: readonly ScheduledBreakInput[],
-): Promise<ShiftRow> {
-  const result = await tx.shift.updateMany({
-    where: { id: current.id, organisationId, version: current.version, deletedAt: null },
-    data: { ...data, version: { increment: 1 } },
-  });
-  if (result.count === 0) {
-    const latest = await tx.shift.findFirst({
-      where: { id: current.id, organisationId },
-      select: { version: true, deletedAt: true },
-    });
-    if (!latest || latest.deletedAt) throw new AppError("NOT_FOUND", "Shift not found");
-    throw new AppError("CONFLICT", "The shift was changed by someone else; reload and try again", {
-      details: { currentVersion: latest.version },
-    });
-  }
-  if (breaks !== undefined) {
-    await tx.scheduledBreak.deleteMany({ where: { shiftId: current.id } });
-    if (breaks.length > 0) {
-      await tx.scheduledBreak.createMany({
-        data: breaks.map((b) => ({
-          shiftId: current.id,
-          offsetMinutesFromStart: b.offsetMinutesFromStart,
-          durationMinutes: b.durationMinutes,
-        })),
-      });
-    }
-  }
-  return tx.shift.findUniqueOrThrow({ where: { id: current.id }, include: shiftInclude });
+/** Managed shifts are read-only for managers (INTEGRATION_MANAGED): they change in the provider. */
+function assertNotManaged(row: Pick<ShiftRow, "managedByIntegrationId">): void {
+  if (row.managedByIntegrationId)
+    throw integrationManagedError("Shift", row.managedByIntegrationId);
 }
 
 // ── reads ───────────────────────────────────────────────────────────────────
@@ -540,7 +416,8 @@ export async function createShift(
       );
     }
     const events: ActivityEvent[] = [];
-    for (const row of rows) events.push(await recordShiftActivity(tx, ctx, "SHIFT_CREATED", row));
+    for (const row of rows)
+      events.push(await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CREATED", row));
     await audit(
       ctx,
       {
@@ -654,6 +531,7 @@ export async function updateShift(
   const organisationId = ctx.organisation.id;
   const now = new Date();
   const current = await requireShift(organisationId, shiftId);
+  assertNotManaged(current);
   if (input.expectedVersion !== undefined && input.expectedVersion !== current.version) {
     throw new AppError("CONFLICT", "The shift was changed by someone else; reload and try again", {
       details: { currentVersion: current.version },
@@ -735,11 +613,11 @@ async function updateSingleShift(
     );
     const events: ActivityEvent[] = [];
     if (times.timesChanged) {
-      const breakEvent = await endActiveBreakOutside(tx, ctx, row, times, now);
+      const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), row, times, now);
       if (breakEvent) events.push(breakEvent);
     }
     events.push(
-      await recordShiftActivity(tx, ctx, "SHIFT_UPDATED", row, {
+      await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_UPDATED", row, {
         changedFields: changedFields(input),
       }),
     );
@@ -954,11 +832,11 @@ async function updateSeriesFrom(
       );
       rows.push(row);
       if (retime) {
-        const breakEvent = await endActiveBreakOutside(tx, ctx, row, plan, now);
+        const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), row, plan, now);
         if (breakEvent) events.push(breakEvent);
       }
       events.push(
-        await recordShiftActivity(tx, ctx, "SHIFT_UPDATED", row, {
+        await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_UPDATED", row, {
           changedFields: changedFields(input),
           applyTo: "THIS_AND_FUTURE",
         }),
@@ -999,12 +877,15 @@ export async function deleteShift(ctx: ManagerContext, shiftId: string): Promise
   const organisationId = ctx.organisation.id;
   const now = new Date();
   const current = await requireShift(organisationId, shiftId);
+  assertNotManaged(current);
   const events = await prisma.$transaction(async (tx) => {
     const row = await updateShiftRow(tx, organisationId, current, { deletedAt: now });
     const events: ActivityEvent[] = [];
-    const breakEvent = await endActiveBreakOutside(tx, ctx, row, null, now);
+    const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), row, null, now);
     if (breakEvent) events.push(breakEvent);
-    events.push(await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", row, { removed: true }));
+    events.push(
+      await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CANCELLED", row, { removed: true }),
+    );
     await audit(
       ctx,
       {
@@ -1040,13 +921,14 @@ export async function cancelShift(
   const organisationId = ctx.organisation.id;
   const now = new Date();
   const current = await requireShift(organisationId, shiftId);
+  assertNotManaged(current);
   assertCancellable(current);
   const { row, events } = await prisma.$transaction(async (tx) => {
     const row = await updateShiftRow(tx, organisationId, current, { status: "CANCELLED" });
     const events: ActivityEvent[] = [];
-    const breakEvent = await endActiveBreakOutside(tx, ctx, row, null, now);
+    const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), row, null, now);
     if (breakEvent) events.push(breakEvent);
-    events.push(await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", row));
+    events.push(await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CANCELLED", row));
     await audit(
       ctx,
       {
@@ -1114,7 +996,7 @@ export async function duplicateShift(
       },
       include: shiftInclude,
     });
-    const event = await recordShiftActivity(tx, ctx, "SHIFT_CREATED", row, {
+    const event = await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CREATED", row, {
       duplicatedFromShiftId: source.id,
     });
     await audit(
@@ -1184,11 +1066,22 @@ export async function bulkShiftAction(
   const byId = new Map(rows.map((r) => [r.id, r]));
   const failed: BulkFailure[] = notFoundFailures(input.shiftIds, byId);
   const ordered = input.shiftIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []));
+  // Managed shifts are read-only: CANCEL, DELETE and MOVE fail per item; REPEAT only copies them into
+  // ordinary MANUAL shifts, like duplicateShift, and stays allowed.
+  const editable =
+    input.action === "REPEAT"
+      ? ordered
+      : ordered.filter((row) => {
+          if (!row.managedByIntegrationId) return true;
+          const err = integrationManagedError("Shift", row.managedByIntegrationId);
+          failed.push({ shiftId: row.id, code: err.code, message: err.message });
+          return false;
+        });
 
   switch (input.action) {
     case "CANCEL": {
       const targets: ShiftRow[] = [];
-      for (const row of ordered) {
+      for (const row of editable) {
         try {
           assertCancellable(row);
           targets.push(row);
@@ -1208,9 +1101,11 @@ export async function bulkShiftAction(
             include: shiftInclude,
           });
           updated.push(u);
-          const breakEvent = await endActiveBreakOutside(tx, ctx, u, null, now);
+          const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), u, null, now);
           if (breakEvent) events.push(breakEvent);
-          events.push(await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", u, { bulk: true }));
+          events.push(
+            await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CANCELLED", u, { bulk: true }),
+          );
         }
         await audit(
           ctx,
@@ -1241,15 +1136,18 @@ export async function bulkShiftAction(
     case "DELETE": {
       const events = await prisma.$transaction(async (tx) => {
         const events: ActivityEvent[] = [];
-        for (const row of ordered) {
+        for (const row of editable) {
           const u = await tx.shift.update({
             where: { id: row.id },
             data: { deletedAt: now, version: { increment: 1 } },
           });
-          const breakEvent = await endActiveBreakOutside(tx, ctx, u, null, now);
+          const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), u, null, now);
           if (breakEvent) events.push(breakEvent);
           events.push(
-            await recordShiftActivity(tx, ctx, "SHIFT_CANCELLED", u, { removed: true, bulk: true }),
+            await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CANCELLED", u, {
+              removed: true,
+              bulk: true,
+            }),
           );
         }
         await audit(
@@ -1257,18 +1155,18 @@ export async function bulkShiftAction(
           {
             action: "shift.bulk_deleted",
             entityType: "Shift",
-            after: { shiftIds: ordered.map((r) => r.id), failed },
+            after: { shiftIds: editable.map((r) => r.id), failed },
           },
           tx,
         );
         return events;
       }, TRANSACTION_OPTIONS);
       for (const event of events) publishActivity(event);
-      publishScheduleChangedForShifts(organisationId, ordered, "DELETED");
+      publishScheduleChangedForShifts(organisationId, editable, "DELETED");
       return {
         action: "DELETE",
         processed: rows.length,
-        succeeded: ordered.length,
+        succeeded: editable.length,
         failed,
         shifts: [],
       };
@@ -1276,7 +1174,7 @@ export async function bulkShiftAction(
 
     case "MOVE": {
       const plans: Array<{ row: ShiftRow; startsAt: Date; endsAt: Date }> = [];
-      for (const row of ordered) {
+      for (const row of editable) {
         if (row.status !== "SCHEDULED") {
           failed.push({
             shiftId: row.id,
@@ -1308,10 +1206,10 @@ export async function bulkShiftAction(
             include: shiftInclude,
           });
           updated.push(u);
-          const breakEvent = await endActiveBreakOutside(tx, ctx, u, plan, now);
+          const breakEvent = await endActiveBreakOutside(tx, shiftActor(ctx), u, plan, now);
           if (breakEvent) events.push(breakEvent);
           events.push(
-            await recordShiftActivity(tx, ctx, "SHIFT_UPDATED", u, {
+            await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_UPDATED", u, {
               changedFields: ["startsAt", "endsAt"],
               bulk: true,
               deltaDays: input.payload.deltaDays,
@@ -1406,7 +1304,7 @@ export async function bulkShiftAction(
           });
           created.push(c);
           events.push(
-            await recordShiftActivity(tx, ctx, "SHIFT_CREATED", c, {
+            await recordShiftActivity(tx, shiftActor(ctx), "SHIFT_CREATED", c, {
               duplicatedFromShiftId: plan.row.id,
               bulk: true,
             }),

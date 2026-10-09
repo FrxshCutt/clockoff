@@ -23,6 +23,8 @@ const JOB_ENTRY_POINTS: Record<string, string[]> = {
   runScheduleUpkeep: ["server/workState/workStateJob.ts"],
   sweepExpiredOverrides: ["server/workState/workStateJob.ts"],
   runScheduledIntegrationSyncs: ["server/integrations/scheduledSync.ts"],
+  // Planday runs (plan §7.6): web only enqueues; the worker's integration runner executes the slices.
+  runSyncSlice: ["server/integrations/runs/executor.ts"],
 };
 
 function sourceFiles(dir: string): string[] {

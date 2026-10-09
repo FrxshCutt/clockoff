@@ -11,6 +11,7 @@ import { managedByFromIntegrationId } from "@clockoff/validation/integrations";
 import { audit } from "@/server/audit/audit";
 import { lockOrganisationRow } from "@/server/joinCodes/joinCodes.repository";
 import { publishBreakPolicyChanged, publishPolicyChanged } from "@/server/policies/events";
+import { integrationManagedError } from "@/server/shifts/shifts.integration";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {
   countEmployeesByLocation,
@@ -31,6 +32,10 @@ import { getActiveAssignmentsForScope, type ScopeAssignments } from "./scopeAssi
  * (case-insensitive), the plan caps how many there are (`isWithinLimit`), deletion is a soft delete that
  * detaches employees, teams and finished shifts (SetNull) and is refused while shifts are still scheduled
  * at the site. Every mutation is audited.
+ *
+ * A location an integration manages (`managedByIntegrationId`, created from a Planday department) keeps its
+ * name in the provider: renaming or deleting it answers INTEGRATION_MANAGED (plan §6.9; remap or exclude the
+ * department in the integration's settings instead). Its time zone and address stay editable.
  */
 
 export interface ListLocationsOptions {
@@ -183,6 +188,11 @@ export async function updateLocation(
     const before = await loadLocationOrThrow(organisationId, id, tx);
     const data: Prisma.LocationUpdateInput = {};
     if (input.name !== undefined && input.name !== before.name) {
+      if (before.managedByIntegrationId) {
+        throw integrationManagedError("Location", before.managedByIntegrationId, {
+          fields: ["name"],
+        });
+      }
       if (await findLocationByName(organisationId, input.name, { excludeId: id, db: tx }))
         throw nameConflict();
       data.name = input.name;
@@ -217,6 +227,9 @@ export async function deleteLocation(ctx: ManagerContext, id: string): Promise<v
   const organisationId = ctx.organisation.id;
   const result = await prisma.$transaction(async (tx) => {
     const before = await loadLocationOrThrow(organisationId, id, tx);
+    if (before.managedByIntegrationId) {
+      throw integrationManagedError("Location", before.managedByIntegrationId);
+    }
     const now = new Date();
     const upcoming = await countUpcomingShiftsForLocation(organisationId, id, now, tx);
     if (upcoming > 0) {

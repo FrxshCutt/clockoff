@@ -17,6 +17,7 @@ import {
   type ScopeAssignments,
 } from "@/server/locations/scopeAssignments";
 import { publishBreakPolicyChanged, publishPolicyChanged } from "@/server/policies/events";
+import { integrationManagedError } from "@/server/shifts/shifts.integration";
 import type { ManagerContext } from "@/server/tenancy/context";
 import {
   addTeamMemberships,
@@ -36,6 +37,11 @@ import {
  * policy-assignment scope. Membership edits only ever accept employees of the same organisation
  * (`EMPLOYEE_NOT_FOUND` otherwise — ids are never confirmed across tenants). Deleting a team ends its open
  * policy assignments so no assignment resolves through a vanished scope. Every mutation is audited.
+ *
+ * A team an integration manages (`managedByIntegrationId`, created from a Planday employee group) keeps its
+ * name in the provider: renaming or deleting it answers INTEGRATION_MANAGED (plan §6.9; remap the group in the
+ * integration's settings instead). Its location and members stay editable here; the sync only maintains the
+ * memberships of mapped teams.
  */
 
 export function toTeamDto(row: TeamRow, assignments: ScopeAssignments | undefined): Team {
@@ -153,6 +159,9 @@ export async function updateTeam(
   const updated = await prisma.$transaction(async (tx) => {
     const before = await loadTeamOrThrow(organisationId, id, tx);
     const data: Prisma.TeamUncheckedUpdateInput = {};
+    if (input.name !== undefined && input.name !== before.name && before.managedByIntegrationId) {
+      throw integrationManagedError("Team", before.managedByIntegrationId, { fields: ["name"] });
+    }
     if (input.name !== undefined) data.name = input.name;
     if (input.locationId !== undefined) {
       if (input.locationId)
@@ -182,6 +191,9 @@ export async function deleteTeam(ctx: ManagerContext, id: string): Promise<void>
   const organisationId = ctx.organisation.id;
   const result = await prisma.$transaction(async (tx) => {
     const before = await loadTeamOrThrow(organisationId, id, tx);
+    if (before.managedByIntegrationId) {
+      throw integrationManagedError("Team", before.managedByIntegrationId);
+    }
     const now = new Date();
     const memberIds = await findTeamMemberIds(id, tx);
     const ended = await endAssignmentsForScope(tx, organisationId, "TEAM", id, now);
